@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     options {
-        buildDiscarder(logRotator(numToKeepStr: '20', daysToKeepStr: '5'))
         disableConcurrentBuilds()
     }
 
@@ -14,7 +13,7 @@ pipeline {
                         step([$class: 'WsCleanup'])
                         checkout scm
                         sh '''
-                            qmake gams-studio.pro CONFIG+=release && make -j3
+                            qmake model-inspector.pro CONFIG+=release && make -j3
                         '''
                         warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', consoleParsers: [[parserName: 'GNU Make + GNU C Compiler (gcc)']], defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', unHealthy: ''
                     }
@@ -29,7 +28,7 @@ pipeline {
                             cd "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin"
                             call vcvars32.bat
                             cd %WORKSPACE%
-                            qmake gams-studio.pro "CONFIG+=release"
+                            qmake model-inspector.pro "CONFIG+=release"
                             nmake
                         '''
                         warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', consoleParsers: [[parserName: 'MSBuild']], defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', unHealthy: ''
@@ -45,7 +44,7 @@ pipeline {
                             cd "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build"
                             call vcvars64.bat
                             cd %WORKSPACE%
-                            qmake gams-studio.pro "CONFIG+=release"
+                            qmake model-inspector.pro "CONFIG+=release"
                             nmake
                         '''
                         warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', consoleParsers: [[parserName: 'MSBuild']], defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', unHealthy: ''
@@ -55,7 +54,7 @@ pipeline {
                     node('macos') {
                         step([$class: 'WsCleanup'])
                         checkout scm
-                        sh 'qmake gams-studio.pro CONFIG+=release && make -j3'
+                        sh 'qmake model-inspector.pro CONFIG+=release && make -j3'
                         warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', consoleParsers: [[parserName: 'Clang (LLVM based)']], defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', unHealthy: ''
                     }
                 }
