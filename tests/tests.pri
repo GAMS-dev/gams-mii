@@ -18,7 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-QT += core testlib gui
+QT += core testlib gui widgets
 
 CONFIG += c++14
 CONFIG -= app_bundle
@@ -28,3 +28,4 @@ DESTDIR = ../bin
 include (../version)
 
 TESTSROOT = $$_PRO_FILE_PWD_/..
+SRCPATH = $$TESTSROOT/../src

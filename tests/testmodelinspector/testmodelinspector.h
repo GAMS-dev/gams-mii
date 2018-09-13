@@ -17,17 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#ifndef TESTMODELINSPECTOR_H
+#define TESTMODELINSPECTOR_H
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
-{
-    ui->setupUi(this);
-}
+#include <QtTest/QTest>
 
-MainWindow::~MainWindow()
+class TestModelInspector : public QObject
 {
-    delete ui;
-}
+    Q_OBJECT
+
+private slots:
+    void testModelInspector();
+};
+
+#endif // TESTMODELINSPECTOR_H

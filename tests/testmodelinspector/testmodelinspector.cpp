@@ -17,17 +17,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "testmodelinspector.h"
+#include "modelinspector.h"
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+using namespace gams::studio::modelinspector;
+
+void TestModelInspector::testModelInspector()
 {
-    ui->setupUi(this);
+    ModelInspector mi;
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
+QTEST_MAIN(TestModelInspector)
