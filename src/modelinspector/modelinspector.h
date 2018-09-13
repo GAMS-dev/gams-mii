@@ -36,6 +36,7 @@ class ModelInspector : public QWidget
 
 public:
     explicit ModelInspector(QWidget *parent = nullptr);
+    ~ModelInspector();
 
 private:
     Ui::ModelInspector* ui;

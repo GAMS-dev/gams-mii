@@ -18,6 +18,22 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-TEMPLATE = subdirs
+TEMPLATE = app
 
-SUBDIRS += testmodelinspector
+include(../tests.pri)
+
+CONFIG += qt warn_on depend_includepath testcase
+
+INCLUDEPATH += $$SRCPATH/modelinspector
+
+SOURCES += \
+    testmodelinspector.cpp \
+    $$SRCPATH/modelinspector/modelinspector.cpp
+
+HEADERS += \
+    testmodelinspector.h \
+    $$SRCPATH/modelinspector/modelinspector.h
+
+FORMS += \
+    $$SRCPATH/modelinspector/modelinspector.ui
+

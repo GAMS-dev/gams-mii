@@ -17,25 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "modelinspector.h"
-#include "ui_modelinspector.h"
+#ifndef TESTMODELINSPECTOR_H
+#define TESTMODELINSPECTOR_H
 
-namespace gams {
-namespace studio{
-namespace modelinspector {
+#include <QtTest/QTest>
 
-ModelInspector::ModelInspector(QWidget *parent)
-    : QWidget(parent),
-      ui(new Ui::ModelInspector)
+class TestModelInspector : public QObject
 {
-    ui->setupUi(this);
-}
+    Q_OBJECT
 
-ModelInspector::~ModelInspector()
-{
-    delete ui;
-}
+private slots:
+    void testModelInspector();
+};
 
-}
-}
-}
+#endif // TESTMODELINSPECTOR_H
