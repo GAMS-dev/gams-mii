@@ -44,13 +44,16 @@ win32 {
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    modelinspector/modelinspector.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    modelinspector/modelinspector.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    modelinspector/modelinspector.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
