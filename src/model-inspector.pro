@@ -56,11 +56,15 @@ win32 {
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    modelinspector/modelinspector.cpp
+    modelinspector/modelinspector.cpp \
+    gamsprocess.cpp \
+    commonpaths.cpp
 
 HEADERS += \
         mainwindow.h \
-    modelinspector/modelinspector.h
+    modelinspector/modelinspector.h \
+    gamsprocess.h \
+    commonpaths.h
 
 FORMS += \
         mainwindow.ui \
