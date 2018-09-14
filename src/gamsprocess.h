@@ -17,7 +17,6 @@ public:
     QString workingDir() const;
 
     void execute();
-
     void interrupt();
     void stop();
 
