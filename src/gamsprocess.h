@@ -27,9 +27,7 @@ private:
 
 private:
     QProcess mProcess;
-    //QMutex mOutputMutex;
     QString mAppName;
-    //QString mInputFile;
     QStringList mParameters;
     QString mWorkingDir;
 };
