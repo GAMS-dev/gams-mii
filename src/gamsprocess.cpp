@@ -3,6 +3,10 @@
 
 #include <QDir>
 
+#ifdef _WIN32
+#include "windows.h"
+#endif
+
 GAMSProcess::GAMSProcess(QObject *parent)
     : QObject(parent),
       mProcess(this),
