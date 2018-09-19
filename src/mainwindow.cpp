@@ -20,6 +20,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "gamsprocess.h"
+#include "gamslibprocess.h"
 #include "commonpaths.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -38,12 +39,23 @@ MainWindow::~MainWindow()
 void MainWindow::on_runButton_clicked(bool checked)
 {
     Q_UNUSED(checked)
+
+    loadModel();
     GAMSProcess proc;
     QStringList params = ui->paramsEdit->text().split(" ",
                                                       QString::SkipEmptyParts,
                                                       Qt::CaseInsensitive);
     proc.setParameters(params);
     proc.setWorkingDir(".");
+    proc.execute();
+    proc.printOutputToDebug();
+}
+
+void MainWindow::loadModel()
+{
+    GAMSLibProcess proc;
+    proc.setTargetDir(".");
+    proc.setModelName("trnsport");
     proc.execute();
     proc.printOutputToDebug();
 }

@@ -38,6 +38,9 @@ private slots:
     void on_runButton_clicked(bool checked);
 
 private:
+    void loadModel();
+
+private:
     Ui::MainWindow *ui;
 };
 

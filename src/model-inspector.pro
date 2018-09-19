@@ -58,13 +58,15 @@ SOURCES += \
         mainwindow.cpp \
     modelinspector/modelinspector.cpp \
     gamsprocess.cpp \
-    commonpaths.cpp
+    commonpaths.cpp \
+    gamslibprocess.cpp
 
 HEADERS += \
         mainwindow.h \
     modelinspector/modelinspector.h \
     gamsprocess.h \
-    commonpaths.h
+    commonpaths.h \
+    gamslibprocess.h
 
 FORMS += \
         mainwindow.ui \
