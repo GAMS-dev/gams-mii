@@ -1,6 +1,7 @@
 #include "gamsprocess.h"
 #include "commonpaths.h"
 
+#include <QDebug>
 #include <QDir>
 
 #ifdef _WIN32
@@ -18,6 +19,9 @@ GAMSProcess::GAMSProcess(QObject *parent)
 void GAMSProcess::execute()
 {
     mProcess.setWorkingDirectory(mWorkingDir);
+    qDebug() << "native path >> " << nativeAppPath();
+    qDebug() << "working dir >> " << workingDir();
+    qDebug() << "gams params >> " << mParameters;
 #if defined(__unix__) || defined(__APPLE__)
     mProcess.start(nativeAppPath(), mParameters);
 #else
@@ -72,6 +76,13 @@ void GAMSProcess::stop()
 void GAMSProcess::setParameters(const QStringList &parameters)
 {
     mParameters = parameters;
+}
+
+void GAMSProcess::printOutputToDebug()
+{
+    if (mProcess.waitForFinished()) {
+        qDebug() << mProcess.readAllStandardOutput();
+    }
 }
 
 QString GAMSProcess::nativeAppPath()

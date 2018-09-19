@@ -22,6 +22,8 @@ public:
 
     void setParameters(const QStringList &parameters);
 
+    void printOutputToDebug();
+
 private:
     QString nativeAppPath();
 

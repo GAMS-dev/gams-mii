@@ -19,15 +19,31 @@
  */
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "gamsprocess.h"
+#include "commonpaths.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    CommonPaths::setSystemDir();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_runButton_clicked(bool checked)
+{
+    Q_UNUSED(checked)
+    GAMSProcess proc;
+    QStringList params = ui->paramsEdit->text().split(" ",
+                                                      QString::SkipEmptyParts,
+                                                      Qt::CaseInsensitive);
+    proc.setParameters(params);
+    proc.setWorkingDir(".");
+    proc.execute();
+    proc.printOutputToDebug();
 }
