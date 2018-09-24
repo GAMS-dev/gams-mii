@@ -55,7 +55,10 @@ void MainWindow::loadModel()
 {
     GAMSLibProcess proc;
     proc.setTargetDir(".");
-    proc.setModelName("trnsport");
+    QStringList params = ui->paramsEdit->text().split(" ",
+                                                      QString::SkipEmptyParts,
+                                                      Qt::CaseInsensitive);
+    proc.setModelName(params.first());
     proc.execute();
     proc.printOutputToDebug();
 }

@@ -20,7 +20,7 @@
       <item>
        <widget class="QLineEdit" name="paramsEdit">
         <property name="text">
-         <string>trnsport.gms SolveLink=0 lo=3 keep=1 curdir=.</string>
+         <string>indus89.gms SolveLink=0 lo=3 keep=1 curdir=.</string>
         </property>
        </widget>
       </item>
