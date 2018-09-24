@@ -22,6 +22,8 @@
 
 #include <QWidget>
 
+#include <memory>
+
 namespace gams {
 namespace studio{
 namespace modelinspector {
@@ -29,6 +31,8 @@ namespace modelinspector {
 namespace Ui {
 class ModelInspector;
 }
+
+class ModelInstance;
 
 class ModelInspector : public QWidget
 {
@@ -40,6 +44,7 @@ public:
 
 private:
     Ui::ModelInspector* ui;
+    std::unique_ptr<ModelInspector> mModelInspector;
 };
 
 }

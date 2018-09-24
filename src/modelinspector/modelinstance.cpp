@@ -18,6 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "modelinstance.h"
+#include "commonpaths.h"
+
+#include <QDebug>
 
 namespace gams {
 namespace studio {
@@ -25,7 +28,24 @@ namespace modelinspector {
 
 ModelInstance::ModelInstance()
 {
+    qDebug() << "ModelInstance creation >> " << CommonPaths::systemDir().toStdString().c_str();
+    char msg[GMS_SSSIZE];
+    if (!gevCreateD(&mGEV,
+                    CommonPaths::systemDir().toStdString().c_str(),
+                    msg,
+                    sizeof(msg)))
+        qDebug() << "ERROR: " << msg; // TODO(AF): execption or syslog
+    if (!gmoCreateD(&mGMO,
+                    CommonPaths::systemDir().toStdString().c_str(),
+                    msg,
+                    sizeof(msg)))
+        qDebug() << "ERROR: " << msg; // TODO(AF): execption or syslog
+}
 
+ModelInstance::~ModelInstance()
+{
+    if (mGMO) gmoFree(&mGMO);
+    if (mGEV) gevFree(&mGEV);
 }
 
 }

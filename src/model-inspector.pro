@@ -54,24 +54,24 @@ win32 {
 }
 
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp \
-    modelinspector/modelinspector.cpp \
+    main.cpp \
+    mainwindow.cpp \
     gamsprocess.cpp \
     commonpaths.cpp \
     gamslibprocess.cpp \
-    modelinspector/modelinstance.cpp
+    modelinspector/modelinstance.cpp    \
+    modelinspector/modelinspector.cpp
 
 HEADERS += \
-        mainwindow.h \
-    modelinspector/modelinspector.h \
+    mainwindow.h \
     gamsprocess.h \
     commonpaths.h \
-    gamslibprocess.h \
-    modelinspector/modelinstance.h
+    gamslibprocess.h    \
+    modelinspector/modelinstance.h  \
+    modelinspector/modelinspector.h
 
 FORMS += \
-        mainwindow.ui \
+    mainwindow.ui \
     modelinspector/modelinspector.ui
 
 # Default rules for deployment.

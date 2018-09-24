@@ -20,6 +20,9 @@
 #ifndef MODELINSTANCE_H
 #define MODELINSTANCE_H
 
+#include "gevmcc.h"
+#include "gmomcc.h"
+
 namespace gams {
 namespace studio {
 namespace modelinspector {
@@ -28,6 +31,11 @@ class ModelInstance
 {
 public:
     ModelInstance();
+    ~ModelInstance();
+
+private:
+    gevHandle_t mGEV;
+    gmoHandle_t mGMO;
 };
 
 }

@@ -74,7 +74,7 @@ equals(GAMS_BUILD_ENV, "") {
     }
     INCLUDEPATH += $$(GPRODUCTS)/gclib $$(GPRODUCTS)/apiwrap/gdxio $$(GPRODUCTS)/apiwrap/joat $$(GPRODUCTS)/apiwrap/optobj
 
-    SOURCES = \
+    SOURCES += \
         $$GAMS_DISTRIB_API/gevmcc.c \
         $$GAMS_DISTRIB_API/gmomcc.c
 }

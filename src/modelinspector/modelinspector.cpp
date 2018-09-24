@@ -19,6 +19,7 @@
  */
 #include "modelinspector.h"
 #include "ui_modelinspector.h"
+#include "modelinstance.h"
 
 namespace gams {
 namespace studio{
@@ -26,7 +27,8 @@ namespace modelinspector {
 
 ModelInspector::ModelInspector(QWidget *parent)
     : QWidget(parent),
-      ui(new Ui::ModelInspector)
+      ui(new Ui::ModelInspector),
+      mModelInspector(new ModelInspector)
 {
     ui->setupUi(this);
 }
