@@ -20,8 +20,12 @@
 
 QT       += core gui widgets
 
-TARGET = src
+TARGET = modelinspector
 TEMPLATE = app
+DESTDIR = bin
+
+# Setup and include the GAMS distribution
+include(../gamsdependency.pri)
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -35,9 +39,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 CONFIG += c++14
-
-# Setup and include the GAMS distribution
-include(../gamsdependency.pri)
 
 macx {
 # ! The icns-file is created from a folder named gams.iconset containing images in multiple sizes.
@@ -73,8 +74,3 @@ HEADERS += \
 FORMS += \
     mainwindow.ui \
     modelinspector/modelinspector.ui
-
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target

@@ -52,6 +52,7 @@ equals(GAMS_BUILD_ENV, "") {
     INCLUDEPATH += $$GAMS_DISTRIB_API
 
     SOURCES += \
+        $$GAMS_DISTRIB_API/gclgms.c \
         $$GAMS_DISTRIB_API/gevmcc.c \
         $$GAMS_DISTRIB_API/gmomcc.c
 } else {
@@ -75,6 +76,7 @@ equals(GAMS_BUILD_ENV, "") {
     INCLUDEPATH += $$(GPRODUCTS)/gclib $$(GPRODUCTS)/apiwrap/gdxio $$(GPRODUCTS)/apiwrap/joat $$(GPRODUCTS)/apiwrap/optobj
 
     SOURCES += \
+        $$GAMS_DISTRIB_API/gclgms.c \
         $$GAMS_DISTRIB_API/gevmcc.c \
         $$GAMS_DISTRIB_API/gmomcc.c
 }
