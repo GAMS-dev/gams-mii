@@ -58,7 +58,7 @@ void MainWindow::loadModel()
     QStringList params = ui->paramsEdit->text().split(" ",
                                                       QString::SkipEmptyParts,
                                                       Qt::CaseInsensitive);
-    proc.setModelName(params.first());
+    proc.setModelName(params.first().replace(".gms", ""));
     proc.execute();
     proc.printOutputToDebug();
 }
