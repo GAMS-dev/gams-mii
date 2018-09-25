@@ -80,4 +80,3 @@ equals(GAMS_BUILD_ENV, "") {
         $$GAMS_DISTRIB_API/gevmcc.c \
         $$GAMS_DISTRIB_API/gmomcc.c
 }
-
