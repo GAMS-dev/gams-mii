@@ -28,7 +28,7 @@ namespace modelinspector {
 ModelInspector::ModelInspector(QWidget *parent)
     : QWidget(parent),
       ui(new Ui::ModelInspector),
-      mModelInspector(new ModelInspector)
+      mModelInstance(new ModelInstance)
 {
     ui->setupUi(this);
 }

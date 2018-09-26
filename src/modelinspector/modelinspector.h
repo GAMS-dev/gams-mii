@@ -44,7 +44,7 @@ public:
 
 private:
     Ui::ModelInspector* ui;
-    std::unique_ptr<ModelInspector> mModelInspector;
+    std::unique_ptr<ModelInstance> mModelInstance;
 };
 
 }
