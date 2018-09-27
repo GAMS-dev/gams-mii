@@ -34,8 +34,8 @@ public:
     ~ModelInstance();
 
 private:
-    gevHandle_t mGEV;
-    gmoHandle_t mGMO;
+    gevHandle_t mGEV = nullptr;
+    gmoHandle_t mGMO = nullptr;
 };
 
 }
