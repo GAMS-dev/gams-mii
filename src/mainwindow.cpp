@@ -21,14 +21,12 @@
 #include "ui_mainwindow.h"
 #include "gamsprocess.h"
 #include "gamslibprocess.h"
-#include "commonpaths.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    CommonPaths::setSystemDir();
 }
 
 MainWindow::~MainWindow()

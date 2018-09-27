@@ -18,10 +18,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "mainwindow.h"
+#include "commonpaths.h"
+
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
+    CommonPaths::setSystemDir();
     QApplication a(argc, argv);
     MainWindow w;
     w.show();
