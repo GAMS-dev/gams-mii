@@ -27,6 +27,8 @@ class TestModelInspector : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
+
     void testModelInspector();
 };
 
