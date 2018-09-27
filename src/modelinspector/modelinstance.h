@@ -23,6 +23,8 @@
 #include "gevmcc.h"
 #include "gmomcc.h"
 
+class QString;
+
 namespace gams {
 namespace studio {
 namespace modelinspector {
@@ -30,7 +32,7 @@ namespace modelinspector {
 class ModelInstance
 {
 public:
-    ModelInstance();
+    ModelInstance(const QString &workingDir);
     ~ModelInstance();
 
 private:

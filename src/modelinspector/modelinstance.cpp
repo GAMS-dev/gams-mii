@@ -21,25 +21,36 @@
 #include "commonpaths.h"
 
 #include <QDebug>
+#include <QString>
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
-ModelInstance::ModelInstance()
+ModelInstance::ModelInstance(const QString &workingDir)
 {
-    qDebug() << "ModelInstance creation >> " << CommonPaths::systemDir().toStdString().c_str();
     char msg[GMS_SSSIZE];
     if (!gevCreateD(&mGEV,
                     CommonPaths::systemDir().toStdString().c_str(),
                     msg,
                     sizeof(msg)))
-        qDebug() << "ERROR: " << msg; // TODO(AF): execption or syslog
+        qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
     if (!gmoCreateD(&mGMO,
                     CommonPaths::systemDir().toStdString().c_str(),
                     msg,
                     sizeof(msg)))
-        qDebug() << "ERROR: " << msg; // TODO(AF): execption or syslog
+        qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
+
+//    QString scratchDir = workingDir; // model instance name needed?
+//    QString logFile = workingDir + "/gamslog.dat";
+//    char ctrlFile[GMS_SSSIZE];
+//    if (gevDuplicateScratchDir(mGEV,
+//                               scratchDir.toStdString().c_str(),
+//                               logFile.toStdString().c_str(),
+//                               ctrlFile))
+//        qDebug() << "ERROR: " << "Problem duplicating scratch directory"; // TODO(AF): execption/syslog
+//    if (gevInitEnvironmentLegacy(mGEV, ctrlFile))
+//        qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
 }
 
 ModelInstance::~ModelInstance()
