@@ -27,6 +27,14 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
+void gevCallback(const char *msg, int mode, void *usrmem)
+{
+    Q_UNUSED(usrmem);
+    qDebug() << "gevCallback";
+    qDebug() << "Mode >> " << QString::number(mode);
+    qDebug() << msg;
+}
+
 ModelInstance::ModelInstance(const QString &workingDir)
 {
     char msg[GMS_SSSIZE];
@@ -41,14 +49,15 @@ ModelInstance::ModelInstance(const QString &workingDir)
                     sizeof(msg)))
         qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
 
+    gevRegisterWriteCallback(mGEV,
+                             gevCallback,
+                             1 /* enable log */,
+                             nullptr /* no call identifier */);
+
 //    QString scratchDir = workingDir; // model instance name needed?
 //    QString logFile = workingDir + "/gamslog.dat";
 //    char ctrlFile[GMS_SSSIZE];
-//    if (gevDuplicateScratchDir(mGEV,
-//                               scratchDir.toStdString().c_str(),
-//                               logFile.toStdString().c_str(),
-//                               ctrlFile))
-//        qDebug() << "ERROR: " << "Problem duplicating scratch directory"; // TODO(AF): execption/syslog
+
 //    if (gevInitEnvironmentLegacy(mGEV, ctrlFile))
 //        qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
 }
