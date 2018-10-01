@@ -38,6 +38,11 @@ ModelInspector::~ModelInspector()
     delete ui;
 }
 
+void ModelInspector::setScratchDir(const QString &scratchDir)
+{
+    mModelInstance->setScratchDir(scratchDir);
+}
+
 }
 }
 }

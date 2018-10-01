@@ -20,6 +20,7 @@
 #include "modelinstance.h"
 #include "commonpaths.h"
 
+#include <QDir>
 #include <QDebug>
 #include <QString>
 
@@ -36,6 +37,8 @@ void gevCallback(const char *msg, int mode, void *usrmem)
 }
 
 ModelInstance::ModelInstance(const QString &workingDir)
+    : mScratchDir(""),
+      mWorkingDir(workingDir)
 {
     char msg[GMS_SSSIZE];
     if (!gevCreateD(&mGEV,
@@ -54,10 +57,8 @@ ModelInstance::ModelInstance(const QString &workingDir)
                              1 /* enable log */,
                              nullptr /* no call identifier */);
 
-//    QString scratchDir = workingDir; // model instance name needed?
-//    QString logFile = workingDir + "/gamslog.dat";
+    QString logFile = mScratchDir + "/gamslog.dat";
 //    char ctrlFile[GMS_SSSIZE];
-
 //    if (gevInitEnvironmentLegacy(mGEV, ctrlFile))
 //        qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
 }
@@ -67,6 +68,21 @@ ModelInstance::~ModelInstance()
     if (mGMO) gmoFree(&mGMO);
     if (mGEV) gevFree(&mGEV);
 }
+
+void ModelInstance::setScratchDir(const QString &scratchDir)
+{
+    mScratchDir = scratchDir;
+
+    QDir dir(mWorkingDir + "/" + mScratchDir);
+    if (!dir.exists())
+        dir.mkdir(dir.absolutePath());
+    qDebug() << "absolute path >> " << dir.absolutePath();
+}
+
+//void ModelInstance::setWorkingdir(const QString &workingDir)
+//{
+
+//}
 
 }
 }

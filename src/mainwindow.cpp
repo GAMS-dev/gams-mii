@@ -56,7 +56,8 @@ void MainWindow::loadModel()
     QStringList params = ui->paramsEdit->text().split(" ",
                                                       QString::SkipEmptyParts,
                                                       Qt::CaseInsensitive);
-    proc.setModelName(params.first().replace(".gms", ""));
+    proc.setModelName(params.first().replace(".gms", "").trimmed());
+    ui->modelInspector->setScratchDir(params.last().replace("scrdir=", "").trimmed());
     proc.execute();
     proc.printOutputToDebug();
 }

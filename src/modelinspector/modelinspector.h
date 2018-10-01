@@ -42,6 +42,8 @@ public:
     explicit ModelInspector(QWidget *parent = nullptr);
     ~ModelInspector();
 
+    void setScratchDir(const QString &scratchDir);
+
 private:
     Ui::ModelInspector* ui;
     std::unique_ptr<ModelInstance> mModelInstance;

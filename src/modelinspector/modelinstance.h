@@ -23,7 +23,7 @@
 #include "gevmcc.h"
 #include "gmomcc.h"
 
-class QString;
+#include <QString>
 
 namespace gams {
 namespace studio {
@@ -35,7 +35,13 @@ public:
     ModelInstance(const QString &workingDir);
     ~ModelInstance();
 
+    void setScratchDir(const QString &scratchDir);
+//    void setWorkingdir(const QString &workingDir);
+
 private:
+    QString mScratchDir;
+    QString mWorkingDir;
+
     gevHandle_t mGEV = nullptr;
     gmoHandle_t mGMO = nullptr;
 };
