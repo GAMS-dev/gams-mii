@@ -37,6 +37,8 @@ public:
 
     void setScratchDir(const QString &scratchDir);
 
+    void instantiate();
+
 private:
     QString mScratchDir;
     QString mWorkingDir;

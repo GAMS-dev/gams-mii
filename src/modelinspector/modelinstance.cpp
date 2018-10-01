@@ -56,11 +56,6 @@ ModelInstance::ModelInstance(const QString &workingDir)
                              gevCallback,
                              1 /* enable log */,
                              nullptr /* no call identifier */);
-
-    QString logFile = mScratchDir + "/gamslog.dat";
-//    char ctrlFile[GMS_SSSIZE];
-//    if (gevInitEnvironmentLegacy(mGEV, ctrlFile))
-//        qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
 }
 
 ModelInstance::~ModelInstance()
@@ -77,6 +72,14 @@ void ModelInstance::setScratchDir(const QString &scratchDir)
     if (!dir.exists())
         dir.mkdir(dir.absolutePath());
     qDebug() << "absolute path >> " << dir.absolutePath();
+}
+
+void ModelInstance::instantiate()
+{
+    QString logFile = mScratchDir + "/gamslog.dat";
+    char ctrlFile[GMS_SSSIZE];
+    if (gevInitEnvironmentLegacy(mGEV, ctrlFile))
+        qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
 }
 
 }
