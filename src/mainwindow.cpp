@@ -24,7 +24,8 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    mProcess(new GAMSProcess)
 {
     ui->setupUi(this);
 }
@@ -39,14 +40,13 @@ void MainWindow::on_runButton_clicked(bool checked)
     Q_UNUSED(checked)
 
     loadModel();
-    GAMSProcess proc;
     QStringList params = ui->paramsEdit->text().split(" ",
                                                       QString::SkipEmptyParts,
                                                       Qt::CaseInsensitive);
-    proc.setParameters(params);
-    proc.setWorkingDir(".");
-    proc.execute();
-    proc.printOutputToDebug();
+    mProcess->setParameters(params);
+    mProcess->setWorkingDir(".");
+    mProcess->execute();
+    mProcess->printOutputToDebug();
 }
 
 void MainWindow::loadModel()

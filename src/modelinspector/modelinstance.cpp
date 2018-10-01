@@ -79,11 +79,6 @@ void ModelInstance::setScratchDir(const QString &scratchDir)
     qDebug() << "absolute path >> " << dir.absolutePath();
 }
 
-//void ModelInstance::setWorkingdir(const QString &workingDir)
-//{
-
-//}
-
 }
 }
 }

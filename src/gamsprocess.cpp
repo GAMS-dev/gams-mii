@@ -32,7 +32,6 @@ GAMSProcess::GAMSProcess(QObject *parent)
       mProcess(this),
       mAppName("gams")
 {
-
 }
 
 void GAMSProcess::execute()

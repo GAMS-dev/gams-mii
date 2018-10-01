@@ -22,9 +22,13 @@
 
 #include <QMainWindow>
 
+#include <memory>
+
 namespace Ui {
 class MainWindow;
 }
+
+class GAMSProcess;
 
 class MainWindow : public QMainWindow
 {
@@ -42,6 +46,7 @@ private:
 
 private:
     Ui::MainWindow *ui;
+    std::unique_ptr<GAMSProcess> mProcess;
 };
 
 #endif // MAINWINDOW_H

@@ -36,7 +36,6 @@ public:
     ~ModelInstance();
 
     void setScratchDir(const QString &scratchDir);
-//    void setWorkingdir(const QString &workingDir);
 
 private:
     QString mScratchDir;
