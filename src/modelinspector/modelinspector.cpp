@@ -25,6 +25,9 @@ namespace gams {
 namespace studio{
 namespace modelinspector {
 
+// TODO(AF): test models
+//  o indus89.gms
+
 ModelInspector::ModelInspector(QWidget *parent)
     : QWidget(parent),
       ui(new Ui::ModelInspector),

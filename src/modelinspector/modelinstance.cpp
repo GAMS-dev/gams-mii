@@ -86,6 +86,9 @@ void ModelInstance::instantiate()
     if (gmoLoadDataLegacy(mGMO, buffer) != 0)
         qDebug() << "ERROR: " << "Could not load model instance: " << QString(buffer); // TODO(AF): execption/syslog
 
+    auto rowCount = gmoM(mGMO);
+    qDebug() << "row count >> " << rowCount;
+
     qDebug() << "absolute scratch path >> " << mScratchDir;
     qDebug() << "lala";
     qDebug() << "lala";
