@@ -44,6 +44,9 @@ public:
 
     void setScratchDir(const QString &scratchDir);
 
+public slots:
+    void modelDataAvailable();
+
 private:
     Ui::ModelInspector* ui;
     std::unique_ptr<ModelInstance> mModelInstance;

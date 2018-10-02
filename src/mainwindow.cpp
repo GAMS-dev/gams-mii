@@ -28,6 +28,10 @@ MainWindow::MainWindow(QWidget *parent) :
     mProcess(new GAMSProcess)
 {
     ui->setupUi(this);
+    connect(mProcess->process(),
+            SIGNAL(finished(int, QProcess::ExitStatus)),
+            ui->modelInspector,
+            SLOT(modelDataAvailable()));
 }
 
 MainWindow::~MainWindow()

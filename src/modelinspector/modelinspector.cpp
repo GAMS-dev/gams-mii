@@ -43,6 +43,11 @@ void ModelInspector::setScratchDir(const QString &scratchDir)
     mModelInstance->setScratchDir(scratchDir);
 }
 
+void ModelInspector::modelDataAvailable()
+{
+    mModelInstance->instantiate();
+}
+
 }
 }
 }

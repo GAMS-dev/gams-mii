@@ -43,6 +43,8 @@ public:
 
     void printOutputToDebug();
 
+    QProcess* process();
+
 private:
     QString nativeAppPath();
 

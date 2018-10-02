@@ -66,20 +66,25 @@ ModelInstance::~ModelInstance()
 
 void ModelInstance::setScratchDir(const QString &scratchDir)
 {
-    mScratchDir = scratchDir;
-
-    QDir dir(mWorkingDir + "/" + mScratchDir);
+    QDir dir(mWorkingDir + "/" + scratchDir);
     if (!dir.exists())
         dir.mkdir(dir.absolutePath());
-    qDebug() << "absolute path >> " << dir.absolutePath();
+    mScratchDir = scratchDir;
 }
 
 void ModelInstance::instantiate()
 {
-    QString logFile = mScratchDir + "/gamslog.dat";
-    char ctrlFile[GMS_SSSIZE];
-    if (gevInitEnvironmentLegacy(mGEV, ctrlFile))
+    //QString logFile = mScratchDir + "/gamslog.dat";
+    QString ctrlFile = mScratchDir + "/gamscntr.dat";
+    if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str()))
         qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
+
+    qDebug() << "absolute scratch path >> " << mScratchDir;
+    qDebug() << "lala";
+    qDebug() << "lala";
+    qDebug() << "lala";
+    qDebug() << "lala";
+    qDebug() << "lala";
 }
 
 }

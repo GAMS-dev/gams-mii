@@ -103,6 +103,11 @@ void GAMSProcess::printOutputToDebug()
     }
 }
 
+QProcess* GAMSProcess::process()
+{
+    return &mProcess;
+}
+
 QString GAMSProcess::nativeAppPath()
 {
     QString systemDir = CommonPaths::systemDir();
