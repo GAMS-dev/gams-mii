@@ -29,7 +29,7 @@ namespace studio {
 namespace modelinspector {
 
 void gevCallback(const char *msg, int mode, void *usrmem)
-{
+{// TODO(AF): What should I see here?
     Q_UNUSED(usrmem);
     qDebug() << "gevCallback";
     qDebug() << "Mode >> " << QString::number(mode);
@@ -78,6 +78,13 @@ void ModelInstance::instantiate()
     QString ctrlFile = mScratchDir + "/gamscntr.dat";
     if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str()))
         qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
+    //gevSetIntOpt(mGEV, "Integer1", tmpOpt.integer1()); // TODO(AF) needed? why?
+
+    char buffer[GMS_SSSIZE];
+    gmoRegisterEnvironment(mGMO, mGEV, buffer);
+
+    if (gmoLoadDataLegacy(mGMO, buffer) != 0)
+        qDebug() << "ERROR: " << "Could not load model instance: " << QString(buffer); // TODO(AF): execption/syslog
 
     qDebug() << "absolute scratch path >> " << mScratchDir;
     qDebug() << "lala";
