@@ -28,14 +28,6 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-void gevCallback(const char *msg, int mode, void *usrmem)
-{// TODO(AF): What should I see here?
-    Q_UNUSED(usrmem);
-    qDebug() << "gevCallback";
-    qDebug() << "Mode >> " << QString::number(mode);
-    qDebug() << msg;
-}
-
 ModelInstance::ModelInstance(const QString &workingDir)
     : mScratchDir(""),
       mWorkingDir(workingDir)
@@ -51,11 +43,6 @@ ModelInstance::ModelInstance(const QString &workingDir)
                     msg,
                     sizeof(msg)))
         qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
-
-    gevRegisterWriteCallback(mGEV,
-                             gevCallback,
-                             1 /* enable log */,
-                             nullptr /* no call identifier */);
 }
 
 ModelInstance::~ModelInstance()
@@ -74,11 +61,12 @@ void ModelInstance::setScratchDir(const QString &scratchDir)
 
 void ModelInstance::instantiate()
 {
-    //QString logFile = mScratchDir + "/gamslog.dat";
     QString ctrlFile = mScratchDir + "/gamscntr.dat";
     if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str()))
         qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
-    //gevSetIntOpt(mGEV, "Integer1", tmpOpt.integer1()); // TODO(AF) needed? why?
+
+    // Increase solve velocity... fill scratch directory only
+    //gevSetIntOpt(mGEV, "Integer1", tmpOpt.integer1());
 
     char buffer[GMS_SSSIZE];
     gmoRegisterEnvironment(mGMO, mGEV, buffer);
