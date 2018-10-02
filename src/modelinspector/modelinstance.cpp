@@ -66,7 +66,8 @@ void ModelInstance::instantiate()
         qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
 
     // Increase solve velocity... fill scratch directory only
-    //gevSetIntOpt(mGEV, "Integer1", tmpOpt.integer1());
+    //int integer1 = optGetIntStr(mOPT, "Integer1"); // TODO(AF): use GAMSOption class?
+    //gevSetIntOpt(mGEV, "Integer1", integer1);
 
     char buffer[GMS_SSSIZE];
     gmoRegisterEnvironment(mGMO, mGEV, buffer);
