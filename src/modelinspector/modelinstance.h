@@ -22,6 +22,7 @@
 
 #include "gevmcc.h"
 #include "gmomcc.h"
+#include "dctmcc.h"
 
 #include <QString>
 
