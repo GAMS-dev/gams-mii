@@ -43,6 +43,11 @@ ModelInstance::ModelInstance(const QString &workingDir)
                     msg,
                     sizeof(msg)))
         qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
+    if (!dctCreateD(&mDCT,
+                    CommonPaths::systemDir().toStdString().c_str(),
+                    msg,
+                    sizeof(msg)))
+        qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
 }
 
 ModelInstance::~ModelInstance()

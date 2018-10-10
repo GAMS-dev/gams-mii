@@ -46,6 +46,7 @@ private:
 
     gevHandle_t mGEV = nullptr;
     gmoHandle_t mGMO = nullptr;
+    dctHandle_t mDCT = nullptr;
 };
 
 }
