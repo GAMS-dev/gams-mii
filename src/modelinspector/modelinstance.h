@@ -31,6 +31,41 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
+struct ModelStatistic
+{
+    /**
+     * @brief Number of Rows.
+     */
+    int RowCount;
+
+    /**
+     * @brief Number of columns.
+     */
+    int ColumnCount;
+
+    /**
+     * @brief Largest dimension of all symbols.
+     */
+    int LargestDimension;
+
+    /**
+     * @brief Number Unique elements.
+     * @remark Without the ones used by model.
+     */
+    int UniqueElementCount;
+
+    /**
+     * @brief Number of symbol.
+     * @remark Inclues variables and equations only.
+     */
+    int SymbolCount;
+
+    /**
+     * @brief Used memory in MB.
+     */
+    double UsedMemory;
+};
+
 class ModelInstance
 {
 public:
@@ -40,6 +75,8 @@ public:
     void setScratchDir(const QString &scratchDir);
 
     void instantiate();
+
+    ModelStatistic statistic();
 
 private:
     QString mScratchDir;

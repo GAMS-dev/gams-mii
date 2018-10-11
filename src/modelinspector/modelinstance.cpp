@@ -84,16 +84,18 @@ void ModelInstance::instantiate()
     int integer1 = optGetIntStr(mOPT, "Integer1"); // TODO(AF): use GAMSOption class?
     gevSetIntOpt(mGEV, "Integer1", integer1);
 
-    char buffer[GMS_SSSIZE];
-    gmoRegisterEnvironment(mGMO, mGEV, buffer);
-
-    if (gmoLoadDataLegacy(mGMO, buffer)) {
-        qDebug() << "ERROR: " << "Could not load model instance: " << QString(buffer); // TODO(AF): execption/syslog
+    char msg[GMS_SSSIZE];
+    gmoRegisterEnvironment(mGMO, mGEV, msg);
+    if (gmoLoadDataLegacy(mGMO, msg)) {
+        qDebug() << "ERROR: " << "Could not load model instance: " << QString(msg); // TODO(AF): execption/syslog
         return;
     }
 
-    auto rowCount = gmoM(mGMO);
-    qDebug() << "row count >> " << rowCount;
+    QString dictFile = mScratchDir + "/gamsdict.dat";
+    if (dctLoadEx(mDCT, dictFile.toStdString().c_str(), msg, sizeof(msg))) {
+        qDebug() << "ERROR: Could not load dictionary file. " << QString(msg); // TODO(AF): execption/syslog
+        return;
+    }
 
     qDebug() << "absolute scratch path >> " << mScratchDir;
     qDebug() << "lala";
@@ -101,6 +103,18 @@ void ModelInstance::instantiate()
     qDebug() << "lala";
     qDebug() << "lala";
     qDebug() << "lala";
+}
+
+ModelStatistic ModelInstance::statistic()
+{
+    ModelStatistic ms;
+    ms.RowCount = dctNRows(mDCT);
+    ms.ColumnCount = dctNCols(mDCT);
+    ms.LargestDimension = dctLrgDim(mDCT);
+    ms.UniqueElementCount = dctNUels(mDCT);
+    ms.SymbolCount = dctNLSyms(mDCT);
+    ms.UsedMemory = dctMemUsed(mDCT);
+    return ms;
 }
 
 }

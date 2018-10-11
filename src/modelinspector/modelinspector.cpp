@@ -49,6 +49,14 @@ void ModelInspector::setScratchDir(const QString &scratchDir)
 void ModelInspector::modelDataAvailable()
 {
     mModelInstance->instantiate();
+
+    auto statistic = mModelInstance->statistic();
+    ui->textEdit->append("Row Count: " + QString::number(statistic.RowCount));
+    ui->textEdit->append("Column Count: " + QString::number(statistic.ColumnCount));
+    ui->textEdit->append("Largest Dimension: " + QString::number(statistic.LargestDimension));
+    ui->textEdit->append("Symbol Count: " + QString::number(statistic.SymbolCount));
+    ui->textEdit->append("Unique Element Count: " + QString::number(statistic.UniqueElementCount));
+    ui->textEdit->append("Used Memory: " + QString::number(statistic.UsedMemory));
 }
 
 }
