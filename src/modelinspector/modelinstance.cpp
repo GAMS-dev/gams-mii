@@ -48,12 +48,19 @@ ModelInstance::ModelInstance(const QString &workingDir)
                     msg,
                     sizeof(msg)))
         qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
+    if (!optCreateD(&mOPT,
+                    CommonPaths::systemDir().toStdString().c_str(),
+                    msg,
+                    sizeof(msg)))
+        qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
 }
 
 ModelInstance::~ModelInstance()
 {
     if (mGMO) gmoFree(&mGMO);
     if (mGEV) gevFree(&mGEV);
+    if (mDCT) dctFree(&mDCT);
+    if (mOPT) optFree(&mOPT);
 }
 
 void ModelInstance::setScratchDir(const QString &scratchDir)
@@ -67,18 +74,23 @@ void ModelInstance::setScratchDir(const QString &scratchDir)
 void ModelInstance::instantiate()
 {
     QString ctrlFile = mScratchDir + "/gamscntr.dat";
-    if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str()))
+    if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str())) {
         qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
+        return;
+    }
 
+    // TODO(AF): *** Warning: Option Integer1 not found!
     // Increase solve velocity... fill scratch directory only
-    //int integer1 = optGetIntStr(mOPT, "Integer1"); // TODO(AF): use GAMSOption class?
-    //gevSetIntOpt(mGEV, "Integer1", integer1);
+    int integer1 = optGetIntStr(mOPT, "Integer1"); // TODO(AF): use GAMSOption class?
+    gevSetIntOpt(mGEV, "Integer1", integer1);
 
     char buffer[GMS_SSSIZE];
     gmoRegisterEnvironment(mGMO, mGEV, buffer);
 
-    if (gmoLoadDataLegacy(mGMO, buffer) != 0)
+    if (gmoLoadDataLegacy(mGMO, buffer)) {
         qDebug() << "ERROR: " << "Could not load model instance: " << QString(buffer); // TODO(AF): execption/syslog
+        return;
+    }
 
     auto rowCount = gmoM(mGMO);
     qDebug() << "row count >> " << rowCount;
