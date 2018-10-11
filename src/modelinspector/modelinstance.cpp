@@ -48,11 +48,6 @@ ModelInstance::ModelInstance(const QString &workingDir)
                     msg,
                     sizeof(msg)))
         qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
-    if (!optCreateD(&mOPT,
-                    CommonPaths::systemDir().toStdString().c_str(),
-                    msg,
-                    sizeof(msg)))
-        qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
 }
 
 ModelInstance::~ModelInstance()
@@ -60,7 +55,6 @@ ModelInstance::~ModelInstance()
     if (mGMO) gmoFree(&mGMO);
     if (mGEV) gevFree(&mGEV);
     if (mDCT) dctFree(&mDCT);
-    if (mOPT) optFree(&mOPT);
 }
 
 void ModelInstance::setScratchDir(const QString &scratchDir)
@@ -78,11 +72,6 @@ void ModelInstance::instantiate()
         qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
         return;
     }
-
-    // TODO(AF): *** Warning: Option Integer1 not found!
-    // Increase solve velocity... fill scratch directory only
-    int integer1 = optGetIntStr(mOPT, "Integer1"); // TODO(AF): use GAMSOption class?
-    gevSetIntOpt(mGEV, "Integer1", integer1);
 
     char msg[GMS_SSSIZE];
     gmoRegisterEnvironment(mGMO, mGEV, msg);

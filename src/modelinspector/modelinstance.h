@@ -23,7 +23,6 @@
 #include "gevmcc.h"
 #include "gmomcc.h"
 #include "dctmcc.h"
-#include "optcc.h"
 
 #include <QString>
 
@@ -85,7 +84,6 @@ private:
     gevHandle_t mGEV = nullptr;
     gmoHandle_t mGMO = nullptr;
     dctHandle_t mDCT = nullptr;
-    optHandle_t mOPT = nullptr;
 };
 
 }
