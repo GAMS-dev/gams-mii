@@ -50,6 +50,7 @@ void ModelInspector::modelDataAvailable()
 {
     mModelInstance->instantiate();
 
+    ui->textEdit->clear();
     auto statistic = mModelInstance->statistic();
     ui->textEdit->append("Row Count: " + QString::number(statistic.RowCount));
     ui->textEdit->append("Column Count: " + QString::number(statistic.ColumnCount));
