@@ -78,6 +78,9 @@ public:
     ModelStatistic statistic();
 
 private:
+    static int errorCallback(int count, const char *message);
+
+private:
     QString mScratchDir;
     QString mWorkingDir;
 

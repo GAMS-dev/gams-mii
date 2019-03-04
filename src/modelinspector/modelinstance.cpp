@@ -67,11 +67,19 @@ void ModelInstance::setScratchDir(const QString &scratchDir)
 
 void ModelInstance::instantiate()
 {
+    gevSetExitIndicator(0); // switch of lib exit() call
+    gevSetScreenIndicator(0); // switch off std lib output
+    gevSetErrorCallback(ModelInstance::errorCallback);
+
     QString ctrlFile = mScratchDir + "/gamscntr.dat";
     if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str())) {
         qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
         return;
     }
+
+    gmoSetExitIndicator(0); // switch of lib exit() call
+    gmoSetScreenIndicator(0); // switch off std lib output
+    gmoSetErrorCallback(ModelInstance::errorCallback);
 
     char msg[GMS_SSSIZE];
     gmoRegisterEnvironment(mGMO, mGEV, msg);
@@ -79,6 +87,10 @@ void ModelInstance::instantiate()
         qDebug() << "ERROR: " << "Could not load model instance: " << QString(msg); // TODO(AF): execption/syslog
         return;
     }
+
+    dctSetExitIndicator(0); // switch of lib exit() call
+    dctSetScreenIndicator(0); // switch off std lib output
+    dctSetErrorCallback(ModelInstance::errorCallback);
 
     QString dictFile = mScratchDir + "/gamsdict.dat";
     if (dctLoadEx(mDCT, dictFile.toStdString().c_str(), msg, sizeof(msg))) {
@@ -104,6 +116,13 @@ ModelStatistic ModelInstance::statistic()
     ms.SymbolCount = dctNLSyms(mDCT);
     ms.UsedMemory = dctMemUsed(mDCT);
     return ms;
+}
+
+int ModelInstance::errorCallback(int count, const char *message)
+{
+    Q_UNUSED(count);
+    qDebug() << message;
+    return 0;
 }
 
 }
