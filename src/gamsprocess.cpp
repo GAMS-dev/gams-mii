@@ -39,11 +39,15 @@ void GAMSProcess::execute()
     mProcess.setWorkingDirectory(mWorkingDir);
     qDebug() << "native path >> " << nativeAppPath();
     qDebug() << "working dir >> " << workingDir();
+    qDebug() << "GAMS model  >> " << mModel;
     qDebug() << "gams params >> " << mParameters;
+
+    QStringList args { mModel };
+    args << mParameters;
 #if defined(__unix__) || defined(__APPLE__)
-    mProcess.start(nativeAppPath(), mParameters);
+    mProcess.start(nativeAppPath(), args);
 #else
-    mProcess.setNativeArguments(mParameters.join(" "));
+    mProcess.setNativeArguments(args.join(" "));
     mProcess.setProgram(nativeAppPath());
     mProcess.start();
 #endif
@@ -89,6 +93,11 @@ void GAMSProcess::interrupt()
 void GAMSProcess::stop()
 {
     mProcess.kill();
+}
+
+void GAMSProcess::setModel(const QString &model)
+{
+    mModel = model;
 }
 
 void GAMSProcess::setParameters(const QStringList &parameters)

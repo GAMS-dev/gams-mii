@@ -25,6 +25,7 @@
 #include "dctmcc.h"
 
 #include <QString>
+#include <QStringList>
 
 namespace gams {
 namespace studio {
@@ -63,6 +64,14 @@ struct ModelStatistic
      * @brief Used memory in MB.
      */
     double UsedMemory;
+
+    QStringList SymbolNames;
+
+    QStringList SymbolDimensions;
+
+    QStringList SymbolDomainNames;
+
+    QStringList UniqueIdentifiers;
 };
 
 class ModelInstance
@@ -71,6 +80,7 @@ public:
     ModelInstance(const QString &workingDir);
     ~ModelInstance();
 
+    QString scratchDir() const;
     void setScratchDir(const QString &scratchDir);
 
     void instantiate();

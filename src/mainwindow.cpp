@@ -43,10 +43,19 @@ void MainWindow::on_runButton_clicked(bool checked)
 {
     Q_UNUSED(checked)
 
-    loadModel();
     QStringList params = ui->paramsEdit->text().split(" ",
                                                       QString::SkipEmptyParts,
                                                       Qt::CaseInsensitive);
+    auto index = params.indexOf(QRegExp("scrdir.*"));
+    if (index >= 0) {
+        auto scrdir = params.at(index);
+        ui->modelInspector->setScratchDir(scrdir.replace("scrdir=", "").trimmed());
+    }
+
+    if (ui->gamslibCheckBox->isChecked())
+        loadModel();
+
+    mProcess->setModel(ui->modelEdit->text());
     mProcess->setParameters(params);
     mProcess->setWorkingDir(".");
     mProcess->execute();
@@ -57,11 +66,8 @@ void MainWindow::loadModel()
 {
     GAMSLibProcess proc;
     proc.setTargetDir(".");
-    QStringList params = ui->paramsEdit->text().split(" ",
-                                                      QString::SkipEmptyParts,
-                                                      Qt::CaseInsensitive);
-    proc.setModelName(params.first().replace(".gms", "").trimmed());
-    ui->modelInspector->setScratchDir(params.last().replace("scrdir=", "").trimmed());
+    QString model = ui->modelEdit->text();
+    proc.setModelName(model.replace(".gms", "").trimmed());
     proc.execute();
     proc.printOutputToDebug();
 }
