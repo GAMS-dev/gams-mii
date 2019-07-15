@@ -74,3 +74,7 @@ HEADERS += \
 FORMS += \
     mainwindow.ui \
     modelinspector/modelinspector.ui
+
+OTHER_FILES +=          \
+    ../jenkinsfile      \
+    ../jenkinsfile-ci
