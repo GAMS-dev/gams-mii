@@ -39,6 +39,7 @@ public:
     void interrupt();
     void stop();
 
+    void setModel(const QString &model);
     void setParameters(const QStringList &parameters);
 
     void printOutputToDebug();
@@ -51,6 +52,7 @@ private:
 private:
     QProcess mProcess;
     QString mAppName;
+    QString mModel;
     QStringList mParameters;
     QString mWorkingDir;
 };

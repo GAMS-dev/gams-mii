@@ -42,6 +42,7 @@ public:
     explicit ModelInspector(QWidget *parent = nullptr);
     ~ModelInspector();
 
+    QString scratchDir() const;
     void setScratchDir(const QString &scratchDir);
 
 public slots:

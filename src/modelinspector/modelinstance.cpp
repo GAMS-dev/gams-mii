@@ -23,10 +23,20 @@
 #include <QDir>
 #include <QDebug>
 #include <QString>
+#include <QVector>
+#include <QVariant>
+
+#include <cstdlib>
+#include <vector>
+
+using namespace std;
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
+
+static gdxStrIndex_t domNames;
+static gdxStrIndexPtrs_t domPtrs;
 
 ModelInstance::ModelInstance(const QString &workingDir)
     : mScratchDir(""),
@@ -71,6 +81,11 @@ ModelInstance::~ModelInstance()
     if (mDCT) dctFree(&mDCT);
 }
 
+QString ModelInstance::scratchDir() const
+{
+    return mScratchDir;
+}
+
 void ModelInstance::setScratchDir(const QString &scratchDir)
 {
     QDir dir(mWorkingDir + "/" + scratchDir);
@@ -101,11 +116,6 @@ void ModelInstance::instantiate()
     }
 
     qDebug() << "absolute scratch path >> " << mScratchDir;
-    qDebug() << "lala";
-    qDebug() << "lala";
-    qDebug() << "lala";
-    qDebug() << "lala";
-    qDebug() << "lala";
 }
 
 ModelStatistic ModelInstance::statistic()
@@ -117,6 +127,122 @@ ModelStatistic ModelInstance::statistic()
     ms.UniqueElementCount = dctNUels(mDCT);
     ms.SymbolCount = dctNLSyms(mDCT);
     ms.UsedMemory = dctMemUsed(mDCT);
+
+    // get symbol names
+    for (int i=1; i<=ms.SymbolCount; ++i) {
+        char name[GMS_SSSIZE];
+        dctSymName(mDCT, i, name, GMS_SSSIZE);
+        ms.SymbolNames << name;
+    }
+
+    for (int i=1; i<=ms.SymbolCount; ++i) {
+        int symbolDimension = dctSymDim(mDCT, i);
+        char symbolName[GMS_SSSIZE];
+        dctSymName(mDCT, i, symbolName, GMS_SSSIZE);
+        ms.SymbolDimensions << QString("%1: %2").arg(symbolName).arg(symbolDimension);
+    }
+
+    ms.SymbolNames << "\nSYMBOL TYPE";
+    for (int i=1; i<=ms.SymbolCount; ++i) {
+        char symbolName[GMS_SSSIZE];
+        dctSymName(mDCT, i, symbolName, GMS_SSSIZE);
+        int symbolType = dctSymType(mDCT, i);
+        switch (symbolType) {
+            case dctfuncSymType:
+                ms.SymbolNames << QString("Symbol %1 Type: dctfuncSymType (%2)").arg(symbolName).arg(symbolType);
+                break;
+            case dctsetSymType:
+                ms.SymbolNames << QString("Symbol %1 Type: dctsetSymType (%2)").arg(symbolName).arg(symbolType);
+                break;
+            case dctacrSymType:
+                ms.SymbolNames << QString("Symbol %1 Type: dctacrSymType (%2)").arg(symbolName).arg(symbolType);
+                break;
+            case dctparmSymType:
+                ms.SymbolNames << QString("Symbol %1 Type: dctparmSymType (%2)").arg(symbolName).arg(symbolType);
+                break;
+            case dctvarSymType:
+                ms.SymbolNames << QString("Symbol %1 Type: dctvarSymType (%2)").arg(symbolName).arg(symbolType);
+                break;
+            case dcteqnSymType:
+                ms.SymbolNames << QString("Symbol %1 Type: dcteqnSymType (%2)").arg(symbolName).arg(symbolType);
+                break;
+            case dctaliasSymType:
+                ms.SymbolNames << QString("Symbol %1 Type: dctaliasSymType (%2)").arg(symbolName).arg(symbolType);
+                break;
+            default: // dctunknownSymType
+                ms.SymbolNames << QString("Symbol %1 Type: dctunknownSymType (%2)").arg(symbolName).arg(symbolType);
+                break;
+        }
+    }
+
+    // TODO dctSymUserInfo
+    for (int i=1; i<=ms.SymbolCount; ++i) {
+        auto value = dctSymOffset(mDCT, i);
+        char symbolName[GMS_SSSIZE];
+        dctSymName(mDCT, i, symbolName, GMS_SSSIZE);
+        qDebug() << "Symbol: " << symbolName << "Value: " << value;
+    }
+    auto value = dctSymOffset(mDCT, 8);
+    qDebug() << "Symbol: ---" << "Value: " << value;
+
+    ms.SymbolNames << "\nSYMBOL DOMAIN INDEX";
+    auto domainNameCount = dctDomNameCount(mDCT);
+    ms.SymbolDomainNames << QString("Domain Name Count: %1").arg(domainNameCount);
+    int idx[domainNameCount];
+    for (int i=1, dimension; i<=ms.SymbolCount; ++i) {
+        char symbolName[GMS_SSSIZE];
+        dctSymName(mDCT, i, symbolName, GMS_SSSIZE);
+        dctSymDomIdx(mDCT, i, idx, &dimension);
+        QStringList idxstr;
+        for (auto value : vector<int>(idx, idx+dimension)) {
+            idxstr << QString::number(value);
+        }
+        ms.SymbolNames << QString("symbol: %1 idx: %2 length: %3")
+                          .arg(symbolName)
+                          .arg(idxstr.join(", "))
+                          .arg(dimension);
+    }
+
+
+    GDXSTRINDEXPTRS_INIT (domNames, domPtrs);
+    for (auto symbolName : ms.SymbolNames) {
+        int symbolIndex = dctSymIndex(mDCT, symbolName.toStdString().c_str());
+        if (symbolIndex <= 0) continue;
+        int  symDomNamesCnt;
+        dctSymDomNames(mDCT, symbolIndex, domPtrs, &symDomNamesCnt);
+        QStringList domains;
+        for  (int i=0; i<symDomNamesCnt; ++i) {
+            domains << domPtrs[i];
+        }
+        if (symDomNamesCnt)
+            ms.SymbolDomainNames << QString("%1: %2").arg(symbolName).arg(domains.join(", "));
+        else
+            ms.SymbolDomainNames << QString("%1: -").arg(symbolName);
+    }
+
+    // get UEL labels
+    for (int i=1; i<=ms.UniqueElementCount; ++i) {
+        char name[GMS_SSSIZE];
+        char ansiChar[GMS_SSSIZE];
+        dctUelLabel(mDCT, i, ansiChar, name, GMS_SSSIZE);
+        ms.UniqueIdentifiers << name;
+    }
+
+//    dctColIndex
+//    dctRowIndex
+//    dctColUels
+//    dctRowUels
+//    dctFindFirstRowCol
+//    dctFindNextRowCol
+//    dctFindClose
+
+//    ms.SymbolNames << "\nCOLUMN UELs";
+//    for (int i=1; i<=ms.SymbolCount; ++i) {
+//        int symbolDimension = dctSymDim(mDCT, i);
+//        int uelIndices[symbolDimension];
+//        dctColIndex(i, uelIndices);
+//    }
+
     return ms;
 }
 
