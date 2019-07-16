@@ -67,7 +67,7 @@ pipeline {
                         }
                     }
                 }
-                stage ('macos' {
+                stage ('macos') {
                     agent { label 'macos' }
                     steps {
                         step([$class: 'WsCleanup'])
