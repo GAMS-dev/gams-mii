@@ -19,8 +19,14 @@
  */
 #include "testmodelinspector.h"
 #include "modelinspector.h"
+#include "commonpaths.h"
 
 using namespace gams::studio::modelinspector;
+
+void TestModelInspector::initTestCase()
+{
+    CommonPaths::setSystemDir();
+}
 
 void TestModelInspector::testModelInspector()
 {
