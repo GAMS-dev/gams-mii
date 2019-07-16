@@ -3,23 +3,31 @@ pipeline {
 
     options {
         disableConcurrentBuilds()
+        parallelsAlwaysFailFast()
     }
 
     stages {
         stage('Build') {
-            steps {
-                parallel linux: {
-                    node('master') {
+            parallel {
+                stage ('linux') {
+                    agent { label 'master' }
+                    steps {
                         step([$class: 'WsCleanup'])
                         checkout scm
                         sh '''
                             qmake model-inspector.pro CONFIG+=release && make -j3
                         '''
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', consoleParsers: [[parserName: 'GNU Make + GNU C Compiler (gcc)']], defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', unHealthy: ''
                     }
-                },
-                windowsX86: {
-                    node('windowsX86') {
+                    post {
+                        always {
+                            recordIssues aggregatingResults: true, enabledForFailure: true, tools: [gcc4(reportEncoding: 'UTF-8')]
+                            recordIssues enabledForFailure: true, tools: [taskScanner(ignoreCase: true, includePattern: '**/*.c, **/*.cpp, **/*.h, **/*.pro, **/*.pri', normalTags: 'TODO')]
+                        }
+                    }
+                }
+                stage ('windowsX86') {
+                    agent { label 'windowsX86' }
+                    steps {
                         step([$class: 'WsCleanup'])
                         checkout scm
                         bat '''
@@ -31,11 +39,16 @@ pipeline {
                             qmake model-inspector.pro "CONFIG+=release"
                             nmake
                         '''
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', consoleParsers: [[parserName: 'MSBuild']], defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', unHealthy: ''
                     }
-                },
-                windowsX64: {
-                    node('windowsX64') {
+                    post {
+                        always {
+                            recordIssues aggregatingResults: true, enabledForFailure: true, tools: [msBuild(id: 'windowsX64', name: 'MSBuild-x64', reportEncoding: 'UTF-8')]
+                        }
+                    }
+                }
+                stage ('windowsX64') {
+                    agent { label 'windowsX64' }
+                    steps {
                         step([$class: 'WsCleanup'])
                         checkout scm
                         bat '''
@@ -47,58 +60,81 @@ pipeline {
                             qmake model-inspector.pro "CONFIG+=release"
                             nmake
                         '''
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', consoleParsers: [[parserName: 'MSBuild']], defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', unHealthy: ''
                     }
-                },
-                macos: {
-                    node('macos') {
+                    post {
+                        always {
+                            recordIssues aggregatingResults: true, enabledForFailure: true, tools: [msBuild(id: 'windowsX64', name: 'MSBuild-x64', reportEncoding: 'UTF-8')]
+                        }
+                    }
+                }
+                stage ('macos' {
+                    agent { label 'macos' }
+                    steps {
                         step([$class: 'WsCleanup'])
                         checkout scm
                         sh 'qmake model-inspector.pro CONFIG+=release && make -j3'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', consoleParsers: [[parserName: 'Clang (LLVM based)']], defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', unHealthy: ''
+                    }
+                    post {
+                        always {
+                            recordIssues aggregatingResults: true, enabledForFailure: true, tools: [clang(reportEncoding: 'UTF-8')]
+                        }
                     }
                 }
             }
         }
         stage('Test') {
-            steps {
-                parallel linux: {
-                    node('master') {
+            parallel {
+                stage ('linux') {
+                    agent { label 'master' }
+                    steps {
                         sh '''
                             mkdir reports
                             cd tests/bin
-                            pwd
-                            ls -al
                             for f in *; do
                                 xvfb-run ./$f -xunitxml -o $WORKSPACE/reports/$f.xml
                             done
                         '''
-                        junit allowEmptyResults: true, testResults: 'reports/*.xml'
                     }
-                },
-                windowsX86: {
-                    node('windowsX86') {
+                    post {
+                        always {
+                            junit allowEmptyResults: true, testResults: 'reports/*.xml'
+                        }
+                    }
+                }
+                stage ('windowsX86') {
+                    agent { label 'windowsX86' }
+                    steps {
                         bat '''
                             echo off
                             mkdir reports
                             cd tests/bin
                             for %%f in (*) do %%f -xunitxml -o %WORKSPACE%/reports/%%f.xml
                         '''
-                        junit allowEmptyResults: true, testResults: 'reports/*.xml'
                     }
-                },
-                windowsX64: {
-                    node('windowsX64') {
+                    post {
+                        always {
+                            junit allowEmptyResults: true, testResults: 'reports/*.xml'
+                        }
+                    }
+                }
+                stage ('windowsX64') {
+                    agent { label 'windowsX64' }
+                    steps {
                         bat '''
                             mkdir reports
                             cd tests/bin
                             for %%f in (*) do %%f -xunitxml -o %WORKSPACE%/reports/%%f.xml
                         '''
-                        junit allowEmptyResults: true, testResults: 'reports/*.xml'
                     }
-                },
-                macos: {
-                    node('macos') {
+                    post {
+                        always {
+                            junit allowEmptyResults: true, testResults: 'reports/*.xml'
+                        }
+                    }
+                }
+                stage ('macos') {
+                    agent { label 'macos' }
+                    steps {
                         sh '''
                             mkdir reports
                             cd tests/bin
@@ -106,7 +142,11 @@ pipeline {
                                 ./$f -xunitxml -o $WORKSPACE/reports/$f.xml
                             done
                         '''
-                        junit allowEmptyResults: true, testResults: 'reports/*.xml'
+                    }
+                    post {
+                        always {
+                            junit allowEmptyResults: true, testResults: 'reports/*.xml'
+                        }
                     }
                 }
             }
