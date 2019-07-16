@@ -188,7 +188,7 @@ ModelStatistic ModelInstance::statistic()
     ms.SymbolNames << "\nSYMBOL DOMAIN INDEX";
     auto domainNameCount = dctDomNameCount(mDCT);
     ms.SymbolDomainNames << QString("Domain Name Count: %1").arg(domainNameCount);
-    int idx[domainNameCount];
+    int *idx = new int[static_cast<uint>(domainNameCount)];
     for (int i=1, dimension; i<=ms.SymbolCount; ++i) {
         char symbolName[GMS_SSSIZE];
         dctSymName(mDCT, i, symbolName, GMS_SSSIZE);
