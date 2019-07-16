@@ -1,0 +1,106 @@
+/*
+ * This file is part of the GAMS Studio project.
+ *
+ * Copyright (c) 2017-2018 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2017-2018 GAMS Development Corp. <support@gams.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+#ifndef MODELINSTANCE_H
+#define MODELINSTANCE_H
+
+#include "gevmcc.h"
+#include "gmomcc.h"
+#include "dctmcc.h"
+
+#include <QString>
+#include <QStringList>
+
+namespace gams {
+namespace studio {
+namespace modelinspector {
+
+struct ModelStatistic
+{
+    /**
+     * @brief Number of Rows.
+     */
+    int RowCount;
+
+    /**
+     * @brief Number of columns.
+     */
+    int ColumnCount;
+
+    /**
+     * @brief Largest dimension of all symbols.
+     */
+    int LargestDimension;
+
+    /**
+     * @brief Number Unique elements.
+     * @remark Without the ones used by model.
+     */
+    int UniqueElementCount;
+
+    /**
+     * @brief Number of symbol.
+     * @remark Inclues variables and equations only.
+     */
+    int SymbolCount;
+
+    /**
+     * @brief Used memory in MB.
+     */
+    double UsedMemory;
+
+    QStringList SymbolNames;
+
+    QStringList SymbolDimensions;
+
+    QStringList SymbolDomainNames;
+
+    QStringList UniqueIdentifiers;
+};
+
+class ModelInstance
+{
+public:
+    ModelInstance(const QString &workingDir);
+    ~ModelInstance();
+
+    QString scratchDir() const;
+    void setScratchDir(const QString &scratchDir);
+
+    void instantiate();
+
+    ModelStatistic statistic();
+
+private:
+    static int errorCallback(int count, const char *message);
+
+private:
+    QString mScratchDir;
+    QString mWorkingDir;
+
+    gevHandle_t mGEV = nullptr;
+    gmoHandle_t mGMO = nullptr;
+    dctHandle_t mDCT = nullptr;
+};
+
+}
+}
+}
+
+#endif // MODELINSTANCE_H

@@ -17,17 +17,46 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "mainwindow.h"
-#include "commonpaths.h"
+#ifndef GAMSLIBPROCESS_H
+#define GAMSLIBPROCESS_H
 
-#include <QApplication>
+#include <QObject>
+#include <QProcess>
+#include <QString>
 
-int main(int argc, char *argv[])
+class GAMSLibProcess
+        : public QObject
 {
-    CommonPaths::setSystemDir();
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
+    Q_OBJECT
 
-    return a.exec();
-}
+public:
+    GAMSLibProcess(QObject *parent = Q_NULLPTR);
+
+    void setTargetDir(const QString &targetDir);
+    QString targetDir() const;
+
+    void setModelNumber(int modelNumber);
+    int modelNumber() const;
+
+    void setModelName(const QString &modelName);
+    QString modelName() const;
+
+    void execute();
+
+    void setGlbFile(const QString &glbFile);
+
+    void printOutputToDebug();
+
+private:
+    QString nativeAppPath();
+
+private:
+    QProcess mProcess;
+    QString mAppName;
+    QString mTargetDir;
+    int mModelNumber = -1;
+    QString mModelName;
+    QString mGlbFile;
+};
+
+#endif // GAMSLIBPROCESS_H

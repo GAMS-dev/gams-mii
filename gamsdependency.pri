@@ -18,6 +18,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+win32 {
+    # Switch off warings caused by GAMS headers
+    DEFINES += _CRT_SECURE_NO_WARNINGS
+}
+
 include (version)
 # GAMS_CORE_PATH is Jenkins build switch
 GAMS_CORE_TMP = $$(GAMS_CORE_PATH)
@@ -52,10 +57,10 @@ equals(GAMS_BUILD_ENV, "") {
     INCLUDEPATH += $$GAMS_DISTRIB_API
 
     SOURCES += \
-        $$GAMS_DISTRIB_API/c4umcc.c \
         $$GAMS_DISTRIB_API/gclgms.c \
-        $$GAMS_DISTRIB_API/gdxcc.c  \
-        $$GAMS_DISTRIB_API/optcc.c
+        $$GAMS_DISTRIB_API/gevmcc.c \
+        $$GAMS_DISTRIB_API/gmomcc.c \
+        $$GAMS_DISTRIB_API/dctmcc.c
 } else {
     GSYS_ENV = $$(GSYS)
     equals(GSYS_ENV, "wei") {
@@ -76,10 +81,9 @@ equals(GAMS_BUILD_ENV, "") {
     }
     INCLUDEPATH += $$(GPRODUCTS)/gclib $$(GPRODUCTS)/apiwrap/gdxio $$(GPRODUCTS)/apiwrap/joat $$(GPRODUCTS)/apiwrap/optobj
 
-    SOURCES = \
-        $$(GPRODUCTS)/apiwrap/joat/c4umcc.c \
+    SOURCES += \
         $$(GPRODUCTS)/gclib/gclgms.c \
-        $$(GPRODUCTS)/apiwrap/gdxio/gdxcc.c  \
-        $$(GPRODUCTS)/apiwrap/optobj/optcc.c
+        $$(GPRODUCTS)/apiwrap/joat/gevmcc.c \
+        $$(GPRODUCTS)/apiwrap/joat/gmomcc.c \
+        $$(GPRODUCTS)/apiwrap/joat/dctmcc.c
 }
-

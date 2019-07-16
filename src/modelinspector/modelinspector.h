@@ -22,6 +22,8 @@
 
 #include <QWidget>
 
+#include <memory>
+
 namespace gams {
 namespace studio{
 namespace modelinspector {
@@ -29,6 +31,8 @@ namespace modelinspector {
 namespace Ui {
 class ModelInspector;
 }
+
+class ModelInstance;
 
 class ModelInspector : public QWidget
 {
@@ -38,8 +42,15 @@ public:
     explicit ModelInspector(QWidget *parent = nullptr);
     ~ModelInspector();
 
+    QString scratchDir() const;
+    void setScratchDir(const QString &scratchDir);
+
+public slots:
+    void modelDataAvailable();
+
 private:
     Ui::ModelInspector* ui;
+    std::unique_ptr<ModelInstance> mModelInstance;
 };
 
 }

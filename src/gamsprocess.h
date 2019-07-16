@@ -17,17 +17,44 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "mainwindow.h"
-#include "commonpaths.h"
+#ifndef GAMSPROCESS_H
+#define GAMSPROCESS_H
 
-#include <QApplication>
+#include <QMutex>
+#include <QObject>
+#include <QProcess>
 
-int main(int argc, char *argv[])
+class GAMSProcess
+        : public QObject
 {
-    CommonPaths::setSystemDir();
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
+    Q_OBJECT
 
-    return a.exec();
-}
+public:
+    GAMSProcess(QObject *parent = nullptr);
+
+    void setWorkingDir(const QString &workingDir);
+    QString workingDir() const;
+
+    void execute();
+    void interrupt();
+    void stop();
+
+    void setModel(const QString &model);
+    void setParameters(const QStringList &parameters);
+
+    void printOutputToDebug();
+
+    QProcess* process();
+
+private:
+    QString nativeAppPath();
+
+private:
+    QProcess mProcess;
+    QString mAppName;
+    QString mModel;
+    QStringList mParameters;
+    QString mWorkingDir;
+};
+
+#endif // GAMSPROCESS_H

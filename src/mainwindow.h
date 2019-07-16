@@ -22,9 +22,13 @@
 
 #include <QMainWindow>
 
+#include <memory>
+
 namespace Ui {
 class MainWindow;
 }
+
+class GAMSProcess;
 
 class MainWindow : public QMainWindow
 {
@@ -34,8 +38,15 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void on_runButton_clicked(bool checked);
+
+private:
+    void loadModel();
+
 private:
     Ui::MainWindow *ui;
+    std::unique_ptr<GAMSProcess> mProcess;
 };
 
 #endif // MAINWINDOW_H

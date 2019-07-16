@@ -19,15 +19,55 @@
  */
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "gamsprocess.h"
+#include "gamslibprocess.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    mProcess(new GAMSProcess)
 {
     ui->setupUi(this);
+    connect(mProcess->process(),
+            SIGNAL(finished(int, QProcess::ExitStatus)),
+            ui->modelInspector,
+            SLOT(modelDataAvailable()));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_runButton_clicked(bool checked)
+{
+    Q_UNUSED(checked)
+
+    QStringList params = ui->paramsEdit->text().split(" ",
+                                                      QString::SkipEmptyParts,
+                                                      Qt::CaseInsensitive);
+    auto index = params.indexOf(QRegExp("scrdir.*"));
+    if (index >= 0) {
+        auto scrdir = params.at(index);
+        ui->modelInspector->setScratchDir(scrdir.replace("scrdir=", "").trimmed());
+    }
+
+    if (ui->gamslibCheckBox->isChecked())
+        loadModel();
+
+    mProcess->setModel(ui->modelEdit->text());
+    mProcess->setParameters(params);
+    mProcess->setWorkingDir(".");
+    mProcess->execute();
+    mProcess->printOutputToDebug();
+}
+
+void MainWindow::loadModel()
+{
+    GAMSLibProcess proc;
+    proc.setTargetDir(".");
+    QString model = ui->modelEdit->text();
+    proc.setModelName(model.replace(".gms", "").trimmed());
+    proc.execute();
+    proc.printOutputToDebug();
 }
