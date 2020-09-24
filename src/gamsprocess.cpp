@@ -28,22 +28,23 @@
 #endif
 
 GAMSProcess::GAMSProcess(QObject *parent)
-    : QObject(parent),
-      mProcess(this),
-      mAppName("gams")
+    : QObject(parent)
+    , mProcess(this)
+    , mAppName("gams")
 {
+    connect(&mProcess, &QProcess::readyReadStandardOutput,
+            this, &GAMSProcess::readStdOut);
+    connect(&mProcess, &QProcess::readyReadStandardError,
+            this, &GAMSProcess::readStdErr);
 }
 
 void GAMSProcess::execute()
 {
     mProcess.setWorkingDirectory(mWorkingDir);
-    qDebug() << "native path >> " << nativeAppPath();
-    qDebug() << "working dir >> " << workingDir();
-    qDebug() << "GAMS model  >> " << mModel;
-    qDebug() << "gams params >> " << mParameters;
 
     QStringList args { mModel };
     args << mParameters;
+    qDebug() << "$$$$ " << args;
 #if defined(__unix__) || defined(__APPLE__)
     mProcess.start(nativeAppPath(), args);
 #else
@@ -105,13 +106,6 @@ void GAMSProcess::setParameters(const QStringList &parameters)
     mParameters = parameters;
 }
 
-void GAMSProcess::printOutputToDebug()
-{
-    if (mProcess.waitForFinished()) {
-        qDebug() << mProcess.readAllStandardOutput();
-    }
-}
-
 QProcess* GAMSProcess::process()
 {
     return &mProcess;
@@ -124,4 +118,30 @@ QString GAMSProcess::nativeAppPath()
         return QString();
     auto appPath = QDir(systemDir).filePath(mAppName);
     return QDir::toNativeSeparators(appPath);
+}
+
+void GAMSProcess::readStdChannel(QProcess::ProcessChannel channel)
+{
+    mOutputMutex.lock();
+    mProcess.setReadChannel(channel);
+    bool avail = mProcess.bytesAvailable();
+    mOutputMutex.unlock();
+
+    while (avail) {
+        mOutputMutex.lock();
+        mProcess.setReadChannel(channel);
+        emit newStdChannelData(mProcess.readLine().constData());
+        avail = mProcess.bytesAvailable();
+        mOutputMutex.unlock();
+    }
+}
+
+void GAMSProcess::readStdOut()
+{
+    readStdChannel(QProcess::StandardOutput);
+}
+
+void GAMSProcess::readStdErr()
+{
+    readStdChannel(QProcess::StandardError);
 }

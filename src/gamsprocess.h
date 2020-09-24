@@ -42,12 +42,17 @@ public:
     void setModel(const QString &model);
     void setParameters(const QStringList &parameters);
 
-    void printOutputToDebug();
-
     QProcess* process();
+
+signals:
+    void newStdChannelData(const QByteArray &data);
 
 private:
     QString nativeAppPath();
+
+    void readStdChannel(QProcess::ProcessChannel channel);
+    void readStdOut();
+    void readStdErr();
 
 private:
     QProcess mProcess;
@@ -55,6 +60,8 @@ private:
     QString mModel;
     QStringList mParameters;
     QString mWorkingDir;
+
+    QMutex mOutputMutex;
 };
 
 #endif // GAMSPROCESS_H

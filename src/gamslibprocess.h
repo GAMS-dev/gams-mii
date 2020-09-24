@@ -23,6 +23,7 @@
 #include <QObject>
 #include <QProcess>
 #include <QString>
+#include <QMutex>
 
 class GAMSLibProcess
         : public QObject
@@ -45,10 +46,15 @@ public:
 
     void setGlbFile(const QString &glbFile);
 
-    void printOutputToDebug();
+signals:
+    void newStdChannelData(const QByteArray &data);
 
 private:
     QString nativeAppPath();
+
+    void readStdChannel(QProcess::ProcessChannel channel);
+    void readStdOut();
+    void readStdErr();
 
 private:
     QProcess mProcess;
@@ -57,6 +63,8 @@ private:
     int mModelNumber = -1;
     QString mModelName;
     QString mGlbFile;
+
+    QMutex mOutputMutex;
 };
 
 #endif // GAMSLIBPROCESS_H

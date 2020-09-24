@@ -20,14 +20,16 @@
 #include "gamslibprocess.h"
 #include "commonpaths.h"
 
-#include <QDebug>
 #include <QDir>
 
 GAMSLibProcess::GAMSLibProcess(QObject *parent)
     : QObject(parent),
       mAppName("gamslib")
 {
-
+    connect(&mProcess, &QProcess::readyReadStandardOutput,
+            this, &GAMSLibProcess::readStdOut);
+    connect(&mProcess, &QProcess::readyReadStandardError,
+            this, &GAMSLibProcess::readStdErr);
 }
 
 void GAMSLibProcess::setTargetDir(const QString &targetDir)
@@ -67,21 +69,13 @@ void GAMSLibProcess::execute()
     args << QDir::toNativeSeparators(mGlbFile);
     args << (mModelName.isEmpty() ? QString::number(mModelNumber) : mModelName);
     args << QDir::toNativeSeparators(mTargetDir);
-    qDebug() << "model name >> " << mModelName;
-    qDebug() << "model dir  >> " << mTargetDir;
     mProcess.start(nativeAppPath(), args);
+    mProcess.waitForFinished(-1);
 }
 
 void GAMSLibProcess::setGlbFile(const QString &glbFile)
 {
     mGlbFile = glbFile;
-}
-
-void GAMSLibProcess::printOutputToDebug()
-{
-    if (mProcess.waitForFinished()) {
-        qDebug() << mProcess.readAllStandardOutput();
-    }
 }
 
 QString GAMSLibProcess::nativeAppPath()
@@ -91,4 +85,30 @@ QString GAMSLibProcess::nativeAppPath()
         return QString();
     auto appPath = QDir(systemDir).filePath(mAppName);
     return QDir::toNativeSeparators(appPath);
+}
+
+void GAMSLibProcess::readStdChannel(QProcess::ProcessChannel channel)
+{
+    mOutputMutex.lock();
+    mProcess.setReadChannel(channel);
+    bool avail = mProcess.bytesAvailable();
+    mOutputMutex.unlock();
+
+    while (avail) {
+        mOutputMutex.lock();
+        mProcess.setReadChannel(channel);
+        emit newStdChannelData(mProcess.readLine().constData());
+        avail = mProcess.bytesAvailable();
+        mOutputMutex.unlock();
+    }
+}
+
+void GAMSLibProcess::readStdOut()
+{
+    readStdChannel(QProcess::StandardOutput);
+}
+
+void GAMSLibProcess::readStdErr()
+{
+    readStdChannel(QProcess::StandardError);
 }

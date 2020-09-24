@@ -1,8 +1,8 @@
 /*
  * This file is part of the GAMS Studio project.
  *
- * Copyright (c) 2017-2018 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2017-2018 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2017-2019 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2017-2019 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,43 +35,16 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-static gdxStrIndex_t domNames;
-static gdxStrIndexPtrs_t domPtrs;
-
-ModelInstance::ModelInstance(const QString &workingDir)
-    : mScratchDir(""),
-      mWorkingDir(workingDir)
+ModelInstance::ModelInstance(const QString &workspace)
+    : mScratchDir("")
+    , mWorkspace(QDir(workspace).absolutePath())
 {
-    gevSetExitIndicator(0); // switch of lib exit() call
-    gevSetScreenIndicator(0); // switch off std lib output
-    gevSetErrorCallback(ModelInstance::errorCallback);
+    initialize();
+}
 
-    char msg[GMS_SSSIZE];
-    if (!gevCreateD(&mGEV,
-                    CommonPaths::systemDir().toStdString().c_str(),
-                    msg,
-                    sizeof(msg)))
-        qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
-
-    gmoSetExitIndicator(0); // switch of lib exit() call
-    gmoSetScreenIndicator(0); // switch off std lib output
-    gmoSetErrorCallback(ModelInstance::errorCallback);
-
-    if (!gmoCreateD(&mGMO,
-                    CommonPaths::systemDir().toStdString().c_str(),
-                    msg,
-                    sizeof(msg)))
-        qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
-
-    dctSetExitIndicator(0); // switch of lib exit() call
-    dctSetScreenIndicator(0); // switch off std lib output
-    dctSetErrorCallback(ModelInstance::errorCallback);
-
-    if (!dctCreateD(&mDCT,
-                    CommonPaths::systemDir().toStdString().c_str(),
-                    msg,
-                    sizeof(msg)))
-        qDebug() << "ERROR: " << msg; // TODO(AF): execption/syslog
+ModelInstance::ModelInstance(const ModelInstance &modelInstance)
+{
+    *this = modelInstance;
 }
 
 ModelInstance::~ModelInstance()
@@ -88,168 +61,122 @@ QString ModelInstance::scratchDir() const
 
 void ModelInstance::setScratchDir(const QString &scratchDir)
 {
-    QDir dir(mWorkingDir + "/" + scratchDir);
+    QDir dir(mWorkspace + "/" + scratchDir);
     if (!dir.exists())
         dir.mkdir(dir.absolutePath());
     mScratchDir = scratchDir;
 }
 
-void ModelInstance::instantiate()
+void ModelInstance::loadScratchData()
 {
-    QString ctrlFile = mScratchDir + "/gamscntr.dat";
+    mLogMessages << "Model Workspace: " + mWorkspace;
+    QString ctrlFile = mWorkspace + "/" + mScratchDir + "/gamscntr.dat";
+    mLogMessages << "CTRL File: " + ctrlFile;
     if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str())) {
-        qDebug() << "ERROR: " << "Could not initialize model instance"; // TODO(AF): execption/syslog
+        mLogMessages << "ERROR: Could not initialize model instance";
         return;
     }
 
     char msg[GMS_SSSIZE];
     gmoRegisterEnvironment(mGMO, mGEV, msg);
     if (gmoLoadDataLegacy(mGMO, msg)) {
-        qDebug() << "ERROR: " << "Could not load model instance: " << QString(msg); // TODO(AF): execption/syslog
+        mLogMessages << "ERROR: Could not load model instance: " + QString(msg);
         return;
     }
 
-    QString dictFile = mScratchDir + "/gamsdict.dat";
+    // TODO specifc error message that model insp. needs the dct... because it can be switched off by the user
+    // TODO check it gmodict() can be used and this could be droped then...
+    QString dictFile = mWorkspace + "/" + mScratchDir + "/gamsdict.dat";
+    mLogMessages << "DCT File: " + dictFile;
     if (dctLoadEx(mDCT, dictFile.toStdString().c_str(), msg, sizeof(msg))) {
-        qDebug() << "ERROR: Could not load dictionary file. " << QString(msg); // TODO(AF): execption/syslog
+        mLogMessages << "ERROR: Could not load dictionary file. " + QString(msg);
         return;
     }
 
-    qDebug() << "absolute scratch path >> " << mScratchDir;
+    // TODO usage... ask michael
+    // o break equation/variable values
+    //gmoObjStyleSet(mGMO, gmoObjType_Fun);
+    mLogMessages << "Absolute Scrach Path: " + mScratchDir;
 }
 
-ModelStatistic ModelInstance::statistic()
+QStringList ModelInstance::symbolNames() const
 {
-    ModelStatistic ms;
-    ms.RowCount = dctNRows(mDCT);
-    ms.ColumnCount = dctNCols(mDCT);
-    ms.LargestDimension = dctLrgDim(mDCT);
-    ms.UniqueElementCount = dctNUels(mDCT);
-    ms.SymbolCount = dctNLSyms(mDCT);
-    ms.UsedMemory = dctMemUsed(mDCT);
-
-    // get symbol names
-    for (int i=1; i<=ms.SymbolCount; ++i) {
+    QStringList names;
+    for (int i=1; i<=symbolCount(); ++i) {
         char name[GMS_SSSIZE];
         dctSymName(mDCT, i, name, GMS_SSSIZE);
-        ms.SymbolNames << name;
+        names << name;
     }
+    return names;
+}
 
-    for (int i=1; i<=ms.SymbolCount; ++i) {
-        int symbolDimension = dctSymDim(mDCT, i);
-        char symbolName[GMS_SSSIZE];
-        dctSymName(mDCT, i, symbolName, GMS_SSSIZE);
-        ms.SymbolDimensions << QString("%1: %2").arg(symbolName).arg(symbolDimension);
-    }
+SymbolInfo ModelInstance::symbol(int index) const
+{
+    SymbolInfo info;
+    if (index > symbolCount())
+        return info;
 
-    ms.SymbolNames << "\nSYMBOL TYPE";
-    for (int i=1; i<=ms.SymbolCount; ++i) {
-        char symbolName[GMS_SSSIZE];
-        dctSymName(mDCT, i, symbolName, GMS_SSSIZE);
-        int symbolType = dctSymType(mDCT, i);
-        switch (symbolType) {
-            case dctfuncSymType:
-                ms.SymbolNames << QString("Symbol %1 Type: dctfuncSymType (%2)").arg(symbolName).arg(symbolType);
-                break;
-            case dctsetSymType:
-                ms.SymbolNames << QString("Symbol %1 Type: dctsetSymType (%2)").arg(symbolName).arg(symbolType);
-                break;
-            case dctacrSymType:
-                ms.SymbolNames << QString("Symbol %1 Type: dctacrSymType (%2)").arg(symbolName).arg(symbolType);
-                break;
-            case dctparmSymType:
-                ms.SymbolNames << QString("Symbol %1 Type: dctparmSymType (%2)").arg(symbolName).arg(symbolType);
-                break;
-            case dctvarSymType:
-                ms.SymbolNames << QString("Symbol %1 Type: dctvarSymType (%2)").arg(symbolName).arg(symbolType);
-                break;
-            case dcteqnSymType:
-                ms.SymbolNames << QString("Symbol %1 Type: dcteqnSymType (%2)").arg(symbolName).arg(symbolType);
-                break;
-            case dctaliasSymType:
-                ms.SymbolNames << QString("Symbol %1 Type: dctaliasSymType (%2)").arg(symbolName).arg(symbolType);
-                break;
-            default: // dctunknownSymType
-                ms.SymbolNames << QString("Symbol %1 Type: dctunknownSymType (%2)").arg(symbolName).arg(symbolType);
-                break;
-        }
-    }
+    info.Index = index;
+    info.Dimension = dctSymDim(mDCT, index);
 
-    // TODO dctSymUserInfo
-    for (int i=1; i<=ms.SymbolCount; ++i) {
-        auto value = dctSymOffset(mDCT, i);
-        char symbolName[GMS_SSSIZE];
-        dctSymName(mDCT, i, symbolName, GMS_SSSIZE);
-        qDebug() << "Symbol: " << symbolName << "Value: " << value;
-    }
-    auto value = dctSymOffset(mDCT, 8);
-    qDebug() << "Symbol: ---" << "Value: " << value;
+    char symbolName[GMS_SSSIZE];
+    dctSymName(mDCT, index, symbolName, GMS_SSSIZE);
+    info.Name = symbolName;
 
-    ms.SymbolNames << "\nSYMBOL DOMAIN INDEX";
-    auto domainNameCount = dctDomNameCount(mDCT);
-    ms.SymbolDomainNames << QString("Domain Name Count: %1").arg(domainNameCount);
-    int *idx = new int[static_cast<uint>(domainNameCount)];
-    for (int i=1, dimension; i<=ms.SymbolCount; ++i) {
-        char symbolName[GMS_SSSIZE];
-        dctSymName(mDCT, i, symbolName, GMS_SSSIZE);
-        dctSymDomIdx(mDCT, i, idx, &dimension);
-        QStringList idxstr;
-        for (auto value : vector<int>(idx, idx+dimension)) {
-            idxstr << QString::number(value);
-        }
-        ms.SymbolNames << QString("symbol: %1 idx: %2 length: %3")
-                          .arg(symbolName)
-                          .arg(idxstr.join(", "))
-                          .arg(dimension);
-    }
+    info.Type = dctSymType(mDCT, index);
 
+    return info;
+}
 
-    GDXSTRINDEXPTRS_INIT (domNames, domPtrs);
-    for (auto symbolName : ms.SymbolNames) {
-        int symbolIndex = dctSymIndex(mDCT, symbolName.toStdString().c_str());
-        if (symbolIndex <= 0) continue;
-        int  symDomNamesCnt;
-        dctSymDomNames(mDCT, symbolIndex, domPtrs, &symDomNamesCnt);
-        QStringList domains;
-        for  (int i=0; i<symDomNamesCnt; ++i) {
-            domains << domPtrs[i];
-        }
-        if (symDomNamesCnt)
-            ms.SymbolDomainNames << QString("%1: %2").arg(symbolName).arg(domains.join(", "));
-        else
-            ms.SymbolDomainNames << QString("%1: -").arg(symbolName);
-    }
+ModelInstance& ModelInstance::operator=(const ModelInstance &modelInstance)
+{
+    mScratchDir = modelInstance.mScratchDir;
+    mWorkspace = modelInstance.mWorkspace;
+    this->initialize();
+    return *this;
+}
 
-    // get UEL labels
-    for (int i=1; i<=ms.UniqueElementCount; ++i) {
-        char name[GMS_SSSIZE];
-        char ansiChar[GMS_SSSIZE];
-        dctUelLabel(mDCT, i, ansiChar, name, GMS_SSSIZE);
-        ms.UniqueIdentifiers << name;
-    }
+void ModelInstance::initialize()
+{
+    gevSetExitIndicator(0); // switch of lib exit() call
+    gevSetScreenIndicator(0); // switch off std lib output
+    gevSetErrorCallback(ModelInstance::errorCallback);
 
-//    dctColIndex
-//    dctRowIndex
-//    dctColUels
-//    dctRowUels
-//    dctFindFirstRowCol
-//    dctFindNextRowCol
-//    dctFindClose
+    mLogMessages << "GAMS System Dir: " + CommonPaths::systemDir();
 
-//    ms.SymbolNames << "\nCOLUMN UELs";
-//    for (int i=1; i<=ms.SymbolCount; ++i) {
-//        int symbolDimension = dctSymDim(mDCT, i);
-//        int uelIndices[symbolDimension];
-//        dctColIndex(i, uelIndices);
-//    }
+    char msg[GMS_SSSIZE];
+    if (!gevCreateD(&mGEV,
+                    CommonPaths::systemDir().toStdString().c_str(),
+                    msg,
+                    sizeof(msg)))
+        mLogMessages << "ERROR: " + QString(msg);
 
-    return ms;
+    gmoSetExitIndicator(0); // switch of lib exit() call
+    gmoSetScreenIndicator(0); // switch off std lib output
+    gmoSetErrorCallback(ModelInstance::errorCallback);
+
+    if (!gmoCreateD(&mGMO,
+                    CommonPaths::systemDir().toStdString().c_str(),
+                    msg,
+                    sizeof(msg)))
+        mLogMessages << "ERROR: " + QString(msg);
+
+    dctSetExitIndicator(0); // switch of lib exit() call
+    dctSetScreenIndicator(0); // switch off std lib output
+    dctSetErrorCallback(ModelInstance::errorCallback);
+
+    if (!dctCreateD(&mDCT,
+                    CommonPaths::systemDir().toStdString().c_str(),
+                    msg,
+                    sizeof(msg)))
+        mLogMessages << "ERROR: " + QString(msg);
 }
 
 int ModelInstance::errorCallback(int count, const char *message)
 {
-    Q_UNUSED(count);
-    qDebug() << message;
+    Q_UNUSED(count)
+    //emit newLogMessage("ERROR CALLBACK: " + QString(message));
+    qDebug()<< message;
     return 0;
 }
 

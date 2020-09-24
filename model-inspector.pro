@@ -21,7 +21,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += src
-SUBDIRS += tests
+#SUBDIRS += tests
 
 src.file = src/model-inspector.pro
-tests.depends = src
+#tests.depends = src

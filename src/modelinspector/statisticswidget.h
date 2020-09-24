@@ -1,8 +1,8 @@
 /*
  * This file is part of the GAMS Studio project.
  *
- * Copyright (c) 2017-2018 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2017-2018 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2017-2019 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2017-2019 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,41 +17,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef STATISTICSWIDGET_H
+#define STATISTICSWIDGET_H
 
-#include <QMainWindow>
+#include <QWidget>
 
-#include <memory>
+#include "modelinstance.h"
+
+namespace gams {
+namespace studio {
+namespace modelinspector {
+
+class ModelInstance;
 
 namespace Ui {
-class MainWindow;
+class StatisticsWidget;
 }
 
-class GAMSLibProcess;
-class GAMSProcess;
-
-class MainWindow : public QMainWindow
+// TODO if this is kept remove the intermediate widget?
+class StatisticsWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    StatisticsWidget(QWidget *parent = nullptr);
 
-private slots:
-    void on_runButton_clicked(bool checked);
-    void appendLogMessage(const QString &message);
+    void showStatistic(ModelInstance *modelInstance);
 
 private:
-    void loadGAMSModel(const QString &path);
-
-    QString workspace() const;
-
-private:
-    Ui::MainWindow *ui;
-    GAMSLibProcess *mLibProcess;
-    std::unique_ptr<GAMSProcess> mProcess;
+    Ui::StatisticsWidget* ui;
 };
 
-#endif // MAINWINDOW_H
+}
+}
+}
+
+#endif // STATISTICSWIDGET_H

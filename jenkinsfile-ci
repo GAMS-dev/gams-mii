@@ -25,27 +25,6 @@ pipeline {
                         }
                     }
                 }
-                stage ('windowsX86') {
-                    agent { label 'windowsX86' }
-                    steps {
-                        step([$class: 'WsCleanup'])
-                        checkout scm
-                        bat '''
-                            @echo off
-                            echo Setting up environment for VS 2015 usage...
-                            cd "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin"
-                            call vcvars32.bat
-                            cd %WORKSPACE%
-                            qmake model-inspector.pro "CONFIG+=release"
-                            nmake
-                        '''
-                    }
-                    post {
-                        always {
-                            recordIssues aggregatingResults: true, enabledForFailure: true, tools: [msBuild(id: 'windowsX86', name: 'MSBuild-x86', reportEncoding: 'UTF-8')]
-                        }
-                    }
-                }
                 stage ('windowsX64') {
                     agent { label 'windowsX64' }
                     steps {
@@ -83,6 +62,9 @@ pipeline {
             }
         }
         stage('Test') {
+            when {
+                expression { return false }
+            }
             parallel {
                 stage ('linux') {
                     agent { label 'master' }
@@ -93,22 +75,6 @@ pipeline {
                             for f in *; do
                                 xvfb-run ./$f -xunitxml -o $WORKSPACE/reports/$f.xml
                             done
-                        '''
-                    }
-                    post {
-                        always {
-                            junit allowEmptyResults: true, testResults: 'reports/*.xml'
-                        }
-                    }
-                }
-                stage ('windowsX86') {
-                    agent { label 'windowsX86' }
-                    steps {
-                        bat '''
-                            echo off
-                            mkdir reports
-                            cd tests/bin
-                            for %%f in (*) do %%f -xunitxml -o %WORKSPACE%/reports/%%f.xml
                         '''
                     }
                     post {
@@ -147,6 +113,100 @@ pipeline {
                         always {
                             junit allowEmptyResults: true, testResults: 'reports/*.xml'
                         }
+                    }
+                }
+            }
+        }
+        stage('Pack') {
+            parallel {
+                stage ('linux') {
+                    agent { label 'master' }
+                    steps {
+                        sh '''
+                            # create folder structure
+                            mkdir -p appdir/usr/bin
+                            mkdir -p appdir/usr/share/pixmaps
+                            mkdir -p appdir/usr/resources
+
+                            # collect files
+                            cp src/bin/modelinspector appdir/usr/bin/
+                            cp -r icons/* appdir/usr/share/pixmaps
+                            cp platform/linux/modelinspector.desktop appdir/usr/share/modelinspector.desktop
+
+                            linuxdeployqt-6-x86_64.AppImage appdir/usr/share/modelinspector.desktop -appimage -bundle-non-qt-libs -no-translations -extra-plugins=iconengines
+                        '''
+                    }
+                }
+                stage ('windowsX64') {
+                    agent { label 'windowsX64' }
+                    steps {
+                        bat '''
+                            windeployqt --release --compiler-runtime --force src\\bin\\modelinspector.exe
+
+                            copy "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Redist\\MSVC\\14.16.27012\\x64\\Microsoft.VC141.CRT\\*" "src\\bin"
+                            copy "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Redist\\MSVC\\14.16.27012\\vc_redist.x64.exe" "src\\bin"
+                        '''
+                        fileOperations([folderCreateOperation('tmp/modelinspector'), folderCopyOperation(destinationFolderPath: 'tmp/modelinspector', sourceFolderPath: 'src/bin')])
+                        withCredentials([certificate(aliasVariable: '', credentialsId: '302df092-b329-47b9-8f7a-605da075126d', keystoreVariable: 'WIN_CERT_FILE', passwordVariable: 'WIN_CERT_PASSWD')]) {
+                            bat '''
+                                echo Setting up environment for VS2017 usage...
+                                cd "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build"
+                                call vcvars64.bat
+                                cd %WORKSPACE%\\tmp\\modelinspector
+                                signtool sign /v /f %WIN_CERT_FILE% /p %WIN_CERT_PASSWD% /t http://timestamp.comodoca.com modelinspector.exe
+                            '''
+                        }
+                        bat '''
+                            echo Setting up environment for VS2017 usage...
+                            cd "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build"
+                            call vcvars64.bat
+                            cd %WORKSPACE%\\tmp\\modelinspector
+                            signtool verify /v /pa modelinspector.exe
+                        '''
+                    }
+                }
+                stage ('macos') {
+                    agent { label 'macos' }
+                    steps {
+                        withCredentials([string(credentialsId: '2e590f95-5e30-4101-93be-31a1b7402da4', variable: 'MACOS_KEYCHAIN_PASSWD')]) {
+                            sh '''
+                                cd src/bin
+                                security unlock-keychain -p ${MACOS_KEYCHAIN_PASSWD}
+
+                                macdeployqt "modelinspector.app" -always-overwrite
+                                codesign --sign ${CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements ../../platform/macos/modelinspector.entitlements.plist "modelinspector.app"
+
+                                hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"
+                            '''
+                        }
+                        sh '''
+                            codesign --verify --verbose "src/bin/modelinspector.app"
+                        '''
+                        sh '''
+                            mv "src/bin/modelinspector.dmg" modelinspector-x86_64.dmg
+                        '''
+                    }
+                }
+            }
+        }
+        stage('Archive') {
+            parallel {
+                stage('linux') {
+                    agent { label 'master'}
+                    steps {
+                        archiveArtifacts artifacts: '*.AppImage', fingerprint: true
+                    }
+                }
+                stage('windowsX64') {
+                    agent { label 'windowsX64' }
+                    steps {
+                        zip zipFile: "modelinspector-x86_64.zip", archive: true, dir: 'tmp'
+                    }
+                }
+                stage('macos') {
+                    agent { label 'macos' }
+                    steps {
+                        archiveArtifacts artifacts: '*.dmg', fingerprint: true
                     }
                 }
             }

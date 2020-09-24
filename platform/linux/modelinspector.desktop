@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Model Inspector
+TryExec=studio
+Exec=modelinspector %F
+Icon=gamslogo
+Terminal=false
+Categories=Development;IDE;

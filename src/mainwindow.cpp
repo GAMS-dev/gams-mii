@@ -21,17 +21,29 @@
 #include "ui_mainwindow.h"
 #include "gamsprocess.h"
 #include "gamslibprocess.h"
+#include "modelinspector/modelinspector.h"
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    mProcess(new GAMSProcess)
+#include <QDir>
+#include <QStandardPaths>
+
+using namespace gams::studio;
+
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
+    , mLibProcess(new GAMSLibProcess(this))
+    , mProcess(new GAMSProcess)
 {
     ui->setupUi(this);
-    connect(mProcess->process(),
-            SIGNAL(finished(int, QProcess::ExitStatus)),
-            ui->modelInspector,
-            SLOT(modelDataAvailable()));
+    ui->modelInspector->setWorkspace(workspace());
+    connect(mProcess->process(), SIGNAL(finished(int, QProcess::ExitStatus)),
+            ui->modelInspector, SLOT(showModelStatisics()));
+    connect(ui->modelInspector, &modelinspector::ModelInspector::newLogMessage,
+            this, &MainWindow::appendLogMessage);
+    connect(mLibProcess, &GAMSLibProcess::newStdChannelData,
+            this, &MainWindow::appendLogMessage);
+    connect(mProcess.get(), &GAMSProcess::newStdChannelData,
+            this, &MainWindow::appendLogMessage);
 }
 
 MainWindow::~MainWindow()
@@ -42,6 +54,12 @@ MainWindow::~MainWindow()
 void MainWindow::on_runButton_clicked(bool checked)
 {
     Q_UNUSED(checked)
+    auto path = workspace();
+    QDir dir(path);
+    if (!dir.mkpath(dir.canonicalPath()))
+        ui->logEdit->append("Error: Could not create path " + path);
+
+    ui->modelInspector->releasePreviousModel();
 
     QStringList params = ui->paramsEdit->text().split(" ",
                                                       QString::SkipEmptyParts,
@@ -49,25 +67,35 @@ void MainWindow::on_runButton_clicked(bool checked)
     auto index = params.indexOf(QRegExp("scrdir.*"));
     if (index >= 0) {
         auto scrdir = params.at(index);
-        ui->modelInspector->setScratchDir(scrdir.replace("scrdir=", "").trimmed());
+        scrdir = scrdir.replace("scrdir=", "").trimmed();
+        ui->modelInspector->setScratchDir(scrdir);
     }
 
     if (ui->gamslibCheckBox->isChecked())
-        loadModel();
+        loadGAMSModel(path);
 
     mProcess->setModel(ui->modelEdit->text());
     mProcess->setParameters(params);
-    mProcess->setWorkingDir(".");
+    mProcess->setWorkingDir(path);
     mProcess->execute();
-    mProcess->printOutputToDebug();
 }
 
-void MainWindow::loadModel()
+void MainWindow::appendLogMessage(const QString &message)
 {
-    GAMSLibProcess proc;
-    proc.setTargetDir(".");
+    ui->logEdit->append(message);
+}
+
+void MainWindow::loadGAMSModel(const QString &path)
+{
+    mLibProcess->setTargetDir(path);
     QString model = ui->modelEdit->text();
-    proc.setModelName(model.replace(".gms", "").trimmed());
-    proc.execute();
-    proc.printOutputToDebug();
+    mLibProcess->setModelName(model.replace(".gms", "").trimmed());
+    mLibProcess->execute();
+}
+
+QString MainWindow::workspace() const
+{
+    auto path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) +
+            "/modelinspector";
+    return path;
 }

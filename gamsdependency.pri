@@ -30,37 +30,53 @@ GAMS_CORE_TMP = $$(GAMS_CORE_PATH)
     equals(GAMS_CORE_TMP, "") {
         macx {
             GAMSINC = GAMS_DISTRIB=/Applications/GAMS'$$GAMS_DISTRIB_MAJOR'.'$$GAMS_DISTRIB_MINOR'/sysdir \
-                      GAMS_DISTRIB_API=\$$GAMS_DISTRIB/apifiles/C/api
+                      GAMS_DISTRIB_C_API=\$$GAMS_DISTRIB/apifiles/C/api   \
+                      GAMS_DISTRIB_CPP_API=\$$GAMS_DISTRIB/apifiles/C++/api
         }
         unix:!macx {
             GAMSINC = GAMS_DISTRIB=$$(HOME)/gams/gams'$$GAMS_DISTRIB_MAJOR'.'$$GAMS_DISTRIB_MINOR'_linux_x64_64_sfx \
-                      GAMS_DISTRIB_API=\$$GAMS_DISTRIB/apifiles/C/api
+                      GAMS_DISTRIB_C_API=\$$GAMS_DISTRIB/apifiles/C/api   \
+                      GAMS_DISTRIB_CPP_API=\$$GAMS_DISTRIB/apifiles/C++/api
         }
         win32 {
             GAMSINC = GAMS_DISTRIB=C:/GAMS/win64/'$$GAMS_DISTRIB_MAJOR'.'$$GAMS_DISTRIB_MINOR' \
-                      GAMS_DISTRIB_API=\$$GAMS_DISTRIB/apifiles/C/api
+                      GAMS_DISTRIB_C_API=\$$GAMS_DISTRIB/apifiles/C/api   \
+                      GAMS_DISTRIB_CPP_API=\$$GAMS_DISTRIB/apifiles/C++/api
         }
         write_file($$PWD/gamsinclude.pri,GAMSINC)
     } else {
-        GAMSINC = GAMS_DISTRIB=$$(GAMS_CORE_PATH) \
-                  GAMS_DISTRIB_API=\$$GAMS_DISTRIB/apifiles/C/api
+        GAMSINC = GAMS_DISTRIB=$$(GAMS_CORE_PATH)   \
+                  GAMS_DISTRIB_C_API=\$$GAMS_DISTRIB/apifiles/C/api       \
+                  GAMS_DISTRIB_CPP_API=\$$GAMS_DISTRIB/apifiles/C++/api
         write_file($$PWD/gamsinclude.pri,GAMSINC)
     }
 }
 exists($$PWD/gamsinclude.pri) {
     include($$PWD/gamsinclude.pri)
+    macx {
+        DEFINES += 'GAMS_DISTRIB_PATH=\\"$$GAMS_DISTRIB\\"'
+    }
+    else {
+        DEFINES += 'GAMS_DISTRIB_PATH=\\"\\"'
+    }
 }
 
 # GAMS_BUILD is GAMS distrib build switch
 GAMS_BUILD_ENV = $$(GAMS_BUILD)
 equals(GAMS_BUILD_ENV, "") {
-    INCLUDEPATH += $$GAMS_DISTRIB_API
+    INCLUDEPATH += $$GAMS_DISTRIB_C_API     \
+                   $$GAMS_DISTRIB_CPP_API
 
     SOURCES += \
-        $$GAMS_DISTRIB_API/gclgms.c \
-        $$GAMS_DISTRIB_API/gevmcc.c \
-        $$GAMS_DISTRIB_API/gmomcc.c \
-        $$GAMS_DISTRIB_API/dctmcc.c
+        $$GAMS_DISTRIB_C_API/c4umcc.c   \
+        $$GAMS_DISTRIB_C_API/gclgms.c   \
+        $$GAMS_DISTRIB_C_API/gevmcc.c   \
+        $$GAMS_DISTRIB_C_API/gmomcc.c   \
+        $$GAMS_DISTRIB_C_API/dctmcc.c   \
+        $$GAMS_DISTRIB_C_API/palmcc.c   \
+        $$GAMS_DISTRIB_C_API/gdxcc.c    \
+        $$GAMS_DISTRIB_C_API/optcc.c    \
+        $$GAMS_DISTRIB_C_API/cfgmcc.c
 } else {
     GSYS_ENV = $$(GSYS)
     equals(GSYS_ENV, "wei") {
@@ -79,11 +95,20 @@ equals(GAMS_BUILD_ENV, "") {
         DEFINES += DEG
         DEFINES += CIA_DEX
     }
-    INCLUDEPATH += $$(GPRODUCTS)/gclib $$(GPRODUCTS)/apiwrap/gdxio $$(GPRODUCTS)/apiwrap/joat $$(GPRODUCTS)/apiwrap/optobj
+    INCLUDEPATH += $$(GPRODUCTS)/gclib                      \
+                   $$(GPRODUCTS)/apiwrap/gdxio              \
+                   $$(GPRODUCTS)/apiwrap/joat               \
+                   $$(GPRODUCTS)/apiwrap/optobj             \
+                   $$(GPRODUCTS)/src/apiexamples/C++/api
 
-    SOURCES += \
-        $$(GPRODUCTS)/gclib/gclgms.c \
-        $$(GPRODUCTS)/apiwrap/joat/gevmcc.c \
-        $$(GPRODUCTS)/apiwrap/joat/gmomcc.c \
-        $$(GPRODUCTS)/apiwrap/joat/dctmcc.c
+    SOURCES = \
+        $$(GPRODUCTS)/apiwrap/joat/c4umcc.c     \
+        $$(GPRODUCTS)/apiwrap/joat/cfgmcc.c     \
+        $$(GPRODUCTS)/apiwrap/joat/palmcc.c     \
+        $$(GPRODUCTS)/gclib/gclgms.c            \
+        $$(GPRODUCTS)/apiwrap/joat/gevmcc.c     \
+        $$(GPRODUCTS)/apiwrap/joat/gmomcc.c     \
+        $$(GPRODUCTS)/apiwrap/joat/dctmcc.c     \
+        $$(GPRODUCTS)/apiwrap/gdxio/gdxcc.c     \
+        $$(GPRODUCTS)/apiwrap/optobj/optcc.c
 }
