@@ -18,7 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-QT       += core gui widgets
+QT       += core gui widgets charts
 
 TARGET = modelinspector
 TEMPLATE = app
@@ -34,6 +34,16 @@ macx {
 # ! On mac osX type the command: iconutil -c icns [base-folder]/gams.iconset to create gams.icns
 #    ICON = studio.icns
 #    QMAKE_INFO_PLIST=Info.plist
+    HEADERS += macoscocoabridge.h \
+               macospathfinder.h
+
+    SOURCES += macospathfinder.cpp
+
+    OBJECTIVE_SOURCES += macoscocoabridge.mm
+
+    QMAKE_INFO_PLIST = ../platform/macos/info.plist
+
+    LIBS += -framework AppKit
 }
 unix {
     LIBS += -ldl
@@ -55,26 +65,43 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    exception.cpp \
     main.cpp \
     mainwindow.cpp \
     gamsprocess.cpp \
     commonpaths.cpp \
     gamslibprocess.cpp \
     modelinspector/modelinstance.cpp    \
-    modelinspector/modelinspector.cpp
+    modelinspector/modelinspector.cpp \
+    modelinspector/modelstatistic.cpp \
+    modelinspector/rangechart.cpp \
+    modelinspector/sectiontreemodel.cpp \
+    modelinspector/sectiontreeview.cpp \
+    modelinspector/statisticedit.cpp \
+    modelinspector/statisticswidget.cpp
 
 HEADERS += \
+    exception.h \
     mainwindow.h \
     gamsprocess.h \
     commonpaths.h \
     gamslibprocess.h    \
     modelinspector/modelinstance.h  \
-    modelinspector/modelinspector.h
+    modelinspector/modelinspector.h \
+    modelinspector/modelstatistic.h \
+    modelinspector/rangechart.h \
+    modelinspector/sectiontreemodel.h \
+    modelinspector/sectiontreeview.h \
+    modelinspector/statisticedit.h \
+    modelinspector/statisticswidget.h
 
 FORMS += \
     mainwindow.ui \
-    modelinspector/modelinspector.ui
+    modelinspector/modelinspector.ui \
+    modelinspector/statisticwidget.ui
 
 OTHER_FILES +=          \
-    ../jenkinsfile      \
-    ../jenkinsfile-ci
+    ../platform/macos/modelinspector.entitlements.plist \
+    ../platform/linux/modelinspector.desktop            \
+    ../jenkinsfile-ci                                   \
+    ../version

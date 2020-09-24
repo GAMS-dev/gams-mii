@@ -55,7 +55,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>SolveLink=0 lo=3 keep=1 curdir=. scrdir=scratch</string>
+         <string>lo=3 keep=1 curdir=. scrdir=scratch</string>
         </property>
        </widget>
       </item>
@@ -76,6 +76,16 @@
     </item>
     <item>
      <widget class="gams::studio::modelinspector::ModelInspector" name="modelInspector" native="true"/>
+    </item>
+    <item>
+     <widget class="QTextEdit" name="logEdit">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

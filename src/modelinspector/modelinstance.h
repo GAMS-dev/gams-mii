@@ -1,8 +1,8 @@
 /*
  * This file is part of the GAMS Studio project.
  *
- * Copyright (c) 2017-2018 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2017-2018 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2017-2019 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2017-2019 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,72 +31,107 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-struct ModelStatistic
+struct SymbolInfo
 {
-    /**
-     * @brief Number of Rows.
-     */
-    int RowCount;
+    int Index = -1;
+    QString Name;
+    int Dimension = -1;
+    int Type = -1;
 
-    /**
-     * @brief Number of columns.
-     */
-    int ColumnCount;
-
-    /**
-     * @brief Largest dimension of all symbols.
-     */
-    int LargestDimension;
-
-    /**
-     * @brief Number Unique elements.
-     * @remark Without the ones used by model.
-     */
-    int UniqueElementCount;
-
-    /**
-     * @brief Number of symbol.
-     * @remark Inclues variables and equations only.
-     */
-    int SymbolCount;
-
-    /**
-     * @brief Used memory in MB.
-     */
-    double UsedMemory;
-
-    QStringList SymbolNames;
-
-    QStringList SymbolDimensions;
-
-    QStringList SymbolDomainNames;
-
-    QStringList UniqueIdentifiers;
+    //QString type()
+    //{
+    //    switch (Type) {
+    //        case dctfuncSymType:
+    //            return "dctfuncSymType";
+    //        case dctsetSymType:
+    //            return "dctsetSymType";
+    //        case dctacrSymType:
+    //            return "dctacrSymType";
+    //        case dctparmSymType:
+    //            return "dctparmSymType";
+    //        case dctvarSymType:
+    //            return "dctvarSymType";
+    //        case dcteqnSymType:
+    //            return "dcteqnSymType";
+    //        case dctaliasSymType:
+    //            return "dctaliasSymType";
+    //        default: // dctunknownSymType
+    //            return "dctunknownSymType";
+    //    }
+    //}
 };
 
+// TODO
+// o do constant values like INF
+// o use dtoaLoc library for value formatting
 class ModelInstance
 {
 public:
     ModelInstance(const QString &workingDir);
+    ModelInstance(const ModelInstance &modelInstance); // todo needed?
     ~ModelInstance();
+
+    gevHandle_t gev() const {
+        return mGEV;
+    }
+
+    gmoHandle_t gmo() const {
+        return mGMO;
+    }
+
+    dctHandle_t dct() const {
+        return mDCT;
+    }
+
+    QString modelName() const {
+        char name[GMS_SSSIZE];
+        gmoNameModel(mGMO, name);
+        return name;
+    }
+
+    bool isEquation(int symType) const {
+        return symType == dcteqnSymType ? true : false;
+    }
+
+    bool isVariable(int symType) const {
+        return symType == dctvarSymType ? true : false;
+    }
 
     QString scratchDir() const;
     void setScratchDir(const QString &scratchDir);
 
-    void instantiate();
 
-    ModelStatistic statistic();
+    int symbolCount() const {
+        return dctNLSyms(mDCT);
+    }
+
+    QString logMessages() {
+        auto messages = mLogMessages.join("\n");
+        mLogMessages.clear();
+        return messages;
+    }
+
+    QStringList symbolNames() const;
+
+    SymbolInfo symbol(int index) const;
+
+    void loadScratchData();
+
+    ModelInstance& operator=(const ModelInstance &modelInstance);
 
 private:
+    void initialize();
     static int errorCallback(int count, const char *message);
 
 private:
     QString mScratchDir;
-    QString mWorkingDir;
+    QString mWorkspace;
 
     gevHandle_t mGEV = nullptr;
     gmoHandle_t mGMO = nullptr;
     dctHandle_t mDCT = nullptr;
+
+    QStringList mLogMessages;
 };
 
 }

@@ -17,59 +17,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef MODELINSPECTOR_H
-#define MODELINSPECTOR_H
-
-#include <QWidget>
-
-#include <memory>
+#include "statisticswidget.h"
+#include "ui_statisticwidget.h"
+#include "modelstatistic.h"
 
 namespace gams {
-namespace studio{
+namespace studio {
 namespace modelinspector {
 
-namespace Ui {
-class ModelInspector;
-}
-
-class ModelInstance;
-class SectionTreeModel;
-
-class ModelInspector : public QWidget
+StatisticsWidget::StatisticsWidget(QWidget *parent)
+    : QWidget(parent)
+    , ui(new Ui::StatisticsWidget)
 {
-    Q_OBJECT
+    ui->setupUi(this);
+}
 
-public:
-    explicit ModelInspector(QWidget *parent = nullptr);
-    ~ModelInspector();
-
-    QString scratchDir() const;
-    void setScratchDir(const QString &scratchDir);
-
-    QString workspace() const;
-    void setWorkspace(const QString &workspace);
-
-    void releasePreviousModel();
-
-signals:
-    // TODO (AF) split/use enum for error/info/...?
-    void newLogMessage(const QString&);
-
-public slots:
-    void showModelStatisics();
-
-private:
-    void showStatisitics2();
-
-private:
-    Ui::ModelInspector* ui;
-    QString mWorkspace;
-    SectionTreeModel *mSectionModel;
-    std::unique_ptr<ModelInstance> mModelInstance;
-};
+void StatisticsWidget::showStatistic(ModelInstance *modelInstance)
+{
+    ModelStatistic statistic(modelInstance);
+    ui->statisticEdit->showStatistic(statistic);
+}
 
 }
 }
 }
-
-#endif // MODELINSPECTOR_H

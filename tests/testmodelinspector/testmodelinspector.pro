@@ -28,17 +28,20 @@ INCLUDEPATH +=  \
     $$SRCPATH   \
     $$SRCPATH/modelinspector
 
-SOURCES += \
-    testmodelinspector.cpp \
-    $$SRCPATH/commonpaths.cpp   \
-    $$SRCPATH/modelinspector/modelinspector.cpp \
-    $$SRCPATH/modelinspector/modelinstance.cpp
+SOURCES +=                                          \
+    testmodelinspector.cpp                          \
+    $$SRCPATH/commonpaths.cpp                       \
+    $$SRCPATH/modelinspector/modelinspector.cpp     \
+    $$SRCPATH/modelinspector/modelinstance.cpp      \
+    $$SRCPATH/modelinspector/statisticswidget.cpp
 
-HEADERS += \
-    testmodelinspector.h \
-    $$SRCPATH/modelinspector/modelinspector.h \
-    $$SRCPATH/modelinspector/modelinstance.h
+HEADERS +=                                      \
+    testmodelinspector.h                        \
+    $$SRCPATH/modelinspector/modelinspector.h   \
+    $$SRCPATH/modelinspector/modelinstance.h    \
+    $$SRCPATH/modelinspector/statisticswidget.h
 
-FORMS += \
-    $$SRCPATH/modelinspector/modelinspector.ui
+FORMS +=                                        \
+    $$SRCPATH/modelinspector/modelinspector.ui  \
+    $$SRCPATH/modelinspector/statisticwidget.ui
 

@@ -1,8 +1,8 @@
 /*
  * This file is part of the GAMS Studio project.
  *
- * Copyright (c) 2017-2018 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2017-2018 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2017-2020 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2017-2020 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,18 +18,55 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "commonpaths.h"
+#include "exception.h"
+
+#ifdef __APPLE__
+#include "macospathfinder.h"
+#include "macoscocoabridge.h"
+#endif
 
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QStandardPaths>
-#include <QDebug>
+
+#if defined(__APPLE__)
+    const QString CommonPaths::DocumentationDir = "../../../Resources/docs";
+    const QString CommonPaths::ModlibsPrefixPath = "../../../Resources/";
+#else
+    const QString CommonPaths::DocumentationDir = "docs";
+    const QString CommonPaths::ModlibsPrefixPath = "";
+#endif
 
 QString CommonPaths::SystemDir = QString();
+
+#if defined(__APPLE__) || defined(__unix__)
+    const QString CommonPaths::ConfigFile = "gmscmpun.txt";
+    const QString CommonPaths::UserLicensePath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+    const QString CommonPaths::GamsConfigPath = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation)  + "/GAMS";
+
+#else
+    const QString CommonPaths::ConfigFile = "gmscmpnt.txt";
+    const QString CommonPaths::UserLicensePath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    const QString CommonPaths::GamsConfigPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/GAMS";
+#endif
+
+const QString CommonPaths::GamsUserConfigFile = "gamsconfig.yaml";
+const QString CommonPaths::LicenseFile = "gamslice.txt";
 
 CommonPaths::CommonPaths()
 {
 
+}
+
+const QString& CommonPaths::documentationDir()
+{
+    return DocumentationDir;
+}
+
+QString CommonPaths::modelLibraryDir(const QString &libname)
+{
+    return (ModlibsPrefixPath.isEmpty() ? libname : ModlibsPrefixPath+libname);
 }
 
 const QString& CommonPaths::systemDir()
@@ -39,30 +76,31 @@ const QString& CommonPaths::systemDir()
 
 void CommonPaths::setSystemDir(const QString &sysdir)
 {
-    QString gamsPath;
-    if (sysdir.isEmpty()) {
-        const QString subPath = QString(QDir::separator()).append("..");
+    if (!sysdir.isEmpty()) {
+        auto path = QFileInfo(QStandardPaths::findExecutable("gams", {sysdir})).absolutePath();
+        SystemDir = QDir::cleanPath(path);
+        return;
+    }
+
 #ifdef __APPLE__
-        gamsPath = "/Applications/GAMS" GAMS_DISTRIB_VERSION_SHORT "/sysdir";
-        if (!QDir(gamsPath).exists())
-            gamsPath = "/Applications/GAMS" GAMS_DISTRIB_VERSION_NEXT_SHORT "/sysdir";
-#elif __unix__
-        QFileInfo fileInfo(qgetenv("APPIMAGE"));
-        gamsPath = fileInfo.absoluteDir().path().append(subPath);
+    SystemDir = MacOSPathFinder::systemDir();
 #else
-        gamsPath = QCoreApplication::applicationDirPath().append(subPath);
+    QString gamsPath;
+    const QString subPath = QString(QDir::separator()).append("..");
+#ifdef __unix__
+    QFileInfo fileInfo(qgetenv("APPIMAGE"));
+    gamsPath = fileInfo.absoluteDir().path().append(subPath);
+#else
+    gamsPath = QCoreApplication::applicationDirPath().append(subPath);
 #endif
 
-        QString path = QStandardPaths::findExecutable("gams", {gamsPath});
-        if (path.isEmpty()) {
-            gamsPath = QFileInfo(QStandardPaths::findExecutable("gams")).absolutePath();
-        }
-    }
-    else {
-        gamsPath = QFileInfo(QStandardPaths::findExecutable("gams", {sysdir})).absolutePath();
+    QString path = QStandardPaths::findExecutable("gams", {gamsPath});
+    if (path.isEmpty()) {
+        gamsPath = QFileInfo(QStandardPaths::findExecutable("gams")).absolutePath();
     }
 
     SystemDir = QDir::cleanPath(gamsPath);
+#endif
 }
 
 bool CommonPaths::isSystemDirValid()
@@ -72,23 +110,55 @@ bool CommonPaths::isSystemDirValid()
     return true;
 }
 
-QString CommonPaths::userDocumentsDir()
+QString CommonPaths::gamsDocumentsDir()
 {
     QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if (dir.isEmpty())
-        qDebug() << "FATAL: Unable to access user documents location";
-    QDir userDocumentsDir = QDir::cleanPath(dir + "/GAMSStudio");
-    if(!userDocumentsDir.exists())
+        FATAL() << "Unable to access user documents location";
+    QDir gamsDocumentsDir = QDir::cleanPath(dir + "/GAMS");
+    if(!gamsDocumentsDir.exists())
+        gamsDocumentsDir.mkpath(".");
+    return gamsDocumentsDir.path();
+}
+
+QString CommonPaths::userDocumentsDir()
+{
+    QDir userDocumentsDir(gamsDocumentsDir() + "/Studio");
+    if (!userDocumentsDir.exists())
         userDocumentsDir.mkpath(".");
     return userDocumentsDir.path();
 }
 
 QString CommonPaths::userModelLibraryDir()
 {
-    QDir userModelLibraryDir(userDocumentsDir() + "/modellibs");
+    QDir userModelLibraryDir(gamsDocumentsDir() + "/modellibs");
     if(!userModelLibraryDir.exists())
         userModelLibraryDir.mkpath(".");
     return userModelLibraryDir.path();
+}
+
+QString CommonPaths::gamsLicenseFilePath()
+{
+    const QString userLicenseFile = UserLicensePath + "/GAMS/" + LicenseFile;
+    const QString globalLicenseFile = systemDir() + "/" + LicenseFile;
+    if (QFileInfo::exists(userLicenseFile))
+        return QDir::cleanPath(userLicenseFile);
+    if (QFileInfo::exists(globalLicenseFile))
+        return QDir::cleanPath(globalLicenseFile);
+    return QDir::cleanPath(userLicenseFile);
+}
+
+QString CommonPaths::gamsUserConfigDir()
+{
+    QDir gamsUserConfigDir = QDir(GamsConfigPath);
+    if(!gamsUserConfigDir.exists())
+        gamsUserConfigDir.mkpath(".");
+    return gamsUserConfigDir.path();
+}
+
+QString CommonPaths::defaultGamsUserConfigFile()
+{
+    return QDir::cleanPath(gamsUserConfigDir() + "/" + GamsUserConfigFile);
 }
 
 QString CommonPaths::defaultWorkingDir()
@@ -111,4 +181,30 @@ QString CommonPaths::absolutPath(const QString &dir)
         return "";
     QDir d(dir);
     return d.absolutePath();
+}
+
+QString CommonPaths::nativePathForProcess(const QString &filePath)
+{
+#if defined(__unix__) || defined(__APPLE__)
+    return QDir::toNativeSeparators(filePath);
+#else
+    return "\""+QDir::toNativeSeparators(filePath)+"\"";
+#endif
+}
+
+QString CommonPaths::configFile()
+{
+    QDir configFile(systemDir() + "/" + ConfigFile);
+    return configFile.path();
+}
+
+QString CommonPaths::changelog()
+{
+#ifdef __APPLE__
+    return QDir::cleanPath(MacOSCocoaBridge::bundlePath().append("/Contents/Resources/Changelog"));
+#elif __unix__
+    return QDir::cleanPath(QCoreApplication::applicationDirPath().append("/../resources/Changelog"));
+#else
+    return QDir::cleanPath(QCoreApplication::applicationDirPath().append("/resources/Changelog"));
+#endif
 }

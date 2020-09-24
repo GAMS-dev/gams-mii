@@ -36,6 +36,9 @@ class CommonPaths
 {
 public:
 
+    static const QString& documentationDir();
+    static QString modelLibraryDir(const QString &libname);
+
     ///
     /// \brief Get GAMS system directory.
     /// \return Returns the GAMS system directory.
@@ -59,9 +62,16 @@ public:
 
     static QString defaultWorkingDir();
 
+    static QString gamsDocumentsDir();
+
     static QString userDocumentsDir();
 
     static QString userModelLibraryDir();
+
+    static QString gamsLicenseFilePath();
+
+    static QString gamsUserConfigDir();
+    static QString defaultGamsUserConfigFile();
 
     ///
     /// \brief Get the absolut file path.
@@ -79,11 +89,37 @@ public:
     ///
     static QString absolutPath(const QString &dir);
 
+    ///
+    /// \brief Get the native file path prepared to be passed to a gams process.
+    /// \param filePath File to get the native path for.
+    /// \return Returns the native file path, system specific with or without quotes
+    ///
+    static QString nativePathForProcess(const QString &filePath);
+
+    ///
+    /// \brief Get GAMS config file name (with path).
+    /// \return Returns GAMS config file name.
+    ///
+    static QString configFile();
+
+    ///
+    /// \brief Get the changelog file including its path.
+    /// \return Returns the changelog file name.
+    ///
+    static QString changelog();
+
 private:
     CommonPaths();
 
 private:
     static QString SystemDir;
+    static const QString ConfigFile;
+    static const QString DocumentationDir;
+    static const QString ModlibsPrefixPath;
+    static const QString GamsUserConfigFile;
+    static const QString LicenseFile;
+    static const QString UserLicensePath;
+    static const QString GamsConfigPath;
 };
 
 #endif // GAMSINFO_H
