@@ -23,6 +23,7 @@
 #include "gamslibprocess.h"
 #include "modelinspector/modelinspector.h"
 
+#include <QDebug>
 #include <QDir>
 #include <QStandardPaths>
 
@@ -38,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->modelInspector->setWorkspace(workspace());
     connect(mProcess->process(), SIGNAL(finished(int, QProcess::ExitStatus)),
             ui->modelInspector, SLOT(showModelStatisics()));
+    connect(mProcess->process(), SIGNAL(finished(int, QProcess::ExitStatus)),
+            ui->modelInspector, SLOT(showBlockpic()));
     connect(ui->modelInspector, &modelinspector::ModelInspector::newLogMessage,
             this, &MainWindow::appendLogMessage);
     connect(mLibProcess, &GAMSLibProcess::newStdChannelData,
@@ -56,13 +59,13 @@ void MainWindow::on_runButton_clicked(bool checked)
     Q_UNUSED(checked)
     auto path = workspace();
     QDir dir(path);
-    if (!dir.mkpath(dir.canonicalPath()))
+    if (!dir.mkpath(path))
         ui->logEdit->append("Error: Could not create path " + path);
 
     ui->modelInspector->releasePreviousModel();
 
     QStringList params = ui->paramsEdit->text().split(" ",
-                                                      QString::SkipEmptyParts,
+                                                      Qt::SkipEmptyParts,
                                                       Qt::CaseInsensitive);
     auto index = params.indexOf(QRegExp("scrdir.*"));
     if (index >= 0) {

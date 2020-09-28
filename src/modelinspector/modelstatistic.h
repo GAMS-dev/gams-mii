@@ -3,68 +3,72 @@
 
 #include "modelinstance.h"
 
-#include <QPair>
-
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
 class ModelStatistic
-{
+{ // TODO remove
 public:
     ModelStatistic(ModelInstance *modelInstance)
         : mModelInstance(modelInstance)
     {}
 
     int coefficents() const {
-        return gmoNZ(mModelInstance->gmo());
+        return mModelInstance->coefficents();
     }
 
-    int positiveCoefficents() const;
+    int positiveCoefficents() const {
+        return mModelInstance->positiveCoefficents();
+    }
 
-    int negativeCoefficents() const;
+    int negativeCoefficents() const {
+        return mModelInstance->negativeCoefficents();
+    }
 
     int nonLinearCoefficents() const {
-        return gmoNLNZ(mModelInstance->gmo());
+        return mModelInstance->nonLinearCoefficents();
     }
 
     int equations() const {
-        return gmoM(mModelInstance->gmo());
+        return mModelInstance->equations();
     }
 
-    /**
-     * @brief Number if equation of equType.
-     * @param equType Value of gmoEquType.
-     * @return Number of equations of specified type.
-     */
-    int numberEquations(int equType) const {
-        return gmoGetEquTypeCnt(mModelInstance->gmo(), equType);
+    int numberEquations(int type) const {
+        return mModelInstance->equations(type);
     }
 
     int variables() const {
-        return gmoN(mModelInstance->gmo());
+        return mModelInstance->variables();
     }
 
-    int equationBlocks() const;
-
-    int variableBlocks() const;
-
-    /**
-     * @brief Number of variables or varType.
-     * @param varType Value of gmoVarType.
-     * @return Number of variables of specified type.
-     */
-    int numberVariables(int varType) const {
-        return gmoGetVarTypeCnt(mModelInstance->gmo(), varType);
+    int equationBlocks() const {
+        return mModelInstance->equationBlocks();
     }
 
-    QPair<double, double> matrixRange() const;
+    int variableBlocks() const {
+        return mModelInstance->variableBlocks();
+    }
 
-    QPair<double, double> objectiveRange() const;
+    int numberVariables(int type) const {
+        return mModelInstance->variables(type);
+    }
 
-    QPair<double, double> boundsRange() const;
+    QPair<double, double> matrixRange() const {
+        return mModelInstance->matrixRange();
+    }
 
-    QPair<double, double> rhsRange() const;
+    QPair<double, double> objectiveRange() const {
+        return mModelInstance->objectiveRange();
+    }
+
+    QPair<double, double> boundsRange() const {
+        return mModelInstance->boundsRange();
+    }
+
+    QPair<double, double> rhsRange() const {
+        return mModelInstance->rhsRange();
+    }
 
 private:
     ModelInstance *mModelInstance;

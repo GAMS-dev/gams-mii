@@ -22,8 +22,6 @@
 
 #include <QWidget>
 
-#include <memory>
-
 namespace gams {
 namespace studio{
 namespace modelinspector {
@@ -34,6 +32,7 @@ class ModelInspector;
 
 class ModelInstance;
 class SectionTreeModel;
+class BlockpicTreeModel;
 
 class ModelInspector : public QWidget
 {
@@ -56,7 +55,9 @@ signals:
     void newLogMessage(const QString&);
 
 public slots:
+    void setCurrentView(int index);
     void showModelStatisics();
+    void showBlockpic();
 
 private:
     void showStatisitics2();
@@ -65,7 +66,10 @@ private:
     Ui::ModelInspector* ui;
     QString mWorkspace;
     SectionTreeModel *mSectionModel;
-    std::unique_ptr<ModelInstance> mModelInstance;
+    BlockpicTreeModel *mBlockpicModelOne;
+    BlockpicTreeModel *mBlockpicModelTwo;
+    BlockpicTreeModel *mBlockpicModelThree;
+    ModelInstance *mModelInstance;
 };
 
 }

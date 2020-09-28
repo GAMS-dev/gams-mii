@@ -2,7 +2,6 @@
 #define STATISTICEDIT_H
 
 #include <QMap>
-//#include <QPlainTextEdit>
 #include <QTextEdit>
 
 namespace gams {

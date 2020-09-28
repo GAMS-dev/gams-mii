@@ -71,6 +71,9 @@ SOURCES += \
     gamsprocess.cpp \
     commonpaths.cpp \
     gamslibprocess.cpp \
+    modelinspector/blockpicitembuilder.cpp \
+    modelinspector/blockpictreeitem.cpp \
+    modelinspector/blockpictreemodel.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
     modelinspector/modelstatistic.cpp \
@@ -86,6 +89,9 @@ HEADERS += \
     gamsprocess.h \
     commonpaths.h \
     gamslibprocess.h    \
+    modelinspector/blockpicitembuilder.h \
+    modelinspector/blockpictreeitem.h \
+    modelinspector/blockpictreemodel.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
     modelinspector/modelstatistic.h \

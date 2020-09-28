@@ -24,24 +24,25 @@ include(../tests.pri)
 
 CONFIG += qt warn_on depend_includepath testcase
 
-INCLUDEPATH +=  \
-    $$SRCPATH   \
-    $$SRCPATH/modelinspector
+INCLUDEPATH +=                                      \
+    $$SRCPATH
+    #$$SRCPATH/modelinspector
 
 SOURCES +=                                          \
     testmodelinspector.cpp                          \
     $$SRCPATH/commonpaths.cpp                       \
-    $$SRCPATH/modelinspector/modelinspector.cpp     \
-    $$SRCPATH/modelinspector/modelinstance.cpp      \
-    $$SRCPATH/modelinspector/statisticswidget.cpp
+    $$SRCPATH/exception.cpp
+#    $$SRCPATH/modelinspector/modelinspector.cpp     \
+#    $$SRCPATH/modelinspector/modelinstance.cpp      \
+#    $$SRCPATH/modelinspector/statisticswidget.cpp
 
-HEADERS +=                                      \
-    testmodelinspector.h                        \
-    $$SRCPATH/modelinspector/modelinspector.h   \
-    $$SRCPATH/modelinspector/modelinstance.h    \
-    $$SRCPATH/modelinspector/statisticswidget.h
+HEADERS +=                                          \
+    testmodelinspector.h
+#    $$SRCPATH/modelinspector/modelinspector.h   \
+#    $$SRCPATH/modelinspector/modelinstance.h    \
+#    $$SRCPATH/modelinspector/statisticswidget.h
 
-FORMS +=                                        \
-    $$SRCPATH/modelinspector/modelinspector.ui  \
-    $$SRCPATH/modelinspector/statisticwidget.ui
+#FORMS +=                                        \
+#    $$SRCPATH/modelinspector/modelinspector.ui  \
+#    $$SRCPATH/modelinspector/statisticwidget.ui
 
