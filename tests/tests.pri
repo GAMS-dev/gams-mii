@@ -18,7 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-QT += core testlib gui widgets
+QT += core testlib gui widgets charts
 
 CONFIG += c++14
 CONFIG -= app_bundle
@@ -29,10 +29,14 @@ DESTDIR = ../bin
 include(../gamsdependency.pri)
 
 macx {
-# ! The icns-file is created from a folder named gams.iconset containing images in multiple sizes.
-# ! On mac osX type the command: iconutil -c icns [base-folder]/gams.iconset to create gams.icns
-#    ICON = studio.icns
-#    QMAKE_INFO_PLIST=Info.plist
+    HEADERS += ../../src/macospathfinder.h
+               ../../src/macoscocoabridge.h
+
+    SOURCES += ../../src/macospathfinder.cpp
+
+    OBJECTIVE_SOURCES += ../../src/macoscocoabridge.mm
+
+    LIBS += -framework AppKit
 }
 unix {
     LIBS += -ldl

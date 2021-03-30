@@ -4,64 +4,51 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-TreeItem::TreeItem(const QVector<QVariant> &data,
-                   int page, TreeItem *parent)
-    : mParent(parent)
-    , mData(data)
+ViewItem::ViewItem(const QString &name, int page, ViewItem *parent)
+    : mName(name)
+    , mParent(parent)
     , mPage(page)
 {
 
 }
 
-TreeItem::~TreeItem()
+ViewItem::~ViewItem()
 {
     qDeleteAll(mChilds);
 }
 
-void TreeItem::appendChild(TreeItem *child)
+void ViewItem::append(ViewItem *child)
 {
     mChilds.append(child);
 }
 
-TreeItem *TreeItem::child(int row)
+ViewItem *ViewItem::child(int row)
 {
     if (row < 0 || row >= mChilds.size())
         return nullptr;
     return mChilds.at(row);
 }
 
-int TreeItem::childCount() const
+int ViewItem::childCount() const
 {
     return mChilds.count();
 }
 
-int TreeItem::columnCount() const
-{
-    return mData.count();
-}
-
-QVariant TreeItem::data(int column) const
-{
-    if (column < 0 || column >= mData.size())
-        return QVariant();
-    return mData.at(column);
-}
-
-int TreeItem::row() const
+int ViewItem::row() const
 {
     if (mParent)
-        return mParent->mChilds.indexOf(const_cast<TreeItem*>(this));
+        return mParent->mChilds.indexOf(const_cast<ViewItem*>(this));
     return 0;
 }
 
-TreeItem *TreeItem::parent()
+ViewItem *ViewItem::parent()
 {
     return mParent;
 }
 
 SectionTreeModel::SectionTreeModel(QObject *parent)
     : QAbstractItemModel(parent)
-    , mRoot(new TreeItem({"Model Instance"}, -1))
+    , mRoot(new ViewItem({"Model Instance"}, -1))
 {
 
 }
@@ -79,8 +66,10 @@ QVariant SectionTreeModel::data(const QModelIndex &index, int role) const
     if (role != Qt::DisplayRole)
         return QVariant();
 
-    auto *item = static_cast<TreeItem*>(index.internalPointer());
-    return item->data(index.column());
+    auto *item = static_cast<ViewItem*>(index.internalPointer());
+    if (index.column() == 0)
+        return item->name();
+    return QVariant();
 }
 
 Qt::ItemFlags SectionTreeModel::flags(const QModelIndex &index) const
@@ -91,10 +80,22 @@ Qt::ItemFlags SectionTreeModel::flags(const QModelIndex &index) const
 }
 
 QVariant SectionTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
-{// TODO show model name in header
-    if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-        return mRoot->data(section);
+{
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section == 0)
+        return mRoot->name();
     return QVariant();
+}
+
+bool SectionTreeModel::setHeaderData(int section, Qt::Orientation orientation,
+                                     const QVariant &value, int role)
+{
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole &&
+            section == 0) {
+        mRoot->setName(value.toString());
+        return true;
+    }
+
+    return false;
 }
 
 QModelIndex SectionTreeModel::index(int row, int column, const QModelIndex &parent) const
@@ -102,13 +103,13 @@ QModelIndex SectionTreeModel::index(int row, int column, const QModelIndex &pare
     if (!hasIndex(row, column, parent))
         return QModelIndex();
 
-    TreeItem *parentItem;
+    ViewItem *parentItem;
     if (!parent.isValid())
         parentItem = mRoot;
     else
-        parentItem = static_cast<TreeItem*>(parent.internalPointer());
+        parentItem = static_cast<ViewItem*>(parent.internalPointer());
 
-    TreeItem *childItem = parentItem->child(row);
+    ViewItem *childItem = parentItem->child(row);
     if (childItem)
         return createIndex(row, column, childItem);
     return QModelIndex();
@@ -119,7 +120,7 @@ QModelIndex SectionTreeModel::parent(const QModelIndex &index) const
     if (!index.isValid())
         return QModelIndex();
 
-    auto *childItem = static_cast<TreeItem*>(index.internalPointer());
+    auto *childItem = static_cast<ViewItem*>(index.internalPointer());
     auto *parentItem = childItem->parent();
 
     if (parentItem == mRoot)
@@ -133,11 +134,11 @@ int SectionTreeModel::rowCount(const QModelIndex &parent) const
     if (parent.column() > 0)
         return 0;
 
-    TreeItem *parentItem;
+    ViewItem *parentItem;
     if (!parent.isValid())
         parentItem = mRoot;
     else
-        parentItem = static_cast<TreeItem*>(parent.internalPointer());
+        parentItem = static_cast<ViewItem*>(parent.internalPointer());
 
     return parentItem->childCount();
 }
@@ -145,14 +146,36 @@ int SectionTreeModel::rowCount(const QModelIndex &parent) const
 int SectionTreeModel::columnCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
-        return static_cast<TreeItem*>(parent.internalPointer())->columnCount();
+        return static_cast<ViewItem*>(parent.internalPointer())->columnCount();
     return mRoot->columnCount();
 }
 
-void SectionTreeModel::loadModelData(const QStringList &data)
+void SectionTreeModel::loadModelData()
 {// TODO page/TreeItem to model generator
-    for (int i=0; i<data.size(); ++i) {
-        mRoot->appendChild(new TreeItem({data.at(i)}, i, mRoot));
+    QStringList mainItems { "Statistic", "Statistic 2", "Blockpic" };
+    QStringList blockpicViews { "View 1", "View 2", "View 3" };
+
+    ViewItem *mainItem;
+    for (int i=0; i<mainItems.size(); ++i) {
+        if (mainItems.at(i) == "Blockpic") {
+            mainItem = new ViewItem(mainItems.at(i), i, mRoot);
+            mainItem->setType(ViewItem::Blockpic);
+            ViewItem *viewItem;
+            for (int k=0; k<blockpicViews.size(); ++k) {
+                viewItem = new ViewItem(blockpicViews.at(k), i, mainItem);
+                if (k == 0)
+                    viewItem->setType(ViewItem::BlockpicView1);
+                else if (k == 1)
+                    viewItem->setType(ViewItem::BlockpicView2);
+                else
+                    viewItem->setType(ViewItem::BlockpicView3);
+                mainItem->append(viewItem);
+            }
+        } else {
+            mainItem = new ViewItem(mainItems.at(i), i, mRoot);
+            mainItem->setType(ViewItem::Statistic);
+        }
+        mRoot->append(mainItem);
     }
 }
 

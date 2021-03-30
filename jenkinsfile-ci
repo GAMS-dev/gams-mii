@@ -1,3 +1,11 @@
+def QT_FOR_LINUX = "/opt/Qt/5.15.2/bin"
+def QT_FOR_MACOS = "/Users/distrib/Qt/5.15.2/clang_64/bin"
+def QT_FOR_WINDOWS = "C:\\Qt\\5.15.2\\msvc2019_64\\bin"
+
+def GAMS_FOR_LINUX = "/opt/gams/gams35.0_linux_x64_64_sfx"
+def GAMS_FOR_MACOS = "/Library/Frameworks/GAMS.framework/Versions/35/Resources"
+def GAMS_FOR_WINDOWS = "C:\\GAMS\\35"
+
 pipeline {
     agent any
 
@@ -11,6 +19,10 @@ pipeline {
             parallel {
                 stage ('linux') {
                     agent { label 'master' }
+                    environment {
+                        GAMS_CORE_PATH="${GAMS_FOR_LINUX}"
+                        PATH="${QT_FOR_LINUX}:${GAMS_FOR_LINUX}:${PATH}"
+                    }
                     steps {
                         step([$class: 'WsCleanup'])
                         checkout scm
@@ -27,6 +39,10 @@ pipeline {
                 }
                 stage ('windowsX64') {
                     agent { label 'windowsX64' }
+                    environment {
+                        GAMS_CORE_PATH="${GAMS_FOR_WINDOWS}"
+                        PATH="${QT_FOR_WINDOWS};${GAMS_FOR_WINDOWS};${PATH}"
+                    }
                     steps {
                         step([$class: 'WsCleanup'])
                         checkout scm
@@ -48,6 +64,10 @@ pipeline {
                 }
                 stage ('macos') {
                     agent { label 'macos' }
+                    environment {
+                        GAMS_CORE_PATH="${GAMS_FOR_MACOS}"
+                        PATH="${QT_FOR_MACOS}:${GAMS_FOR_MACOS}:${PATH}"
+                    }
                     steps {
                         step([$class: 'WsCleanup'])
                         checkout scm
@@ -62,14 +82,15 @@ pipeline {
             }
         }
         stage('Test') {
-            when {
-                expression { return false }
-            }
             parallel {
                 stage ('linux') {
                     agent { label 'master' }
+                    environment {
+                        PATH="${QT_FOR_LINUX}:${GAMS_FOR_LINUX}:${PATH}"
+                    }
                     steps {
                         sh '''
+                            set +e
                             mkdir reports
                             cd tests/bin
                             for f in *; do
@@ -85,6 +106,9 @@ pipeline {
                 }
                 stage ('windowsX64') {
                     agent { label 'windowsX64' }
+                    environment {
+                        PATH="${QT_FOR_WINDOWS};${GAMS_FOR_WINDOWS};${PATH}"
+                    }
                     steps {
                         bat '''
                             mkdir reports
@@ -100,8 +124,12 @@ pipeline {
                 }
                 stage ('macos') {
                     agent { label 'macos' }
+                    environment {
+                        PATH="${QT_FOR_MACOS}:${GAMS_FOR_MACOS}:${PATH}"
+                    }
                     steps {
                         sh '''
+                            set +e
                             mkdir reports
                             cd tests/bin
                             for f in *; do
@@ -121,6 +149,9 @@ pipeline {
             parallel {
                 stage ('linux') {
                     agent { label 'master' }
+                    environment {
+                        PATH="${QT_FOR_LINUX}:${PATH}"
+                    }
                     steps {
                         sh '''
                             # create folder structure
@@ -139,6 +170,9 @@ pipeline {
                 }
                 stage ('windowsX64') {
                     agent { label 'windowsX64' }
+                    environment {
+                        PATH="${QT_FOR_WINDOWS};${PATH}"
+                    }
                     steps {
                         bat '''
                             windeployqt --release --compiler-runtime --force src\\bin\\modelinspector.exe
@@ -167,6 +201,9 @@ pipeline {
                 }
                 stage ('macos') {
                     agent { label 'macos' }
+                    environment {
+                        PATH="${QT_FOR_MACOS}:${PATH}"
+                    }
                     steps {
                         withCredentials([string(credentialsId: '2e590f95-5e30-4101-93be-31a1b7402da4', variable: 'MACOS_KEYCHAIN_PASSWD')]) {
                             sh '''

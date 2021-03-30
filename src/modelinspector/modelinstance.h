@@ -24,46 +24,44 @@
 #include "gmomcc.h"
 #include "dctmcc.h"
 
+#include <QMap>
 #include <QString>
 #include <QStringList>
+#include <QVariant>
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
+// TODO
+//  o do constant values like INF
+//  o use dtoaLoc library for value formatting
+//  o cache/pre-load data/lazy loading?
+
 struct SymbolInfo
 {
     int Index = -1;
+    int Offset = -1;
+    int Entries = -1;
     QString Name;
     int Dimension = -1;
     int Type = -1;
 
-    //QString type()
-    //{
-    //    switch (Type) {
-    //        case dctfuncSymType:
-    //            return "dctfuncSymType";
-    //        case dctsetSymType:
-    //            return "dctsetSymType";
-    //        case dctacrSymType:
-    //            return "dctacrSymType";
-    //        case dctparmSymType:
-    //            return "dctparmSymType";
-    //        case dctvarSymType:
-    //            return "dctvarSymType";
-    //        case dcteqnSymType:
-    //            return "dcteqnSymType";
-    //        case dctaliasSymType:
-    //            return "dctaliasSymType";
-    //        default: // dctunknownSymType
-    //            return "dctunknownSymType";
-    //    }
-    //}
+    bool isScalar() const {
+        return Entries == 1;
+    }
+
+    int lastOffset() const {
+        return Offset+Entries;
+    }
 };
 
-// TODO
-// o do constant values like INF
-// o use dtoaLoc library for value formatting
+struct MaxMin {
+    bool Valid = false;
+    double Max;
+    double Min;
+};
+
 class ModelInstance
 {
 public:
@@ -71,27 +69,43 @@ public:
     ModelInstance(const ModelInstance &modelInstance); // todo needed?
     ~ModelInstance();
 
-    gevHandle_t gev() const {
-        return mGEV;
-    }
+    QString modelName() const;
 
-    gmoHandle_t gmo() const {
-        return mGMO;
-    }
+    int coefficents() const;
 
-    dctHandle_t dct() const {
-        return mDCT;
-    }
+    int positiveCoefficents() const;
 
-    QString modelName() const {
-        char name[GMS_SSSIZE];
-        gmoNameModel(mGMO, name);
-        return name;
-    }
+    int negativeCoefficents() const;
 
-    bool isEquation(int symType) const {
-        return symType == dcteqnSymType ? true : false;
-    }
+    int nonLinearCoefficents() const;
+
+    /**
+     * @brief Total number of equations.
+     */
+    int equations() const;
+
+    /**
+     * @brief Number of equations defined by <c>type</c>.
+     * @param Equation type.
+     */
+    int equations(int type) const;
+
+    int equationBlocks() const;
+
+    bool isEquation(int type) const;
+
+    /**
+     * @brief Total number of variables.
+     */
+    int variables() const;
+
+    /**
+     * @brief Number of variables defined by <c>type</c>.
+     * @param Equation type.
+     */
+    int variables(int type) const;
+
+    int variableBlocks() const;
 
     bool isVariable(int symType) const {
         return symType == dctvarSymType ? true : false;
@@ -105,6 +119,29 @@ public:
         return dctNLSyms(mDCT);
     }
 
+    QString equationType(int offset) const;
+
+    QVector<QVariant> scalarEquationData(int offset) const;
+    QMap<int,QVariant> equationData(int currentRow) const;
+
+    QVector<MaxMin> equationVariableScaling(const SymbolInfo &symbol);
+    QVector<MaxMin> totalScaling();
+    MaxMin equationScaling(const SymbolInfo &symbol);
+
+    double rhs(int offset) const;
+    QPair<double,double> maxminRhs(int offset, int entries) const;
+    QPair<double,double> totalRhs();
+    QString aggregatedRhs(const SymbolInfo &symbol) const;
+
+    QVector<QVariant> variableData(const SymbolInfo &symbol);
+    QVector<QVariant> variableType();
+
+    QVector<QString> rowUels(const SymbolInfo &symInfo) const;
+
+    int rowIndex(int offset) const;
+
+    QString columnUels(int symbolIndex) const;
+
     QString logMessages() {
         auto messages = mLogMessages.join("\n");
         mLogMessages.clear();
@@ -113,11 +150,29 @@ public:
 
     QStringList symbolNames() const;
 
+    /**
+    * @brief Symbol offset to get records.
+    * @return dctSymOffset, offset < 0 is failiure
+    */
+    int symbolOffset(const QString &label) const;
+
     SymbolInfo symbol(int index) const;
+
+    QVector<SymbolInfo> symbols(int typeFilter = -1);
 
     void loadScratchData();
 
     ModelInstance& operator=(const ModelInstance &modelInstance);
+
+    QVector<QVariant> columnUelStrings(const SymbolInfo &symboldInfo);
+
+    QPair<double, double> matrixRange() const;
+
+    QPair<double, double> objectiveRange() const;
+
+    QPair<double, double> boundsRange() const;
+
+    QPair<double, double> rhsRange() const;
 
 private:
     void initialize();

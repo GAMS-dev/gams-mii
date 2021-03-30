@@ -22,6 +22,8 @@
 #include "modelinstance.h"
 #include "modelstatistic.h"
 #include "sectiontreemodel.h"
+#include "blockpictreemodel.h"
+#include "blockpicitembuilder.h"
 
 #include "gclgms.h"
 
@@ -38,15 +40,17 @@ ModelInspector::ModelInspector(QWidget *parent)
     , mModelInstance(new ModelInstance("."))
 {
     ui->setupUi(this);
-    mSectionModel->loadModelData({"Statistic", "Statistic 2", "Blockpic?"});
+    mSectionModel->loadModelData();
     ui->sectionTreeView->setModel(mSectionModel);
 
     connect(ui->sectionTreeView, &SectionTreeView::currentItemChanged,
-            ui->stackedWidget, &QStackedWidget::setCurrentIndex);
+            this, &ModelInspector::setCurrentView);
+    ui->sectionTreeView->expandAll();
 }
 
 ModelInspector::~ModelInspector()
 {
+    delete mModelInstance;
     delete ui;
 }
 
@@ -72,15 +76,53 @@ void ModelInspector::setWorkspace(const QString &workingDir)
 
 void ModelInspector::releasePreviousModel()
 {
-    mModelInstance = std::make_unique<ModelInstance>(ModelInstance(mWorkspace));
+    delete  mModelInstance;
+    mModelInstance = new ModelInstance(mWorkspace);
+}
+
+void ModelInspector::setCurrentView(int index)
+{
+    Q_UNUSED(index);
+    auto modelIndex = ui->sectionTreeView->currentIndex();
+    auto* item = static_cast<ViewItem*>(modelIndex.internalPointer());
+    if (mBlockpicModelOne && mBlockpicModelTwo && mBlockpicModelThree) {
+        switch (item->type()) {
+        case ViewItem::BlockpicView1:
+            ui->blockpicTreeView->setModel(mBlockpicModelOne);
+            break;
+        case ViewItem::BlockpicView2:
+            ui->blockpicTreeView->setModel(mBlockpicModelTwo);
+            break;
+        case ViewItem::BlockpicView3:
+            ui->blockpicTreeView->setModel(mBlockpicModelThree);
+            break;
+        default:
+            break;
+        }
+    }
+    ui->blockpicTreeView->expandAll();
+    ui->stackedWidget->setCurrentIndex(item->page());
 }
 
 void ModelInspector::showModelStatisics()
 {
     mModelInstance->loadScratchData();
-    ui->statisticWidget->showStatistic(mModelInstance.get());
+    ui->statisticWidget->showStatistic(mModelInstance);
     showStatisitics2();
     emit newLogMessage(mModelInstance->logMessages());
+}
+
+void ModelInspector::showBlockpic()
+{ // TODO object lifetime, creation, ...
+    DetailLevelOneBuilder builder1(mModelInstance);
+    mBlockpicModelOne = new BlockpicTreeModel(builder1.dataStructure());
+    DetailLevelTwoBuilder builder2(mModelInstance);
+    mBlockpicModelTwo = new BlockpicTreeModel(builder2.dataStructure());
+    DetailLevelThreeBuilder builder3(mModelInstance);
+    mBlockpicModelThree = new BlockpicTreeModel(builder3.dataStructure());
+
+    ui->blockpicTreeView->setModel(mBlockpicModelThree);
+    ui->blockpicTreeView->expandAll();
 }
 
 void ModelInspector::showStatisitics2()
@@ -88,7 +130,7 @@ void ModelInspector::showStatisitics2()
     ui->statistic2Widget->setColumnCount(3);
     ui->statistic2Widget->setRowCount(33);
 
-    ModelStatistic statistics(mModelInstance.get());
+    ModelStatistic statistics(mModelInstance);
     auto matrixRange = statistics.matrixRange();
     auto objectiveRange = statistics.objectiveRange();
     auto boundsRange = statistics.boundsRange();
@@ -97,7 +139,6 @@ void ModelInspector::showStatisitics2()
     auto font = QFont();
     font.setBold(true);
 
-    //ui->statistic2Widget->setItem(0, 0, new QTableWidgetItem(""));
     auto item1 = new QTableWidgetItem("Equation Counts");
     item1->setFont(font);
     ui->statistic2Widget->setItem(0, 0, item1);

@@ -44,7 +44,7 @@ void GAMSProcess::execute()
 
     QStringList args { mModel };
     args << mParameters;
-    qDebug() << "$$$$ " << args;
+    //qDebug() << "$$$$ " << args;
 #if defined(__unix__) || defined(__APPLE__)
     mProcess.start(nativeAppPath(), args);
 #else

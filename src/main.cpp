@@ -24,8 +24,8 @@
 
 int main(int argc, char *argv[])
 {
-    CommonPaths::setSystemDir();
     QApplication a(argc, argv);
+    CommonPaths::setSystemDir();
     MainWindow w;
     w.show();
 

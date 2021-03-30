@@ -18,10 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "testmodelinspector.h"
-#include "modelinspector.h"
+//#include "modelinspector.h"
 #include "commonpaths.h"
 
-using namespace gams::studio::modelinspector;
+//using namespace gams::studio::modelinspector;
 
 void TestModelInspector::initTestCase()
 {
@@ -30,7 +30,7 @@ void TestModelInspector::initTestCase()
 
 void TestModelInspector::testModelInspector()
 {
-    ModelInspector mi;
+    //ModelInspector mi;
 }
 
 QTEST_MAIN(TestModelInspector)

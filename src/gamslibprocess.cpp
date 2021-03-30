@@ -65,17 +65,10 @@ QString GAMSLibProcess::modelName() const
 void GAMSLibProcess::execute()
 {
     QStringList args;
-    args << "-lib";
-    args << QDir::toNativeSeparators(mGlbFile);
     args << (mModelName.isEmpty() ? QString::number(mModelNumber) : mModelName);
     args << QDir::toNativeSeparators(mTargetDir);
     mProcess.start(nativeAppPath(), args);
     mProcess.waitForFinished(-1);
-}
-
-void GAMSLibProcess::setGlbFile(const QString &glbFile)
-{
-    mGlbFile = glbFile;
 }
 
 QString GAMSLibProcess::nativeAppPath()

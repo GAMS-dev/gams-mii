@@ -44,8 +44,6 @@ public:
 
     void execute();
 
-    void setGlbFile(const QString &glbFile);
-
 signals:
     void newStdChannelData(const QByteArray &data);
 
@@ -62,7 +60,6 @@ private:
     QString mTargetDir;
     int mModelNumber = -1;
     QString mModelName;
-    QString mGlbFile;
 
     QMutex mOutputMutex;
 };
