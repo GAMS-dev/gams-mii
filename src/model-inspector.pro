@@ -18,7 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-QT       += core gui widgets charts
+QT       += core gui widgets
 
 TARGET = modelinspector
 TEMPLATE = app
@@ -71,13 +71,11 @@ SOURCES += \
     gamsprocess.cpp \
     commonpaths.cpp \
     gamslibprocess.cpp \
-    modelinspector/blockpicitembuilder.cpp \
-    modelinspector/blockpictreeitem.cpp \
-    modelinspector/blockpictreemodel.cpp \
+    modelinspector/hierarchicalheaderview.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
+    modelinspector/modelinstancetablemodel.cpp \
     modelinspector/modelstatistic.cpp \
-    modelinspector/rangechart.cpp \
     modelinspector/sectiontreemodel.cpp \
     modelinspector/sectiontreeview.cpp \
     modelinspector/statisticedit.cpp \
@@ -89,13 +87,11 @@ HEADERS += \
     gamsprocess.h \
     commonpaths.h \
     gamslibprocess.h    \
-    modelinspector/blockpicitembuilder.h \
-    modelinspector/blockpictreeitem.h \
-    modelinspector/blockpictreemodel.h \
+    modelinspector/hierarchicalheaderview.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
+    modelinspector/modelinstancetablemodel.h \
     modelinspector/modelstatistic.h \
-    modelinspector/rangechart.h \
     modelinspector/sectiontreemodel.h \
     modelinspector/sectiontreeview.h \
     modelinspector/statisticedit.h \

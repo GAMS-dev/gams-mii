@@ -20,6 +20,7 @@
 #ifndef STATISTICSWIDGET_H
 #define STATISTICSWIDGET_H
 
+#include <QSharedPointer>
 #include <QWidget>
 
 #include "modelinstance.h"
@@ -42,7 +43,7 @@ class StatisticsWidget : public QWidget
 public:
     StatisticsWidget(QWidget *parent = nullptr);
 
-    void showStatistic(ModelInstance *modelInstance);
+    void showStatistic(const QSharedPointer<ModelInstance> &modelInstance);
 
 private:
     Ui::StatisticsWidget* ui;

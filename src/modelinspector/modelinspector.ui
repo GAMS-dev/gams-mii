@@ -32,7 +32,7 @@
         <number>1</number>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="statisticPage1">
         <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -41,93 +41,10 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="statisticPAge2">
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <widget class="QWidget" name="fullView">
+        <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
-          <widget class="QTableWidget" name="statistic2Widget">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
-           </property>
-           <property name="alternatingRowColors">
-            <bool>true</bool>
-           </property>
-           <property name="gridStyle">
-            <enum>Qt::NoPen</enum>
-           </property>
-           <property name="wordWrap">
-            <bool>false</bool>
-           </property>
-           <attribute name="horizontalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-           <attribute name="verticalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <layout class="QGridLayout" name="gridLayout">
-           <item row="0" column="0">
-            <widget class="gams::studio::modelinspector::RangeChart" name="equationView">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="gams::studio::modelinspector::VariableChart" name="variableView">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="gams::studio::modelinspector::CoefficientChart" name="coeffView">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="gams::studio::modelinspector::DummyChart" name="placeholderView">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </widget>
-       <widget class="QWidget" name="blockpicTree">
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <item>
-          <widget class="QTreeView" name="blockpicTreeView">
-           <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
-           </property>
-           <property name="alternatingRowColors">
-            <bool>true</bool>
-           </property>
-          </widget>
+          <widget class="QTableView" name="modelInstanceView"/>
          </item>
         </layout>
        </widget>
@@ -148,26 +65,6 @@
    <class>SectionTreeView</class>
    <extends>QTreeView</extends>
    <header>modelinspector/sectiontreeview.h</header>
-  </customwidget>
-  <customwidget>
-   <class>gams::studio::modelinspector::RangeChart</class>
-   <extends>QGraphicsView</extends>
-   <header>modelinspector/rangechart.h</header>
-  </customwidget>
-  <customwidget>
-   <class>gams::studio::modelinspector::VariableChart</class>
-   <extends>QGraphicsView</extends>
-   <header>modelinspector/rangechart.h</header>
-  </customwidget>
-  <customwidget>
-   <class>gams::studio::modelinspector::CoefficientChart</class>
-   <extends>QGraphicsView</extends>
-   <header>modelinspector/rangechart.h</header>
-  </customwidget>
-  <customwidget>
-   <class>gams::studio::modelinspector::DummyChart</class>
-   <extends>QGraphicsView</extends>
-   <header>modelinspector/rangechart.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

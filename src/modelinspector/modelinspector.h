@@ -20,6 +20,8 @@
 #ifndef MODELINSPECTOR_H
 #define MODELINSPECTOR_H
 
+#include <QProcess>
+#include <QSharedPointer>
 #include <QWidget>
 
 namespace gams {
@@ -31,8 +33,8 @@ class ModelInspector;
 }
 
 class ModelInstance;
+class ModelInstanceTableModel;
 class SectionTreeModel;
-class BlockpicTreeModel;
 
 class ModelInspector : public QWidget
 {
@@ -48,28 +50,23 @@ public:
     QString workspace() const;
     void setWorkspace(const QString &workspace);
 
-    void releasePreviousModel();
-
 signals:
     // TODO (AF) split/use enum for error/info/...?
     void newLogMessage(const QString&);
 
 public slots:
-    void setCurrentView(int index);
-    void showModelStatisics();
-    void showBlockpic();
+    void loadModelInstance(int exitCode, QProcess::ExitStatus status);
+    void releasePreviousModel();
 
-private:
-    void showStatisitics2();
+    void setCurrentView(int index);
 
 private:
     Ui::ModelInspector* ui;
+    QString mScratchDir;
     QString mWorkspace;
     SectionTreeModel *mSectionModel;
-    BlockpicTreeModel *mBlockpicModelOne;
-    BlockpicTreeModel *mBlockpicModelTwo;
-    BlockpicTreeModel *mBlockpicModelThree;
-    ModelInstance *mModelInstance;
+    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;
 };
 
 }

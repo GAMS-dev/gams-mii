@@ -1,30 +1,28 @@
-#ifndef BLOCKPICTREEMODEL_H
-#define BLOCKPICTREEMODEL_H
+#ifndef MODELINSTANCETABLEMODEL_H
+#define MODELINSTANCETABLEMODEL_H
 
-#include <QAbstractItemModel>
+#include <QAbstractTableModel>
+#include <QStandardItemModel>
+#include <QSharedPointer>
 
 namespace gams {
 namespace studio{
 namespace modelinspector {
 
 class ModelInstance;
-class BlockpicTreeItem;
 
-class BlockpicTreeModel : public QAbstractItemModel
+class ModelInstanceTableModel : public QAbstractTableModel
 {
-    Q_OBJECT
-
 public:
-    explicit BlockpicTreeModel(BlockpicTreeItem *rootItem,
-                               QObject *parent = nullptr);
-    ~BlockpicTreeModel();
+    explicit ModelInstanceTableModel(QObject *parent = nullptr);
+
+    ~ModelInstanceTableModel();
+
+    void setModelInstance(const QSharedPointer<ModelInstance> &modelInstance);
 
     QVariant data(const QModelIndex &index, int role) const override;
 
     Qt::ItemFlags flags(const QModelIndex &index) const override;
-
-    QVariant headerData(int section, Qt::Orientation orientation,
-                        int role = Qt::DisplayRole) const override;
 
     QModelIndex index(int row, int column,
                       const QModelIndex &parent = QModelIndex()) const override;
@@ -36,11 +34,14 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
 private:
-    BlockpicTreeItem *mRootItem;
+    QSharedPointer<ModelInstance> mModelInstance;
+
+    QStandardItemModel mHorizontalHeaderModel;
+    QStandardItemModel mVerticalHeaderModel;
 };
 
 }
 }
 }
 
-#endif // BLOCKPICTREEMODEL_H
+#endif // MODELINSTANCETABLEMODEL_H

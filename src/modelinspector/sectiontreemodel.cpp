@@ -151,26 +151,14 @@ int SectionTreeModel::columnCount(const QModelIndex &parent) const
 }
 
 void SectionTreeModel::loadModelData()
-{// TODO page/TreeItem to model generator
-    QStringList mainItems { "Statistic", "Statistic 2", "Blockpic" };
-    QStringList blockpicViews { "View 1", "View 2", "View 3" };
+{
+    QStringList mainItems { "Statistic", "Full View" };
 
     ViewItem *mainItem;
     for (int i=0; i<mainItems.size(); ++i) {
-        if (mainItems.at(i) == "Blockpic") {
+        if (mainItems.at(i) == "Full View") {
             mainItem = new ViewItem(mainItems.at(i), i, mRoot);
             mainItem->setType(ViewItem::Blockpic);
-            ViewItem *viewItem;
-            for (int k=0; k<blockpicViews.size(); ++k) {
-                viewItem = new ViewItem(blockpicViews.at(k), i, mainItem);
-                if (k == 0)
-                    viewItem->setType(ViewItem::BlockpicView1);
-                else if (k == 1)
-                    viewItem->setType(ViewItem::BlockpicView2);
-                else
-                    viewItem->setType(ViewItem::BlockpicView3);
-                mainItem->append(viewItem);
-            }
         } else {
             mainItem = new ViewItem(mainItems.at(i), i, mRoot);
             mainItem->setType(ViewItem::Statistic);

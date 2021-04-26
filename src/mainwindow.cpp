@@ -28,6 +28,7 @@
 #include <QStandardPaths>
 
 using namespace gams::studio;
+using gams::studio::modelinspector::ModelInspector;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -37,10 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->modelInspector->setWorkspace(workspace());
-    connect(mProcess->process(), SIGNAL(finished(int, QProcess::ExitStatus)),
-            ui->modelInspector, SLOT(showModelStatisics()));
-    connect(mProcess->process(), SIGNAL(finished(int, QProcess::ExitStatus)),
-            ui->modelInspector, SLOT(showBlockpic()));
+    connect(mProcess->process(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            ui->modelInspector, &ModelInspector::loadModelInstance);
     connect(ui->modelInspector, &modelinspector::ModelInspector::newLogMessage,
             this, &MainWindow::appendLogMessage);
     connect(mLibProcess, &GAMSLibProcess::newStdChannelData,
@@ -61,8 +60,6 @@ void MainWindow::on_runButton_clicked(bool checked)
     QDir dir(path);
     if (!dir.mkpath(path))
         ui->logEdit->append("Error: Could not create path " + path);
-
-    ui->modelInspector->releasePreviousModel();
 
     QStringList params = ui->paramsEdit->text().split(" ",
                                                       Qt::SkipEmptyParts,

@@ -21,8 +21,10 @@
 #include "commonpaths.h"
 
 #include <QDir>
-#include <QDebug>
+#include <QStandardItem>
 #include <QVector>
+
+#include <QDebug>
 
 using namespace std;
 
@@ -30,8 +32,11 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-ModelInstance::ModelInstance(const QString &workspace)
-    : mScratchDir("")
+const QStringList ModelInstance::PredefinedHeader { "level", "lower", "marginal", "scale", "upper" };
+const int ModelInstance::PredefinedHeaderLength = ModelInstance::PredefinedHeader.size();
+
+ModelInstance::ModelInstance(const QString &workspace, const QString &scratchDir)
+    : mScratchDir(scratchDir)
     , mWorkspace(QDir(workspace).absolutePath())
 {
     initialize();
@@ -158,19 +163,6 @@ int ModelInstance::variableBlocks() const
     return blocks;
 }
 
-QString ModelInstance::scratchDir() const
-{
-    return mScratchDir;
-}
-
-void ModelInstance::setScratchDir(const QString &scratchDir)
-{
-    QDir dir(mWorkspace + "/" + scratchDir);
-    if (!dir.exists())
-        dir.mkdir(dir.absolutePath());
-    mScratchDir = scratchDir;
-}
-
 void ModelInstance::loadScratchData()
 {
     mLogMessages << "Model Workspace: " + mWorkspace;
@@ -190,7 +182,7 @@ void ModelInstance::loadScratchData()
 
     // TODO specifc error message that model insp. needs the dct... because it
     //      can be switched off by the user
-    // TODO check it gmodict() can be used and this could be droped...
+    // TODO check if gmodict() can be used and this could be droped...?
     QString dictFile = mWorkspace + "/" + mScratchDir + "/gamsdict.dat";
     mLogMessages << "DCT File: " + dictFile;
     if (dctLoadEx(mDCT, dictFile.toStdString().c_str(), msg, sizeof(msg))) {
@@ -331,17 +323,12 @@ MaxMin ModelInstance::equationScaling(const SymbolInfo &symbol)
     return maxmin;
 }
 
-double ModelInstance::rhs(int offset) const
-{
-    return gmoGetRhsOne(mGMO, offset);
-}
-
 QPair<double,double> ModelInstance::maxminRhs(int offset, int entries) const
 {
     QPair<double,double> maxmin { gmoMinf(mGMO), gmoPinf(mGMO) };
     for (int i=offset; i<offset+entries; ++i) {
-        maxmin.first = std::max(maxmin.first, rhs(i));
-        maxmin.second = std::min(maxmin.second, rhs(i));
+        maxmin.first = std::max(maxmin.first, gmoGetRhsOne(mGMO, i));
+        maxmin.second = std::min(maxmin.second, gmoGetRhsOne(mGMO, i));
     }
     return maxmin;
 }
@@ -353,8 +340,8 @@ QPair<double,double> ModelInstance::totalRhs()
         if (symbol.isScalar())
             continue;
         for (int i=symbol.Offset; i<symbol.Offset+symbol.Entries; ++i) {
-            maxmin.first = std::max(maxmin.first, rhs(i));
-            maxmin.second = std::min(maxmin.second, rhs(i));
+            maxmin.first = std::max(maxmin.first, gmoGetRhsOne(mGMO, i));
+            maxmin.second = std::min(maxmin.second, gmoGetRhsOne(mGMO, i));
         }
     }
     return maxmin;
@@ -362,12 +349,12 @@ QPair<double,double> ModelInstance::totalRhs()
 
 QString ModelInstance::aggregatedRhs(const SymbolInfo &symbol) const
 {
-    double min = rhs(symbol.Offset);
-    double max = rhs(symbol.Offset);
+    double min = gmoGetRhsOne(mGMO, symbol.Offset);
+    double max = gmoGetRhsOne(mGMO, symbol.Offset);
     if (symbol.Entries) {
         for (int i=1; i<symbol.Entries; ++i) {
-            min = std::min(min, rhs(symbol.Offset+i));
-            max = std::max(max, rhs(symbol.Offset+i));
+            min = std::min(min, gmoGetRhsOne(mGMO, symbol.Offset+i));
+            max = std::max(max, gmoGetRhsOne(mGMO, symbol.Offset+i));
         }
     }
 
@@ -441,37 +428,37 @@ QVector<QVariant> ModelInstance::variableType()
     return types;
 }
 
-QVector<QString> ModelInstance::rowUels(const SymbolInfo &symInfo) const
-{
-    char q;
-    char label[GMS_SSSIZE];
-    QVector<QString> uels;
-    int entries = dctSymEntries(mDCT, symInfo.Index);
-    for (int i=0; i<entries; ++i) {
-        if (dctUelLabel(mDCT, symInfo.Offset+i, &q, label, GMS_SSSIZE))
-            continue;
-        uels.append(label);
-    }
-    return uels;
-}
+//QVector<QString> ModelInstance::rowUels(int index, int offset) const
+//{// TODO keep?
+//    char q;
+//    char label[GMS_SSSIZE];
+//    QVector<QString> uels;
+//    int entries = dctSymEntries(mDCT, index);
+//    for (int i=0; i<entries; ++i) {
+//        if (dctUelLabel(mDCT, offset+i, &q, label, GMS_SSSIZE))
+//            continue;
+//        uels.append(label);
+//    }
+//    return uels;
+//}
 
 int ModelInstance::rowIndex(int offset) const
 {
     return gmoGetjSolverQuiet(mGMO, offset);
 }
 
-QString ModelInstance::columnUels(int symbolIndex) const
-{
-    int symDim = 0,  symIndex = 0;
-    int uelIdcs[GMS_MAX_INDEX_DIM];
-    if (dctRowUels(mDCT, symbolIndex, &symIndex, uelIdcs, &symDim))
-        return QString();
-    char q;
-    char label[GMS_SSSIZE];
-    if (dctUelLabel(mDCT, symIndex, &q, label, GMS_SSSIZE))
-        return QString();
-    return label;
-}
+//QString ModelInstance::columnUels(int symbolIndex) const
+//{ // TODO keep?
+//    int symDim = 0,  symIndex = 0;
+//    int uelIdcs[GMS_MAX_INDEX_DIM];
+//    if (dctRowUels(mDCT, symbolIndex, &symIndex, uelIdcs, &symDim))
+//        return QString();
+//    char q;
+//    char label[GMS_SSSIZE];
+//    if (dctUelLabel(mDCT, symIndex, &q, label, GMS_SSSIZE))
+//        return QString();
+//    return label;
+//}
 
 QStringList ModelInstance::symbolNames() const
 {
@@ -515,7 +502,14 @@ SymbolInfo ModelInstance::symbol(int index) const
     return info;
 }
 
-QVector<SymbolInfo> ModelInstance::symbols(int typeFilter)
+SymbolInfo ModelInstance::symbol(int index, int type) const
+{// TODO preload/lazy loading symbols?
+    auto syms = symbols(type);
+    return syms.at(index);
+}
+
+
+QVector<SymbolInfo> ModelInstance::symbols(int typeFilter) const
 {
     QVector<SymbolInfo> infos;
     for (int i=1; i<=symbolCount(); ++i) {
@@ -658,6 +652,77 @@ QPair<double, double> ModelInstance::rhsRange() const
     return range;
 }
 
+int ModelInstance::rowCount() const
+{
+    int entries = 0;
+    Q_FOREACH(const auto sym, symbols(dcteqnSymType)) {
+        entries += sym.Entries;
+    }
+    return PredefinedHeader.size() + entries;
+}
+
+int ModelInstance::columnCount() const
+{
+    int entries = 0;
+    Q_FOREACH(const auto sym, symbols(dctvarSymType)) {
+        entries += sym.Entries;
+    }
+    return PredefinedHeader.size() + entries;
+}
+
+void ModelInstance::horizontalHeaderData(QStandardItemModel &model)
+{
+    QList<QStandardItem*> rootItems;
+
+    Q_FOREACH(const auto &predefined, PredefinedHeader) {
+        rootItems.append(new QStandardItem(predefined));
+    }
+    Q_FOREACH(const auto &var, symbols(dctvarSymType)) {
+        auto rootItem = new QStandardItem(var.Name);
+        rootItems.append(rootItem);
+        appendHeaderColumns(rootItem, var, Qt::Horizontal);
+    }
+
+    model.insertRow(0, rootItems);
+}
+
+void ModelInstance::verticalHeaderData(QStandardItemModel &model)
+{
+    QList<QStandardItem*> rootItems;
+
+    Q_FOREACH(const auto &predefined, PredefinedHeader) {
+        rootItems.append(new QStandardItem(predefined));
+    }
+    Q_FOREACH(const auto &eqn, symbols(dcteqnSymType)) {
+        auto rootItem = new QStandardItem(eqn.Name);
+        rootItems.append(rootItem);
+        appendHeaderColumns(rootItem, eqn, Qt::Vertical);
+    }
+
+    model.insertRow(0, rootItems);
+}
+
+QVariant ModelInstance::data(int row, int column)
+{
+    if (row < 5 && column < 5) {
+        return QVariant();
+    }
+
+    int cIndex =  column - PredefinedHeaderLength;
+    if (row < PredefinedHeaderLength && column >= PredefinedHeaderLength) {
+        return variableAttribute(row, cIndex);
+    }
+
+    int rIndex = row - PredefinedHeaderLength;
+    if (row >= PredefinedHeaderLength && column < PredefinedHeaderLength) {
+        return equationAttribute(column, rIndex);
+    }
+
+    // TODO @lutz use the special value stuff here or just the 0 test?
+    double value = jaccobianValue(rIndex, cIndex);
+    return value != 0.0 ? QVariant(value) : QString();
+}
+
 void ModelInstance::initialize()
 {
     gevSetExitIndicator(0); // switch of lib exit() call
@@ -682,7 +747,21 @@ void ModelInstance::initialize()
                     msg,
                     sizeof(msg)))
         mLogMessages << "ERROR: " + QString(msg);
-    //gmoIndexBaseSet(mGMO, 1); // TODO switch to one based indexes
+
+    if (gmoHaveBasis(mGMO)){
+        specialMarginalEquValuePtr = std::bind(&ModelInstance::specialMarginalVarValueBasis,
+                                               this, std::placeholders::_1,
+                                               std::placeholders::_2);
+        specialMarginalVarValuePtr = std::bind(&ModelInstance::specialMarginalVarValueBasis,
+                                               this, std::placeholders::_1,
+                                               std::placeholders::_2);
+    } else {
+        specialMarginalEquValuePtr = std::bind(&ModelInstance::specialMarginalValue,
+                                               this, std::placeholders::_1);
+        specialMarginalVarValuePtr = std::bind(&ModelInstance::specialMarginalValue,
+                                               this, std::placeholders::_1);
+    }
+
 
     dctSetExitIndicator(0); // switch of lib exit() call
     dctSetScreenIndicator(0); // switch off std lib output
@@ -695,18 +774,107 @@ void ModelInstance::initialize()
         mLogMessages << "ERROR: " + QString(msg);
 }
 
-int ModelInstance::errorCallback(int count, const char *message)
-{// TODO
-    Q_UNUSED(count)
-    //emit newLogMessage("ERROR CALLBACK: " + QString(message));
-    qDebug()<< message;
-    return 0;
+double ModelInstance::jaccobianValue(int row, int column)
+{
+    const int columns = variables();
+    int *colidx = new int[columns];
+    double *jacval = new double[columns];
+    int *nlflag = new int[columns];
+    int nz;
+    int nlnz;
+
+    double value = 0.0;
+    if (!gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz)) {
+        for (int i=0; i<nz; ++i) {
+            if (colidx[i] == column) {
+                value = jacval[i];
+                break;
+            }
+        }
+    }
+
+    delete [] colidx;
+    delete [] jacval;
+    delete [] nlflag;
+    return value;
 }
 
-QVector<QVariant> ModelInstance::columnUelStrings(const SymbolInfo &symbolInfo)
+QVariant ModelInstance::variableAttribute(int row, int cIndex)
 {
-    QVector<QVariant> records;
+    double value = 0.0;
+    auto header = PredefinedHeader.at(row).toLower();
+    if (header == "level") {
+        value = gmoGetVarLOne(mGMO, cIndex);
+    } else if (header == "lower") {
+        value = gmoGetVarLowerOne(mGMO, cIndex);
+    } else if (header == "marginal") {
+        value = gmoGetVarMOne(mGMO, cIndex);
+        return specialMarginalVarValuePtr(value, cIndex);
+    } else if (header == "scale") {
+        value = gmoGetVarScaleOne(mGMO, cIndex);
+    } else if (header == "upper") {
+        value = gmoGetVarUpperOne(mGMO, cIndex);
+    }
+    return specialValue(value);
+}
 
+QVariant ModelInstance::equationAttribute(int column, int rIndex)
+{
+    double value = 0.0;
+    auto header = PredefinedHeader.at(column).toLower();
+    if (header == "level") {
+        value = gmoGetEquLOne(mGMO, rIndex);
+    } else if (header == "lower") {
+        auto bounds = equationBounds(rIndex);
+        value = bounds.first;
+    } else if (header == "marginal") {
+        value = gmoGetEquMOne(mGMO, rIndex);
+        return specialMarginalEquValuePtr(value, rIndex);
+    } else if (header == "scale") {
+        value = gmoGetEquScaleOne(mGMO, rIndex);
+    } else if (header == "upper") {
+        auto bounds = equationBounds(rIndex);
+        value = bounds.second;
+    }
+    return specialValue(value);
+}
+
+QPair<double, double> ModelInstance::equationBounds(int row)
+{
+    QPair<double, double> bounds(-1, -1); // TODO keep these default values?
+
+    switch (gmoGetEquTypeOne(mGMO, row)) {
+    case gmoequ_B:
+    case gmoequ_E:
+        bounds.first = gmoGetRhsOne(mGMO, row);
+        bounds.second = gmoGetRhsOne(mGMO, row);
+        break;
+    case gmoequ_C:
+    case gmoequ_G:
+        bounds.first = gmoGetRhsOne(mGMO, row);
+        bounds.second = gmoPinf(mGMO);
+        break;
+    case gmoequ_L:
+        bounds.first = gmoMinf(mGMO);
+        bounds.second = gmoGetRhsOne(mGMO, row);
+        break;
+    case gmoequ_N:
+        bounds.first = gmoMinf(mGMO);
+        bounds.second = gmoPinf(mGMO);
+        break;
+    case gmoequ_X:
+        bounds.first = 0.0;
+        bounds.second = 0.0;
+        break;
+    }
+    return bounds;
+}
+
+void ModelInstance::appendHeaderColumns(QStandardItem *parent,
+                                        const SymbolInfo &symbolInfo,
+                                        Qt::Orientation orientation)
+{// TODO check if this approach is correct (talk to lutz)...
+ //      probaly the discussion approach is much faster
     int nDomains;
     int domains[GLOBAL_MAX_INDEX_DIM];
     int entries = dctSymEntries(mDCT, symbolInfo.Index);
@@ -715,21 +883,88 @@ QVector<QVariant> ModelInstance::columnUelStrings(const SymbolInfo &symbolInfo)
             continue;
 
         int symIndex;
-        if (dctColUels(mDCT, symbolInfo.Offset+j, &symIndex, domains, &nDomains))
-            continue;
+        if (orientation == Qt::Horizontal) {
+            if (dctColUels(mDCT, symbolInfo.Offset+j, &symIndex, domains, &nDomains))
+                continue;
+        } else {
+            if (dctRowUels(mDCT, symbolInfo.Offset+j, &symIndex, domains, &nDomains))
+                continue;
+        }
 
         char quote;
         char uelName[GMS_SSSIZE];
-        QString text = symbolInfo.Name + "(";
+        QStringList uels;
         for (int k=0; k<nDomains; ++k) {
             dctUelLabel(mDCT, domains[k], &quote, uelName, GMS_SSSIZE);
-            text.append(uelName);
-            k<nDomains-1 ? text.append(", ") : text.append(")");
+            uels << uelName;
         }
-        records << text;
+        appendHeaderItems(parent, uels);
     }
+}
 
-    return records;
+void ModelInstance::appendHeaderItems(QStandardItem *parent, QStringList &uels)
+{
+    if (uels.isEmpty())
+        return;
+    auto uel = uels.takeFirst();
+    if (parent->columnCount() == 0) {
+        auto child = new QStandardItem(uel);
+        parent->appendColumn({child});
+        appendHeaderItems(child, uels);
+    } else {
+        bool found = false;
+        for (int i=0; i<parent->columnCount(); ++i) {
+            auto child = parent->child(0, i);
+            if (child->text() == uel) {
+                found = true;
+                appendHeaderItems(child, uels);
+                break;
+            }
+        }
+        if (!found) {
+            auto child = new QStandardItem(uel);
+            parent->appendColumn({child});
+            appendHeaderItems(child, uels);
+        }
+    }
+}
+
+QVariant ModelInstance::specialValue(double value)
+{
+    if (value == 0.0)
+        return QVariant();
+    else if (gmoPinf(mGMO) == value)
+        return "+INF";
+    else if (gmoMinf(mGMO) == value)
+        return "-INF";
+    return value;
+}
+
+QVariant ModelInstance::specialMarginalValue(double value)
+{
+    return specialValue(value);
+}
+
+QVariant ModelInstance::specialMarginalEquValueBasis(double value, int rIndex)
+{
+    if (gmoGetEquStatOne(mGMO, rIndex) != gmoBstat_Basic && value == 0.0)
+        return "EPS";
+    return specialValue(value);
+}
+
+QVariant ModelInstance::specialMarginalVarValueBasis(double value, int cIndex)
+{
+    if (gmoGetVarStatOne(mGMO, cIndex) != gmoBstat_Basic && value == 0.0)
+        return "EPS";
+    return specialValue(value);
+}
+
+int ModelInstance::errorCallback(int count, const char *message)
+{// TODO
+    Q_UNUSED(count)
+    //emit newLogMessage("ERROR CALLBACK: " + QString(message));
+    qDebug()<< message;
+    return 0;
 }
 
 }

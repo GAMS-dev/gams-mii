@@ -24,10 +24,15 @@
 #include "gmomcc.h"
 #include "dctmcc.h"
 
+#include <functional>
+
 #include <QMap>
 #include <QString>
 #include <QStringList>
 #include <QVariant>
+
+class QStandardItem;
+class QStandardItemModel;
 
 namespace gams {
 namespace studio {
@@ -65,7 +70,7 @@ struct MaxMin {
 class ModelInstance
 {
 public:
-    ModelInstance(const QString &workingDir);
+    ModelInstance(const QString &workingDir = ".", const QString &scratchDir = QString());
     ModelInstance(const ModelInstance &modelInstance); // todo needed?
     ~ModelInstance();
 
@@ -111,10 +116,6 @@ public:
         return symType == dctvarSymType ? true : false;
     }
 
-    QString scratchDir() const;
-    void setScratchDir(const QString &scratchDir);
-
-
     int symbolCount() const {
         return dctNLSyms(mDCT);
     }
@@ -128,7 +129,6 @@ public:
     QVector<MaxMin> totalScaling();
     MaxMin equationScaling(const SymbolInfo &symbol);
 
-    double rhs(int offset) const;
     QPair<double,double> maxminRhs(int offset, int entries) const;
     QPair<double,double> totalRhs();
     QString aggregatedRhs(const SymbolInfo &symbol) const;
@@ -136,11 +136,11 @@ public:
     QVector<QVariant> variableData(const SymbolInfo &symbol);
     QVector<QVariant> variableType();
 
-    QVector<QString> rowUels(const SymbolInfo &symInfo) const;
+    //QVector<QString> rowUels(int index, int offset) const;
 
     int rowIndex(int offset) const;
 
-    QString columnUels(int symbolIndex) const;
+    //QString columnUels(int symbolIndex) const;
 
     QString logMessages() {
         auto messages = mLogMessages.join("\n");
@@ -158,13 +158,13 @@ public:
 
     SymbolInfo symbol(int index) const;
 
-    QVector<SymbolInfo> symbols(int typeFilter = -1);
+    SymbolInfo symbol(int index, int type) const;
+
+    QVector<SymbolInfo> symbols(int typeFilter = -1) const;
 
     void loadScratchData();
 
     ModelInstance& operator=(const ModelInstance &modelInstance);
-
-    QVector<QVariant> columnUelStrings(const SymbolInfo &symboldInfo);
 
     QPair<double, double> matrixRange() const;
 
@@ -174,8 +174,35 @@ public:
 
     QPair<double, double> rhsRange() const;
 
+    int rowCount() const;
+
+    int columnCount() const;
+
+    void horizontalHeaderData(QStandardItemModel &model);
+
+    void verticalHeaderData(QStandardItemModel &model);
+
+    QVariant data(int row, int column);
+
 private:
     void initialize();
+
+    double jaccobianValue(int row, int column);
+    QVariant variableAttribute(int row, int column);
+    QVariant equationAttribute(int row, int column);
+
+    QPair<double, double> equationBounds(int row);
+
+    void appendHeaderColumns(QStandardItem *parent, const SymbolInfo &symbolInfo,
+                             Qt::Orientation orientation);
+
+    void appendHeaderItems(QStandardItem *parent, QStringList &uels);
+
+    QVariant specialValue(double value);
+    QVariant specialMarginalValue(double value);
+    QVariant specialMarginalEquValueBasis(double value, int rIndex);
+    QVariant specialMarginalVarValueBasis(double value, int cIndex);
+
     static int errorCallback(int count, const char *message);
 
 private:
@@ -185,8 +212,13 @@ private:
     gevHandle_t mGEV = nullptr;
     gmoHandle_t mGMO = nullptr;
     dctHandle_t mDCT = nullptr;
+    std::function<QVariant(double, int)> specialMarginalEquValuePtr;
+    std::function<QVariant(double, int)> specialMarginalVarValuePtr;
 
     QStringList mLogMessages;
+
+    const static QStringList PredefinedHeader;
+    const static int PredefinedHeaderLength;
 };
 
 }

@@ -20,4 +20,5 @@
 
 TEMPLATE = subdirs
 
-SUBDIRS += testmodelinspector
+SUBDIRS += testmodelinspector \
+    testmodelinstance

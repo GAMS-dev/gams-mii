@@ -164,7 +164,7 @@ pipeline {
                             cp -r icons/* appdir/usr/share/pixmaps
                             cp platform/linux/modelinspector.desktop appdir/usr/share/modelinspector.desktop
 
-                            linuxdeployqt-6-x86_64.AppImage appdir/usr/share/modelinspector.desktop -appimage -bundle-non-qt-libs -no-translations -extra-plugins=iconengines
+                            linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/modelinspector.desktop -appimage -bundle-non-qt-libs -no-translations -extra-plugins=iconengines
                         '''
                     }
                 }

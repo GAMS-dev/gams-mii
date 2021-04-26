@@ -32,9 +32,9 @@ StatisticsWidget::StatisticsWidget(QWidget *parent)
     ui->setupUi(this);
 }
 
-void StatisticsWidget::showStatistic(ModelInstance *modelInstance)
+void StatisticsWidget::showStatistic(const QSharedPointer<ModelInstance> &modelInstance)
 {
-    ModelStatistic statistic(modelInstance);
+    ModelStatistic statistic(modelInstance.get());
     ui->statisticEdit->showStatistic(statistic);
 }
 
