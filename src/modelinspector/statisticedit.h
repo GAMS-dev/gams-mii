@@ -8,7 +8,7 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-class ModelStatistic;
+class ModelInstance;
 
 class StatisticEdit : public QTextEdit
 {
@@ -19,7 +19,7 @@ public:
 
     bool event(QEvent *event) override;
 
-    void showStatistic(const ModelStatistic &statistics);
+    void showStatistic(const QSharedPointer<ModelInstance> &modelInstance);
 
 private:
     const QMap<QString, QString> mToolTipMapping = {

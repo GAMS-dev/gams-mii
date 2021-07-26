@@ -1,5 +1,5 @@
 #include "statisticedit.h"
-#include "modelstatistic.h"
+#include "modelinstance.h"
 
 #include <QToolTip>
 #include <QEvent>
@@ -42,12 +42,12 @@ bool StatisticEdit::event(QEvent *event)
     return QTextEdit::event(event);
 }
 
-void StatisticEdit::showStatistic(const ModelStatistic &statistics)
+void StatisticEdit::showStatistic(const QSharedPointer<ModelInstance> &modelInstance)
 {
-    auto matrixRange = statistics.matrixRange();
-    auto objectiveRange = statistics.objectiveRange();
-    auto boundsRange = statistics.boundsRange();
-    auto rhsRange = statistics.rhsRange();
+    auto matrixRange = modelInstance->matrixRange();
+    auto objectiveRange = modelInstance->objectiveRange();
+    auto boundsRange = modelInstance->boundsRange();
+    auto rhsRange = modelInstance->rhsRange();
 
     QString html("<h2>Equation Counts</h2>"
                  "<div><table>"
@@ -63,15 +63,15 @@ void StatisticEdit::showStatistic(const ModelStatistic &statistics)
                         "<th>=B=</th>"
                     "</tr>"
                     "<tr>"
-                        "<td align=\"right\">" + QString::number(statistics.equationBlocks()) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.equations()) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberEquations(gmoequ_E)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberEquations(gmoequ_G)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberEquations(gmoequ_L)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberEquations(gmoequ_N)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberEquations(gmoequ_X)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberEquations(gmoequ_C)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberEquations(gmoequ_B)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equationBlocks()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equations()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equations(gmoequ_E)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equations(gmoequ_G)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equations(gmoequ_L)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equations(gmoequ_N)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equations(gmoequ_X)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equations(gmoequ_C)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equations(gmoequ_B)) + "</td>"
                     "</tr>"
                  "</table></div>"
                  "<h2>Variable Counts</h2>"
@@ -88,15 +88,15 @@ void StatisticEdit::showStatistic(const ModelStatistic &statistics)
                         "<th>SInt</th>"
                     "</tr>"
                     "<tr>"
-                        "<td align=\"right\">" + QString::number(statistics.variableBlocks()) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.variables()) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberVariables(gmovar_X)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberVariables(gmovar_B)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberVariables(gmovar_I)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberVariables(gmovar_S1)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberVariables(gmovar_S2)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberVariables(gmovar_SC)) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.numberVariables(gmovar_SI)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variableBlocks()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variables()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variables(gmovar_X)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variables(gmovar_B)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variables(gmovar_I)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variables(gmovar_S1)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variables(gmovar_S2)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variables(gmovar_SC)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variables(gmovar_SI)) + "</td>"
                     "</tr>"
                  "</table></div>"
                  "<h2>Coefficient Counts</h2>"
@@ -108,10 +108,10 @@ void StatisticEdit::showStatistic(const ModelStatistic &statistics)
                         "<th>Non-Linear</th>"
                     "</tr>"
                     "<tr>"
-                        "<td align=\"right\">" + QString::number(statistics.coefficents()) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.positiveCoefficents()) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.negativeCoefficents()) + "</td>"
-                        "<td align=\"right\">" + QString::number(statistics.nonLinearCoefficents()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->coefficents()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->positiveCoefficents()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->negativeCoefficents()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->nonLinearCoefficents()) + "</td>"
                     "</tr>"
                  "</table></div>"
                  "<h2>Coefficent Statistics</h2></div>"

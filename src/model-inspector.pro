@@ -75,7 +75,6 @@ SOURCES += \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
     modelinspector/modelinstancetablemodel.cpp \
-    modelinspector/modelstatistic.cpp \
     modelinspector/sectiontreemodel.cpp \
     modelinspector/sectiontreeview.cpp \
     modelinspector/statisticedit.cpp \
@@ -91,7 +90,6 @@ HEADERS += \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
     modelinspector/modelinstancetablemodel.h \
-    modelinspector/modelstatistic.h \
     modelinspector/sectiontreemodel.h \
     modelinspector/sectiontreeview.h \
     modelinspector/statisticedit.h \

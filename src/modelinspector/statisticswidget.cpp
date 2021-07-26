@@ -19,7 +19,6 @@
  */
 #include "statisticswidget.h"
 #include "ui_statisticwidget.h"
-#include "modelstatistic.h"
 
 namespace gams {
 namespace studio {
@@ -34,8 +33,7 @@ StatisticsWidget::StatisticsWidget(QWidget *parent)
 
 void StatisticsWidget::showStatistic(const QSharedPointer<ModelInstance> &modelInstance)
 {
-    ModelStatistic statistic(modelInstance.get());
-    ui->statisticEdit->showStatistic(statistic);
+    ui->statisticEdit->showStatistic(modelInstance);
 }
 
 }
