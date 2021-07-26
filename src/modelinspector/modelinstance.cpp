@@ -19,6 +19,7 @@
  */
 #include "modelinstance.h"
 #include "commonpaths.h"
+#include "valuefiltersettings.h"
 
 #include <QDir>
 #include <QStandardItem>
@@ -35,16 +36,72 @@ namespace modelinspector {
 const QStringList ModelInstance::PredefinedHeader { "level", "lower", "marginal", "scale", "upper" };
 const int ModelInstance::PredefinedHeaderLength = ModelInstance::PredefinedHeader.size();
 
+class ModelInstance::Cache
+{
+public:
+    Cache(ModelInstance* const modelInstance)
+        : mModelInstance(modelInstance)
+    {
+
+    }
+
+    void loadSymbols(int type)
+    {
+        QVector<SymbolInfo> &syms = (type == dcteqnSymType) ? mEquations : mVariables;
+        for (int i=1; i<=mModelInstance->symbolCount(); ++i) {
+            auto sym = mModelInstance->symbol(i);
+            if (type == sym.Type)
+                syms.append(sym);
+        }
+    }
+
+    const QVector<SymbolInfo>& symbols(int type) const
+    {
+        return (type == dcteqnSymType) ? mEquations : mVariables;
+    }
+
+public:
+    ///
+    /// \brief mHIndexToItem Horizontal logical index to QStandardItem mapping.
+    ///
+    QMap<int, QStandardItem*> HIndexToItem;
+
+    ///
+    /// \brief mHItemToIndex QStandardItem to Horizontal logical index mapping.
+    ///
+    QMap<QStandardItem*, int> HItemToIndex;
+
+    ///
+    /// \brief mVIndexToItem Vertical logical index to QStandardItem mapping.
+    ///
+    QMap<int, QStandardItem*> VIndexToItem;
+
+    ///
+    /// \brief mVIndexToItem QStandardItem to Vertical logical index mapping.
+    ///
+    QMap<QStandardItem*, int> VItemToIndex;
+
+    QList<QStandardItem*> HorizontalSymbols;
+    QList<QStandardItem*> VerticalSymbols;
+
+    QMap<QString, bool> HorizontalUelStates;
+    QMap<QString, bool> VerticalUelStates;
+
+    ValueFilterSettings ValueFilterSettings;
+
+private:
+    ModelInstance* const mModelInstance;
+
+    QVector<SymbolInfo> mEquations;
+    QVector<SymbolInfo> mVariables;
+};
+
 ModelInstance::ModelInstance(const QString &workspace, const QString &scratchDir)
-    : mScratchDir(scratchDir)
+    : mCache(new Cache(this))
+    , mScratchDir(scratchDir)
     , mWorkspace(QDir(workspace).absolutePath())
 {
     initialize();
-}
-
-ModelInstance::ModelInstance(const ModelInstance &modelInstance)
-{
-    *this = modelInstance;
 }
 
 ModelInstance::~ModelInstance()
@@ -52,6 +109,7 @@ ModelInstance::~ModelInstance()
     if (mGMO) gmoFree(&mGMO);
     if (mGEV) gevFree(&mGEV);
     if (mDCT) dctFree(&mDCT);
+    delete mCache;
 }
 
 QString ModelInstance::modelName() const
@@ -66,9 +124,8 @@ int ModelInstance::coefficents() const
     return gmoNZ(mGMO);
 }
 
-// TODO (AF) get full jac right away... large model issue?
 int ModelInstance::positiveCoefficents() const
-{// TODO (AF) optimize... save value
+{
     const int columns = variables();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
@@ -90,7 +147,7 @@ int ModelInstance::positiveCoefficents() const
 }
 
 int ModelInstance::negativeCoefficents() const
-{// TODO (AF) optimize... save value
+{
     const int columns = variables();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
@@ -126,20 +183,23 @@ int ModelInstance::equations(int type) const
     return gmoGetEquTypeCnt(mGMO, type);
 }
 
-int ModelInstance::equationBlocks() const
-{// TODO use symbols(dcteqntype)?
-    int blocks = 0;
-    for (int i=1; i<=symbolCount(); ++i) {
-        auto sym = symbol(i);
-        if (isEquation(sym.Type))
-            ++blocks;
-    }
-    return blocks;
+int ModelInstance::equationBlocks()
+{
+    return symbols(dcteqnSymType).count();
 }
 
-bool ModelInstance::isEquation(int symType) const
+bool ModelInstance::isEquation(int symType)
 {
     return symType == dcteqnSymType ? true : false;
+}
+
+bool ModelInstance::isEquation(const QString &name)
+{
+    Q_FOREACH(const auto& sym, symbols(dcteqnSymType)) {
+        if (sym.Name == name)
+            return true;
+    }
+    return false;
 }
 
 int ModelInstance::variables() const
@@ -152,15 +212,18 @@ int ModelInstance::variables(int type) const
     return gmoGetVarTypeCnt(mGMO, type);
 }
 
-int ModelInstance::variableBlocks() const
-{// TODO user symbols(dctvartype)?
-    int blocks = 0;
-    for (int i=1; i<=symbolCount(); ++i) {
-        auto sym = symbol(i);
-        if (isVariable(sym.Type))
-            ++blocks;
+int ModelInstance::variableBlocks()
+{
+    return symbols(dctvarSymType).count();
+}
+
+bool ModelInstance::isVariable(const QString &name)
+{
+    Q_FOREACH(const auto& sym, symbols(dctvarSymType)) {
+        if (sym.Name == name)
+            return true;
     }
-    return blocks;
+    return false;
 }
 
 void ModelInstance::loadScratchData()
@@ -180,9 +243,9 @@ void ModelInstance::loadScratchData()
         return;
     }
 
-    // TODO specifc error message that model insp. needs the dct... because it
+    // TODO (AF/LW) specifc error message that model insp. needs the dct... because it
     //      can be switched off by the user
-    // TODO check if gmodict() can be used and this could be droped...?
+    // TODO (AF/LW) check if gmodict() can be used to drop this?
     QString dictFile = mWorkspace + "/" + mScratchDir + "/gamsdict.dat";
     mLogMessages << "DCT File: " + dictFile;
     if (dctLoadEx(mDCT, dictFile.toStdString().c_str(), msg, sizeof(msg))) {
@@ -191,6 +254,33 @@ void ModelInstance::loadScratchData()
     }
 
     mLogMessages << "Absolute Scrach Path: " + mScratchDir;
+}
+
+void ModelInstance::loadSymbols()
+{
+    mCache->loadSymbols(dcteqnSymType);
+    mCache->loadSymbols(dctvarSymType);
+}
+
+void ModelInstance::loadMinMaxValues()
+{
+    QPair<double, double> range { 0.0, 0.0 };
+    bool ok;
+    for (int r=0; r<rowCount(); ++r) {
+        for (int c=0; c<columnCount(); ++c) {
+            auto variant = data(r,c);
+            if (variant.toString().contains("inf", Qt::CaseInsensitive) ||
+                    variant.toString().contains("eps", Qt::CaseInsensitive))
+                continue;
+            double value = variant.toDouble(&ok);
+            if (ok) {
+                range.first = std::min(range.first, value);
+                range.second = std::max(range.second, value);
+            }
+        }
+    }
+    mCache->ValueFilterSettings.MinValue = range.first;
+    mCache->ValueFilterSettings.MaxValue = range.second;
 }
 
 QString ModelInstance::equationType(int offset) const
@@ -364,101 +454,10 @@ QString ModelInstance::aggregatedRhs(const SymbolInfo &symbol) const
     return "0";
 }
 
-QVector<QVariant> ModelInstance::variableData(const SymbolInfo &symbol)
-{
-    int *colidx = new int[gmoN(mGMO)];
-    int *nlflag = new int[gmoN(mGMO)];
-    double *jacval = new double[gmoN(mGMO)];
-    int nnz, nlnnz;
-
-    QVector<QVariant> data;
-    int rowidx = rowIndex(symbol.Offset);
-    if (rowidx >= 0 && !gmoGetRowSparse(mGMO, rowidx, colidx, jacval, nlflag, &nnz, &nlnnz)) {
-        Q_FOREACH(const auto& var, symbols(dctvarSymType)) {
-            double min = gmoPinf(mGMO);
-            double max = gmoMinf(mGMO);
-            bool listed = false;
-            for (int i=0; i<nnz; ++i) { // TODO is colidx always ordered by symbol
-                if (colidx[i] >= var.Offset && colidx[i] < var.lastOffset()) {
-                    listed = true;
-                    if (i == 0) {
-                        min = jacval[i];
-                        max = jacval[i];
-                    } else {
-                        min = std::min(min, jacval[i]);
-                        max = std::max(max, jacval[i]);
-                    }
-                }
-            }
-
-            if (!listed) data.append("");
-            else if (max <= 0) data.append("-");
-            else if (min >= 0) data.append("+");
-            else if (min < 0 && max > 0) data.append("u");
-            else data.append("0");
-        }
-    }
-
-    delete [] colidx;
-    delete [] nlflag;
-    delete [] jacval;
-
-    return data;
-}
-
-QVector<QVariant> ModelInstance::variableType()
-{
-    QVector<QVariant> types;
-    Q_FOREACH(const auto& eqn, symbols(dcteqnSymType)) {
-        if (types.isEmpty()) {
-            types.append(variableData(eqn));
-        } else {
-            auto tmp = variableData(eqn);
-            for (int i=0; i<types.size(); ++i) {
-                if (types[i] == "u")
-                if (types[i] == tmp[i])
-                    continue;
-                if (tmp[i].toString().isEmpty())
-                    continue;
-                if (types[i].toString().isEmpty())
-                    types[i] = tmp[i];
-            }
-        }
-    }
-    return types;
-}
-
-//QVector<QString> ModelInstance::rowUels(int index, int offset) const
-//{// TODO keep?
-//    char q;
-//    char label[GMS_SSSIZE];
-//    QVector<QString> uels;
-//    int entries = dctSymEntries(mDCT, index);
-//    for (int i=0; i<entries; ++i) {
-//        if (dctUelLabel(mDCT, offset+i, &q, label, GMS_SSSIZE))
-//            continue;
-//        uels.append(label);
-//    }
-//    return uels;
-//}
-
 int ModelInstance::rowIndex(int offset) const
 {
     return gmoGetjSolverQuiet(mGMO, offset);
 }
-
-//QString ModelInstance::columnUels(int symbolIndex) const
-//{ // TODO keep?
-//    int symDim = 0,  symIndex = 0;
-//    int uelIdcs[GMS_MAX_INDEX_DIM];
-//    if (dctRowUels(mDCT, symbolIndex, &symIndex, uelIdcs, &symDim))
-//        return QString();
-//    char q;
-//    char label[GMS_SSSIZE];
-//    if (dctUelLabel(mDCT, symIndex, &q, label, GMS_SSSIZE))
-//        return QString();
-//    return label;
-//}
 
 QStringList ModelInstance::symbolNames() const
 {
@@ -470,6 +469,11 @@ QStringList ModelInstance::symbolNames() const
         names << name;
     }
     return names;
+}
+
+int ModelInstance::symbolIndex(const QString &label) const
+{
+    return dctSymIndex(mDCT, label.toLatin1().toStdString().c_str());
 }
 
 int ModelInstance::symbolOffset(const QString &label) const
@@ -502,32 +506,14 @@ SymbolInfo ModelInstance::symbol(int index) const
     return info;
 }
 
-SymbolInfo ModelInstance::symbol(int index, int type) const
-{// TODO preload/lazy loading symbols?
-    auto syms = symbols(type);
-    return syms.at(index);
+SymbolInfo ModelInstance::symbol(int index, int type)
+{
+    return symbols(type).at(index);
 }
 
-
-QVector<SymbolInfo> ModelInstance::symbols(int typeFilter) const
+const QVector<SymbolInfo>& ModelInstance::symbols(int type) const
 {
-    QVector<SymbolInfo> infos;
-    for (int i=1; i<=symbolCount(); ++i) {
-        auto sym = symbol(i);
-        if (typeFilter < 0)
-            infos.append(sym);
-        else if (sym.Type == typeFilter)
-            infos.append(sym);
-    }
-    return infos;
-}
-
-ModelInstance& ModelInstance::operator=(const ModelInstance &modelInstance)
-{
-    mScratchDir = modelInstance.mScratchDir;
-    mWorkspace = modelInstance.mWorkspace;
-    this->initialize();
-    return *this;
+    return mCache->symbols(type);
 }
 
 QPair<double, double> ModelInstance::matrixRange() const
@@ -541,7 +527,6 @@ QPair<double, double> ModelInstance::matrixRange() const
     int nz;
     int nlnz;
 
-    // TODO filter zielfunktion?
     for (int row=0; row<equations(); ++row) {
         gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
         for (int idx = 0; idx<nz+nlnz; ++idx) {
@@ -652,7 +637,7 @@ QPair<double, double> ModelInstance::rhsRange() const
     return range;
 }
 
-int ModelInstance::rowCount() const
+int ModelInstance::rowCount()
 {
     int entries = 0;
     Q_FOREACH(const auto sym, symbols(dcteqnSymType)) {
@@ -661,7 +646,7 @@ int ModelInstance::rowCount() const
     return PredefinedHeader.size() + entries;
 }
 
-int ModelInstance::columnCount() const
+int ModelInstance::columnCount()
 {
     int entries = 0;
     Q_FOREACH(const auto sym, symbols(dctvarSymType)) {
@@ -674,13 +659,30 @@ void ModelInstance::horizontalHeaderData(QStandardItemModel &model)
 {
     QList<QStandardItem*> rootItems;
 
-    Q_FOREACH(const auto &predefined, PredefinedHeader) {
-        rootItems.append(new QStandardItem(predefined));
+    for (int i=0; i<PredefinedHeaderLength; ++i) {
+        auto rootItem = new QStandardItem(PredefinedHeader.at(i));
+        rootItem->setCheckState(Qt::Checked);
+        mCache->HorizontalSymbols.push_back(rootItem);
+        mCache->HIndexToItem[i] = rootItem;
+        if (!rootItem->hasChildren())
+            mCache->HItemToIndex[rootItem] = i;
+        rootItems.append(rootItem);
     }
+    int itemIndex = PredefinedHeaderLength;
     Q_FOREACH(const auto &var, symbols(dctvarSymType)) {
         auto rootItem = new QStandardItem(var.Name);
+        rootItem->setCheckState(Qt::Checked);
+        mCache->HorizontalSymbols.push_back(rootItem);
+        mCache->HItemToIndex[rootItem] = itemIndex;
+        for (int i=itemIndex; i<itemIndex+var.Entries; ++i)
+            mCache->HIndexToItem[i] = rootItem;
+        itemIndex += var.Entries;
         rootItems.append(rootItem);
         appendHeaderColumns(rootItem, var, Qt::Horizontal);
+    }
+
+    Q_FOREACH(auto symbol, mCache->HorizontalSymbols) {
+        setItemToIndexMapping(symbol, mCache->HItemToIndex);
     }
 
     model.insertRow(0, rootItems);
@@ -690,21 +692,175 @@ void ModelInstance::verticalHeaderData(QStandardItemModel &model)
 {
     QList<QStandardItem*> rootItems;
 
-    Q_FOREACH(const auto &predefined, PredefinedHeader) {
-        rootItems.append(new QStandardItem(predefined));
+    for (int i=0; i<PredefinedHeaderLength; ++i) {
+        auto rootItem = new QStandardItem(PredefinedHeader.at(i));
+        rootItem->setCheckState(Qt::Checked);
+        mCache->VerticalSymbols.push_back(rootItem);
+        mCache->VIndexToItem[i] = rootItem;
+        if (!rootItem->hasChildren())
+            mCache->VItemToIndex[rootItem] = i;
+        rootItems.append(rootItem);
     }
+    int itemIndex = PredefinedHeaderLength;
     Q_FOREACH(const auto &eqn, symbols(dcteqnSymType)) {
         auto rootItem = new QStandardItem(eqn.Name);
+        rootItem->setCheckState(Qt::Checked);
+        mCache->VerticalSymbols.push_back(rootItem);
+        mCache->VItemToIndex[rootItem] = itemIndex;
+        for (int i=itemIndex; i<itemIndex+eqn.Entries; ++i)
+            mCache->VIndexToItem[i] = rootItem;
+        itemIndex += eqn.Entries;
         rootItems.append(rootItem);
         appendHeaderColumns(rootItem, eqn, Qt::Vertical);
+    }
+
+    Q_FOREACH(auto symbol, mCache->VerticalSymbols) {
+        setItemToIndexMapping(symbol, mCache->VItemToIndex);
     }
 
     model.insertRow(0, rootItems);
 }
 
+QStandardItem* ModelInstance::horizontalItem(int logicalIndex)
+{
+    return mCache->HIndexToItem.contains(logicalIndex) ? mCache->HIndexToItem[logicalIndex] :
+                                                         nullptr;
+}
+
+QStandardItem* ModelInstance::verticalItem(int logicalIndex)
+{
+    return mCache->VIndexToItem.contains(logicalIndex) ? mCache->VIndexToItem[logicalIndex] :
+                                                         nullptr;
+}
+
+QList<QStandardItem*> ModelInstance::horizontalItems()
+{
+    return mCache->HIndexToItem.values();
+}
+
+QList<QStandardItem*> ModelInstance::verticalItems()
+{
+    return mCache->VIndexToItem.values();
+}
+
+QList<QStandardItem*> ModelInstance::horizontalUelItems()
+{
+    return mCache->HItemToIndex.keys();
+}
+
+QList<QStandardItem*> ModelInstance::verticalUelItems()
+{
+    return mCache->VItemToIndex.keys();
+}
+
+QList<QStandardItem*> ModelInstance::horizontalSymbols() const
+{
+    return mCache->HorizontalSymbols;
+}
+
+QList<QStandardItem*> ModelInstance::verticalSymbols() const
+{
+    return mCache->VerticalSymbols;
+}
+
+QList<QStandardItem*> ModelInstance::setBranchState(QStandardItem *startItem, Qt::CheckState state)
+{
+    QList<QStandardItem*> branch;
+    QList<QStandardItem*> items { startItem };
+    while (!items.isEmpty()) {
+        auto item = items.takeFirst();
+        for (int c=0; c<item->columnCount(); ++c)
+            items.append(item->child(0, c));
+        item->setCheckState(state);
+        branch.append(item);
+    }
+    return branch;
+}
+
+void ModelInstance::setUelStates(Qt::Orientation orientation,
+                                 const QMap<QString, bool> &uelStates)
+{
+    if (orientation == Qt::Horizontal)
+        mCache->HorizontalUelStates = uelStates;
+    mCache->VerticalUelStates = uelStates;
+}
+
+QMap<QString, bool> ModelInstance::uelStates(Qt::Orientation orientation)
+{
+    QMap<QString, bool> &uelStates = orientation == Qt::Horizontal ? mCache->HorizontalUelStates :
+                                                                     mCache->VerticalUelStates;
+    if (!uelStates.isEmpty()) {
+        return uelStates;
+    }
+
+    Q_FOREACH(const auto &symbolInfo, symbols(dcteqnSymType)) {
+        int nDomains;
+        int domains[GLOBAL_MAX_INDEX_DIM];
+        for (int j=0; j<symbolInfo.Entries; ++j) {
+            if (gmoGetjSolverQuiet(mGMO, symbolInfo.Offset + j) < 0)
+                continue;
+
+            int symIndex;
+            if (orientation == Qt::Horizontal) {
+                if (dctColUels(mDCT, symbolInfo.Offset+j, &symIndex, domains, &nDomains))
+                    continue;
+            } else {
+                if (dctRowUels(mDCT, symbolInfo.Offset+j, &symIndex, domains, &nDomains))
+                    continue;
+            }
+
+            char quote;
+            char uelName[GMS_SSSIZE];
+            for (int k=0; k<nDomains; ++k) {
+                dctUelLabel(mDCT, domains[k], &quote, uelName, GMS_SSSIZE);
+                uelStates[uelName] = true;
+            }
+        }
+    }
+
+    return uelStates;
+}
+
+int ModelInstance::horizontalIndex(QStandardItem *item)
+{
+    return mCache->HItemToIndex.contains(item) ? mCache->HItemToIndex[item] : -1;
+}
+
+int ModelInstance::verticalIndex(QStandardItem *item)
+{
+    return mCache->VItemToIndex.contains(item) ? mCache->VItemToIndex[item] : -1;
+}
+
+int ModelInstance::itemToIndex(Qt::Orientation orientation, QStandardItem *item)
+{// TODO remove orientation
+    int index = -1;
+    if (orientation == Qt::Horizontal)
+        index = horizontalIndex(item);
+    else
+        index = verticalIndex(item);
+    return index;
+}
+
+void ModelInstance::setHeaderRootItemEnabled(QStandardItem *item, bool enabled)
+{
+    QList<QStandardItem*> items { item };
+    while (!items.isEmpty()) {
+        auto item = items.takeFirst();
+        for (int c=0; c<item->columnCount(); ++c) {
+            items.append(item->child(0, c));
+        }
+        item->setCheckState(enabled ? Qt::Checked : Qt::Unchecked);
+    }
+}
+
+int ModelInstance::predefinedHeaderLength() const
+{
+    return PredefinedHeaderLength;
+}
+
 QVariant ModelInstance::data(int row, int column)
 {
-    if (row < 5 && column < 5) {
+    if (row < PredefinedHeaderLength && column < PredefinedHeaderLength) {
         return QVariant();
     }
 
@@ -718,9 +874,18 @@ QVariant ModelInstance::data(int row, int column)
         return equationAttribute(column, rIndex);
     }
 
-    // TODO @lutz use the special value stuff here or just the 0 test?
     double value = jaccobianValue(rIndex, cIndex);
     return value != 0.0 ? QVariant(value) : QString();
+}
+
+ValueFilterSettings ModelInstance::valueFilterSettings() const
+{
+    return mCache->ValueFilterSettings;
+}
+
+void ModelInstance::setValueFilterSettings(const ValueFilterSettings &settings)
+{
+    mCache->ValueFilterSettings = settings;
 }
 
 void ModelInstance::initialize()
@@ -873,12 +1038,10 @@ QPair<double, double> ModelInstance::equationBounds(int row)
 void ModelInstance::appendHeaderColumns(QStandardItem *parent,
                                         const SymbolInfo &symbolInfo,
                                         Qt::Orientation orientation)
-{// TODO check if this approach is correct (talk to lutz)...
- //      probaly the discussion approach is much faster
+{// TODO check later if we want to improve performance... non-recursive
     int nDomains;
     int domains[GLOBAL_MAX_INDEX_DIM];
-    int entries = dctSymEntries(mDCT, symbolInfo.Index);
-    for (int j=0; j<entries; ++j) {
+    for (int j=0; j<symbolInfo.Entries; ++j) {
         if (gmoGetjSolverQuiet(mGMO, symbolInfo.Offset + j) < 0)
             continue;
 
@@ -898,6 +1061,7 @@ void ModelInstance::appendHeaderColumns(QStandardItem *parent,
             dctUelLabel(mDCT, domains[k], &quote, uelName, GMS_SSSIZE);
             uels << uelName;
         }
+
         appendHeaderItems(parent, uels);
     }
 }
@@ -909,6 +1073,7 @@ void ModelInstance::appendHeaderItems(QStandardItem *parent, QStringList &uels)
     auto uel = uels.takeFirst();
     if (parent->columnCount() == 0) {
         auto child = new QStandardItem(uel);
+        child->setCheckState(Qt::Checked);
         parent->appendColumn({child});
         appendHeaderItems(child, uels);
     } else {
@@ -923,6 +1088,7 @@ void ModelInstance::appendHeaderItems(QStandardItem *parent, QStringList &uels)
         }
         if (!found) {
             auto child = new QStandardItem(uel);
+            child->setCheckState(Qt::Checked);
             parent->appendColumn({child});
             appendHeaderItems(child, uels);
         }
@@ -959,10 +1125,35 @@ QVariant ModelInstance::specialMarginalVarValueBasis(double value, int cIndex)
     return specialValue(value);
 }
 
+void ModelInstance::setItemToIndexMapping(QStandardItem *item, QMap<QStandardItem *, int> &mapping)
+{
+    auto parent = item;
+    while (parent->parent())
+        parent = parent->parent();
+
+    int parentIndex = mapping[parent];
+    QList<QStandardItem*> nodes;
+    QList<QStandardItem*> subTree { parent };
+    while (!subTree.isEmpty()) {
+        auto subItem = subTree.takeFirst();
+        if (subItem->columnCount()) {
+            nodes.prepend(subItem);
+            for (int c=subItem->columnCount()-1; c>=0; --c)
+                subTree.prepend(subItem->child(0, c));
+        } else {
+            mapping[subItem] = parentIndex++;
+        }
+    }
+
+    Q_FOREACH(auto node, nodes) {
+        auto child = node->child(0, 0);
+        mapping[node] = mapping[child];
+    }
+}
+
 int ModelInstance::errorCallback(int count, const char *message)
-{// TODO
+{// TODO (AF) use system logger when integrated into studio
     Q_UNUSED(count)
-    //emit newLogMessage("ERROR CALLBACK: " + QString(message));
     qDebug()<< message;
     return 0;
 }

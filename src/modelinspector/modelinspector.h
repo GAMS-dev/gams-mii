@@ -24,6 +24,10 @@
 #include <QSharedPointer>
 #include <QWidget>
 
+#include "searchresult.h"
+
+class QStandardItem;
+
 namespace gams {
 namespace studio{
 namespace modelinspector {
@@ -32,9 +36,13 @@ namespace Ui {
 class ModelInspector;
 }
 
+class FilterTreeItem;
 class ModelInstance;
 class ModelInstanceTableModel;
 class SectionTreeModel;
+class SearchResultModel;
+class ValueFormatProxyModel;
+struct ValueFilterSettings;
 
 class ModelInspector : public QWidget
 {
@@ -50,15 +58,32 @@ public:
     QString workspace() const;
     void setWorkspace(const QString &workspace);
 
+    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx);
+
+    QSharedPointer<ModelInstance> modelInstance() const;
+
 signals:
-    // TODO (AF) split/use enum for error/info/...?
+    void filtersUpdated();
+
+    // TODO (AF) use message types when integrated into studio
     void newLogMessage(const QString&);
+    void newModelInstance();
 
 public slots:
     void loadModelInstance(int exitCode, QProcess::ExitStatus status);
     void releasePreviousModel();
 
+    void processGlobalFilterUpdate();
+
     void setCurrentView(int index);
+
+    void setSearchSelection(const SearchResult &result);
+
+private slots:
+    void applyHeaderLabelFilter(FilterTreeItem *root, Qt::Orientation orientation);
+
+private:
+    void applyHeaderSymbolFilter();
 
 private:
     Ui::ModelInspector* ui;
@@ -67,6 +92,7 @@ private:
     SectionTreeModel *mSectionModel;
     QSharedPointer<ModelInstance> mModelInstance;
     QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;
+    ValueFormatProxyModel *mValueFormatModel;
 };
 
 }

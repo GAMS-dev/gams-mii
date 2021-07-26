@@ -21,8 +21,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QSharedPointer>
 
-#include <memory>
+class QStandardItem;
 
 namespace Ui {
 class MainWindow;
@@ -30,6 +31,14 @@ class MainWindow;
 
 class GAMSLibProcess;
 class GAMSProcess;
+
+namespace gams {
+namespace studio {
+namespace modelinspector {
+class GlobalFilterDialog;
+}
+}
+}
 
 class MainWindow : public QMainWindow
 {
@@ -43,6 +52,25 @@ private slots:
     void on_runButton_clicked(bool checked);
     void appendLogMessage(const QString &message);
 
+    // File
+    void on_action_Quit_triggered();
+
+    // Edit
+    void on_action_Search_triggered();
+    void searchHeaders();
+
+    // View
+    void on_actionGlobal_Filters_triggered();
+
+    // Help
+    void on_actionAbout_Qt_triggered();
+
+    // Other
+    void updateMenuEntries();
+    void handleFilterUpdate();
+    void searchResultSelectionChanged(const QModelIndex &index);
+    void updateModelInstance();
+
 private:
     void loadGAMSModel(const QString &path);
 
@@ -51,7 +79,8 @@ private:
 private:
     Ui::MainWindow *ui;
     GAMSLibProcess *mLibProcess;
-    std::unique_ptr<GAMSProcess> mProcess;
+    QSharedPointer<GAMSProcess> mProcess;
+    gams::studio::modelinspector::GlobalFilterDialog *mGlobalFilterDialog;
 };
 
 #endif // MAINWINDOW_H

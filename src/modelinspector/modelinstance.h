@@ -38,10 +38,9 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-// TODO
-//  o do constant values like INF
-//  o use dtoaLoc library for value formatting
-//  o cache/pre-load data/lazy loading?
+struct ValueFilterSettings;
+
+// TODO Which default values if something goes wrong (e.g. excel '##ERROR##', -1, ...)? -> something like '##ERROR##'
 
 struct SymbolInfo
 {
@@ -71,7 +70,7 @@ class ModelInstance
 {
 public:
     ModelInstance(const QString &workingDir = ".", const QString &scratchDir = QString());
-    ModelInstance(const ModelInstance &modelInstance); // todo needed?
+
     ~ModelInstance();
 
     QString modelName() const;
@@ -95,9 +94,11 @@ public:
      */
     int equations(int type) const;
 
-    int equationBlocks() const;
+    int equationBlocks();
 
-    bool isEquation(int type) const;
+    bool isEquation(int type);
+
+    bool isEquation(const QString &name);
 
     /**
      * @brief Total number of variables.
@@ -110,11 +111,13 @@ public:
      */
     int variables(int type) const;
 
-    int variableBlocks() const;
+    int variableBlocks();
 
     bool isVariable(int symType) const {
         return symType == dctvarSymType ? true : false;
     }
+
+    bool isVariable(const QString &name);
 
     int symbolCount() const {
         return dctNLSyms(mDCT);
@@ -133,14 +136,7 @@ public:
     QPair<double,double> totalRhs();
     QString aggregatedRhs(const SymbolInfo &symbol) const;
 
-    QVector<QVariant> variableData(const SymbolInfo &symbol);
-    QVector<QVariant> variableType();
-
-    //QVector<QString> rowUels(int index, int offset) const;
-
     int rowIndex(int offset) const;
-
-    //QString columnUels(int symbolIndex) const;
 
     QString logMessages() {
         auto messages = mLogMessages.join("\n");
@@ -150,6 +146,8 @@ public:
 
     QStringList symbolNames() const;
 
+    int symbolIndex(const QString &label) const;
+
     /**
     * @brief Symbol offset to get records.
     * @return dctSymOffset, offset < 0 is failiure
@@ -158,13 +156,13 @@ public:
 
     SymbolInfo symbol(int index) const;
 
-    SymbolInfo symbol(int index, int type) const;
+    SymbolInfo symbol(int index, int type);
 
-    QVector<SymbolInfo> symbols(int typeFilter = -1) const;
+    const QVector<SymbolInfo>& symbols(int type) const;
 
     void loadScratchData();
-
-    ModelInstance& operator=(const ModelInstance &modelInstance);
+    void loadSymbols();
+    void loadMinMaxValues();
 
     QPair<double, double> matrixRange() const;
 
@@ -174,15 +172,42 @@ public:
 
     QPair<double, double> rhsRange() const;
 
-    int rowCount() const;
+    int rowCount();
 
-    int columnCount() const;
+    int columnCount();
 
     void horizontalHeaderData(QStandardItemModel &model);
-
     void verticalHeaderData(QStandardItemModel &model);
 
+    QStandardItem* horizontalItem(int logicalIndex);
+    QStandardItem* verticalItem(int logicalIndex);
+
+    QList<QStandardItem*> horizontalItems();
+    QList<QStandardItem*> verticalItems();
+
+    QList<QStandardItem*> horizontalUelItems();
+    QList<QStandardItem*> verticalUelItems();
+
+    QList<QStandardItem*> horizontalSymbols() const;
+    QList<QStandardItem*> verticalSymbols() const;
+
+    QList<QStandardItem*> setBranchState(QStandardItem *startItem, Qt::CheckState state);
+
+    void setUelStates(Qt::Orientation orientation, const QMap<QString, bool> &uelStates);
+    QMap<QString, bool> uelStates(Qt::Orientation orientation);
+
+    // TOOD merge the two functions?
+    int horizontalIndex(QStandardItem *item);
+    int verticalIndex(QStandardItem *item);
+    int itemToIndex(Qt::Orientation orientation, QStandardItem *item);
+    void setHeaderRootItemEnabled(QStandardItem *item, bool enabled);
+
+    int predefinedHeaderLength() const;
+
     QVariant data(int row, int column);
+
+    ValueFilterSettings valueFilterSettings() const;
+    void setValueFilterSettings(const ValueFilterSettings &settings);
 
 private:
     void initialize();
@@ -203,9 +228,14 @@ private:
     QVariant specialMarginalEquValueBasis(double value, int rIndex);
     QVariant specialMarginalVarValueBasis(double value, int cIndex);
 
+    void setItemToIndexMapping(QStandardItem *item, QMap<QStandardItem*, int> &mapping);
+
     static int errorCallback(int count, const char *message);
 
 private:
+    class Cache;
+    Cache *mCache;
+
     QString mScratchDir;
     QString mWorkspace;
 

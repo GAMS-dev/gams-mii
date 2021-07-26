@@ -20,10 +20,13 @@
 #include "modelinspector.h"
 #include "ui_modelinspector.h"
 #include "modelinstance.h"
-#include "modelstatistic.h"
 #include "sectiontreemodel.h"
 #include "modelinstancetablemodel.h"
 #include "hierarchicalheaderview.h"
+#include "searchresultmodel.h"
+#include "filtertreeitem.h"
+#include "valueformatproxymodel.h"
+#include "valuefiltersettings.h"
 
 #include "gclgms.h"
 
@@ -44,11 +47,11 @@ ModelInspector::ModelInspector(QWidget *parent)
 {
     ui->setupUi(this);
     mSectionModel->loadModelData();
-    ui->sectionTreeView->setModel(mSectionModel);
+    ui->sectionView->setModel(mSectionModel);
 
-    connect(ui->sectionTreeView, &SectionTreeView::currentItemChanged,
+    connect(ui->sectionView, &SectionTreeView::currentItemChanged,
             this, &ModelInspector::setCurrentView);
-    ui->sectionTreeView->expandAll();
+    ui->sectionView->expandAll();
 }
 
 ModelInspector::~ModelInspector()
@@ -79,8 +82,21 @@ void ModelInspector::setWorkspace(const QString &workingDir)
     mWorkspace = workingDir;
 }
 
+QList<SearchResult> ModelInspector::searchHeaders(const QString &term, bool isRegEx)
+{
+    if (term.isEmpty())
+        return QList<SearchResult>();
+    return mModelInstanceModel->searchHeaders(term, isRegEx);
+}
+
+QSharedPointer<ModelInstance> ModelInspector::modelInstance() const
+{
+    return mModelInstance;
+}
+
 void ModelInspector::loadModelInstance(int exitCode, QProcess::ExitStatus status)
 {
+    Q_UNUSED(status);
     if (exitCode > 0) {
         emit newLogMessage("The GAMSProcess reported an issue. The exit code is " +
                            QString().number(exitCode));
@@ -92,39 +108,160 @@ void ModelInspector::loadModelInstance(int exitCode, QProcess::ExitStatus status
     ui->statisticWidget->showStatistic(mModelInstance);
     emit newLogMessage(mModelInstance->logMessages());
 
-    auto hHeader = new HierarchicalHeaderView(Qt::Horizontal, ui->modelInstanceView);
-    ui->modelInstanceView->setHorizontalHeader(hHeader);
-    ui->modelInstanceView->horizontalHeader()->setVisible(true);
-    ui->modelInstanceView->horizontalHeader()->setHighlightSections(true);
-    ui->modelInstanceView->horizontalHeader()->setSectionsClickable(true);
+    auto hHeader = new HierarchicalHeaderView(Qt::Horizontal, ui->miView);
+    hHeader->setModelInstance(mModelInstance);
+    ui->miView->setHorizontalHeader(hHeader);
+    ui->miView->horizontalHeader()->setVisible(true);
+    ui->miView->horizontalHeader()->setHighlightSections(true);
+    ui->miView->horizontalHeader()->setSectionsClickable(true);
+    connect(hHeader, &HierarchicalHeaderView::filterChanged,
+            this, &ModelInspector::applyHeaderLabelFilter);
 
-    auto vheader = new HierarchicalHeaderView(Qt::Vertical, ui->modelInstanceView);
-    ui->modelInstanceView->setVerticalHeader(vheader);
-    ui->modelInstanceView->verticalHeader()->setVisible(true);
-    ui->modelInstanceView->verticalHeader()->setHighlightSections(true);
-    ui->modelInstanceView->verticalHeader()->setSectionsClickable(true);
+    auto vHeader = new HierarchicalHeaderView(Qt::Vertical, ui->miView);
+    vHeader->setModelInstance(mModelInstance);
+    ui->miView->setVerticalHeader(vHeader);
+    ui->miView->verticalHeader()->setVisible(true);
+    ui->miView->verticalHeader()->setHighlightSections(true);
+    ui->miView->verticalHeader()->setSectionsClickable(true);
+    connect(vHeader, &HierarchicalHeaderView::filterChanged,
+            this, &ModelInspector::applyHeaderLabelFilter);
 
-    ui->modelInstanceView->resizeColumnsToContents();
-    ui->modelInstanceView->resizeRowsToContents();
+    ui->miView->resizeColumnsToContents();
+    ui->miView->resizeRowsToContents();
+
+    emit newModelInstance();
 }
 
 void ModelInspector::releasePreviousModel()
 {
     mModelInstance = QSharedPointer<ModelInstance>(new ModelInstance(mWorkspace, mScratchDir));
     mModelInstance->loadScratchData();
+    mModelInstance->loadSymbols();
+    mModelInstance->loadMinMaxValues();
 
-    auto tmpModelInstanceModel = new ModelInstanceTableModel;
-    tmpModelInstanceModel->setModelInstance(mModelInstance);
-    ui->modelInstanceView->setModel(tmpModelInstanceModel);
-    mModelInstanceModel = QSharedPointer<ModelInstanceTableModel>(tmpModelInstanceModel);
+    auto modelInstanceModel = new ModelInstanceTableModel(ui->miView);
+    modelInstanceModel->setModelInstance(mModelInstance);
+    mValueFormatModel = new ValueFormatProxyModel(ui->miView);
+    mValueFormatModel->setSettings(mModelInstance->valueFilterSettings());
+    mValueFormatModel->setSourceModel(modelInstanceModel);
+    ui->miView->setModel(mValueFormatModel);
+    mModelInstanceModel = QSharedPointer<ModelInstanceTableModel>(modelInstanceModel);
+}
+
+void ModelInspector::processGlobalFilterUpdate()
+{
+    auto processUelCheckStates = [this](Qt::Orientation orientation,
+                                        const QMap<QString, bool> &uels,
+                                        const QList<QStandardItem*> &items){
+        Q_FOREACH(auto item, items) {
+            if (uels.contains(item->data(Qt::DisplayRole).toString()) &&
+                item->parent()->checkState() != Qt::Unchecked) {
+                auto branch = mModelInstance->setBranchState(item, uels[item->text()] ? Qt::Checked : Qt::Unchecked);
+                if (orientation == Qt::Horizontal) {
+                    Q_FOREACH(auto bItem, branch) {
+                        ui->miView->setColumnHidden(mModelInstance->itemToIndex(orientation, bItem),
+                                                    !bItem->checkState());
+                    }
+                } else {
+                    Q_FOREACH(auto bItem, branch) {
+                        ui->miView->setRowHidden(mModelInstance->itemToIndex(orientation, bItem),
+                                                 !bItem->checkState());
+                    }
+                }
+            }
+        }
+    };
+
+    applyHeaderSymbolFilter();
+    auto hItems = mModelInstance->horizontalUelItems();
+    processUelCheckStates(Qt::Horizontal,
+                          mModelInstance->uelStates(Qt::Horizontal), hItems);
+
+    auto vItems = mModelInstance->verticalUelItems();
+    processUelCheckStates(Qt::Vertical,
+                          mModelInstance->uelStates(Qt::Vertical), vItems);
+
+    mValueFormatModel->setSettings(mModelInstance->valueFilterSettings());
+    emit filtersUpdated();
 }
 
 void ModelInspector::setCurrentView(int index)
 {
     Q_UNUSED(index);
-    auto modelIndex = ui->sectionTreeView->currentIndex();
-    auto* item = static_cast<ViewItem*>(modelIndex.internalPointer());
+    auto modelIndex = ui->sectionView->currentIndex();
+    auto* item = static_cast<SectionTreeItem*>(modelIndex.internalPointer());
     ui->stackedWidget->setCurrentIndex(item->page());
+}
+
+void ModelInspector::setSearchSelection(const SearchResult &result)
+{
+    if (!result.isValid())
+        return;
+    if (result.Orientation == Qt::Horizontal) {
+        ui->miView->selectColumn(result.Index);
+    } else {
+        ui->miView->selectRow(result.Index);
+    }
+}
+
+void ModelInspector::applyHeaderLabelFilter(FilterTreeItem *root, Qt::Orientation orientation)
+{
+    if (orientation == Qt::Horizontal) {
+        QList<FilterTreeItem*> filterItems { root };
+        QList<QStandardItem*> subTree { mModelInstance->horizontalItem(root->logicalIndex()) };
+        while (!filterItems.isEmpty()) {
+            auto filterItem = filterItems.takeFirst();
+            filterItems.append(filterItem->childs());
+            auto subItem = subTree.takeFirst();
+            for (int c=0; c<subItem->columnCount(); ++c)
+                subTree.append(subItem->child(0, c));
+            subItem->setCheckState(filterItem->checked());
+            ui->miView->setColumnHidden(filterItem->logicalIndex(), !filterItem->checked());
+        }
+    } else {
+        QList<FilterTreeItem*> filterItems { root };
+        QList<QStandardItem*> subTree { mModelInstance->verticalItem(root->logicalIndex()) };
+        while (!filterItems.isEmpty()) {
+            auto filterItem = filterItems.takeFirst();
+            filterItems.append(filterItem->childs());
+            auto subItem = subTree.takeFirst();
+            for (int c=0; c<subItem->columnCount(); ++c)
+                subTree.append(subItem->child(0, c));
+            subItem->setCheckState(filterItem->checked());
+            ui->miView->setRowHidden(filterItem->logicalIndex(), !filterItem->checked());
+        }
+    }
+    emit filtersUpdated();
+}
+
+void ModelInspector::applyHeaderSymbolFilter()
+{
+    Q_FOREACH(auto item, mModelInstance->horizontalSymbols()) {
+        int logicaIndex = mModelInstance->horizontalIndex(item);
+        if (logicaIndex < mModelInstance->predefinedHeaderLength()) {
+            ui->miView->setColumnHidden(logicaIndex, !item->checkState());
+            continue;
+        }
+        int symIndex = mModelInstance->symbolIndex(item->data(Qt::DisplayRole).toString());
+        if (symIndex <= 0)
+            continue;
+        auto symbol = mModelInstance->symbol(symIndex);
+        for (int i=logicaIndex; i<logicaIndex+symbol.Entries; ++i)
+            ui->miView->setColumnHidden(i, !item->checkState());
+    }
+    Q_FOREACH(auto item, mModelInstance->verticalSymbols()) {
+        int logicalIndex = mModelInstance->verticalIndex(item);
+        if (logicalIndex < mModelInstance->predefinedHeaderLength()) {
+            ui->miView->setRowHidden(logicalIndex, !item->checkState());
+            continue;
+        }
+        int symIndex = mModelInstance->symbolIndex(item->data(Qt::DisplayRole).toString());
+        if (symIndex <= 0)
+            continue;
+        auto symbol = mModelInstance->symbol(symIndex);
+        for (int i=logicalIndex; i<logicalIndex+symbol.Entries; ++i)
+            ui->miView->setRowHidden(i, !item->checkState());
+    }
 }
 
 }

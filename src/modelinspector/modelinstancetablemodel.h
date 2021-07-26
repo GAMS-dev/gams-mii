@@ -5,6 +5,8 @@
 #include <QStandardItemModel>
 #include <QSharedPointer>
 
+#include "searchresult.h"
+
 namespace gams {
 namespace studio{
 namespace modelinspector {
@@ -32,6 +34,12 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+
+    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx);
+
+private:
+    void find(const QString &term, bool isRegEx, Qt::Orientation orientation,
+              const QStandardItemModel &headerModel, QList<SearchResult> &result);
 
 private:
     QSharedPointer<ModelInstance> mModelInstance;

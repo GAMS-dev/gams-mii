@@ -17,7 +17,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
-      <widget class="SectionTreeView" name="sectionTreeView">
+      <widget class="SectionTreeView" name="sectionView">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -44,7 +44,7 @@
        <widget class="QWidget" name="fullView">
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
-          <widget class="QTableView" name="modelInstanceView"/>
+          <widget class="gams::studio::modelinspector::MITableView" name="miView"/>
          </item>
         </layout>
        </widget>
@@ -65,6 +65,11 @@
    <class>SectionTreeView</class>
    <extends>QTreeView</extends>
    <header>modelinspector/sectiontreeview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>gams::studio::modelinspector::MITableView</class>
+   <extends>QTableView</extends>
+   <header>modelinspector/mitableview.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

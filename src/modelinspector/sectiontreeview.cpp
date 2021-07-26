@@ -17,7 +17,7 @@ void SectionTreeView::currentChanged(const QModelIndex &current, const QModelInd
 {
     if (!current.isValid())
         return;
-    auto *item = static_cast<ViewItem*>(current.internalPointer());
+    auto *item = static_cast<SectionTreeItem*>(current.internalPointer());
     emit currentItemChanged(item->page());
     QTreeView::currentChanged(current, previous);
 }

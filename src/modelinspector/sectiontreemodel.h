@@ -7,7 +7,7 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-class ViewItem
+class SectionTreeItem
 {
 public:
     enum Type {
@@ -20,12 +20,13 @@ public:
     };
 
 public:
-    explicit ViewItem(const QString &name, int page, ViewItem *parent = nullptr);
-    ~ViewItem();
+    explicit SectionTreeItem(const QString &name, int page,
+                             SectionTreeItem *parent = nullptr);
+    ~SectionTreeItem();
 
-    void append(ViewItem *child);
+    void append(SectionTreeItem *child);
 
-    ViewItem *child(int row);
+    SectionTreeItem *child(int row);
 
     int childCount() const;
 
@@ -59,14 +60,14 @@ public:
         mType = type;
     }
 
-    ViewItem *parent();
+    SectionTreeItem *parent();
 
 private:
     QString mName;
-    ViewItem *mParent;
+    SectionTreeItem *mParent;
     int mPage;
     int mType = Unknown;
-    QVector<ViewItem*> mChilds;
+    QVector<SectionTreeItem*> mChilds;
 };
 
 class SectionTreeModel : public QAbstractItemModel
@@ -95,7 +96,7 @@ public:
     void loadModelData();
 
 private:
-    ViewItem *mRoot;
+    SectionTreeItem *mRoot;
 };
 
 }

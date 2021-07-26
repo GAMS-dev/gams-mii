@@ -18,7 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-QT       += core gui widgets
+QT       += core gui widgets svg
 
 TARGET = modelinspector
 TEMPLATE = app
@@ -71,14 +71,21 @@ SOURCES += \
     gamsprocess.cpp \
     commonpaths.cpp \
     gamslibprocess.cpp \
+    modelinspector/filtertreeitem.cpp \
+    modelinspector/filtertreemodel.cpp \
+    modelinspector/globalfilterdialog.cpp \
     modelinspector/hierarchicalheaderview.cpp \
+    modelinspector/labelfilterwidget.cpp \
+    modelinspector/mitableview.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
     modelinspector/modelinstancetablemodel.cpp \
+    modelinspector/searchresultmodel.cpp \
     modelinspector/sectiontreemodel.cpp \
     modelinspector/sectiontreeview.cpp \
     modelinspector/statisticedit.cpp \
-    modelinspector/statisticswidget.cpp
+    modelinspector/statisticswidget.cpp \
+    modelinspector/valueformatproxymodel.cpp
 
 HEADERS += \
     exception.h \
@@ -86,19 +93,33 @@ HEADERS += \
     gamsprocess.h \
     commonpaths.h \
     gamslibprocess.h    \
+    modelinspector/filtertreeitem.h \
+    modelinspector/filtertreemodel.h \
+    modelinspector/globalfilterdialog.h \
     modelinspector/hierarchicalheaderview.h \
+    modelinspector/labelfilterwidget.h \
+    modelinspector/mitableview.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
     modelinspector/modelinstancetablemodel.h \
+    modelinspector/searchresult.h \
+    modelinspector/searchresultmodel.h \
     modelinspector/sectiontreemodel.h \
     modelinspector/sectiontreeview.h \
     modelinspector/statisticedit.h \
-    modelinspector/statisticswidget.h
+    modelinspector/statisticswidget.h \
+    modelinspector/valuefiltersettings.h \
+    modelinspector/valueformatproxymodel.h
 
 FORMS += \
     mainwindow.ui \
+    modelinspector/globalfilterdialog.ui \
+    modelinspector/labelfilterwidget.ui \
     modelinspector/modelinspector.ui \
     modelinspector/statisticwidget.ui
+
+RESOURCES += \
+    ../icons/icons.qrc
 
 OTHER_FILES +=          \
     ../platform/macos/modelinspector.entitlements.plist \

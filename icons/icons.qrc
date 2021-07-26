@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/img">
+        <file alias="filter">filter.svg</file>
+        <file alias="filter-off">filter-off.svg</file>
+        <file alias="gams">gamslogo.svg</file>
+    </qresource>
+</RCC>
