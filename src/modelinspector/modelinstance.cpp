@@ -60,6 +60,16 @@ public:
         return (type == dcteqnSymType) ? mEquations : mVariables;
     }
 
+    ValueFilterSettings& valueFilterSettings()
+    {
+        return mValueFilterSettings;
+    }
+
+    void setValueFilterSettings(const ValueFilterSettings &settings)
+    {
+        mValueFilterSettings = settings;
+    }
+
 public:
     ///
     /// \brief mHIndexToItem Horizontal logical index to QStandardItem mapping.
@@ -87,13 +97,14 @@ public:
     QMap<QString, bool> HorizontalUelStates;
     QMap<QString, bool> VerticalUelStates;
 
-    ValueFilterSettings ValueFilterSettings;
 
 private:
     ModelInstance* const mModelInstance;
 
     QVector<SymbolInfo> mEquations;
     QVector<SymbolInfo> mVariables;
+
+    ValueFilterSettings mValueFilterSettings;
 };
 
 ModelInstance::ModelInstance(const QString &workspace, const QString &scratchDir)
@@ -279,8 +290,8 @@ void ModelInstance::loadMinMaxValues()
             }
         }
     }
-    mCache->ValueFilterSettings.MinValue = range.first;
-    mCache->ValueFilterSettings.MaxValue = range.second;
+    mCache->valueFilterSettings().MinValue = range.first;
+    mCache->valueFilterSettings().MaxValue = range.second;
 }
 
 QString ModelInstance::equationType(int offset) const
@@ -880,12 +891,12 @@ QVariant ModelInstance::data(int row, int column)
 
 ValueFilterSettings ModelInstance::valueFilterSettings() const
 {
-    return mCache->ValueFilterSettings;
+    return mCache->valueFilterSettings();
 }
 
 void ModelInstance::setValueFilterSettings(const ValueFilterSettings &settings)
 {
-    mCache->ValueFilterSettings = settings;
+    mCache->setValueFilterSettings(settings);
 }
 
 void ModelInstance::initialize()
