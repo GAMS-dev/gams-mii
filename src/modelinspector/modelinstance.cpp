@@ -935,8 +935,9 @@ void ModelInstance::initialize()
     if (!dctCreateD(&mDCT,
                     CommonPaths::systemDir().toStdString().c_str(),
                     msg,
-                    sizeof(msg)))
+                    sizeof(msg))) {
         mLogMessages << "ERROR: " + QString(msg);
+    }
 }
 
 double ModelInstance::jaccobianValue(int row, int column)
