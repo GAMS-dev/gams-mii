@@ -55,6 +55,9 @@ Qt::ItemFlags FilterTreeModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
         return Qt::NoItemFlags;
+    auto item = static_cast<FilterTreeItem*>(index.internalPointer());
+    if (!item->isEnabled())
+        return Qt::NoItemFlags;
     return QAbstractItemModel::flags(index) | Qt::ItemIsUserCheckable;
 }
 

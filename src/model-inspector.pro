@@ -72,20 +72,23 @@ SOURCES += \
     commonpaths.cpp \
     gamslibprocess.cpp \
     modelinspector/aggregationdialog.cpp \
+    modelinspector/columnrowfiltermodel.cpp \
     modelinspector/filtertreeitem.cpp \
     modelinspector/filtertreemodel.cpp \
     modelinspector/globalfilterdialog.cpp \
     modelinspector/hierarchicalheaderview.cpp \
     modelinspector/labelfilterwidget.cpp \
-    modelinspector/mitableview.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
     modelinspector/modelinstancetablemodel.cpp \
+    modelinspector/modelinstancetableview.cpp \
     modelinspector/searchresultmodel.cpp \
     modelinspector/sectiontreemodel.cpp \
     modelinspector/sectiontreeview.cpp \
     modelinspector/statisticedit.cpp \
     modelinspector/statisticswidget.cpp \
+    modelinspector/symbolfiltermodel.cpp \
+    modelinspector/uelfiltermodel.cpp \
     modelinspector/valueformatproxymodel.cpp
 
 HEADERS += \
@@ -95,22 +98,24 @@ HEADERS += \
     commonpaths.h \
     gamslibprocess.h    \
     modelinspector/aggregationdialog.h \
+    modelinspector/columnrowfiltermodel.h \
+    modelinspector/common.h \
     modelinspector/filtertreeitem.h \
     modelinspector/filtertreemodel.h \
     modelinspector/globalfilterdialog.h \
     modelinspector/hierarchicalheaderview.h \
     modelinspector/labelfilterwidget.h \
-    modelinspector/mitableview.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
     modelinspector/modelinstancetablemodel.h \
-    modelinspector/searchresult.h \
+    modelinspector/modelinstancetableview.h \
     modelinspector/searchresultmodel.h \
     modelinspector/sectiontreemodel.h \
     modelinspector/sectiontreeview.h \
     modelinspector/statisticedit.h \
     modelinspector/statisticswidget.h \
-    modelinspector/valuefiltersettings.h \
+    modelinspector/symbolfiltermodel.h \
+    modelinspector/uelfiltermodel.h \
     modelinspector/valueformatproxymodel.h
 
 FORMS += \

@@ -44,7 +44,7 @@
        <widget class="QWidget" name="fullView">
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
-          <widget class="gams::studio::modelinspector::MITableView" name="miView">
+          <widget class="gams::studio::modelinspector::ModelInstanceTableView" name="modelInstanceView">
            <attribute name="verticalHeaderCascadingSectionResizes">
             <bool>false</bool>
            </attribute>
@@ -71,9 +71,9 @@
    <header>modelinspector/sectiontreeview.h</header>
   </customwidget>
   <customwidget>
-   <class>gams::studio::modelinspector::MITableView</class>
+   <class>gams::studio::modelinspector::ModelInstanceTableView</class>
    <extends>QTableView</extends>
-   <header>modelinspector/mitableview.h</header>
+   <header>modelinspector/modelinstancetableview.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

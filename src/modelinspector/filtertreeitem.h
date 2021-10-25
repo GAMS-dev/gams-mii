@@ -17,7 +17,7 @@ public:
 
     explicit FilterTreeItem(const QString &text = "",
                              Qt::CheckState checkState = Qt::Checked,
-                             int logicalIndex = -1,
+                             int index = -1,
                              FilterTreeItem *parent = nullptr);
 
 
@@ -43,15 +43,19 @@ public:
 
     void setCheckable(bool checkable);
 
+    bool isEnabled() const;
+
+    void setEnabled(bool enabled);
+
     Qt::CheckState checked();
 
     void setChecked(Qt::CheckState state);
 
     void setSubTreeState(Qt::CheckState checked);
 
-    int logicalIndex() const;
+    int index() const;
 
-    void setLogicalIndex(int index);
+    void setIndex(int index);
 
     static const QString EquationText;
     static const QString VariableText;
@@ -65,9 +69,13 @@ private:
 
     Qt::CheckState mChecked;
 
-    int mLogicalIndex;
+    ///
+    /// \brief mIndex Logical or section index.
+    ///
+    int mIndex;
 
     bool mCheckable = true;
+    bool mEnabled = true;
 };
 
 }

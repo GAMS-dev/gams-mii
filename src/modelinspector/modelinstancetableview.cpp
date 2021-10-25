@@ -1,4 +1,4 @@
-#include "mitableview.h"
+#include "modelinstancetableview.h"
 
 #include <QDebug>
 
@@ -6,7 +6,7 @@ namespace gams {
 namespace studio{
 namespace modelinspector {
 
-MITableView::MITableView(QWidget *parent)
+ModelInstanceTableView::ModelInstanceTableView(QWidget *parent)
     : QTableView(parent)
 {
 }

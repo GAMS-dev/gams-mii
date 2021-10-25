@@ -19,10 +19,9 @@
  */
 #include "modelinstance.h"
 #include "commonpaths.h"
-#include "valuefiltersettings.h"
 
+#include <QAbstractItemModel>
 #include <QDir>
-#include <QStandardItem>
 #include <QVector>
 
 #include <QDebug>
@@ -32,9 +31,6 @@ using namespace std;
 namespace gams {
 namespace studio {
 namespace modelinspector {
-
-const QStringList ModelInstance::PredefinedHeader { "level", "lower", "marginal", "scale", "upper" };
-const int ModelInstance::PredefinedHeaderLength = ModelInstance::PredefinedHeader.size();
 
 class ModelInstance::Cache
 {
@@ -47,16 +43,18 @@ public:
 
     void loadSymbols(int type)
     {
+        int sectionIndex = PredefinedHeaderLength;
         QVector<SymbolInfo> &syms = (type == dcteqnSymType) ? mEquations : mVariables;
         for (int i=1; i<=mModelInstance->symbolCount(); ++i) {
-            auto sym = mModelInstance->symbol(i);
+            auto sym = mModelInstance->loadSymbol(i, sectionIndex);
             if (type != sym.Type)
                 continue;
-             syms.append(sym);
-             if (type == dcteqnSymType)
-                 mEquationEntries += sym.Entries;
-             else
-                 mVariableEntries += sym.Entries;
+            sectionIndex += sym.Entries;
+            syms.append(sym);
+            if (type == dcteqnSymType)
+                mEquationEntries += sym.Entries;
+            else
+                mVariableEntries += sym.Entries;
         }
     }
 
@@ -87,6 +85,30 @@ public:
         }
     }
 
+    void loadHorizontalHeaderData()
+    {
+        int itemIndex = PredefinedHeaderLength;
+        Q_FOREACH(const auto &var, symbols(dctvarSymType)) {
+            HMaxSymbolDimension = qMax(HMaxSymbolDimension, var.Dimension);
+            for (int i=itemIndex; i<itemIndex+var.Entries; ++i) {
+                HSectionIndexToSymbol[i] = var;
+            }
+            itemIndex += var.Entries;
+        }
+    }
+
+    void loadVerticalHeaderData()
+    {
+        int itemIndex = PredefinedHeaderLength;
+        Q_FOREACH(const auto &eqn, symbols(dcteqnSymType)) {
+            VMaxSymbolDimension = qMax(VMaxSymbolDimension, eqn.Dimension);
+            for (int i=itemIndex; i<itemIndex+eqn.Entries; ++i) {
+                VSectionIndexToSymbol[i] = eqn;
+            }
+            itemIndex += eqn.Entries;
+        }
+    }
+
     QVariant jaccobianValue(int column, int row) const
     {
         const static QVariant defaultValue(0.0);
@@ -114,30 +136,9 @@ public:
         return type == dcteqnSymType ? mEquations : mVariables;
     }
 
-    ValueFilterSettings& valueFilterSettings()
+    ValueFilter& initalValueFilter()
     {
-        return mValueFilterSettings;
-    }
-
-    void setValueFilterSettings(const ValueFilterSettings &settings)
-    {
-        mValueFilterSettings = settings;
-    }
-
-    QList<QStandardItem*>& horizontalTree() {
-        return mHorizontalTree;
-    }
-
-    void setHorizontalTree(const QList<QStandardItem*> &tree) {
-        mHorizontalTree = tree;
-    }
-
-    QList<QStandardItem*>& verticalTree() {
-        return mVerticalTree;
-    }
-
-    void setVerticalTree(const QList<QStandardItem*> &tree) {
-        mVerticalTree = tree;
+        return mInitialValueFilter;
     }
 
     QString longestEqnText() {
@@ -152,7 +153,7 @@ public:
 
     QString longestEqnUelText() {
         if (mLongestEqnUelText.isEmpty()) {
-            Q_FOREACH(auto uel, mModelInstance->uelStates(Qt::Vertical).keys()) {
+            Q_FOREACH(auto uel, InitialUelFilter[Qt::Vertical].keys()) {
                 if (uel.size() > mLongestEqnUelText.size())
                     mLongestEqnUelText = uel;
             }
@@ -172,7 +173,7 @@ public:
 
     QString longestVarUelText() {
         if (mLongestVarUelText.isEmpty()) {
-            Q_FOREACH(auto uel, mModelInstance->uelStates(Qt::Horizontal).keys()) {
+            Q_FOREACH(auto uel, InitialUelFilter[Qt::Horizontal].keys()) {
                 if (uel.size() > mLongestVarUelText.size())
                     mLongestVarUelText = uel;
             }
@@ -180,32 +181,20 @@ public:
         return mLongestVarUelText;
     }
 
+    const SymbolInfo& sectionSymbol(int sectionIndex, Qt::Orientation orientation)
+    {
+        if (orientation == Qt::Horizontal)
+            return HSectionIndexToSymbol[sectionIndex];
+        return VSectionIndexToSymbol[sectionIndex];
+    }
+
 public:
-    ///
-    /// \brief mHIndexToItem Horizontal logical index to QStandardItem mapping.
-    ///
-    QMap<int, QStandardItem*> HIndexToItem;
+    QMap<int, SymbolInfo> HSectionIndexToSymbol;
+    QMap<int, SymbolInfo> VSectionIndexToSymbol;
+    int HMaxSymbolDimension = 0;
+    int VMaxSymbolDimension = 0;
 
-    ///
-    /// \brief mHItemToIndex QStandardItem to Horizontal logical index mapping.
-    ///
-    QMap<QStandardItem*, int> HItemToIndex;
-
-    ///
-    /// \brief mVIndexToItem Vertical logical index to QStandardItem mapping.
-    ///
-    QMap<int, QStandardItem*> VIndexToItem;
-
-    ///
-    /// \brief mVIndexToItem QStandardItem to Vertical logical index mapping.
-    ///
-    QMap<QStandardItem*, int> VItemToIndex;
-
-    QList<QStandardItem*> HorizontalSymbols;
-    QList<QStandardItem*> VerticalSymbols;
-
-    QMap<QString, bool> HorizontalUelStates;
-    QMap<QString, bool> VerticalUelStates;
+    UelFilterMap  InitialUelFilter;
 
 private:
     ModelInstance* const mModelInstance;
@@ -216,10 +205,7 @@ private:
     int mEquationEntries = 0;
     int mVariableEntries = 0;
 
-    ValueFilterSettings mValueFilterSettings;
-
-    QList<QStandardItem*> mHorizontalTree;
-    QList<QStandardItem*> mVerticalTree;
+    ValueFilter mInitialValueFilter;
 
     QString mLongestEqnText;
     QString mLongestEqnUelText;
@@ -310,6 +296,11 @@ int ModelInstance::nonLinearCoefficents() const
     return gmoNLNZ(mGMO);
 }
 
+SymbolInfo ModelInstance::equation(int sectionIndex) const
+{
+    return mCache->VSectionIndexToSymbol[sectionIndex];
+}
+
 const QVector<SymbolInfo>& ModelInstance::equations() const
 {
     return mCache->symbols(dcteqnSymType);
@@ -362,6 +353,11 @@ QString ModelInstance::longestVarText() const
     return uel;
 }
 
+SymbolInfo ModelInstance::variable(int sectionIndex) const
+{
+    return mCache->HSectionIndexToSymbol[sectionIndex];
+}
+
 const QVector<SymbolInfo>& ModelInstance::variables() const
 {
     return mCache->symbols(dctvarSymType);
@@ -370,6 +366,16 @@ const QVector<SymbolInfo>& ModelInstance::variables() const
 int ModelInstance::variableCount() const
 {
     return gmoN(mGMO);
+}
+
+int ModelInstance::maxEquationDimension() const
+{
+    return mCache->HMaxSymbolDimension;
+}
+
+int ModelInstance::maxVariableDimension() const
+{
+    return mCache->VMaxSymbolDimension;
 }
 
 int ModelInstance::variableCount(int type) const
@@ -425,9 +431,13 @@ void ModelInstance::loadTableData()
 {
     mCache->loadSymbols(dcteqnSymType);
     mCache->loadSymbols(dctvarSymType);
+    loadInitialUelFilter(Qt::Horizontal);
+    loadInitialUelFilter(Qt::Vertical);
     mCache->loadHorizontalAttributes();
     mCache->loadVerticalAttributes();
     mCache->loadJaccobian();
+    mCache->loadHorizontalHeaderData();
+    mCache->loadVerticalHeaderData();
 }
 
 void ModelInstance::loadMinMaxValues()
@@ -447,8 +457,8 @@ void ModelInstance::loadMinMaxValues()
             }
         }
     }
-    mCache->valueFilterSettings().MinValue = range.first;
-    mCache->valueFilterSettings().MaxValue = range.second;
+    mCache->initalValueFilter().MinValue = range.first;
+    mCache->initalValueFilter().MaxValue = range.second;
 }
 
 QString ModelInstance::equationType(int offset) const
@@ -652,13 +662,14 @@ int ModelInstance::symbolOffset(const QString &label) const
     return dctSymOffset(mDCT, index);
 }
 
-SymbolInfo ModelInstance::symbol(int index) const
+SymbolInfo ModelInstance::loadSymbol(int index, int sectionIndex) const
 {
     SymbolInfo info;
     if (index > symbolCount())
         return info;
 
     info.Index = index;
+    info.setFirstSection(sectionIndex);
     info.Offset = dctSymOffset(mDCT, index);
     info.Dimension = dctSymDim(mDCT, index);
     info.Entries = dctSymEntries(mDCT, index);
@@ -670,8 +681,37 @@ SymbolInfo ModelInstance::symbol(int index) const
         info.Name = symbolName;
 
     info.Type = dctSymType(mDCT, index);
+    loadDimensions(info);
 
     return info;
+}
+
+void ModelInstance::loadDimensions(SymbolInfo &symbol) const
+{
+    int nDomains;
+    int domains[GLOBAL_MAX_INDEX_DIM];
+    for (int j=0; j<symbol.Entries; ++j) {
+        if (gmoGetjSolverQuiet(mGMO, symbol.Offset + j) < 0)
+            continue;
+
+        int symIndex;
+        if (symbol.Type == dctvarSymType) {
+            if (dctColUels(mDCT, symbol.Offset+j, &symIndex, domains, &nDomains))
+                continue;
+        } else {
+            if (dctRowUels(mDCT, symbol.Offset+j, &symIndex, domains, &nDomains))
+                continue;
+        }
+
+        char quote;
+        char uelName[GMS_SSSIZE];
+        QStringList uels;
+        for (int k=0; k<nDomains; ++k) {
+            dctUelLabel(mDCT, domains[k], &quote, uelName, GMS_SSSIZE);
+            uels << uelName;
+        }
+        symbol.DimensionData[symbol.firstSection()+j] = uels;
+    }
 }
 
 const SymbolInfo& ModelInstance::symbol(int index, int type) const
@@ -815,154 +855,9 @@ int ModelInstance::columnCount() const
     return PredefinedHeaderLength + mCache->symbolEntries(dctvarSymType);
 }
 
-void ModelInstance::horizontalHeaderData(QStandardItemModel &model)
-{// TODO keep this approach?
-    QList<QStandardItem*> &rootItems = mCache->horizontalTree();
-
-    for (int i=0; i<PredefinedHeaderLength; ++i) {
-        auto rootItem = new QStandardItem(PredefinedHeader.at(i));
-        rootItem->setCheckState(Qt::Checked);
-        mCache->HorizontalSymbols.push_back(rootItem);
-        mCache->HIndexToItem[i] = rootItem;
-        if (!rootItem->hasChildren())
-            mCache->HItemToIndex[rootItem] = i;
-        rootItems.append(rootItem);
-    }
-    int itemIndex = PredefinedHeaderLength;
-    Q_FOREACH(const auto &var, symbols(dctvarSymType)) {
-        auto rootItem = new QStandardItem(var.Name);
-        rootItem->setCheckState(Qt::Checked);
-        mCache->HorizontalSymbols.push_back(rootItem);
-        mCache->HItemToIndex[rootItem] = itemIndex;
-        for (int i=itemIndex; i<itemIndex+var.Entries; ++i)
-            mCache->HIndexToItem[i] = rootItem;
-        itemIndex += var.Entries;
-        rootItems.append(rootItem);
-        appendHeaderColumns(rootItem, var, Qt::Horizontal);
-    }
-
-    Q_FOREACH(auto symbol, mCache->HorizontalSymbols) {
-        setItemToIndexMapping(symbol, mCache->HItemToIndex);
-    }
-
-    model.insertRow(0, rootItems);
-}
-
-void ModelInstance::verticalHeaderData(QStandardItemModel &model)
-{// TODO keep this approach?
-    QList<QStandardItem*> &rootItems = mCache->verticalTree();
-
-    for (int i=0; i<PredefinedHeaderLength; ++i) {
-        auto rootItem = new QStandardItem(PredefinedHeader.at(i));
-        rootItem->setCheckState(Qt::Checked);
-        mCache->VerticalSymbols.push_back(rootItem);
-        mCache->VIndexToItem[i] = rootItem;
-        if (!rootItem->hasChildren())
-            mCache->VItemToIndex[rootItem] = i;
-        rootItems.append(rootItem);
-    }
-    int itemIndex = PredefinedHeaderLength;
-    Q_FOREACH(const auto &eqn, symbols(dcteqnSymType)) {
-        auto rootItem = new QStandardItem(eqn.Name);
-        rootItem->setCheckState(Qt::Checked);
-        mCache->VerticalSymbols.push_back(rootItem);
-        mCache->VItemToIndex[rootItem] = itemIndex;
-        for (int i=itemIndex; i<itemIndex+eqn.Entries; ++i)
-            mCache->VIndexToItem[i] = rootItem;
-        itemIndex += eqn.Entries;
-        rootItems.append(rootItem);
-        appendHeaderColumns(rootItem, eqn, Qt::Vertical);
-    }
-
-    Q_FOREACH(auto symbol, mCache->VerticalSymbols) {
-        setItemToIndexMapping(symbol, mCache->VItemToIndex);
-    }
-
-    model.insertRow(0, rootItems);
-}
-
-QStandardItem* ModelInstance::horizontalItem(int logicalIndex)
+void ModelInstance::loadInitialUelFilter(Qt::Orientation orientation)
 {
-    return mCache->HIndexToItem.contains(logicalIndex) ? mCache->HIndexToItem[logicalIndex] :
-                                                         nullptr;
-}
-
-QStandardItem* ModelInstance::verticalItem(int logicalIndex)
-{
-    return mCache->VIndexToItem.contains(logicalIndex) ? mCache->VIndexToItem[logicalIndex] :
-                                                         nullptr;
-}
-
-const QList<QStandardItem*>& ModelInstance::horizontalTree() const
-{
-    return mCache->horizontalTree();
-}
-
-const QList<QStandardItem*>& ModelInstance::verticalTree() const
-{
-    return mCache->verticalTree();
-}
-
-QList<QStandardItem*> ModelInstance::horizontalItems()
-{
-    return mCache->HIndexToItem.values();
-}
-
-QList<QStandardItem*> ModelInstance::verticalItems()
-{
-    return mCache->VIndexToItem.values();
-}
-
-QList<QStandardItem*> ModelInstance::horizontalUelItems()
-{
-    return mCache->HItemToIndex.keys();
-}
-
-QList<QStandardItem*> ModelInstance::verticalUelItems()
-{
-    return mCache->VItemToIndex.keys();
-}
-
-QList<QStandardItem*> ModelInstance::horizontalSymbols() const
-{
-    return mCache->HorizontalSymbols;
-}
-
-QList<QStandardItem*> ModelInstance::verticalSymbols() const
-{
-    return mCache->VerticalSymbols;
-}
-
-QList<QStandardItem*> ModelInstance::setBranchState(QStandardItem *startItem, Qt::CheckState state)
-{
-    QList<QStandardItem*> branch;
-    QList<QStandardItem*> items { startItem };
-    while (!items.isEmpty()) {
-        auto item = items.takeFirst();
-        for (int c=0; c<item->columnCount(); ++c)
-            items.append(item->child(0, c));
-        item->setCheckState(state);
-        branch.append(item);
-    }
-    return branch;
-}
-
-void ModelInstance::setUelStates(Qt::Orientation orientation,
-                                 const QMap<QString, bool> &uelStates)
-{
-    if (orientation == Qt::Horizontal)
-        mCache->HorizontalUelStates = uelStates;
-    mCache->VerticalUelStates = uelStates;
-}
-
-QMap<QString, bool> ModelInstance::uelStates(Qt::Orientation orientation)
-{
-    QMap<QString, bool> &uelStates = orientation == Qt::Horizontal ? mCache->HorizontalUelStates :
-                                                                     mCache->VerticalUelStates;
-    if (!uelStates.isEmpty()) {
-        return uelStates;
-    }
-
+    UelFilter filter;
     Q_FOREACH(const auto &symbolInfo, symbols(dcteqnSymType)) {
         int nDomains;
         int domains[GLOBAL_MAX_INDEX_DIM];
@@ -980,52 +875,14 @@ QMap<QString, bool> ModelInstance::uelStates(Qt::Orientation orientation)
             }
 
             char quote;
-            char uelName[GMS_SSSIZE];
+            char name[GMS_SSSIZE];
             for (int k=0; k<nDomains; ++k) {
-                dctUelLabel(mDCT, domains[k], &quote, uelName, GMS_SSSIZE);
-                uelStates[uelName] = true;
+                dctUelLabel(mDCT, domains[k], &quote, name, GMS_SSSIZE);
+                filter[name] = Qt::Checked;
             }
         }
     }
-
-    return uelStates;
-}
-
-int ModelInstance::horizontalIndex(QStandardItem *item)
-{
-    return mCache->HItemToIndex.contains(item) ? mCache->HItemToIndex[item] : -1;
-}
-
-int ModelInstance::verticalIndex(QStandardItem *item)
-{
-    return mCache->VItemToIndex.contains(item) ? mCache->VItemToIndex[item] : -1;
-}
-
-int ModelInstance::itemToIndex(Qt::Orientation orientation, QStandardItem *item)
-{// TODO remove orientation
-    int index = -1;
-    if (orientation == Qt::Horizontal)
-        index = horizontalIndex(item);
-    else
-        index = verticalIndex(item);
-    return index;
-}
-
-void ModelInstance::setHeaderRootItemEnabled(QStandardItem *item, bool enabled)
-{
-    QList<QStandardItem*> items { item };
-    while (!items.isEmpty()) {
-        auto item = items.takeFirst();
-        for (int c=0; c<item->columnCount(); ++c) {
-            items.append(item->child(0, c));
-        }
-        item->setCheckState(enabled ? Qt::Checked : Qt::Unchecked);
-    }
-}
-
-int ModelInstance::predefinedHeaderLength() const
-{
-    return PredefinedHeaderLength;
+    mCache->InitialUelFilter[orientation] = filter;
 }
 
 QVariant ModelInstance::data(int row, int column) const
@@ -1043,14 +900,89 @@ QVariant ModelInstance::data(int row, int column) const
     return mCache->jaccobianValue(cIndex, rIndex);
 }
 
-ValueFilterSettings ModelInstance::valueFilterSettings() const
+QString ModelInstance::headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const
 {
-    return mCache->valueFilterSettings();
+    if (sectionIndex < PredefinedHeaderLength)
+        return PredefinedHeader.at(sectionIndex);
+    if (orientation == Qt::Horizontal) {
+        auto var = variable(sectionIndex);
+        if (dimension < 0)
+            return var.Name;
+        return var.dimensionData(sectionIndex, dimension);
+    }
+    auto eqn = equation(sectionIndex);
+    if (dimension < 0)
+        return eqn.Name;
+    return eqn.dimensionData(sectionIndex, dimension);
 }
 
-void ModelInstance::setValueFilterSettings(const ValueFilterSettings &settings)
+void ModelInstance::searchSymbolData(int logicalIndex,
+                                     int sectionIndex,
+                                     const QString &term,
+                                     bool isRegEx,
+                                     Qt::Orientation orientation,
+                                     QList<SearchResult> &result)
 {
-    mCache->setValueFilterSettings(settings);
+    std::function<bool(const QString&)> compare;
+    if (isRegEx) {
+        QRegExp regex(term);
+        compare = [regex](const QString &text) {
+            return regex.exactMatch(text);
+        };
+    } else {
+        compare = [&term](const QString &text) {
+            return text.contains(term, Qt::CaseInsensitive);
+        };
+    }
+
+    auto sym = mCache->sectionSymbol(sectionIndex, orientation);
+    if (compare(sym.Name)) {
+        result.append(SearchResult{logicalIndex, orientation});
+    } else {
+        auto uels = sym.DimensionData[sectionIndex];
+        Q_FOREACH(const auto uel, uels) {
+            if (compare(uel)) {
+                result.append(SearchResult{logicalIndex, orientation});
+                break;
+            }
+        }
+    }
+}
+
+SymbolFilter ModelInstance::initialSymboldFilter(QAbstractItemModel *model,
+                                                 Qt::Orientation orientation)
+{
+    int sections = orientation == Qt::Horizontal ? model->columnCount() :
+                                                   model->rowCount();
+    bool ok;
+    SymbolFilter filter;
+    QSet<QString> symNames;
+    for (int s=0; s<PredefinedHeaderLength; ++s) {
+        auto data = headerData(s, -1, orientation);
+        filter.push_back(SymbolFilterItem{ false, -1, data, Qt::Unchecked });
+    }
+    for (int s=0; s<sections; ++s) {
+        int realSection = model->headerData(s, orientation).toInt(&ok);
+        if (!ok) continue;
+        auto data = headerData(realSection, -1, orientation);
+        if (realSection < PredefinedHeaderLength) {
+            filter[realSection] = SymbolFilterItem{ true, realSection, data, Qt::Checked };
+        } else if (!symNames.contains(data)) {
+            symNames.insert(data);
+            filter.push_back(SymbolFilterItem{ true, realSection, data, Qt::Checked });
+        }
+    }
+    return filter;
+}
+
+UelFilterMap ModelInstance::initialUelFilter() const
+{
+    return mCache->InitialUelFilter;
+}
+
+ValueFilter ModelInstance::initalValueFilter() const
+{
+    return mCache->initalValueFilter();
 }
 
 void ModelInstance::initialize()
@@ -1167,7 +1099,7 @@ QVariant ModelInstance::verticalAttribute(const QString &header, int row)
 
 QPair<double, double> ModelInstance::equationBounds(int row)
 {
-    QPair<double, double> bounds(-1, -1); // TODO keep these default values?
+    QPair<double, double> bounds(-1, -1); // TODO (AF) keep these default values?
 
     switch (gmoGetEquTypeOne(mGMO, row)) {
     case gmoequ_B:
@@ -1194,66 +1126,6 @@ QPair<double, double> ModelInstance::equationBounds(int row)
         break;
     }
     return bounds;
-}
-
-void ModelInstance::appendHeaderColumns(QStandardItem *parent,
-                                        const SymbolInfo &symbolInfo,
-                                        Qt::Orientation orientation)
-{// TODO check later if we want to improve performance... non-recursive
-    int nDomains;
-    int domains[GLOBAL_MAX_INDEX_DIM];
-    for (int j=0; j<symbolInfo.Entries; ++j) {
-        if (gmoGetjSolverQuiet(mGMO, symbolInfo.Offset + j) < 0)
-            continue;
-
-        int symIndex;
-        if (orientation == Qt::Horizontal) {
-            if (dctColUels(mDCT, symbolInfo.Offset+j, &symIndex, domains, &nDomains))
-                continue;
-        } else {
-            if (dctRowUels(mDCT, symbolInfo.Offset+j, &symIndex, domains, &nDomains))
-                continue;
-        }
-
-        char quote;
-        char uelName[GMS_SSSIZE];
-        QStringList uels;
-        for (int k=0; k<nDomains; ++k) {
-            dctUelLabel(mDCT, domains[k], &quote, uelName, GMS_SSSIZE);
-            uels << uelName;
-        }
-
-        appendHeaderItems(parent, uels);
-    }
-}
-
-void ModelInstance::appendHeaderItems(QStandardItem *parent, QStringList &uels)
-{
-    if (uels.isEmpty())
-        return;
-    auto uel = uels.takeFirst();
-    if (parent->columnCount() == 0) {
-        auto child = new QStandardItem(uel);
-        child->setCheckState(Qt::Checked);
-        parent->appendColumn({child});
-        appendHeaderItems(child, uels);
-    } else {
-        bool found = false;
-        for (int i=0; i<parent->columnCount(); ++i) {
-            auto child = parent->child(0, i);
-            if (child->text() == uel) {
-                found = true;
-                appendHeaderItems(child, uels);
-                break;
-            }
-        }
-        if (!found) {
-            auto child = new QStandardItem(uel);
-            child->setCheckState(Qt::Checked);
-            parent->appendColumn({child});
-            appendHeaderItems(child, uels);
-        }
-    }
 }
 
 QVariant ModelInstance::specialValue(double value)
@@ -1284,32 +1156,6 @@ QVariant ModelInstance::specialMarginalVarValueBasis(double value, int cIndex)
     if (gmoGetVarStatOne(mGMO, cIndex) != gmoBstat_Basic && value == 0.0)
         return "EPS";
     return specialValue(value);
-}
-
-void ModelInstance::setItemToIndexMapping(QStandardItem *item, QMap<QStandardItem *, int> &mapping)
-{
-    auto parent = item;
-    while (parent->parent())
-        parent = parent->parent();
-
-    int parentIndex = mapping[parent];
-    QList<QStandardItem*> nodes;
-    QList<QStandardItem*> subTree { parent };
-    while (!subTree.isEmpty()) {
-        auto subItem = subTree.takeFirst();
-        if (subItem->columnCount()) {
-            nodes.prepend(subItem);
-            for (int c=subItem->columnCount()-1; c>=0; --c)
-                subTree.prepend(subItem->child(0, c));
-        } else {
-            mapping[subItem] = parentIndex++;
-        }
-    }
-
-    Q_FOREACH(auto node, nodes) {
-        auto child = node->child(0, 0);
-        mapping[node] = mapping[child];
-    }
 }
 
 int ModelInstance::errorCallback(int count, const char *message)

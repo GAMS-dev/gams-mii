@@ -1,7 +1,4 @@
 #include "valueformatproxymodel.h"
-#include "hierarchicalheaderview.h"
-
-#include <QDebug>
 
 namespace gams {
 namespace studio {
@@ -13,19 +10,20 @@ ValueFormatProxyModel::ValueFormatProxyModel(QObject *parent)
 
 }
 
-void ValueFormatProxyModel::setSettings(const ValueFilterSettings &settings)
+ValueFilter ValueFormatProxyModel::valueFilter() const
+{
+    return mValueFilter;
+}
+
+void ValueFormatProxyModel::setValueFilter(const ValueFilter &valueFilter)
 {
     beginResetModel();
-    mSettings = settings;
+    mValueFilter = valueFilter;
     endResetModel();
 }
 
 QVariant ValueFormatProxyModel::data(const QModelIndex &index, int role) const
 {
-    if (role == HierarchicalHeaderView::HorizontalHeaderDataRole ||
-        role == HierarchicalHeaderView::VerticalHeaderDataRole) {
-        return sourceModel()->data(index, role);
-    }
     if (!index.isValid())
         return QVariant();
     if (role != Qt::DisplayRole)
@@ -36,26 +34,26 @@ QVariant ValueFormatProxyModel::data(const QModelIndex &index, int role) const
 QVariant ValueFormatProxyModel::applyFilter(const QVariant &data) const
 {
     if (!data.toString().compare("eps", Qt::CaseInsensitive)) {
-        if  (mSettings.ShowEps)
+        if  (mValueFilter.ShowEps)
             return data;
         return QVariant();
     }
     if (!data.toString().compare("+inf", Qt::CaseInsensitive)) {
-        if (mSettings.ShowPInf)
+        if (mValueFilter.ShowPInf)
             return data;
         return QVariant();
     }
     if (!data.toString().compare("-inf", Qt::CaseInsensitive)) {
-        if (mSettings.ShowNInf)
+        if (mValueFilter.ShowNInf)
             return data;
         return QVariant();
     }
     bool ok;
     double value = data.toDouble(&ok);
     if (ok) {
-        if (!mSettings.Exclude && value >= mSettings.MinValue && value <= mSettings.MaxValue)
+        if (!mValueFilter.Exclude && value >= mValueFilter.MinValue && value <= mValueFilter.MaxValue)
             return data;
-        else if (mSettings.Exclude && (value < mSettings.MinValue || value > mSettings.MaxValue))
+        else if (mValueFilter.Exclude && (value < mValueFilter.MinValue || value > mValueFilter.MaxValue))
             return data;
     }
     return QVariant();

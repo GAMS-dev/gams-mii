@@ -2,21 +2,16 @@
 #include "ui_globalfilterdialog.h"
 #include "filtertreeitem.h"
 #include "filtertreemodel.h"
-#include "modelinstance.h"
 
-#include <QMap>
-#include <QStandardItem>
 #include <QSortFilterProxyModel>
-
-#include <QDebug>
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
-GlobalFilterDialog::GlobalFilterDialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::GlobalFilterDialog)
+GlobalFilterDialog::GlobalFilterDialog(QWidget *parent)
+    : QDialog(parent)
+    , ui(new Ui::GlobalFilterDialog)
 {
     ui->setupUi(this);
     ui->uelView->sortByColumn(0, Qt::AscendingOrder);
@@ -25,20 +20,6 @@ GlobalFilterDialog::GlobalFilterDialog(QWidget *parent) :
 
     connect(this, &QDialog::rejected,
             this, &GlobalFilterDialog::on_cancelButton_clicked);
-    connect(ui->minEdit, &QLineEdit::textChanged,
-            this, [this](const QString &text){
-                    mSettings.MinValue = text.toDouble(); });
-    connect(ui->maxEdit, &QLineEdit::textChanged,
-            this, [this](const QString &text){
-                    mSettings.MaxValue = text.toDouble(); });
-    connect(ui->excludeBox, &QCheckBox::stateChanged,
-            this, [this](int state){ mSettings.Exclude = state; });
-    connect(ui->pInfBox, &QCheckBox::stateChanged,
-            this, [this](int state){ mSettings.ShowPInf = state; });
-    connect(ui->nInfBox, &QCheckBox::stateChanged,
-            this, [this](int state){ mSettings.ShowNInf = state; });
-    connect(ui->epsBox, &QCheckBox::stateChanged,
-            this, [this](int state){ mSettings.ShowEps = state; });
 }
 
 GlobalFilterDialog::~GlobalFilterDialog()
@@ -46,96 +27,131 @@ GlobalFilterDialog::~GlobalFilterDialog()
     delete ui;
 }
 
-void GlobalFilterDialog::setModelInstance(QSharedPointer<ModelInstance> modelInstance)
+QMap<Qt::Orientation, SymbolFilter> GlobalFilterDialog::symbolFilter() const
 {
-    mModelInstance = modelInstance;
-    mSettings = mModelInstance->valueFilterSettings();
-    ui->minEdit->setText(QString::number(mSettings.MinValue));
-    ui->maxEdit->setText(QString::number(mSettings.MaxValue));
-    ui->excludeBox->setChecked(mSettings.Exclude);
-    ui->epsBox->setChecked(mSettings.ShowEps);
-    ui->nInfBox->setChecked(mSettings.ShowNInf);
-    ui->pInfBox->setChecked(mSettings.ShowPInf);
-    setupEquationFilter();
-    setupVariableFilter();
-    setupUelsFilter();
+    return mSymbolFilter;
 }
 
-void GlobalFilterDialog::reloadUpdatedFilterData()
+void GlobalFilterDialog::setSymbolFilter(const SymbolFilterMap &filter)
 {
-    mSettings = mModelInstance->valueFilterSettings();
-    setModelInstance(mModelInstance);
-    applyEqnFilter(ui->equationEdit->text());
-    applyVarFilter(ui->variableEdit->text());
-    applyUelFilter(ui->uelEdit->text());
+    mSymbolFilter = filter;
+    setupEquationFilter(mSymbolFilter[Qt::Vertical]);
+    setupVariableFilter(mSymbolFilter[Qt::Horizontal]);
+}
+
+void GlobalFilterDialog::setDefaultSymbolFilter(const SymbolFilterMap &filter)
+{
+    mDefaultSymbolFilter = filter;
+}
+
+ValueFilter GlobalFilterDialog::valueFilter() const
+{
+    return mValueFilter;
+}
+
+void GlobalFilterDialog::setValueFilter(const ValueFilter &filter)
+{
+    mValueFilter = filter;
+    ui->minEdit->setText(QString::number(mValueFilter.MinValue));
+    ui->maxEdit->setText(QString::number(mValueFilter.MaxValue));
+    ui->excludeBox->setChecked(mValueFilter.Exclude);
+    ui->epsBox->setChecked(mValueFilter.ShowEps);
+    ui->nInfBox->setChecked(mValueFilter.ShowNInf);
+    ui->pInfBox->setChecked(mValueFilter.ShowPInf);
+}
+
+void GlobalFilterDialog::setDefaultValueFilter(const ValueFilter &filter)
+{
+    mDefaultValueFilter = filter;
+}
+
+UelFilterMap GlobalFilterDialog::uelFilter() const
+{
+    return mUelFilter;
+}
+
+void GlobalFilterDialog::setUelFilter(const UelFilterMap &filter)
+{
+    mUelFilter = filter;
+    setupUelFilter();
+}
+
+void GlobalFilterDialog::setDefaultUelFilter(const UelFilterMap &filter)
+{
+    mDefaultUelFilter = filter;
 }
 
 void GlobalFilterDialog::on_applyButton_clicked()
 {
-    updateEqnVarData(Qt::Horizontal,
-                     static_cast<FilterTreeModel*>(mVarFilterModel->sourceModel())->filterItem());
-    updateEqnVarData(Qt::Vertical,
-                     static_cast<FilterTreeModel*>(mEqnFilterModel->sourceModel())->filterItem());
-
-    auto hUelStates = uelSatesFromFilterView(Qt::Horizontal);
-    mModelInstance->setUelStates(Qt::Horizontal, hUelStates);
-
-    auto vUelStates = uelSatesFromFilterView(Qt::Vertical);
-    mModelInstance->setUelStates(Qt::Vertical, vUelStates);
-
-    mModelInstance->setValueFilterSettings(mSettings);
-    emit updated();
+    mSymbolFilter[Qt::Horizontal] = applyHeaderFilter(mVarFilterModel);
+    mSymbolFilter[Qt::Vertical] = applyHeaderFilter(mEqnFilterModel);
+    applyValueFilter();
+    mUelFilter[Qt::Horizontal] = applyUelFilter(Qt::Horizontal, mUelFilterModel);
+    mUelFilter[Qt::Vertical] = applyUelFilter(Qt::Vertical, mUelFilterModel);
+    emit filterUpdated();
 }
 
 void GlobalFilterDialog::on_resetButton_clicked()
 {
-    mSettings = mModelInstance->valueFilterSettings();
-    setModelInstance(mModelInstance);
+    setSymbolFilter(mDefaultSymbolFilter);
+    setValueFilter(mDefaultValueFilter);
+    setUelFilter(mDefaultUelFilter);
+
     ui->equationEdit->setText("");
     ui->variableEdit->setText("");
     ui->uelEdit->setText("");
     ui->uelFilterBox->setCurrentIndex(0);
+
+    on_applyButton_clicked();
 }
 
 void GlobalFilterDialog::on_cancelButton_clicked()
 {
-    on_resetButton_clicked();
+    setSymbolFilter(mSymbolFilter);
+    setValueFilter(mValueFilter);
+    setUelFilter(mUelFilter);
+
+    ui->equationEdit->setText("");
+    ui->variableEdit->setText("");
+    ui->uelEdit->setText("");
+    ui->uelFilterBox->setCurrentIndex(0);
+
     close();
 }
 
 void GlobalFilterDialog::on_selectEqnButton_clicked()
 {
-    setCheckState(mEqnFilterModel, Qt::Checked);
+    applyCheckState(ui->equationView, mEqnFilterModel, Qt::Checked);
     ui->equationView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void GlobalFilterDialog::on_deselectEqnButton_clicked()
 {
-    setCheckState(mEqnFilterModel, Qt::Unchecked);
+    applyCheckState(ui->equationView, mEqnFilterModel, Qt::Unchecked);
     ui->equationView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void GlobalFilterDialog::on_selectVarButton_clicked()
 {
-    setCheckState(mVarFilterModel, Qt::Checked);
+    applyCheckState(ui->variableView, mVarFilterModel, Qt::Checked);
     ui->variableView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void GlobalFilterDialog::on_deselectVarButton_clicked()
 {
-    setCheckState(mVarFilterModel, Qt::Unchecked);
+    applyCheckState(ui->variableView, mVarFilterModel, Qt::Unchecked);
     ui->variableView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void GlobalFilterDialog::on_selectUelButton_clicked()
 {
-    setCheckState(mUelFilterModel, Qt::Checked);
+    applyCheckState(ui->uelView, mUelFilterModel, Qt::Checked);
     ui->uelView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void GlobalFilterDialog::on_deselectUelButton_clicked()
 {
-    setCheckState(mUelFilterModel, Qt::Unchecked);
+    applyCheckState(ui->uelView, mUelFilterModel, Qt::Unchecked);
     ui->uelView->dataChanged(QModelIndex(), QModelIndex());
 }
 
@@ -157,30 +173,9 @@ void GlobalFilterDialog::on_uelFilterBox_currentIndexChanged(int index)
     }
 }
 
-void GlobalFilterDialog::applyEqnFilter(const QString &text)
+void GlobalFilterDialog::setupEquationFilter(const SymbolFilter &filter)
 {
-    if (!mEqnFilterModel) return;
-    mEqnFilterModel->setFilterWildcard(text);
-    ui->equationView->expandAll();
-}
-
-void GlobalFilterDialog::applyVarFilter(const QString &text)
-{
-    if (!mVarFilterModel) return;
-    mVarFilterModel->setFilterWildcard(text);
-    ui->variableView->expandAll();
-}
-
-void GlobalFilterDialog::applyUelFilter(const QString &text)
-{
-    mUelFilterModel->setFilterWildcard(text);
-    ui->uelView->expandAll();
-}
-
-void GlobalFilterDialog::setupEquationFilter()
-{
-    auto filterItem = setupEqnVarFilterItems(Qt::Vertical,
-                                             mModelInstance->verticalSymbols());
+    auto filterItem = setupSymTreeItems(Qt::Vertical, filter);
     auto oldEqnModel = ui->equationView->selectionModel();
     auto eqnTreeModel = new FilterTreeModel(filterItem, ui->equationView);
     mEqnFilterModel = new QSortFilterProxyModel(ui->equationView);
@@ -192,13 +187,16 @@ void GlobalFilterDialog::setupEquationFilter()
     if (oldEqnModel)
         oldEqnModel->deleteLater();
     connect(ui->equationEdit, &QLineEdit::textChanged,
-            this, &GlobalFilterDialog::applyEqnFilter);
+            this, [this](const QString &text){
+                            if (!mEqnFilterModel) return;
+                            mEqnFilterModel->setFilterWildcard(text);
+                            ui->equationView->expandAll();
+                        });
 }
 
-void GlobalFilterDialog::setupVariableFilter()
+void GlobalFilterDialog::setupVariableFilter(const SymbolFilter &filter)
 {
-    auto filterItem = setupEqnVarFilterItems(Qt::Horizontal,
-                                             mModelInstance->horizontalSymbols());
+    auto filterItem = setupSymTreeItems(Qt::Horizontal, filter);
     auto oldVarModel = ui->variableView->selectionModel();
     auto varTreeModel = new FilterTreeModel(filterItem, ui->variableView);
     mVarFilterModel = new QSortFilterProxyModel(ui->variableEdit);
@@ -210,11 +208,39 @@ void GlobalFilterDialog::setupVariableFilter()
     if (oldVarModel)
         oldVarModel->deleteLater();
     connect(ui->variableEdit, &QLineEdit::textChanged,
-            this, &GlobalFilterDialog::applyVarFilter);
+            this, [this](const QString &text) {
+                                                if (!mVarFilterModel) return;
+                                                mVarFilterModel->setFilterWildcard(text);
+                                                ui->variableView->expandAll();
+                                              });
 }
 
-FilterTreeItem* GlobalFilterDialog::setupEqnVarFilterItems(Qt::Orientation orientation,
-                                                           const QList<QStandardItem*> items)
+void GlobalFilterDialog::setupUelFilter()
+{
+    auto uelFilterItem = new FilterTreeItem("", Qt::Unchecked);
+    uelFilterItem->setCheckable(false);
+    setupUelTreeItems(Qt::Horizontal, uelFilterItem);
+    setupUelTreeItems(Qt::Vertical, uelFilterItem);
+
+    auto oldUelModel = ui->uelView->selectionModel();
+    auto uelTreeModel = new FilterTreeModel(uelFilterItem, ui->uelView);
+    mUelFilterModel = new QSortFilterProxyModel(ui->uelView);
+    mUelFilterModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    mUelFilterModel->setRecursiveFilteringEnabled(true);
+    mUelFilterModel->setSourceModel(uelTreeModel);
+    ui->uelView->setModel(mUelFilterModel);
+    ui->uelView->expandAll();
+    if (oldUelModel)
+        oldUelModel->deleteLater();
+    connect(ui->uelEdit, &QLineEdit::textChanged,
+            this, [this](const QString &text){
+                                                mUelFilterModel->setFilterWildcard(text);
+                                                ui->uelView->expandAll();
+                                              });
+}
+
+FilterTreeItem* GlobalFilterDialog::setupSymTreeItems(Qt::Orientation orientation,
+                                                   const SymbolFilter &filter)
 {
     auto root = new FilterTreeItem(QString(), Qt::Unchecked);
     root->setCheckable(false);
@@ -226,48 +252,26 @@ FilterTreeItem* GlobalFilterDialog::setupEqnVarFilterItems(Qt::Orientation orien
                                        Qt::Unchecked, -1, root);
     typeItem->setCheckable(false);
     root->append(typeItem);
-    Q_FOREACH(auto item, items) {
-        auto itemIndex = mModelInstance->itemToIndex(orientation, item);
-        if (itemIndex < mModelInstance->predefinedHeaderLength()) {
-            auto fitem = new FilterTreeItem(item->data(Qt::DisplayRole).toString(),
-                                            item->checkState(),
-                                            itemIndex,
+    Q_FOREACH(auto item, filter) {
+        if (item.SectionIndex < PredefinedHeaderLength) {
+            auto fItem = new FilterTreeItem(item.Text,
+                                            item.Checked,
+                                            item.SectionIndex,
                                             attributes);
-            attributes->append(fitem);
+            fItem->setEnabled(item.Enabled);
+            attributes->append(fItem);
         } else {
-            auto fitem = new FilterTreeItem(item->data(Qt::DisplayRole).toString(),
-                                            item->checkState(),
-                                            itemIndex,
+            auto fItem = new FilterTreeItem(item.Text,
+                                            item.Checked,
+                                            item.SectionIndex,
                                             typeItem);
-            typeItem->append(fitem);
+            typeItem->append(fItem);
         }
     }
     return root;
 }
 
-void GlobalFilterDialog::setupUelsFilter()
-{
-    auto uelFilterItem = new FilterTreeItem("", Qt::Unchecked);
-    uelFilterItem->setCheckable(false);
-    setupUelFilterItems(Qt::Horizontal, uelFilterItem);
-    setupUelFilterItems(Qt::Vertical, uelFilterItem);
-
-    auto oldUelModel = ui->uelView->selectionModel();
-    mUelTreeModel = new FilterTreeModel(uelFilterItem, ui->uelView);
-    mUelFilterModel = new QSortFilterProxyModel(ui->uelView);
-    mUelFilterModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-    mUelFilterModel->setRecursiveFilteringEnabled(true);
-    mUelFilterModel->setSourceModel(mUelTreeModel);
-    ui->uelView->setModel(mUelFilterModel);
-    ui->uelView->expandAll();
-    if (oldUelModel)
-        oldUelModel->deleteLater();
-    connect(ui->uelEdit, &QLineEdit::textChanged,
-            this, &GlobalFilterDialog::applyUelFilter);
-}
-
-void GlobalFilterDialog::setupUelFilterItems(Qt::Orientation orientation,
-                                             FilterTreeItem *root)
+void GlobalFilterDialog::setupUelTreeItems(Qt::Orientation orientation, FilterTreeItem *root)
 {
     auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ?
                                            FilterTreeItem::VariableText :
@@ -275,8 +279,9 @@ void GlobalFilterDialog::setupUelFilterItems(Qt::Orientation orientation,
                                        Qt::Unchecked, -1, root);
     typeItem->setCheckable(false);
     root->append(typeItem);
-    auto uelStates = mModelInstance->uelStates(orientation);
-    for (auto iter=uelStates.constKeyValueBegin(); iter!=uelStates.constKeyValueEnd(); ++iter) {
+
+    auto uelFilter = mUelFilter[orientation];
+    for (auto iter=uelFilter.constKeyValueBegin(); iter!=uelFilter.constKeyValueEnd(); ++iter) {
         auto treeItem = new FilterTreeItem(iter->first,
                                            iter->second ? Qt::Checked : Qt::Unchecked,
                                            -1, typeItem);
@@ -284,64 +289,83 @@ void GlobalFilterDialog::setupUelFilterItems(Qt::Orientation orientation,
     }
 }
 
-void GlobalFilterDialog::updateEqnVarData(Qt::Orientation orientation,
-                                          FilterTreeItem *filterTree)
-{
-    QList<FilterTreeItem*> items { filterTree };
-    while (!items.isEmpty()) {
-        auto item = items.takeFirst();
-        items.append(item->childs());
-        if (item->isCheckable()) {
-            QStandardItem *stdItem;
-            if (orientation == Qt::Horizontal) {
-                stdItem = mModelInstance->horizontalItem(item->logicalIndex());
-                mModelInstance->setHeaderRootItemEnabled(stdItem, item->checked());
-            } else {
-                stdItem = mModelInstance->verticalItem(item->logicalIndex());
-                mModelInstance->setHeaderRootItemEnabled(stdItem, item->checked());
-            }
-        }
-    }
-}
-
-void GlobalFilterDialog::setCheckState(QSortFilterProxyModel *filterModel,
-                                       Qt::CheckState state)
+void GlobalFilterDialog::applyCheckState(QTreeView *view,
+                                         QSortFilterProxyModel *model,
+                                         Qt::CheckState state)
 {
     QModelIndexList indexes;
-    for(int row=0; row<filterModel->rowCount(); ++row) {
-        indexes.append(filterModel->index(row, 0));
+    for(int row=0; row<model->rowCount(); ++row) {
+        auto index = model->index(row, 0);
+        if (view->isExpanded(index) && !view->isRowHidden(row, QModelIndex()))
+            indexes.append(index);
     }
     while (!indexes.isEmpty()) {
         auto index = indexes.takeFirst();
-        filterModel->setData(index, state, Qt::CheckStateRole);
-        if (filterModel->hasChildren(index)) {
-            for(int row=0; row<filterModel->rowCount(index); ++row)
-                indexes.append(filterModel->index(row, 0, index));
+        if (model->flags(index) == Qt::NoItemFlags)
+            continue;
+        model->setData(index, state, Qt::CheckStateRole);
+        if (model->hasChildren(index)) {
+            for(int row=0; row<model->rowCount(index); ++row)
+                indexes.append(model->index(row, 0, index));
         }
     }
 }
 
-QMap<QString, bool> GlobalFilterDialog::uelSatesFromFilterView(Qt::Orientation orientation)
+SymbolFilter GlobalFilterDialog::applyHeaderFilter(QSortFilterProxyModel *model)
 {
-    QMap<QString, bool> uels;
-    if (!mUelTreeModel->filterItem())
-        return uels;
-    FilterTreeItem *root = nullptr;
-    Q_FOREACH(auto item, mUelTreeModel->filterItem()->childs()) {
-        if (orientation == Qt::Horizontal && item->text() == FilterTreeItem::VariableText) {
-            root = item;
+    QList<FilterTreeItem*> items {
+        static_cast<FilterTreeModel*>(model->sourceModel())->filterItem()
+    };
+    SymbolFilter filter;
+    while (!items.isEmpty()) {
+        auto item = items.takeFirst();
+        items.append(item->childs());
+        if (!item->isCheckable())
+            continue;
+        filter.push_back(SymbolFilterItem {
+                             item->isEnabled(), item->index(), item->text(), item->checked()
+                         });
+    }
+    return filter;
+}
+
+void GlobalFilterDialog::applyValueFilter()
+{
+    mValueFilter.MinValue = ui->minEdit->text().toDouble();
+    mValueFilter.MaxValue = ui->maxEdit->text().toDouble();
+    mValueFilter.Exclude = ui->excludeBox->isChecked();
+    mValueFilter.ShowPInf = ui->pInfBox->isChecked();
+    mValueFilter.ShowNInf = ui->nInfBox->isChecked();
+    mValueFilter.ShowEps = ui->epsBox->isChecked();
+}
+
+UelFilter GlobalFilterDialog::applyUelFilter(Qt::Orientation orientation,
+                                             QSortFilterProxyModel *model)
+{
+    FilterTreeItem* root = nullptr;
+    auto childs = static_cast<FilterTreeModel*>(model->sourceModel())->filterItem()->childs();
+    Q_FOREACH(auto child, childs) {
+        if (orientation == Qt::Horizontal && child->text() == FilterTreeItem::VariableText) {
+            root = child;
             break;
-        } else if (orientation == Qt::Vertical && item->text() == FilterTreeItem::EquationText) {
-            root = item;
+        } else if (orientation == Qt::Vertical && child->text() == FilterTreeItem::EquationText) {
+            root = child;
             break;
         }
     }
-    if (!root)
-        return uels;
-    Q_FOREACH(auto item, root->childs()) {
-        uels[item->text()] = item->checked();
+
+    UelFilter filter;
+    if (root) {
+        QList<FilterTreeItem*> items { root };
+        while (!items.isEmpty()) {
+            auto item = items.takeFirst();
+            items.append(item->childs());
+            if (!item->isCheckable())
+                continue;
+            filter[item->text()] = item->checked();
+        }
     }
-    return uels;
+    return filter;
 }
 
 }

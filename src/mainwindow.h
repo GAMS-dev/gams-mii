@@ -64,15 +64,19 @@ private slots:
     // View
     void on_actionGlobal_Filters_triggered();
     void on_actionAggregation_triggered();
+    void on_actionShow_search_result_triggered();
+    void on_actionPrint_DBG_Stuff_triggered(); // TODO remove
 
     // Help
     void on_actionAbout_Qt_triggered();
 
     // Other
+    void globalFilterUpdate();
     void updateMenuEntries();
     void handleFilterUpdate();
     void searchResultSelectionChanged(const QModelIndex &index);
     void updateModelInstance();
+
 
 private:
     void loadGAMSModel(const QString &path);

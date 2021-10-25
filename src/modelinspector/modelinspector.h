@@ -24,7 +24,7 @@
 #include <QSharedPointer>
 #include <QWidget>
 
-#include "searchresult.h"
+#include "common.h"
 
 class QStandardItem;
 
@@ -41,7 +41,10 @@ class ModelInstance;
 class ModelInstanceTableModel;
 class SectionTreeModel;
 class SearchResultModel;
+class ColumnRowFilterModel;
+class SymbolFilterModel;
 class ValueFormatProxyModel;
+class UelFilterModel;
 struct ValueFilterSettings;
 
 class ModelInspector : public QWidget
@@ -62,6 +65,18 @@ public:
 
     QSharedPointer<ModelInstance> modelInstance() const;
 
+    SymbolFilterMap symbolFilter();
+    SymbolFilterMap defaultSymbolFilter();
+    void setSymbolFilter(const SymbolFilterMap &filter);
+
+    ValueFilter valueFilter() const;
+    ValueFilter defaultValueFilter() const;
+    void setValueFilter(const ValueFilter &filter);
+
+    UelFilterMap uelFilter() const;
+    UelFilterMap defaultUelFilter() const;
+    void setUelFilter(const UelFilterMap &filter);
+
 signals:
     void filtersUpdated();
 
@@ -71,29 +86,33 @@ signals:
 
 public slots:
     void loadModelInstance(int exitCode, QProcess::ExitStatus status);
-    void releasePreviousModel();
-
-    void processGlobalFilterUpdate();
-    void processAggregationUpdate();
+    void setupModelInstanceView();
 
     void setCurrentView(int index);
 
     void setSearchSelection(const SearchResult &result);
 
-private slots:
-    void applyHeaderLabelFilter(FilterTreeItem *root, Qt::Orientation orientation);
+    void printDebugStuff(); // TODO remove
+
+//private slots: // TODO Symbol Icon filter
+    //void applyHeaderLabelFilter(FilterTreeItem *root, Qt::Orientation orientation);
 
 private:
-    void applyHeaderSymbolFilter();
+    void searchHeader(const QString &term, bool isRegEx,
+                      Qt::Orientation orientation,
+                      QList<SearchResult> &result);
 
 private:
     Ui::ModelInspector* ui;
     QString mScratchDir;
     QString mWorkspace;
-    SectionTreeModel *mSectionModel;
+    SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<ModelInstance> mModelInstance;
     QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;
-    ValueFormatProxyModel *mValueFormatModel;
+    ValueFormatProxyModel* mValueFormatModel = nullptr;
+    ColumnRowFilterModel* mColumnRowFilterModel = nullptr;
+    SymbolFilterModel* mSymbolFilterModel = nullptr;
+    UelFilterModel* mUelFilterModel = nullptr;
 };
 
 }

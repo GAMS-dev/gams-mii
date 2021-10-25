@@ -24,6 +24,8 @@
 #include "gmomcc.h"
 #include "dctmcc.h"
 
+#include "common.h"
+
 #include <functional>
 
 #include <QMap>
@@ -31,8 +33,7 @@
 #include <QStringList>
 #include <QVariant>
 
-class QStandardItem;
-class QStandardItemModel;
+class QAbstractItemModel;
 
 namespace gams {
 namespace studio {
@@ -40,7 +41,7 @@ namespace modelinspector {
 
 struct ValueFilterSettings;
 
-// TODO Which default values if something goes wrong (e.g. excel '##ERROR##', -1, ...)? -> something like '##ERROR##'
+// TODO (AF) Which default values if something goes wrong (e.g. excel '##ERROR##', -1, ...)? -> something like '##ERROR##'
 
 typedef QMap<int, QVariant> JaccobianRow;
 typedef QVector<JaccobianRow> Jaccobian;
@@ -49,7 +50,7 @@ typedef QMap<int, QVariant> AttribeValueLine;
 typedef QMap<int, AttribeValueLine> AttributeValues;
 
 struct SymbolInfo
-{
+{// TODO review... get/set functions?
     int Index = -1;
     int Offset = -1;
     int Entries = -1;
@@ -57,16 +58,49 @@ struct SymbolInfo
     int Dimension = -1;
     int Type = -1;
 
-    bool isScalar() const {
+    ///
+    /// \brief DimensionData Data by section index.
+    ///
+    QMap<int, QStringList> DimensionData;
+
+    QString dimensionData(int sectionIndex, int dimension) const
+    {
+        auto data = DimensionData[sectionIndex];
+        if (dimension < data.size())
+            return data[dimension];
+        return QString();
+    }
+
+    bool isScalar() const
+    {
         return Entries == 1;
     }
 
-    int lastOffset() const {
+    int lastOffset() const
+    {
         return Offset+Entries;
     }
+
+    int firstSection() const {
+        return mFirstSection;
+    }
+
+    void setFirstSection(int sectionIndex)
+    {
+        mFirstSection = sectionIndex;
+    }
+
+    int lastSection() const
+    {
+        return mFirstSection+Entries-1;
+    }
+
+private:
+    int mFirstSection = -1;
 };
 
-struct MaxMin {
+struct MaxMin
+{
     bool Valid = false;
     double Max;
     double Min;
@@ -88,6 +122,8 @@ public:
     int negativeCoefficents() const;
 
     int nonLinearCoefficents() const;
+
+    SymbolInfo equation(int sectionIndex) const;
 
     const QVector<SymbolInfo>& equations() const;
 
@@ -112,12 +148,18 @@ public:
 
     QString longestVarText() const;
 
+    SymbolInfo variable(int sectionIndex) const;
+
     const QVector<SymbolInfo>& variables() const;
 
     /**
      * @brief Total number of variables.
      */
     int variableCount() const;
+
+    int maxEquationDimension() const;
+
+    int maxVariableDimension() const;
 
     /**
      * @brief Number of variables defined by <c>type</c>.
@@ -169,8 +211,6 @@ public:
     */
     int symbolOffset(const QString &label) const;
 
-    SymbolInfo symbol(int index) const;
-
     const SymbolInfo& symbol(int index, int type) const;
 
     const QVector<SymbolInfo>& symbols(int type) const;
@@ -191,44 +231,27 @@ public:
 
     int columnCount() const;
 
-    void horizontalHeaderData(QStandardItemModel &model);
-    void verticalHeaderData(QStandardItemModel &model);
-
-    QStandardItem* horizontalItem(int logicalIndex);
-    QStandardItem* verticalItem(int logicalIndex);
-
-    const QList<QStandardItem*>& horizontalTree() const;
-    const QList<QStandardItem*>& verticalTree() const;
-
-    QList<QStandardItem*> horizontalItems();
-    QList<QStandardItem*> verticalItems();
-
-    QList<QStandardItem*> horizontalUelItems();
-    QList<QStandardItem*> verticalUelItems();
-
-    QList<QStandardItem*> horizontalSymbols() const;
-    QList<QStandardItem*> verticalSymbols() const;
-
-    QList<QStandardItem*> setBranchState(QStandardItem *startItem, Qt::CheckState state);
-
-    void setUelStates(Qt::Orientation orientation, const QMap<QString, bool> &uelStates);
-    QMap<QString, bool> uelStates(Qt::Orientation orientation);
-
-    // TOOD merge the two functions?
-    int horizontalIndex(QStandardItem *item);
-    int verticalIndex(QStandardItem *item);
-    int itemToIndex(Qt::Orientation orientation, QStandardItem *item);
-    void setHeaderRootItemEnabled(QStandardItem *item, bool enabled);
-
-    int predefinedHeaderLength() const;
-
     QVariant data(int row, int column) const;
 
-    ValueFilterSettings valueFilterSettings() const;
-    void setValueFilterSettings(const ValueFilterSettings &settings);
+    QString headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const;
+
+    void searchSymbolData(int logicalIndex, int sectionIndex, const QString &term,
+                          bool isRegEx, Qt::Orientation orientation,
+                          QList<SearchResult> &result);
+
+    SymbolFilter initialSymboldFilter(QAbstractItemModel *model,
+                                      Qt::Orientation orientation);
+
+    UelFilterMap initialUelFilter() const;
+
+    ValueFilter initalValueFilter() const;
 
 private:
     void initialize();
+
+    SymbolInfo loadSymbol(int index, int sectionIndex) const;
+    void loadDimensions(SymbolInfo &symbolInf) const;
+    void loadInitialUelFilter(Qt::Orientation orientation);
 
     JaccobianRow jaccobianRow(int row);
 
@@ -237,17 +260,10 @@ private:
 
     QPair<double, double> equationBounds(int row);
 
-    void appendHeaderColumns(QStandardItem *parent, const SymbolInfo &symbolInfo,
-                             Qt::Orientation orientation);
-
-    void appendHeaderItems(QStandardItem *parent, QStringList &uels);
-
     QVariant specialValue(double value);
     QVariant specialMarginalValue(double value);
     QVariant specialMarginalEquValueBasis(double value, int rIndex);
     QVariant specialMarginalVarValueBasis(double value, int cIndex);
-
-    void setItemToIndexMapping(QStandardItem *item, QMap<QStandardItem*, int> &mapping);
 
     static int errorCallback(int count, const char *message);
 
@@ -265,9 +281,6 @@ private:
     std::function<QVariant(double, int)> specialMarginalVarValuePtr;
 
     QStringList mLogMessages;
-
-    const static QStringList PredefinedHeader;
-    const static int PredefinedHeaderLength;
 };
 
 }

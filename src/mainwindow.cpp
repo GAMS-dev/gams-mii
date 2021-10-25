@@ -66,11 +66,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->runButton, &QPushButton::clicked,
             this, &MainWindow::on_actionRun_triggered);
     connect(mAggregationDialog, &AggregationDialog::updated,
-            ui->modelInspector, &ModelInspector::processAggregationUpdate);
-    connect(mAggregationDialog, &AggregationDialog::updated,
             this, [this]{ mAggregationStatusLabel->setText(mAggregationDialog->statusText()); });
-    connect(mGlobalFilterDialog, &GlobalFilterDialog::updated,
-            ui->modelInspector, &ModelInspector::processGlobalFilterUpdate);
+    connect(mGlobalFilterDialog, &GlobalFilterDialog::filterUpdated,
+            this, &MainWindow::globalFilterUpdate);
     connect(ui->modelInspector, &ModelInspector::filtersUpdated,
             this, &MainWindow::handleFilterUpdate);
     connect(ui->searchResultView, &QTableView::doubleClicked,
@@ -136,16 +134,30 @@ void MainWindow::searchHeaders()
 
 void MainWindow::on_actionGlobal_Filters_triggered()
 {
-    if (!mGlobalFilterDialog->isInitialized())
-        return; // For some reason disabeling the action has no effect on the shortcut on macOS
+    mGlobalFilterDialog->setSymbolFilter(ui->modelInspector->symbolFilter());
+    mGlobalFilterDialog->setDefaultSymbolFilter(ui->modelInspector->defaultSymbolFilter());
+    mGlobalFilterDialog->setValueFilter(ui->modelInspector->valueFilter());
+    mGlobalFilterDialog->setDefaultValueFilter(ui->modelInspector->defaultValueFilter());
+    mGlobalFilterDialog->setUelFilter(ui->modelInspector->uelFilter());
+    mGlobalFilterDialog->setDefaultUelFilter(ui->modelInspector->defaultUelFilter());
     showDialog(mGlobalFilterDialog);
 }
 
 void MainWindow::on_actionAggregation_triggered()
 {
-    if (!mAggregationDialog->isInitialized())
+    if (!mAggregationDialog->isInitialized()) // TODO remove
         return; // For some reason disabeling the action has no effect on the shortcut on macOS
     showDialog(mAggregationDialog);
+}
+
+void MainWindow::on_actionShow_search_result_triggered()
+{
+    ui->dockWidget->show();
+}
+
+void MainWindow::on_actionPrint_DBG_Stuff_triggered()
+{
+    ui->modelInspector->printDebugStuff();
 }
 
 void MainWindow::on_actionAbout_Qt_triggered()
@@ -153,15 +165,20 @@ void MainWindow::on_actionAbout_Qt_triggered()
     qApp->aboutQt();
 }
 
+void MainWindow::globalFilterUpdate()
+{
+    ui->modelInspector->setSymbolFilter(mGlobalFilterDialog->symbolFilter());
+    ui->modelInspector->setValueFilter(mGlobalFilterDialog->valueFilter());
+    ui->modelInspector->setUelFilter(mGlobalFilterDialog->uelFilter());
+}
+
 void MainWindow::updateMenuEntries()
 {
     ui->actionAggregation->setEnabled(mAggregationDialog->isInitialized());
-    ui->actionGlobal_Filters->setEnabled(mGlobalFilterDialog->isInitialized());
 }
 
 void MainWindow::handleFilterUpdate()
 {
-    mGlobalFilterDialog->reloadUpdatedFilterData();
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
 }
 
@@ -176,7 +193,6 @@ void MainWindow::searchResultSelectionChanged(const QModelIndex &index)
 void MainWindow::updateModelInstance()
 {
     mAggregationDialog->setModelInstance(ui->modelInspector->modelInstance());
-    mGlobalFilterDialog->setModelInstance(ui->modelInspector->modelInstance());
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
 }
 

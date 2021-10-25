@@ -1,11 +1,9 @@
 #ifndef SEARCHRESULTMODEL_H
 #define SEARCHRESULTMODEL_H
 
-#include "searchresult.h"
-
 #include <QAbstractTableModel>
 
-class QStandardItem;
+#include "common.h"
 
 namespace gams {
 namespace studio {
@@ -34,7 +32,7 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 
 private:
-    const QStringList mHeaderData { "Index", "Orientation", "Text"};
+    const QStringList mHeaderData { "Index", "Orientation"};
     QList<SearchResult> mData;
 };
 

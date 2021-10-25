@@ -3,10 +3,11 @@
 
 #include <QDialog>
 
-#include "valuefiltersettings.h"
+#include "common.h"
 
 class QSortFilterProxyModel;
 class QStandardItem;
+class QTreeView;
 
 namespace gams {
 namespace studio {
@@ -28,16 +29,20 @@ public:
     explicit GlobalFilterDialog(QWidget *parent = nullptr);
     ~GlobalFilterDialog();
 
-    bool isInitialized() const {
-        return mModelInstance != nullptr;
-    }
+    SymbolFilterMap symbolFilter() const;
+    void setSymbolFilter(const SymbolFilterMap &filter);
+    void setDefaultSymbolFilter(const SymbolFilterMap &filter);
 
-    void setModelInstance(QSharedPointer<ModelInstance> modelInstance);
+    ValueFilter valueFilter() const;
+    void setValueFilter(const ValueFilter &filter);
+    void setDefaultValueFilter(const ValueFilter &filter);
 
-    void reloadUpdatedFilterData();
+    UelFilterMap uelFilter() const;
+    void setUelFilter(const UelFilterMap &filter);
+    void setDefaultUelFilter(const UelFilterMap &filter);
 
 signals:
-    void updated();
+    void filterUpdated();
 
 private slots:
     void on_applyButton_clicked();
@@ -60,33 +65,33 @@ private slots:
 
     void on_uelFilterBox_currentIndexChanged(int index);
 
-    void applyEqnFilter(const QString &text);
-    void applyVarFilter(const QString &text);
-    void applyUelFilter(const QString &text);
-
 private:
-    void setupEquationFilter();
-    void setupVariableFilter();
-    FilterTreeItem* setupEqnVarFilterItems(Qt::Orientation orientation,
-                                           const QList<QStandardItem*> items);
+    void setupEquationFilter(const SymbolFilter &filter);
+    void setupVariableFilter(const SymbolFilter &filter);
+    void setupUelFilter();
+    FilterTreeItem* setupSymTreeItems(Qt::Orientation orientation, const SymbolFilter &filter);
+    void setupUelTreeItems(Qt::Orientation orientation, FilterTreeItem *root);
 
-    void setupUelsFilter();
-    void setupUelFilterItems(Qt::Orientation orientation, FilterTreeItem *root);
-
-    // TODO move to ModelInstance
-    void updateEqnVarData(Qt::Orientation orientation, FilterTreeItem *filterTree);
-
-    void setCheckState(QSortFilterProxyModel *filterModel, Qt::CheckState state);
-
-    QMap<QString, bool> uelSatesFromFilterView(Qt::Orientation orientation);
+    void applyCheckState(QTreeView* view,
+                         QSortFilterProxyModel *model,
+                         Qt::CheckState state);
+    SymbolFilter applyHeaderFilter(QSortFilterProxyModel *model);
+    void applyValueFilter();
+    UelFilter applyUelFilter(Qt::Orientation orientation,
+                             QSortFilterProxyModel *model);
 
 private:
     Ui::GlobalFilterDialog *ui;
-    ValueFilterSettings mSettings;
-    QSharedPointer<ModelInstance> mModelInstance;
+
+    SymbolFilterMap mSymbolFilter;
+    SymbolFilterMap mDefaultSymbolFilter;
+    ValueFilter mValueFilter;
+    ValueFilter mDefaultValueFilter;
+    UelFilterMap mUelFilter;
+    UelFilterMap mDefaultUelFilter;
+
     QSortFilterProxyModel *mEqnFilterModel;
     QSortFilterProxyModel *mVarFilterModel;
-    FilterTreeModel *mUelTreeModel;
     QSortFilterProxyModel *mUelFilterModel;
 };
 

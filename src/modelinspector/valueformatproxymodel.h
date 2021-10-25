@@ -3,7 +3,7 @@
 
 #include <QIdentityProxyModel>
 
-#include "valuefiltersettings.h"
+#include "common.h"
 
 namespace gams {
 namespace studio {
@@ -16,7 +16,8 @@ class ValueFormatProxyModel : public QIdentityProxyModel
 public:
     ValueFormatProxyModel(QObject *parent = nullptr);
 
-    void setSettings(const ValueFilterSettings &settings);
+    ValueFilter valueFilter() const;
+    void setValueFilter(const ValueFilter &valueFilter);
 
     QVariant data(const QModelIndex &index, int role) const override;
 
@@ -24,7 +25,7 @@ private:
     QVariant applyFilter(const QVariant &data) const;
 
 private:
-    ValueFilterSettings mSettings;
+    ValueFilter mValueFilter;
 };
 
 }

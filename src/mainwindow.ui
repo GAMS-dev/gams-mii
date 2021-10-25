@@ -162,6 +162,10 @@
     </property>
     <addaction name="actionGlobal_Filters"/>
     <addaction name="actionAggregation"/>
+    <addaction name="separator"/>
+    <addaction name="actionShow_search_result"/>
+    <addaction name="separator"/>
+    <addaction name="actionPrint_DBG_Stuff"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -256,6 +260,19 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionPrint_DBG_Stuff">
+   <property name="text">
+    <string>Print Debug Stuff</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="actionShow_search_result">
+   <property name="text">
+    <string>Show search result</string>
    </property>
   </action>
  </widget>

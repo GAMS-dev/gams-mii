@@ -2,10 +2,7 @@
 #define MODELINSTANCETABLEMODEL_H
 
 #include <QAbstractTableModel>
-#include <QStandardItemModel>
 #include <QSharedPointer>
-
-#include "searchresult.h"
 
 namespace gams {
 namespace studio{
@@ -13,8 +10,11 @@ namespace modelinspector {
 
 class ModelInstance;
 
-class ModelInstanceTableModel : public QAbstractTableModel
+class ModelInstanceTableModel
+        : public QAbstractTableModel
 {
+    Q_OBJECT
+
 public:
     explicit ModelInstanceTableModel(QObject *parent = nullptr);
 
@@ -26,26 +26,18 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
+    QVariant headerData(int section, Qt::Orientation orientation,
+                        int role = Qt::DisplayRole) const override;
+
     QModelIndex index(int row, int column,
                       const QModelIndex &parent = QModelIndex()) const override;
-
-    QModelIndex parent(const QModelIndex &index) const override;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
-    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx);
-
-private:
-    void find(const QString &term, bool isRegEx, Qt::Orientation orientation,
-              const QStandardItemModel &headerModel, QList<SearchResult> &result);
-
 private:
     QSharedPointer<ModelInstance> mModelInstance;
-
-    QStandardItemModel mHorizontalHeaderModel;
-    QStandardItemModel mVerticalHeaderModel;
 };
 
 }

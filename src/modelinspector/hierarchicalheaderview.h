@@ -19,18 +19,12 @@ class HierarchicalHeaderView : public QHeaderView
     Q_OBJECT
 
 public:
-    enum HeaderDataModelRoles
-    {
-        HorizontalHeaderDataRole = Qt::UserRole,
-        VerticalHeaderDataRole = Qt::UserRole+1
-    };
-
     HierarchicalHeaderView(Qt::Orientation orientation,
+                           QSharedPointer<ModelInstance> modelInstance,
                            QWidget *parent = nullptr);
     ~HierarchicalHeaderView();
 
     void setModel(QAbstractItemModel *model) override;
-    void setModelInstance(QSharedPointer<ModelInstance> modelInstance);
 
 public slots:
     void customMenuRequested(QPoint position);
@@ -41,18 +35,13 @@ signals:
 protected:
     void paintSection(QPainter *painter, const QRect &rect,
                       int logicalIndex) const override;
+
     QSize sectionSizeFromContents(int logicalIndex) const override;
 
     void mousePressEvent(QMouseEvent *event) override;
 
-private slots:
-    void on_sectionResized(int logicalIndex, int oldSize, int newSize);
-
 private:
     QStyleOptionHeader styleOptionForCell(int logicalIndex) const;
-
-    bool isEquation(const QString &name) const;
-    bool isVariable(const QString &name) const;
 
 private:
     class HierarchicalHeaderView_private;

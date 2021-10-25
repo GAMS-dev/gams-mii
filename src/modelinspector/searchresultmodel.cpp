@@ -1,8 +1,5 @@
 #include "searchresultmodel.h"
 
-#include <QStandardItem>
-#include <QDebug>
-
 namespace gams {
 namespace studio {
 namespace modelinspector {
@@ -32,9 +29,6 @@ QVariant SearchResultModel::data(const QModelIndex &index, int role) const
     }
     if (index.column() == 1) {
         return mData[index.row()].Orientation == Qt::Horizontal? "Horizontal" : "Vertical";
-    }
-    if (index.column() == 2) {
-        return mData[index.row()].ModelItem->data(Qt::DisplayRole);
     }
     return QVariant();
 }

@@ -75,9 +75,9 @@ QVariant SectionTreeModel::data(const QModelIndex &index, int role) const
 
 Qt::ItemFlags SectionTreeModel::flags(const QModelIndex &index) const
 {
-    if (!index.isValid())
-        return Qt::NoItemFlags;
-    return QAbstractItemModel::flags(index);
+    if (index.isValid())
+        return QAbstractItemModel::flags(index);
+    return Qt::NoItemFlags;
 }
 
 QVariant SectionTreeModel::headerData(int section, Qt::Orientation orientation,

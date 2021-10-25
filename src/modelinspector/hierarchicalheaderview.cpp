@@ -7,7 +7,6 @@
 #include <QPointer>
 #include <QMenu>
 #include <QMouseEvent>
-#include <QStandardItem>
 #include <QWidgetAction>
 
 #include <QDebug>
@@ -18,46 +17,6 @@ namespace modelinspector {
 
 // TODO (AF) theme stuff (foreground/background color)
 
-class TreeGenerator
-{
-public:
-    TreeGenerator(QSharedPointer<ModelInstance> modelInstance,
-                  Qt::Orientation orientation)
-        : mModelInstance(modelInstance)
-        , mOrientation(orientation)
-    {
-    }
-
-    FilterTreeItem* generate(QStandardItem *item)
-    {
-        auto root = new FilterTreeItem(item->data(Qt::DisplayRole).toString(),
-                                       item->checkState(),
-                                       mModelInstance->itemToIndex(mOrientation, item));
-        appendChildren(root, item);
-        return root;
-    }
-
-private:
-
-    void appendChildren(FilterTreeItem *parent, QStandardItem *item)
-    {
-        for (int c=0; c<item->columnCount(); ++c) {
-            auto child = item->child(0, c);
-            auto fitem = new FilterTreeItem(child->data(Qt::DisplayRole).toString(),
-                                            child->checkState(),
-                                            mModelInstance->itemToIndex(mOrientation, child),
-                                            parent);
-            parent->append(fitem);
-            appendChildren(fitem, child);
-        }
-    }
-
-private:
-    QSharedPointer<ModelInstance> mModelInstance;
-    Qt::Orientation mOrientation;
-};
-
-
 class HierarchicalHeaderView::HierarchicalHeaderView_private
 {
 public:
@@ -66,16 +25,7 @@ public:
     {
     }
 
-    void initFromModel(Qt::Orientation orientation, QAbstractItemModel* model)
-    {
-        mModel = QPointer<QAbstractItemModel>();
-        QVariant variant(model->data(QModelIndex(),
-                         (orientation == Qt::Horizontal ? HorizontalHeaderDataRole :
-                                                          VerticalHeaderDataRole)));
-        if (variant.isValid()) {
-            mModel = qobject_cast<QAbstractItemModel*>(variant.value<QObject*>());
-        }
-
+    void init() {
         QFontMetrics fm(mHeaderView->font());
         mMinHorizontalCellSize = fm.size(0, mHeaderView->mModelInstance->longestVarText());
         mMinVerticalCellSize = fm.size(0, mHeaderView->mModelInstance->longestEqnText());
@@ -86,14 +36,6 @@ public:
         mPixmapFilterOn = icon.pixmap(mFilterIconSize);
     }
 
-    QAbstractItemModel* model() const {
-        return mModel.data();
-    }
-
-    bool isValid() const {
-        return mModel;
-    }
-
     bool isDimensionFilter(const QPoint &pos) {
         Q_FOREACH(const auto &rect, mDimensionFilterSpots) {
             if (rect.contains(pos))
@@ -102,278 +44,150 @@ public:
         return false;
     }
 
-    QModelIndex leafIndex(int sectionIndex)
+    int sectionIndex(int logicalIndex) const
     {
-        if (!mModel)
-            return QModelIndex();
-
-        int currentLeafIndex = -1;
-        for (int i = 0; i < mModel->columnCount(); ++i) {
-            QModelIndex index(findLeaf(mModel->index(0, i), sectionIndex,
-                                       currentLeafIndex));
-            if (index.isValid())
-                return index;
-        }
-
-        return QModelIndex();
+        bool ok;
+        auto index = mHeaderView->model()->headerData(logicalIndex,
+                                                      mHeaderView->orientation()).toInt(&ok);
+        if (!ok) index = -1;
+        return index;
     }
 
-    QModelIndex findLeaf(const QModelIndex &currentIndex, int logiacalLeafIndex,
-                         int &currentLeafIndex)
+    int sectionDimension(int sectionIndex)
     {
-        if (!currentIndex.isValid())
-            return QModelIndex();
-
-        int childCount = currentIndex.model()->columnCount(currentIndex);
-        if (childCount) {
-             for (int i = 0; i < childCount; ++i) {
-                 QModelIndex childIndex(findLeaf(mModel->index(0, i, currentIndex),
-                                        logiacalLeafIndex,
-                                        currentLeafIndex));
-                 if (childIndex.isValid())
-                     return childIndex;
-             }
+        if (sectionIndex < PredefinedHeaderLength)
+            return 0;
+        SymbolInfo symbol;
+        if (mHeaderView->orientation() == Qt::Horizontal) {
+            symbol = mHeaderView->mModelInstance->variable(sectionIndex);
         } else {
-            if (++currentLeafIndex == logiacalLeafIndex)
-                return currentIndex;
+            symbol = mHeaderView->mModelInstance->equation(sectionIndex);
         }
-
-        return QModelIndex();
-    }
-
-    QModelIndexList searchLeafs(const QModelIndex& currentIndex) const
-    {
-        QModelIndexList leafs;
-        if(currentIndex.isValid()) {
-            int childCount = 0;
-            QModelIndexList tmp { currentIndex };
-            while (!tmp.isEmpty()) {
-                auto leaf = tmp.takeFirst();
-                childCount = leaf.model()->columnCount(leaf);
-                if (childCount) {
-                    for (int i=0; i<childCount; ++i)
-                        tmp.push_back(mModel->index(0, i, leaf));
-                } else {
-                    leafs.push_back(leaf);
-                }
-            }
-        }
-        // TODO which one to keep?
-        //int childCount = currentIndex.model()->columnCount(currentIndex);
-        //if(childCount) {
-        //    for(int i = 0; i < childCount; ++i)
-        //        leafs += searchLeafs(mModel->index(0, i, currentIndex));
-        //} else {
-        //    leafs.push_back(currentIndex);
-        //}
-        return leafs;
-    }
-
-    QModelIndexList subLeafs(const QModelIndex &currentIndex) const
-    {
-        QModelIndexList leafs;
-        if (currentIndex.isValid()) {
-            int count = currentIndex.model()->columnCount(currentIndex);
-            for (int i=0; i<count; ++i) {
-                leafs += searchLeafs(mModel->index(0, i, currentIndex));
-            }
-        }
-        return leafs;
+        return symbol.Dimension;
     }
 
     void paintHorizontalSection(QPainter *painter,
                                 const QRect &rect,
-                                int logicalLeafIndex,
                                 const QStyleOptionHeader &option,
-                                const QModelIndex &leafIndex)
+                                int sectionIndex)
     {
         int currentTop = rect.y();
         QPointF oldBrushOrigin(painter->brushOrigin());
 
-        QModelIndexList indexes(branch(leafIndex));
-        for (int i=0; i<indexes.size(); ++i) {
-            QStyleOptionHeader realStyleOption(option);
-            if (i < indexes.size() - 1 &&
-                    (realStyleOption.state.testFlag(QStyle::State_Sunken) ||
-                     realStyleOption.state.testFlag(QStyle::State_On))) {
-                QStyle::State state(QStyle::State_Sunken | QStyle::State_On);
-                realStyleOption.state &= (~state);
-            }
-            currentTop = paintHorizontalCell(painter, rect, logicalLeafIndex,
-                                             indexes[i], leafIndex, currentTop,
-                                             realStyleOption);
+        QStyleOptionHeader styleOption(option);
+        if (styleOption.state.testFlag(QStyle::State_Sunken) ||
+                styleOption.state.testFlag(QStyle::State_On)) {
+            // TODO mind sparse cells
+            QStyle::State state(QStyle::State_Sunken | QStyle::State_On);
+            styleOption.state &= (~state);
         }
 
+        paintHorizontalCell(painter, rect, styleOption, currentTop,
+                            mHeaderView->mModelInstance->headerData(sectionIndex, -1, mHeaderView->orientation()));
+        for (int d=0; d<sectionDimension(sectionIndex); ++d) {
+            paintHorizontalCell(painter, rect, styleOption, currentTop,
+                                mHeaderView->mModelInstance->headerData(sectionIndex, d, mHeaderView->orientation()));
+        }
+        paintHorizontalCellSpacing(painter, rect, styleOption, currentTop, sectionIndex);
+
         painter->setBrushOrigin(oldBrushOrigin);
+    }
+
+    void paintHorizontalCell(QPainter *painter,
+                             const QRect &rect,
+                             const QStyleOptionHeader &option,
+                             int &currentTop,
+                             const QString &text)
+    {
+        QStyleOptionHeader styleOption(option);
+        QSize size = cellSize(styleOption);
+        styleOption.text = text;
+        styleOption.rect = QRect(rect.x(), currentTop, rect.width(), size.height());
+        currentTop += size.height();
+
+        painter->save();
+        mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
+        mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
+        painter->restore();
+    }
+
+    void paintHorizontalCellSpacing(QPainter *painter,
+                                    const QRect &rect,
+                                    const QStyleOptionHeader &option,
+                                    int &currentTop,
+                                    int sectionIndex)
+    {
+        QStyleOptionHeader styleOption(option);
+        painter->save();
+        if (sectionDimension(sectionIndex) < mHeaderView->mModelInstance->maxVariableDimension()) {
+            styleOption.rect = QRect(rect.x(), currentTop, rect.width(), rect.height());
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
+        }
+        painter->restore();
     }
 
     void paintVerticalSection(QPainter *painter,
                               const QRect &rect,
-                              int logicalLeafIndex,
                               QStyleOptionHeader option,
-                              const QModelIndex &leafIndex)
+                              int sectionIndex)
     {
         int currentLeft = rect.x();
         QPointF oldBrushOrigin(painter->brushOrigin());
 
-        QModelIndexList indexes(branch(leafIndex));
-        for (int i = 0; i < indexes.size(); ++i) {
-            QStyleOptionHeader realStyleOption(option);
-            if (i < indexes.size() -1 &&
-                    (realStyleOption.state.testFlag(QStyle::State_Sunken) ||
-                     realStyleOption.state.testFlag(QStyle::State_On))) {
-                QStyle::State state(QStyle::State_Sunken | QStyle::State_On);
-                realStyleOption.state &= (~state);
-            }
-            currentLeft = paintVerticalCell(painter, rect, logicalLeafIndex,
-                                            indexes[i], leafIndex, currentLeft,
-                                            realStyleOption);
+        QStyleOptionHeader styleOption(option);
+        if (styleOption.state.testFlag(QStyle::State_Sunken) ||
+                styleOption.state.testFlag(QStyle::State_On)) {
+            // TODO mind sparse cells
+            QStyle::State state(QStyle::State_Sunken | QStyle::State_On);
+            styleOption.state &= (~state);
         }
+
+        paintVerticalCell(painter, rect, styleOption, currentLeft,
+                          mHeaderView->mModelInstance->headerData(sectionIndex, -1, mHeaderView->orientation()));
+        for (int d=0; d<sectionDimension(sectionIndex); ++d) {
+            paintVerticalCell(painter, rect, styleOption, currentLeft,
+                              mHeaderView->mModelInstance->headerData(sectionIndex, d, mHeaderView->orientation()));
+        }
+        paintVerticalCellSpacing(painter, rect, styleOption, currentLeft, sectionIndex);
+
         painter->setBrushOrigin(oldBrushOrigin);
-
     }
 
-    int paintHorizontalCell(QPainter *painter,
-                            const QRect &rect,
-                            int logicalLeafIndex,
-                            const QModelIndex& cellIndex,
-                            const QModelIndex &leafIndex,
-                            int currentTop,
-                            const QStyleOptionHeader &styleOption)
+    void paintVerticalCell(QPainter *painter,
+                           const QRect &rect,
+                           const QStyleOptionHeader &option,
+                           int &currentLeft,
+                           const QString &text)
     {
-        QStyleOptionHeader option(styleOption);
-
-        int height = cellSize(cellIndex, option).height();
-        if (cellIndex == leafIndex) {
-            height = rect.height() - currentTop;
-        }
-
-        int left = cellLeft(cellIndex, leafIndex, logicalLeafIndex, rect.left());
-        int width = cellWidth(cellIndex, leafIndex, logicalLeafIndex);
-
-        option.text = cellIndex.data(Qt::DisplayRole).toString();
+        QStyleOptionHeader styleOption(option);
+        QSize size = cellSize(styleOption);
+        styleOption.text = text;
+        styleOption.rect = QRect(currentLeft, rect.y(), size.width(), rect.height());
+        currentLeft += size.width();
 
         painter->save();
-        if (mHeaderView->isVariable(option.text)) {
-            option.rect = QRect(left+mFilterIconSize.width(), currentTop, width-mFilterIconSize.width(), height);
-            painter->drawPixmap(left, currentTop, mPixmapFilterOn);
-            mDimensionFilterSpots.push_back(QRect(QPoint(left, currentTop), mFilterIconSize));
-        } else {
-            option.rect = QRect(left, currentTop, width, height);
-        }
-
-        mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &option, painter, mHeaderView);
-
-        //QFontMetrics fm(mHeaderView->font());
-        //QSize size = fm.size(0, cellIndex.data().toString());
-
-        //if (cellIndex.data().toString() == "z") // TODO macOS cell issue
-        //    qDebug() << "Z RECT: " << option.rect << currentTop;
-
-        //QTransform matrix;
-        //matrix.rotate(-90); // TODO mind dim
-        //painter->setWorldTransform(matrix, true);
-        //
-        //QRect labelRect(0, 0, size.height(), size.width());
-        //labelRect.moveCenter(QPoint(-rect.center().y(), rect.center().x()));
-        //option.rect = labelRect;
-
-        mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &option, painter, mHeaderView);
-
+        mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
+        mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
         painter->restore();
-
-        return currentTop + height;
     }
 
-    int paintVerticalCell(QPainter *painter,
-                          const QRect &rect,
-                          int logicalLeafIndex,
-                          const QModelIndex& cellIndex,
-                          const QModelIndex &leafIndex,
-                          int currentLeft,
-                          const QStyleOptionHeader &styleOption)
+    void paintVerticalCellSpacing(QPainter *painter,
+                                  const QRect &rect,
+                                  const QStyleOptionHeader &option,
+                                  int &currentLeft,
+                                  int sectionIndex)
     {
-        QStyleOptionHeader option(styleOption);
-
-        int width = cellSize(cellIndex, option).width();
-        if (cellIndex == leafIndex) {
-            width = rect.width() - currentLeft;
-        }
-
-        int top = cellLeft(cellIndex, leafIndex, logicalLeafIndex, rect.top());
-        int height = cellWidth(cellIndex, leafIndex, logicalLeafIndex);
-
-        option.text = cellIndex.data(Qt::DisplayRole).toString();
-
+        QStyleOptionHeader styleOption(option);
         painter->save();
-        if (mHeaderView->isEquation(option.text)) {
-            painter->drawPixmap(currentLeft, top, mPixmapFilterOn);
-            mDimensionFilterSpots.push_back(QRect(QPoint(currentLeft, top), mFilterIconSize));
-            option.rect = QRect(currentLeft+mFilterIconSize.width(), top, width, height);
-        } else {
-            if (cellIndex.parent().isValid()) {
-                option.rect = QRect(currentLeft+mFilterIconSize.width(), top, width, height);
-            } else {
-                option.rect = QRect(currentLeft, top, width+mFilterIconSize.width(), height);
-            }
+        if (sectionDimension(sectionIndex) < mHeaderView->mModelInstance->maxEquationDimension()) {
+            styleOption.rect = QRect(currentLeft, rect.y(), rect.width(), rect.height());
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
         }
-
-        mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &option, painter, mHeaderView);
-        mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &option, painter, mHeaderView);
-
         painter->restore();
-
-        return currentLeft + width;
     }
 
-    int cellLeft(const QModelIndex &cellIndex, const QModelIndex &leafIndex,
-                 int logicalLeafIndex, int sectionLeft) const
+    QSize cellSize(QStyleOptionHeader styleOption) const
     {
-        QModelIndexList leafsList(subLeafs(cellIndex));
-
-        if(leafsList.empty())
-            return sectionLeft;
-        int n = leafsList.indexOf(leafIndex);
-        int firstLeafSectionIndex = logicalLeafIndex - n--;
-        for(; n >= 0; --n)
-            sectionLeft -= mHeaderView->sectionSize(firstLeafSectionIndex + n);
-
-        return sectionLeft;
-    }
-
-    int cellWidth(const QModelIndex &cellIndex, const QModelIndex &leafIndex,
-                  int logicalLeafIndex) const
-    {
-        QModelIndexList leafsList(subLeafs(cellIndex));
-        if(leafsList.empty())
-            return mHeaderView->sectionSize(logicalLeafIndex);
-
-        int width = 0;
-        int firstLeafSectionIndex = logicalLeafIndex - leafsList.indexOf(leafIndex);
-
-        for(int i = 0; i < leafsList.size(); ++i)
-            width += mHeaderView->sectionSize(firstLeafSectionIndex + i);
-
-        return width;
-    }
-
-    QSize cellSize(const QModelIndex &cellIndex,
-                   QStyleOptionHeader styleOption) const
-    {
-        QSize res;
-        QVariant sizeHint(cellIndex.data(Qt::SizeHintRole));
-        if (sizeHint.isValid()) {
-            res = qvariant_cast<QSize>(sizeHint);
-        }
-
-        QFont font(mHeaderView->font());
-        QVariant fontRole(cellIndex.data(Qt::FontRole));
-        if (fontRole.isValid() && fontRole.canConvert<QFont>()) {
-            font = qvariant_cast<QFont>(fontRole);
-        }
-
-        font.setBold(true);
-
         QSize size = mHeaderView->orientation() == Qt::Vertical ? mMinVerticalCellSize :
                                                                   mMinHorizontalCellSize;
 
@@ -381,24 +195,7 @@ public:
                                                                      &styleOption,
                                                                      QSize(),
                                                                      mHeaderView));
-        return res.expandedTo(size + decorationsSize - mEmptyTextSize);
-    }
-
-    QModelIndexList branch(QModelIndex index) const
-    {
-        QModelIndexList branch;
-        while (index.isValid()) {
-            branch.push_front(index);
-            index = index.parent();
-        }
-        return branch;
-    }
-
-    QModelIndex root(QModelIndex index) const
-    {
-        while (index.parent().isValid())
-            index = index.parent();
-        return index;
+        return size + decorationsSize - mEmptyTextSize;
     }
 
     inline QSize filterIconSize() const
@@ -411,7 +208,6 @@ private:
     const QString FilterIconOff = ":/img/filter-off";
 
     const HierarchicalHeaderView *mHeaderView;
-    QPointer<QAbstractItemModel> mModel;
     QVector<QRect> mDimensionFilterSpots;
 
     QSize mFilterIconSize;
@@ -420,24 +216,26 @@ private:
     QSize mEmptyTextSize;
 
     QPixmap mPixmapFilterOn;
-    //QPixmap mFilterPixmapOff; // TODO off icon
+    //QPixmap mFilterPixmapOff; // TODO (AF) off icon
 };
 
 HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
+                                               QSharedPointer<ModelInstance> modelInstance,
                                                QWidget *parent)
     : QHeaderView(orientation, parent)
     , mPrivate(new HierarchicalHeaderView_private(this))
+    , mModelInstance(modelInstance)
     , mFilterMenu(new QMenu(this))
     , mFilterWidget(new LabelFilterWidget(orientation, this))
 {
+    setHighlightSections(true);
+    setSectionsClickable(true);
     setDefaultAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     auto filterAction = new QWidgetAction(mFilterMenu);
     filterAction->setDefaultWidget(mFilterWidget);
     mFilterMenu->addAction(filterAction);
 
-    connect(this, &QHeaderView::sectionResized,
-            this, &HierarchicalHeaderView::on_sectionResized);
     connect(this, &HierarchicalHeaderView::customContextMenuRequested,
             this, &HierarchicalHeaderView::customMenuRequested);
     connect(mFilterWidget, &LabelFilterWidget::filterChanged,
@@ -451,68 +249,24 @@ HierarchicalHeaderView::~HierarchicalHeaderView()
 
 void HierarchicalHeaderView::setModel(QAbstractItemModel *model)
 {
-    mPrivate->initFromModel(orientation(), model);
+    mPrivate->init();
     QHeaderView::setModel(model);
-    int count = (orientation() == Qt::Horizontal ? model->columnCount() :
-                                                   model->rowCount());
-    if(count) {
-        initializeSections(0, count-1);
-    }
-}
-
-void HierarchicalHeaderView::setModelInstance(QSharedPointer<ModelInstance> modelInstance)
-{
-    mModelInstance = modelInstance;
 }
 
 void HierarchicalHeaderView::customMenuRequested(QPoint position)
-{
-    QStandardItem *item;
-    if (orientation() == Qt::Horizontal) {
-        item =  mModelInstance->horizontalItem(logicalIndexAt(position));
-    } else {
-        item = mModelInstance->verticalItem(logicalIndexAt(position));
-    }
-    if (item) {
-        TreeGenerator generator(mModelInstance, orientation());
-        auto root = generator.generate(item);
-        mFilterWidget->setData(root);
-        mFilterMenu->popup(viewport()->mapToGlobal(position));
-    }
-}
-
-void HierarchicalHeaderView::on_sectionResized(int logicalIndex,
-                                               int oldSize,
-                                               int newSize)
-{
-    Q_UNUSED(oldSize);
-    Q_UNUSED(newSize);
-
-    if (isSectionHidden(logicalIndex))
-        return;
-
-    QModelIndex leafIndex(mPrivate->leafIndex(logicalIndex));
-    if (!leafIndex.isValid())
-        return;
-
-    QModelIndexList subLeafs(mPrivate->subLeafs(mPrivate->root(leafIndex)));
-    for (int i=subLeafs.indexOf(leafIndex); i>0; --i) {
-        --logicalIndex;
-
-        int width = viewport()->width();
-        int height = viewport()->height();
-        int pos = sectionViewportPosition(logicalIndex);
-        QRect rect(pos, 0, width - pos, height);
-
-        if(orientation() == Qt::Horizontal) {
-            if (isRightToLeft())
-                rect.setRect(0, 0, pos + sectionSize(logicalIndex), height);
-        } else {
-            rect.setRect(0, pos, width, height - pos);
-        }
-
-        viewport()->update(rect.normalized());
-    }
+{// TODO ...
+    //QStandardItem *item;
+    //if (orientation() == Qt::Horizontal) {
+    //    item =  mModelInstance->horizontalItem(logicalIndexAt(position));
+    //} else {
+    //    item = mModelInstance->verticalItem(logicalIndexAt(position));
+    //}
+    //if (item) {
+    //    TreeGenerator generator(mModelInstance, orientation());
+    //    auto root = generator.generate(item);
+    //    mFilterWidget->setData(root);
+    //    mFilterMenu->popup(viewport()->mapToGlobal(position));
+    //}
 }
 
 void HierarchicalHeaderView::paintSection(QPainter *painter,
@@ -520,46 +274,32 @@ void HierarchicalHeaderView::paintSection(QPainter *painter,
                                           int logicalIndex) const
 {
     if (rect.isValid()) {
-        QModelIndex leafIndex = mPrivate->leafIndex(logicalIndex);
-        if (leafIndex.isValid()) {
-            auto option = styleOptionForCell(logicalIndex);
-            if (orientation() == Qt::Horizontal)
-                mPrivate->paintHorizontalSection(painter, rect, logicalIndex,
-                                                 option, leafIndex);
-            else
-                mPrivate->paintVerticalSection(painter, rect, logicalIndex,
-                                               option, leafIndex);
-            return;
+        auto option = styleOptionForCell(logicalIndex);
+        int sectionIdx = mPrivate->sectionIndex(logicalIndex);
+        if (orientation() == Qt::Horizontal) {
+            mPrivate->paintHorizontalSection(painter, rect, option, sectionIdx);
+        } else {
+            mPrivate->paintVerticalSection(painter, rect, option, sectionIdx);
         }
+        return;
     }
-
     QHeaderView::paintSection(painter, rect, logicalIndex);
 }
 
 QSize HierarchicalHeaderView::sectionSizeFromContents(int logicalIndex) const
 {
-    if (mPrivate->isValid()) {
-        QModelIndex currentIndex(mPrivate->leafIndex(logicalIndex));
-        if (currentIndex.isValid()) {
-            QStyleOptionHeader styleOption(styleOptionForCell(logicalIndex));
-            QSize size(mPrivate->cellSize(currentIndex, styleOption));
-            currentIndex = currentIndex.parent();
+    QStyleOptionHeader styleOption(styleOptionForCell(logicalIndex));
+    QSize size(mPrivate->cellSize(styleOption));
 
-            while (currentIndex.isValid()) {
-                if (orientation() == Qt::Horizontal) {
-                    size.rheight() += mPrivate->cellSize(currentIndex,
-                                                         styleOption).height();
-                } else {
-                    size.rwidth() += mPrivate->cellSize(currentIndex, styleOption)
-                            .width()+mPrivate->filterIconSize().width();
-                }
-                currentIndex = currentIndex.parent();
-            }
-            return size;
+    int sectionIdx = mPrivate->sectionIndex(logicalIndex);
+    for (int d=0; d<mPrivate->sectionDimension(sectionIdx); ++d) {
+        if (orientation() == Qt::Horizontal) {
+            size.rheight() += mPrivate->cellSize(styleOption).height();
+        } else {
+            size.rwidth() += mPrivate->cellSize(styleOption).width();
         }
     }
-
-    return QHeaderView::sectionSizeFromContents(logicalIndex);
+    return size;
 }
 
 void HierarchicalHeaderView::mousePressEvent(QMouseEvent *event)
@@ -646,16 +386,6 @@ QStyleOptionHeader HierarchicalHeaderView::styleOptionForCell(int logicalIndex) 
     }
 
     return option;
-}
-
-bool HierarchicalHeaderView::isEquation(const QString &name) const
-{
-    return mModelInstance->isEquation(name);
-}
-
-bool HierarchicalHeaderView::isVariable(const QString &name) const
-{
-    return mModelInstance->isVariable(name);
 }
 
 }

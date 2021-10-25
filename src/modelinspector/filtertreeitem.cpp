@@ -17,12 +17,12 @@ FilterTreeItem::FilterTreeItem(const QString &text,
 
 FilterTreeItem::FilterTreeItem(const QString &text,
                                  Qt::CheckState checkState,
-                                 int logicalIndex,
+                                 int index,
                                  FilterTreeItem *parent)
     : mParent(parent)
     , mText(text)
     , mChecked(checkState)
-    , mLogicalIndex(logicalIndex)
+    , mIndex(index)
 {
 
 }
@@ -86,6 +86,16 @@ void FilterTreeItem::setCheckable(bool checkable)
     mCheckable = checkable;
 }
 
+bool FilterTreeItem::isEnabled() const
+{
+    return mEnabled;
+}
+
+void FilterTreeItem::setEnabled(bool enabled)
+{
+    mEnabled = enabled;
+}
+
 Qt::CheckState FilterTreeItem::checked()
 {
     if (mChilds.isEmpty())
@@ -125,14 +135,14 @@ void FilterTreeItem::setSubTreeState(Qt::CheckState checked)
     }
 }
 
-int FilterTreeItem::logicalIndex() const
+int FilterTreeItem::index() const
 {
-    return mLogicalIndex;
+    return mIndex;
 }
 
-void FilterTreeItem::setLogicalIndex(int index)
+void FilterTreeItem::setIndex(int index)
 {
-    mLogicalIndex = index;
+    mIndex = index;
 }
 
 }

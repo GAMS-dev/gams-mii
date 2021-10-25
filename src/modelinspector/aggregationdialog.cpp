@@ -4,7 +4,7 @@
 #include "filtertreeitem.h"
 #include "filtertreemodel.h"
 
-#include <QStandardItem>
+#include <QStandardItem> // TODO remove
 #include <QSortFilterProxyModel>
 
 namespace gams {
