@@ -4,7 +4,16 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-const QString FilterTreeItem::HeaderText = "Uels";
+const QString FilterTreeItem::EquationText = "Equations";
+const QString FilterTreeItem::VariableText = "Variables";
+
+FilterTreeItem::FilterTreeItem(const QString &text,
+                               bool checkable,
+                               FilterTreeItem *parent)
+    : FilterTreeItem(text, Qt::Unchecked, -1, parent)
+{
+    setCheckable(checkable);
+}
 
 FilterTreeItem::FilterTreeItem(const QString &text,
                                  Qt::CheckState checkState,

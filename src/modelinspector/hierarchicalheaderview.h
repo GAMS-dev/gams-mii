@@ -54,9 +54,6 @@ private:
     bool isEquation(const QString &name) const;
     bool isVariable(const QString &name) const;
 
-    FilterTreeItem* buildFilterItems(QStandardItem *item);
-    void appendChildren(FilterTreeItem *parent, QStandardItem *item);
-
 private:
     class HierarchicalHeaderView_private;
     HierarchicalHeaderView_private *mPrivate;

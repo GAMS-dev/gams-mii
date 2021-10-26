@@ -70,6 +70,62 @@ public:
         mValueFilterSettings = settings;
     }
 
+    QList<QStandardItem*>& horizontalTree() {
+        return mHorizontalTree;
+    }
+
+    void setHorizontalTree(const QList<QStandardItem*> &tree) {
+        mHorizontalTree = tree;
+    }
+
+    QList<QStandardItem*>& verticalTree() {
+        return mVerticalTree;
+    }
+
+    void setVerticalTree(const QList<QStandardItem*> &tree) {
+        mVerticalTree = tree;
+    }
+
+    QString longestEqnText() {
+        if (mLongestEqnText.isEmpty()) {
+            Q_FOREACH(auto symbol, mModelInstance->equations()) {
+                if (symbol.Name.size() > mLongestEqnText.size())
+                    mLongestEqnText = symbol.Name;
+            }
+        }
+        return mLongestEqnText;
+    }
+
+    QString longestEqnUelText() {
+        if (mLongestEqnUelText.isEmpty()) {
+            Q_FOREACH(auto uel, mModelInstance->uelStates(Qt::Vertical).keys()) {
+                if (uel.size() > mLongestEqnUelText.size())
+                    mLongestEqnUelText = uel;
+            }
+        }
+        return mLongestEqnUelText;
+    }
+
+    QString longestVarText() {
+        if (mLongestVarText.isEmpty()) {
+            Q_FOREACH(auto symbol, mModelInstance->variables()) {
+                if (symbol.Name.size() > mLongestVarText.size())
+                    mLongestVarText = symbol.Name;
+            }
+        }
+        return mLongestVarText;
+    }
+
+    QString longestVarUelText() {
+        if (mLongestVarUelText.isEmpty()) {
+            Q_FOREACH(auto uel, mModelInstance->uelStates(Qt::Horizontal).keys()) {
+                if (uel.size() > mLongestVarUelText.size())
+                    mLongestVarUelText = uel;
+            }
+        }
+        return mLongestVarUelText;
+    }
+
 public:
     ///
     /// \brief mHIndexToItem Horizontal logical index to QStandardItem mapping.
@@ -105,6 +161,15 @@ private:
     QVector<SymbolInfo> mVariables;
 
     ValueFilterSettings mValueFilterSettings;
+
+    QList<QStandardItem*> mHorizontalTree;
+    QList<QStandardItem*> mVerticalTree;
+
+    QString mLongestEqnText;
+    QString mLongestEqnUelText;
+
+    QString mLongestVarText;
+    QString mLongestVarUelText;
 };
 
 ModelInstance::ModelInstance(const QString &workspace, const QString &scratchDir)
@@ -137,14 +202,14 @@ int ModelInstance::coefficents() const
 
 int ModelInstance::positiveCoefficents() const
 {
-    const int columns = variables();
+    const int columns = variableCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];
     int nz;
     int nlnz;
     int positiveCoeffs = 0;
-    for (int row=0; row<equations(); ++row) {
+    for (int row=0; row<equationCount(); ++row) {
         gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
         for (int idx = 0; idx<nz+nlnz; ++idx) {
             if (jacval[idx] >= 0)
@@ -159,14 +224,14 @@ int ModelInstance::positiveCoefficents() const
 
 int ModelInstance::negativeCoefficents() const
 {
-    const int columns = variables();
+    const int columns = variableCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];
     int nz;
     int nlnz;
     int negativeCoeffs = 0;
-    for (int row=0; row<equations(); ++row) {
+    for (int row=0; row<equationCount(); ++row) {
         gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
         for (int idx = 0; idx<nz+nlnz; ++idx) {
             if (jacval[idx] < 0)
@@ -184,12 +249,17 @@ int ModelInstance::nonLinearCoefficents() const
     return gmoNLNZ(mGMO);
 }
 
-int ModelInstance::equations() const
+const QVector<SymbolInfo>& ModelInstance::equations() const
+{
+    return mCache->symbols(dcteqnSymType);
+}
+
+int ModelInstance::equationCount() const
 {
     return gmoM(mGMO);
 }
 
-int ModelInstance::equations(int type) const
+int ModelInstance::equationCount(int type) const
 {
     return gmoGetEquTypeCnt(mGMO, type);
 }
@@ -213,12 +283,35 @@ bool ModelInstance::isEquation(const QString &name)
     return false;
 }
 
-int ModelInstance::variables() const
+QString ModelInstance::longestEqnText() const
+{
+    auto eqn = mCache->longestEqnText();
+    auto uel = mCache->longestEqnUelText();
+    if (eqn.size() > uel.size())
+        return eqn;
+    return uel;
+}
+
+QString ModelInstance::longestVarText() const
+{
+    auto var = mCache->longestVarText();
+    auto uel = mCache->longestVarUelText();
+    if (var.size() > uel.size())
+        return var;
+    return uel;
+}
+
+const QVector<SymbolInfo>& ModelInstance::variables() const
+{
+    return mCache->symbols(dctvarSymType);
+}
+
+int ModelInstance::variableCount() const
 {
     return gmoN(mGMO);
 }
 
-int ModelInstance::variables(int type) const
+int ModelInstance::variableCount(int type) const
 {
     return gmoGetVarTypeCnt(mGMO, type);
 }
@@ -531,14 +624,14 @@ QPair<double, double> ModelInstance::matrixRange() const
 {
     gmoObjStyleSet(mGMO, gmoObjType_Fun);
     QPair<double, double> range;
-    const int columns = variables();
+    const int columns = variableCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];
     int nz;
     int nlnz;
 
-    for (int row=0; row<equations(); ++row) {
+    for (int row=0; row<equationCount(); ++row) {
         gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
         for (int idx = 0; idx<nz+nlnz; ++idx) {
             if (row == 0 && idx == 0) {
@@ -562,14 +655,14 @@ QPair<double, double> ModelInstance::objectiveRange() const
 {
     gmoObjStyleSet(mGMO, gmoObjType_Fun);
     QPair<double, double> range;
-    const int columns = variables();
+    const int columns = variableCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];
     int nz;
     int nlnz;
 
-    for (int row=0; row<equations(); ++row) {
+    for (int row=0; row<equationCount(); ++row) {
         gmoGetObjSparse(mGMO, colidx, jacval, nlflag, &nz, &nlnz);
         for (int idx=0; idx<nz+nlnz; ++idx) {
             if (row == 0 && idx == 0) {
@@ -593,7 +686,7 @@ QPair<double, double> ModelInstance::boundsRange() const
 {
     gmoObjStyleSet(mGMO, gmoObjType_Fun);
     QPair<double, double> range;
-    auto columns = variables();
+    auto columns = variableCount();
 
     auto lowerVals = new double[columns];
     if (!gmoGetVarLower(mGMO, lowerVals)) {
@@ -629,7 +722,7 @@ QPair<double, double> ModelInstance::rhsRange() const
 {
     gmoObjStyleSet(mGMO, gmoObjType_Fun);
     QPair<double, double> range;
-    auto rows = equations();
+    auto rows = equationCount();
     auto *vals = new double[rows];
     if (gmoGetRhs(mGMO, vals))
         return range;
@@ -667,8 +760,8 @@ int ModelInstance::columnCount()
 }
 
 void ModelInstance::horizontalHeaderData(QStandardItemModel &model)
-{
-    QList<QStandardItem*> rootItems;
+{// TODO keep this approach?
+    QList<QStandardItem*> &rootItems = mCache->horizontalTree();
 
     for (int i=0; i<PredefinedHeaderLength; ++i) {
         auto rootItem = new QStandardItem(PredefinedHeader.at(i));
@@ -700,8 +793,8 @@ void ModelInstance::horizontalHeaderData(QStandardItemModel &model)
 }
 
 void ModelInstance::verticalHeaderData(QStandardItemModel &model)
-{
-    QList<QStandardItem*> rootItems;
+{// TODO keep this approach?
+    QList<QStandardItem*> &rootItems = mCache->verticalTree();
 
     for (int i=0; i<PredefinedHeaderLength; ++i) {
         auto rootItem = new QStandardItem(PredefinedHeader.at(i));
@@ -742,6 +835,16 @@ QStandardItem* ModelInstance::verticalItem(int logicalIndex)
 {
     return mCache->VIndexToItem.contains(logicalIndex) ? mCache->VIndexToItem[logicalIndex] :
                                                          nullptr;
+}
+
+const QList<QStandardItem*>& ModelInstance::horizontalTree() const
+{
+    return mCache->horizontalTree();
+}
+
+const QList<QStandardItem*>& ModelInstance::verticalTree() const
+{
+    return mCache->verticalTree();
 }
 
 QList<QStandardItem*> ModelInstance::horizontalItems()
@@ -953,7 +1056,7 @@ void ModelInstance::initialize()
 
 double ModelInstance::jaccobianValue(int row, int column)
 {
-    const int columns = variables();
+    const int columns = variableCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];

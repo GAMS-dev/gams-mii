@@ -58,15 +58,6 @@ Qt::ItemFlags FilterTreeModel::flags(const QModelIndex &index) const
     return QAbstractItemModel::flags(index) | Qt::ItemIsUserCheckable;
 }
 
-QVariant FilterTreeModel::headerData(int section, Qt::Orientation orientation,
-                                     int role) const
-{
-    Q_UNUSED(section);
-    if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-        return FilterTreeItem::HeaderText;
-    return QVariant();
-}
-
 QModelIndex FilterTreeModel::index(int row, int column,
                                    const QModelIndex &parent) const
 {

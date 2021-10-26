@@ -140,6 +140,8 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="actionRun"/>
+    <addaction name="separator"/>
     <addaction name="action_Quit"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
@@ -159,6 +161,7 @@
      <string>View</string>
     </property>
     <addaction name="actionGlobal_Filters"/>
+    <addaction name="actionAggregation"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -234,6 +237,22 @@
   <action name="actionGlobal_Filters">
    <property name="text">
     <string>Global Filters</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="actionAggregation">
+   <property name="text">
+    <string>Aggregation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+J</string>
+   </property>
+  </action>
+  <action name="actionRun">
+   <property name="text">
+    <string>Run</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>

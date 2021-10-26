@@ -21,9 +21,10 @@
 #include "ui_mainwindow.h"
 #include "gamsprocess.h"
 #include "gamslibprocess.h"
+#include "modelinspector/aggregationdialog.h"
+#include "modelinspector/globalfilterdialog.h"
 #include "modelinspector/modelinspector.h"
 #include "modelinspector/searchresultmodel.h"
-#include "modelinspector/globalfilterdialog.h"
 
 #include <QDir>
 #include <QStandardItem>
@@ -32,20 +33,25 @@
 #include <QDebug>
 
 using namespace gams::studio;
+using gams::studio::modelinspector::AggregationDialog;
+using gams::studio::modelinspector::GlobalFilterDialog;
 using gams::studio::modelinspector::ModelInspector;
 using gams::studio::modelinspector::SearchResultModel;
-using gams::studio::modelinspector::GlobalFilterDialog;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , mLibProcess(new GAMSLibProcess(this))
-    , mProcess(new GAMSProcess)
+    , mProcess(new GAMSProcess(this))
+    , mAggregationDialog(new AggregationDialog(this))
     , mGlobalFilterDialog(new GlobalFilterDialog(this))
+    , mAggregationStatusLabel(new QLabel(QString(), this))
 {
     ui->setupUi(this);
     ui->modelInspector->setWorkspace(workspace());
     ui->searchResultView->setModel(new SearchResultModel(ui->searchResultView));
+    ui->statusBar->addPermanentWidget(mAggregationStatusLabel);
+    mAggregationStatusLabel->setText(mAggregationDialog->statusText());
 
     connect(mProcess->process(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             ui->modelInspector, &ModelInspector::loadModelInstance);
@@ -57,7 +63,13 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::appendLogMessage);
     connect(ui->searchEdit, &QLineEdit::returnPressed,
             this, &MainWindow::searchHeaders);
-    connect(mGlobalFilterDialog, &GlobalFilterDialog::filterUpdate,
+    connect(ui->runButton, &QPushButton::clicked,
+            this, &MainWindow::on_actionRun_triggered);
+    connect(mAggregationDialog, &AggregationDialog::updated,
+            ui->modelInspector, &ModelInspector::processAggregationUpdate);
+    connect(mAggregationDialog, &AggregationDialog::updated,
+            this, [this]{ mAggregationStatusLabel->setText(mAggregationDialog->statusText()); });
+    connect(mGlobalFilterDialog, &GlobalFilterDialog::updated,
             ui->modelInspector, &ModelInspector::processGlobalFilterUpdate);
     connect(ui->modelInspector, &ModelInspector::filtersUpdated,
             this, &MainWindow::handleFilterUpdate);
@@ -71,14 +83,16 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    delete mLibProcess;
-    delete mGlobalFilterDialog;
     delete ui;
 }
 
-void MainWindow::on_runButton_clicked(bool checked)
+void MainWindow::appendLogMessage(const QString &message)
 {
-    Q_UNUSED(checked)
+    ui->logEdit->append(message);
+}
+
+void MainWindow::on_actionRun_triggered()
+{
     auto path = workspace();
     QDir dir(path);
     if (!dir.mkpath(path))
@@ -103,11 +117,6 @@ void MainWindow::on_runButton_clicked(bool checked)
     mProcess->execute();
 }
 
-void MainWindow::appendLogMessage(const QString &message)
-{
-    ui->logEdit->append(message);
-}
-
 void MainWindow::on_action_Quit_triggered()
 {
     close();
@@ -129,16 +138,14 @@ void MainWindow::on_actionGlobal_Filters_triggered()
 {
     if (!mGlobalFilterDialog->isInitialized())
         return; // For some reason disabeling the action has no effect on the shortcut on macOS
-    // needed for KDE to raise the dialog when minimized
-    if (mGlobalFilterDialog->isMinimized())
-        mGlobalFilterDialog->setWindowState(Qt::WindowMaximized);
-    if (mGlobalFilterDialog->isVisible()) {
-        // needed for macOS to rasise dialog when minimized
-        mGlobalFilterDialog->raise();
-        mGlobalFilterDialog->activateWindow();
-    } else {
-        mGlobalFilterDialog->show();
-    }
+    showDialog(mGlobalFilterDialog);
+}
+
+void MainWindow::on_actionAggregation_triggered()
+{
+    if (!mAggregationDialog->isInitialized())
+        return; // For some reason disabeling the action has no effect on the shortcut on macOS
+    showDialog(mAggregationDialog);
 }
 
 void MainWindow::on_actionAbout_Qt_triggered()
@@ -148,6 +155,7 @@ void MainWindow::on_actionAbout_Qt_triggered()
 
 void MainWindow::updateMenuEntries()
 {
+    ui->actionAggregation->setEnabled(mAggregationDialog->isInitialized());
     ui->actionGlobal_Filters->setEnabled(mGlobalFilterDialog->isInitialized());
 }
 
@@ -167,6 +175,7 @@ void MainWindow::searchResultSelectionChanged(const QModelIndex &index)
 
 void MainWindow::updateModelInstance()
 {
+    mAggregationDialog->setModelInstance(ui->modelInspector->modelInstance());
     mGlobalFilterDialog->setModelInstance(ui->modelInspector->modelInstance());
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
 }
@@ -177,6 +186,20 @@ void MainWindow::loadGAMSModel(const QString &path)
     QString model = ui->modelEdit->text();
     mLibProcess->setModelName(model.replace(".gms", "").trimmed());
     mLibProcess->execute();
+}
+
+void MainWindow::showDialog(QDialog *dialog)
+{
+    // needed for KDE to raise the dialog when minimized
+    if (dialog->isMinimized())
+        dialog->setWindowState(Qt::WindowMaximized);
+    if (dialog->isVisible()) {
+        // needed for macOS to rasise dialog when minimized
+        dialog->raise();
+        dialog->activateWindow();
+    } else {
+        dialog->show();
+    }
 }
 
 QString MainWindow::workspace() const

@@ -44,6 +44,9 @@ private slots:
     void applyFilter(const QString &text);
 
 private:
+    void setSelection(bool state);
+
+private:
     Ui::LabelFilterWidget *ui;
     Qt::Orientation mOrientation;
     FilterTreeItem *mRootItem;

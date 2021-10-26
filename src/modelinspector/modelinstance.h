@@ -83,16 +83,18 @@ public:
 
     int nonLinearCoefficents() const;
 
+    const QVector<SymbolInfo>& equations() const;
+
     /**
      * @brief Total number of equations.
      */
-    int equations() const;
+    int equationCount() const;
 
     /**
      * @brief Number of equations defined by <c>type</c>.
      * @param Equation type.
      */
-    int equations(int type) const;
+    int equationCount(int type) const;
 
     int equationBlocks();
 
@@ -100,16 +102,22 @@ public:
 
     bool isEquation(const QString &name);
 
+    QString longestEqnText() const;
+
+    QString longestVarText() const;
+
+    const QVector<SymbolInfo>& variables() const;
+
     /**
      * @brief Total number of variables.
      */
-    int variables() const;
+    int variableCount() const;
 
     /**
      * @brief Number of variables defined by <c>type</c>.
      * @param Equation type.
      */
-    int variables(int type) const;
+    int variableCount(int type) const;
 
     int variableBlocks();
 
@@ -118,6 +126,7 @@ public:
     }
 
     bool isVariable(const QString &name);
+
 
     int symbolCount() const {
         return dctNLSyms(mDCT);
@@ -181,6 +190,9 @@ public:
 
     QStandardItem* horizontalItem(int logicalIndex);
     QStandardItem* verticalItem(int logicalIndex);
+
+    const QList<QStandardItem*>& horizontalTree() const;
+    const QList<QStandardItem*>& verticalTree() const;
 
     QList<QStandardItem*> horizontalItems();
     QList<QStandardItem*> verticalItems();

@@ -12,9 +12,15 @@ class FilterTreeItem
 {
 public:
     explicit FilterTreeItem(const QString &text,
-                             Qt::CheckState checkState,
+                            bool checkable,
+                            FilterTreeItem *parent = nullptr);
+
+    explicit FilterTreeItem(const QString &text = "",
+                             Qt::CheckState checkState = Qt::Checked,
                              int logicalIndex = -1,
                              FilterTreeItem *parent = nullptr);
+
+
     ~FilterTreeItem();
 
     void append(FilterTreeItem *child);
@@ -47,7 +53,8 @@ public:
 
     void setLogicalIndex(int index);
 
-    static const QString HeaderText;
+    static const QString EquationText;
+    static const QString VariableText;
 
 private:
     FilterTreeItem *mParent = nullptr;
@@ -56,7 +63,7 @@ private:
 
     QString mText;
 
-    Qt::CheckState mChecked = Qt::Checked;
+    Qt::CheckState mChecked;
 
     int mLogicalIndex;
 

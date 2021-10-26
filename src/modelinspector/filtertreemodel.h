@@ -26,9 +26,6 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
-    QVariant headerData(int section, Qt::Orientation orientation,
-                        int role = Qt::DisplayRole) const override;
-
     QModelIndex index(int row, int column,
                       const QModelIndex &parent = QModelIndex()) const override;
 

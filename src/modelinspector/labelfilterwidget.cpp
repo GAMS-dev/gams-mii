@@ -58,42 +58,35 @@ void LabelFilterWidget::on_applyButton_clicked()
 
 void LabelFilterWidget::on_selectButton_clicked()
 {
-    QModelIndexList indexes;
-    for(int row=0; row<mFilterModel->rowCount(); ++row) {
-        indexes.append(mFilterModel->index(row, 0));
-    }
-    while (!indexes.isEmpty()) {
-        auto index = indexes.takeFirst();
-        if (!mFilterModel->hasChildren(index))
-            mFilterModel->setData(index, true, Qt::CheckStateRole);
-        if (mFilterModel->hasChildren(index)) {
-            for(int row=0; row<mFilterModel->rowCount(index); ++row)
-                indexes.append(mFilterModel->index(row, 0, index));
-        }
-    }
+    setSelection(true);
 }
 
 void LabelFilterWidget::on_deselectButton_clicked()
 {
-    QModelIndexList indexes;
-    for(int row=0; row<mFilterModel->rowCount(); ++row) {
-        indexes.append(mFilterModel->index(row, 0));
-    }
-    while (!indexes.isEmpty()) {
-        auto index = indexes.takeFirst();
-        if (!mFilterModel->hasChildren(index))
-            mFilterModel->setData(index, false, Qt::CheckStateRole);
-        if (mFilterModel->hasChildren(index)) {
-            for(int row=0; row<mFilterModel->rowCount(index); ++row)
-                indexes.append(mFilterModel->index(row, 0, index));
-        }
-    }
+    setSelection(false);
 }
 
 void LabelFilterWidget::applyFilter(const QString &text)
 {
     mFilterModel->setFilterWildcard(text);
     ui->labelView->expandAll();
+}
+
+void LabelFilterWidget::setSelection(bool state)
+{
+    QModelIndexList indexes;
+    for(int row=0; row<mFilterModel->rowCount(); ++row) {
+        indexes.append(mFilterModel->index(row, 0));
+    }
+    while (!indexes.isEmpty()) {
+        auto index = indexes.takeFirst();
+        if (!mFilterModel->hasChildren(index))
+            mFilterModel->setData(index, state, Qt::CheckStateRole);
+        if (mFilterModel->hasChildren(index)) {
+            for(int row=0; row<mFilterModel->rowCount(index); ++row)
+                indexes.append(mFilterModel->index(row, 0, index));
+        }
+    }
 }
 
 } // namespace modelinspector

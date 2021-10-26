@@ -71,6 +71,7 @@ SOURCES += \
     gamsprocess.cpp \
     commonpaths.cpp \
     gamslibprocess.cpp \
+    modelinspector/aggregationdialog.cpp \
     modelinspector/filtertreeitem.cpp \
     modelinspector/filtertreemodel.cpp \
     modelinspector/globalfilterdialog.cpp \
@@ -93,6 +94,7 @@ HEADERS += \
     gamsprocess.h \
     commonpaths.h \
     gamslibprocess.h    \
+    modelinspector/aggregationdialog.h \
     modelinspector/filtertreeitem.h \
     modelinspector/filtertreemodel.h \
     modelinspector/globalfilterdialog.h \
@@ -113,6 +115,7 @@ HEADERS += \
 
 FORMS += \
     mainwindow.ui \
+    modelinspector/aggregationdialog.ui \
     modelinspector/globalfilterdialog.ui \
     modelinspector/labelfilterwidget.ui \
     modelinspector/modelinspector.ui \

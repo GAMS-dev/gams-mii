@@ -37,7 +37,7 @@ public:
     void reloadUpdatedFilterData();
 
 signals:
-    void filterUpdate();
+    void updated();
 
 private slots:
     void on_applyButton_clicked();

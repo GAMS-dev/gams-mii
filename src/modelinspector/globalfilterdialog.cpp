@@ -84,7 +84,7 @@ void GlobalFilterDialog::on_applyButton_clicked()
     mModelInstance->setUelStates(Qt::Vertical, vUelStates);
 
     mModelInstance->setValueFilterSettings(mSettings);
-    emit filterUpdate();
+    emit updated();
 }
 
 void GlobalFilterDialog::on_resetButton_clicked()
@@ -159,12 +159,14 @@ void GlobalFilterDialog::on_uelFilterBox_currentIndexChanged(int index)
 
 void GlobalFilterDialog::applyEqnFilter(const QString &text)
 {
+    if (!mEqnFilterModel) return;
     mEqnFilterModel->setFilterWildcard(text);
     ui->equationView->expandAll();
 }
 
 void GlobalFilterDialog::applyVarFilter(const QString &text)
 {
+    if (!mVarFilterModel) return;
     mVarFilterModel->setFilterWildcard(text);
     ui->variableView->expandAll();
 }
@@ -219,7 +221,8 @@ FilterTreeItem* GlobalFilterDialog::setupEqnVarFilterItems(Qt::Orientation orien
     auto attributes = new FilterTreeItem("Attributes", Qt::Unchecked, -1, root);
     attributes->setCheckable(false);
     root->append(attributes);
-    auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ? "Variables" : "Equations",
+    auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ? FilterTreeItem::VariableText :
+                                                                       FilterTreeItem::EquationText,
                                        Qt::Unchecked, -1, root);
     typeItem->setCheckable(false);
     root->append(typeItem);
@@ -267,7 +270,8 @@ void GlobalFilterDialog::setupUelFilterItems(Qt::Orientation orientation,
                                              FilterTreeItem *root)
 {
     auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ?
-                                           "Variables" : "Equations",
+                                           FilterTreeItem::VariableText :
+                                           FilterTreeItem::EquationText,
                                        Qt::Unchecked, -1, root);
     typeItem->setCheckable(false);
     root->append(typeItem);
@@ -324,10 +328,10 @@ QMap<QString, bool> GlobalFilterDialog::uelSatesFromFilterView(Qt::Orientation o
         return uels;
     FilterTreeItem *root = nullptr;
     Q_FOREACH(auto item, mUelTreeModel->filterItem()->childs()) {
-        if (orientation == Qt::Horizontal && item->text() == "Variables") {
+        if (orientation == Qt::Horizontal && item->text() == FilterTreeItem::VariableText) {
             root = item;
             break;
-        } else if (orientation == Qt::Vertical && item->text() == "Equations") {
+        } else if (orientation == Qt::Vertical && item->text() == FilterTreeItem::EquationText) {
             root = item;
             break;
         }

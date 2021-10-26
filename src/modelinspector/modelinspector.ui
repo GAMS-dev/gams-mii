@@ -44,7 +44,11 @@
        <widget class="QWidget" name="fullView">
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
-          <widget class="gams::studio::modelinspector::MITableView" name="miView"/>
+          <widget class="gams::studio::modelinspector::MITableView" name="miView">
+           <attribute name="verticalHeaderCascadingSectionResizes">
+            <bool>false</bool>
+           </attribute>
+          </widget>
          </item>
         </layout>
        </widget>

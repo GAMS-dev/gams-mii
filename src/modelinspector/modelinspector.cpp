@@ -114,6 +114,7 @@ void ModelInspector::loadModelInstance(int exitCode, QProcess::ExitStatus status
     ui->miView->horizontalHeader()->setVisible(true);
     ui->miView->horizontalHeader()->setHighlightSections(true);
     ui->miView->horizontalHeader()->setSectionsClickable(true);
+    ui->miView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     connect(hHeader, &HierarchicalHeaderView::filterChanged,
             this, &ModelInspector::applyHeaderLabelFilter);
 
@@ -123,11 +124,13 @@ void ModelInspector::loadModelInstance(int exitCode, QProcess::ExitStatus status
     ui->miView->verticalHeader()->setVisible(true);
     ui->miView->verticalHeader()->setHighlightSections(true);
     ui->miView->verticalHeader()->setSectionsClickable(true);
+    ui->miView->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     connect(vHeader, &HierarchicalHeaderView::filterChanged,
             this, &ModelInspector::applyHeaderLabelFilter);
 
-    ui->miView->resizeColumnsToContents();
-    ui->miView->resizeRowsToContents();
+    // TODO which one to use... QHeaderView or this one?
+    //ui->miView->resizeColumnsToContents();
+    //ui->miView->resizeRowsToContents();
 
     emit newModelInstance();
 }
@@ -183,6 +186,11 @@ void ModelInspector::processGlobalFilterUpdate()
 
     mValueFormatModel->setSettings(mModelInstance->valueFilterSettings());
     emit filtersUpdated();
+}
+
+void ModelInspector::processAggregationUpdate()
+{
+    // TODO
 }
 
 void ModelInspector::setCurrentView(int index)

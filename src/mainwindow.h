@@ -23,6 +23,7 @@
 #include <QMainWindow>
 #include <QSharedPointer>
 
+class QLabel;
 class QStandardItem;
 
 namespace Ui {
@@ -35,6 +36,7 @@ class GAMSProcess;
 namespace gams {
 namespace studio {
 namespace modelinspector {
+class AggregationDialog;
 class GlobalFilterDialog;
 }
 }
@@ -49,10 +51,10 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_runButton_clicked(bool checked);
     void appendLogMessage(const QString &message);
 
     // File
+    void on_actionRun_triggered();
     void on_action_Quit_triggered();
 
     // Edit
@@ -61,6 +63,7 @@ private slots:
 
     // View
     void on_actionGlobal_Filters_triggered();
+    void on_actionAggregation_triggered();
 
     // Help
     void on_actionAbout_Qt_triggered();
@@ -74,13 +77,17 @@ private slots:
 private:
     void loadGAMSModel(const QString &path);
 
+    void showDialog(QDialog *dialog);
+
     QString workspace() const;
 
 private:
     Ui::MainWindow *ui;
     GAMSLibProcess *mLibProcess;
     QSharedPointer<GAMSProcess> mProcess;
+    gams::studio::modelinspector::AggregationDialog *mAggregationDialog;
     gams::studio::modelinspector::GlobalFilterDialog *mGlobalFilterDialog;
+    QLabel *mAggregationStatusLabel;
 };
 
 #endif // MAINWINDOW_H

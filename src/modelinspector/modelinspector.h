@@ -74,6 +74,7 @@ public slots:
     void releasePreviousModel();
 
     void processGlobalFilterUpdate();
+    void processAggregationUpdate();
 
     void setCurrentView(int index);
 
