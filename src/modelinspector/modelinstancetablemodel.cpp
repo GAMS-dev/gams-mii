@@ -64,15 +64,14 @@ Qt::ItemFlags ModelInstanceTableModel::flags(const QModelIndex &index) const
 QModelIndex ModelInstanceTableModel::index(int row, int column,
                                            const QModelIndex &parent) const
 {
-    if (!hasIndex(row, column, parent))
-        return QModelIndex();
-    return createIndex(row, column);
+    if (hasIndex(row, column, parent))
+        return createIndex(row, column);
+    return QModelIndex();
 }
 
 QModelIndex ModelInstanceTableModel::parent(const QModelIndex &index) const
 {
-    if (!index.isValid())
-        return QModelIndex();
+    Q_UNUSED(index);
     return QModelIndex();
 }
 

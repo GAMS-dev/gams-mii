@@ -110,27 +110,26 @@ void ModelInspector::loadModelInstance(int exitCode, QProcess::ExitStatus status
 
     auto hHeader = new HierarchicalHeaderView(Qt::Horizontal, ui->miView);
     hHeader->setModelInstance(mModelInstance);
+    hHeader->setVisible(true);
+    hHeader->setHighlightSections(true);
+    hHeader->setSectionsClickable(true);
+    hHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->miView->setHorizontalHeader(hHeader);
-    ui->miView->horizontalHeader()->setVisible(true);
-    ui->miView->horizontalHeader()->setHighlightSections(true);
-    ui->miView->horizontalHeader()->setSectionsClickable(true);
-    ui->miView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     connect(hHeader, &HierarchicalHeaderView::filterChanged,
             this, &ModelInspector::applyHeaderLabelFilter);
 
     auto vHeader = new HierarchicalHeaderView(Qt::Vertical, ui->miView);
     vHeader->setModelInstance(mModelInstance);
+    vHeader->setVisible(true);
+    vHeader->setHighlightSections(true);
+    vHeader->setSectionsClickable(true);
+    vHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->miView->setVerticalHeader(vHeader);
-    ui->miView->verticalHeader()->setVisible(true);
-    ui->miView->verticalHeader()->setHighlightSections(true);
-    ui->miView->verticalHeader()->setSectionsClickable(true);
-    ui->miView->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     connect(vHeader, &HierarchicalHeaderView::filterChanged,
             this, &ModelInspector::applyHeaderLabelFilter);
 
-    // TODO which one to use... QHeaderView or this one?
-    //ui->miView->resizeColumnsToContents();
-    //ui->miView->resizeRowsToContents();
+    emit newLogMessage(QString("Table Row Count >> %1").arg(mModelInstance->rowCount()));
+    emit newLogMessage(QString("Table Column Count >> %1").arg(mModelInstance->columnCount()));
 
     emit newModelInstance();
 }

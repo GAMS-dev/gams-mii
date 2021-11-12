@@ -50,14 +50,37 @@ public:
         QVector<SymbolInfo> &syms = (type == dcteqnSymType) ? mEquations : mVariables;
         for (int i=1; i<=mModelInstance->symbolCount(); ++i) {
             auto sym = mModelInstance->symbol(i);
-            if (type == sym.Type)
-                syms.append(sym);
+            if (type != sym.Type)
+                continue;
+             syms.append(sym);
+             if (type == dcteqnSymType)
+                 mEquationEntries += sym.Entries;
+             else
+                 mVariableEntries += sym.Entries;
         }
+    }
+
+    void loadJaccobian()
+    {
+        for (int r=0; r<mModelInstance->equationCount(); ++r) {
+            mJaccobian.push_back(mModelInstance->jaccobianRow(r));
+        }
+    }
+
+    double jaccobianValue(int column, int row) const
+    {
+        if (row < mJaccobian.size())
+            return mJaccobian[row][column];
+        return 0.0;
+    }
+
+    int symbolEntries(int type) const {
+        return type == dcteqnSymType ? mEquationEntries : mVariableEntries;
     }
 
     const QVector<SymbolInfo>& symbols(int type) const
     {
-        return (type == dcteqnSymType) ? mEquations : mVariables;
+        return type == dcteqnSymType ? mEquations : mVariables;
     }
 
     ValueFilterSettings& valueFilterSettings()
@@ -153,12 +176,14 @@ public:
     QMap<QString, bool> HorizontalUelStates;
     QMap<QString, bool> VerticalUelStates;
 
-
 private:
     ModelInstance* const mModelInstance;
 
     QVector<SymbolInfo> mEquations;
     QVector<SymbolInfo> mVariables;
+
+    int mEquationEntries = 0;
+    int mVariableEntries = 0;
 
     ValueFilterSettings mValueFilterSettings;
 
@@ -170,6 +195,8 @@ private:
 
     QString mLongestVarText;
     QString mLongestVarUelText;
+
+    QVector<JaccobianRow> mJaccobian;
 };
 
 ModelInstance::ModelInstance(const QString &workspace, const QString &scratchDir)
@@ -364,6 +391,7 @@ void ModelInstance::loadSymbols()
 {
     mCache->loadSymbols(dcteqnSymType);
     mCache->loadSymbols(dctvarSymType);
+    mCache->loadJaccobian();
 }
 
 void ModelInstance::loadMinMaxValues()
@@ -610,7 +638,7 @@ SymbolInfo ModelInstance::symbol(int index) const
     return info;
 }
 
-SymbolInfo ModelInstance::symbol(int index, int type)
+const SymbolInfo& ModelInstance::symbol(int index, int type) const
 {
     return symbols(type).at(index);
 }
@@ -741,22 +769,14 @@ QPair<double, double> ModelInstance::rhsRange() const
     return range;
 }
 
-int ModelInstance::rowCount()
+int ModelInstance::rowCount() const
 {
-    int entries = 0;
-    Q_FOREACH(const auto sym, symbols(dcteqnSymType)) {
-        entries += sym.Entries;
-    }
-    return PredefinedHeader.size() + entries;
+    return PredefinedHeaderLength + mCache->symbolEntries(dcteqnSymType);
 }
 
-int ModelInstance::columnCount()
+int ModelInstance::columnCount() const
 {
-    int entries = 0;
-    Q_FOREACH(const auto sym, symbols(dctvarSymType)) {
-        entries += sym.Entries;
-    }
-    return PredefinedHeader.size() + entries;
+    return PredefinedHeaderLength + mCache->symbolEntries(dctvarSymType);
 }
 
 void ModelInstance::horizontalHeaderData(QStandardItemModel &model)
@@ -988,7 +1008,7 @@ QVariant ModelInstance::data(int row, int column)
         return equationAttribute(column, rIndex);
     }
 
-    double value = jaccobianValue(rIndex, cIndex);
+    double value = mCache->jaccobianValue(cIndex, rIndex);
     return value != 0.0 ? QVariant(value) : QString();
 }
 
@@ -1054,7 +1074,7 @@ void ModelInstance::initialize()
     }
 }
 
-double ModelInstance::jaccobianValue(int row, int column)
+JaccobianRow ModelInstance::jaccobianRow(int row)
 {
     const int columns = variableCount();
     int *colidx = new int[columns];
@@ -1063,20 +1083,17 @@ double ModelInstance::jaccobianValue(int row, int column)
     int nz;
     int nlnz;
 
-    double value = 0.0;
+    JaccobianRow jacRow;
     if (!gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz)) {
         for (int i=0; i<nz; ++i) {
-            if (colidx[i] == column) {
-                value = jacval[i];
-                break;
-            }
+            jacRow[colidx[i]] = jacval[i];
         }
     }
 
     delete [] colidx;
     delete [] jacval;
     delete [] nlflag;
-    return value;
+    return jacRow;
 }
 
 QVariant ModelInstance::variableAttribute(int row, int cIndex)

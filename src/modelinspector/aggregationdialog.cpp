@@ -78,7 +78,7 @@ AggregationDialog::AggregationDialog(QWidget *parent)
     connect(this, &QDialog::rejected,
             this, &AggregationDialog::on_cancelButton_clicked);
 
-    setupLeftTreeView(setupAggregationItems(false));
+    setupLeftTreeView(setupAggregationItems());
 }
 
 AggregationDialog::~AggregationDialog()
@@ -100,7 +100,7 @@ void AggregationDialog::setModelInstance(QSharedPointer<ModelInstance> modelInst
     mModelInstance = modelInstance;
     mTreeGenerator->setModelInstance(modelInstance);
 
-    setupLeftTreeView(setupAggregationItems(false));
+    setupLeftTreeView(setupAggregationItems());
 }
 
 void AggregationDialog::on_selectButton_clicked()
@@ -163,7 +163,7 @@ void AggregationDialog::setupLeftTreeView(FilterTreeItem *root)
         oldModel->deleteLater();
 }
 
-FilterTreeItem* AggregationDialog::setupAggregationItems(bool rightView)
+FilterTreeItem* AggregationDialog::setupAggregationItems()
 {
     mRootItem = new FilterTreeItem;
     mTreeGenerator->generate(mRootItem);

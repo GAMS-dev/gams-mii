@@ -80,10 +80,14 @@ public:
         mMinHorizontalCellSize = fm.size(0, mHeaderView->mModelInstance->longestVarText());
         mMinVerticalCellSize = fm.size(0, mHeaderView->mModelInstance->longestEqnText());
         mEmptyTextSize = fm.size(0, "");
+        mFilterIconSize = QSize(mEmptyTextSize.height(), mEmptyTextSize.height());
+
+        QIcon icon(FilterIconOn);
+        mPixmapFilterOn = icon.pixmap(mFilterIconSize);
     }
 
     QAbstractItemModel* model() const {
-        return mModel;
+        return mModel.data();
     }
 
     bool isValid() const {
@@ -250,12 +254,10 @@ public:
         option.text = cellIndex.data(Qt::DisplayRole).toString();
 
         painter->save();
-        auto iconSize = pixmapSize();
         if (mHeaderView->isVariable(option.text)) {
-            option.rect = QRect(left+iconSize.width(), currentTop, width-iconSize.width(), height);
-            QIcon icon(FilterIconOn);
-            painter->drawPixmap(left, currentTop, icon.pixmap(iconSize));
-            mDimensionFilterSpots.push_back(QRect(QPoint(left, currentTop), iconSize));
+            option.rect = QRect(left+mFilterIconSize.width(), currentTop, width-mFilterIconSize.width(), height);
+            painter->drawPixmap(left, currentTop, mPixmapFilterOn);
+            mDimensionFilterSpots.push_back(QRect(QPoint(left, currentTop), mFilterIconSize));
         } else {
             option.rect = QRect(left, currentTop, width, height);
         }
@@ -265,8 +267,8 @@ public:
         //QFontMetrics fm(mHeaderView->font());
         //QSize size = fm.size(0, cellIndex.data().toString());
 
-        if (cellIndex.data().toString() == "z") // TODO macOS cell issue
-            qDebug() << "Z RECT: " << option.rect << currentTop;
+        //if (cellIndex.data().toString() == "z") // TODO macOS cell issue
+        //    qDebug() << "Z RECT: " << option.rect << currentTop;
 
         //QTransform matrix;
         //matrix.rotate(-90); // TODO mind dim
@@ -304,17 +306,15 @@ public:
         option.text = cellIndex.data(Qt::DisplayRole).toString();
 
         painter->save();
-        auto iconSize = pixmapSize();
         if (mHeaderView->isEquation(option.text)) {
-            QIcon icon(FilterIconOn);
-            painter->drawImage(currentLeft, top, icon.pixmap(iconSize).toImage());
-            mDimensionFilterSpots.push_back(QRect(QPoint(currentLeft, top), iconSize));
-            option.rect = QRect(currentLeft+iconSize.width(), top, width, height);
+            painter->drawPixmap(currentLeft, top, mPixmapFilterOn);
+            mDimensionFilterSpots.push_back(QRect(QPoint(currentLeft, top), mFilterIconSize));
+            option.rect = QRect(currentLeft+mFilterIconSize.width(), top, width, height);
         } else {
             if (cellIndex.parent().isValid()) {
-                option.rect = QRect(currentLeft+iconSize.width(), top, width, height);
+                option.rect = QRect(currentLeft+mFilterIconSize.width(), top, width, height);
             } else {
-                option.rect = QRect(currentLeft, top, width+iconSize.width(), height);
+                option.rect = QRect(currentLeft, top, width+mFilterIconSize.width(), height);
             }
         }
 
@@ -324,11 +324,6 @@ public:
         painter->restore();
 
         return currentLeft + width;
-    }
-
-    QSize pixmapSize()
-    {// TODO dyn. pixmap size
-        return QSize(22, 22);
     }
 
     int cellLeft(const QModelIndex &cellIndex, const QModelIndex &leafIndex,
@@ -406,6 +401,11 @@ public:
         return index;
     }
 
+    inline QSize filterIconSize() const
+    {
+        return mFilterIconSize;
+    }
+
 private:
     const QString FilterIconOn = ":/img/filter";
     const QString FilterIconOff = ":/img/filter-off";
@@ -414,9 +414,13 @@ private:
     QPointer<QAbstractItemModel> mModel;
     QVector<QRect> mDimensionFilterSpots;
 
+    QSize mFilterIconSize;
     QSize mMinHorizontalCellSize;
     QSize mMinVerticalCellSize;
     QSize mEmptyTextSize;
+
+    QPixmap mPixmapFilterOn;
+    //QPixmap mFilterPixmapOff; // TODO off icon
 };
 
 HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
@@ -547,7 +551,7 @@ QSize HierarchicalHeaderView::sectionSizeFromContents(int logicalIndex) const
                                                          styleOption).height();
                 } else {
                     size.rwidth() += mPrivate->cellSize(currentIndex, styleOption)
-                            .width()+mPrivate->pixmapSize().width();
+                            .width()+mPrivate->filterIconSize().width();
                 }
                 currentIndex = currentIndex.parent();
             }

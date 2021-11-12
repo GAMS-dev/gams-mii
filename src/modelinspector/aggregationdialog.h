@@ -53,7 +53,7 @@ private:
 
     void setupLeftTreeView(FilterTreeItem *root);
 
-    FilterTreeItem* setupAggregationItems(bool rightView);
+    FilterTreeItem* setupAggregationItems();
 
 private:
     Ui::AggregationDialog *ui;
