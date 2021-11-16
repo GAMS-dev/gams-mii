@@ -67,11 +67,12 @@ public:
         }
     }
 
-    double jaccobianValue(int column, int row) const
+    QVariant jaccobianValue(int column, int row) const
     {
+        const static QVariant defaultValue(0.0);
         if (row < mJaccobian.size())
-            return mJaccobian[row][column];
-        return 0.0;
+            return mJaccobian[row].value(column);
+        return defaultValue;
     }
 
     int symbolEntries(int type) const {
@@ -1008,8 +1009,7 @@ QVariant ModelInstance::data(int row, int column)
         return equationAttribute(column, rIndex);
     }
 
-    double value = mCache->jaccobianValue(cIndex, rIndex);
-    return value != 0.0 ? QVariant(value) : QString();
+    return mCache->jaccobianValue(cIndex, rIndex);
 }
 
 ValueFilterSettings ModelInstance::valueFilterSettings() const
@@ -1086,7 +1086,7 @@ JaccobianRow ModelInstance::jaccobianRow(int row)
     JaccobianRow jacRow;
     if (!gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz)) {
         for (int i=0; i<nz; ++i) {
-            jacRow[colidx[i]] = jacval[i];
+            jacRow[colidx[i]] = QVariant(jacval[i]);
         }
     }
 

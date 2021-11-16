@@ -42,7 +42,7 @@ struct ValueFilterSettings;
 
 // TODO Which default values if something goes wrong (e.g. excel '##ERROR##', -1, ...)? -> something like '##ERROR##'
 
-typedef QMap<int, double> JaccobianRow;
+typedef QMap<int, QVariant> JaccobianRow;
 
 struct SymbolInfo
 {
