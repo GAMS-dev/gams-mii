@@ -67,12 +67,42 @@ public:
         }
     }
 
+    void loadHorizontalAttributes()
+    {
+        for (int r=0; r<PredefinedHeaderLength; ++r) {
+            auto header = PredefinedHeader.at(r).toLower();
+            for (int c=0; c<mModelInstance->columnCount()-PredefinedHeaderLength; ++c) {
+                mHorizontalAttributes[r][c] = mModelInstance->horizontalAttribute(header, c);
+            }
+        }
+    }
+
+    void loadVerticalAttributes()
+    {
+        for (int c=0; c<PredefinedHeaderLength; ++c) {
+            auto header = PredefinedHeader.at(c).toLower();
+            for (int r=0; r<mModelInstance->rowCount()-PredefinedHeaderLength; ++r) {
+                mVerticalAttributes[c][r] = mModelInstance->verticalAttribute(header, r);
+            }
+        }
+    }
+
     QVariant jaccobianValue(int column, int row) const
     {
         const static QVariant defaultValue(0.0);
         if (row < mJaccobian.size())
             return mJaccobian[row].value(column);
         return defaultValue;
+    }
+
+    QVariant horizontalAttribute(int row, int column) const
+    {
+        return mHorizontalAttributes[row][column];
+    }
+
+    QVariant verticalAttribute(int row, int column) const
+    {
+        return mVerticalAttributes[column][row];
     }
 
     int symbolEntries(int type) const {
@@ -197,7 +227,10 @@ private:
     QString mLongestVarText;
     QString mLongestVarUelText;
 
-    QVector<JaccobianRow> mJaccobian;
+    AttributeValues mHorizontalAttributes;
+    AttributeValues mVerticalAttributes;
+
+    Jaccobian mJaccobian;
 };
 
 ModelInstance::ModelInstance(const QString &workspace, const QString &scratchDir)
@@ -388,10 +421,12 @@ void ModelInstance::loadScratchData()
     mLogMessages << "Absolute Scrach Path: " + mScratchDir;
 }
 
-void ModelInstance::loadSymbols()
+void ModelInstance::loadTableData()
 {
     mCache->loadSymbols(dcteqnSymType);
     mCache->loadSymbols(dctvarSymType);
+    mCache->loadHorizontalAttributes();
+    mCache->loadVerticalAttributes();
     mCache->loadJaccobian();
 }
 
@@ -993,20 +1028,16 @@ int ModelInstance::predefinedHeaderLength() const
     return PredefinedHeaderLength;
 }
 
-QVariant ModelInstance::data(int row, int column)
+QVariant ModelInstance::data(int row, int column) const
 {
-    if (row < PredefinedHeaderLength && column < PredefinedHeaderLength) {
-        return QVariant();
-    }
-
     int cIndex =  column - PredefinedHeaderLength;
-    if (row < PredefinedHeaderLength && column >= PredefinedHeaderLength) {
-        return variableAttribute(row, cIndex);
+    if (row < PredefinedHeaderLength) {
+        return mCache->horizontalAttribute(row, cIndex);
     }
 
     int rIndex = row - PredefinedHeaderLength;
-    if (row >= PredefinedHeaderLength && column < PredefinedHeaderLength) {
-        return equationAttribute(column, rIndex);
+    if (column < PredefinedHeaderLength) {
+        return mCache->verticalAttribute(rIndex, column);
     }
 
     return mCache->jaccobianValue(cIndex, rIndex);
@@ -1096,41 +1127,39 @@ JaccobianRow ModelInstance::jaccobianRow(int row)
     return jacRow;
 }
 
-QVariant ModelInstance::variableAttribute(int row, int cIndex)
+QVariant ModelInstance::horizontalAttribute(const QString &header, int column)
 {
     double value = 0.0;
-    auto header = PredefinedHeader.at(row).toLower();
     if (header == "level") {
-        value = gmoGetVarLOne(mGMO, cIndex);
+        value = gmoGetVarLOne(mGMO, column);
     } else if (header == "lower") {
-        value = gmoGetVarLowerOne(mGMO, cIndex);
+        value = gmoGetVarLowerOne(mGMO, column);
     } else if (header == "marginal") {
-        value = gmoGetVarMOne(mGMO, cIndex);
-        return specialMarginalVarValuePtr(value, cIndex);
+        value = gmoGetVarMOne(mGMO, column);
+        return specialMarginalVarValuePtr(value, column);
     } else if (header == "scale") {
-        value = gmoGetVarScaleOne(mGMO, cIndex);
+        value = gmoGetVarScaleOne(mGMO, column);
     } else if (header == "upper") {
-        value = gmoGetVarUpperOne(mGMO, cIndex);
+        value = gmoGetVarUpperOne(mGMO, column);
     }
     return specialValue(value);
 }
 
-QVariant ModelInstance::equationAttribute(int column, int rIndex)
+QVariant ModelInstance::verticalAttribute(const QString &header, int row)
 {
     double value = 0.0;
-    auto header = PredefinedHeader.at(column).toLower();
     if (header == "level") {
-        value = gmoGetEquLOne(mGMO, rIndex);
+        value = gmoGetEquLOne(mGMO, row);
     } else if (header == "lower") {
-        auto bounds = equationBounds(rIndex);
+        auto bounds = equationBounds(row);
         value = bounds.first;
     } else if (header == "marginal") {
-        value = gmoGetEquMOne(mGMO, rIndex);
-        return specialMarginalEquValuePtr(value, rIndex);
+        value = gmoGetEquMOne(mGMO, row);
+        return specialMarginalEquValuePtr(value, row);
     } else if (header == "scale") {
-        value = gmoGetEquScaleOne(mGMO, rIndex);
+        value = gmoGetEquScaleOne(mGMO, row);
     } else if (header == "upper") {
-        auto bounds = equationBounds(rIndex);
+        auto bounds = equationBounds(row);
         value = bounds.second;
     }
     return specialValue(value);

@@ -138,7 +138,7 @@ void ModelInspector::releasePreviousModel()
 {
     mModelInstance = QSharedPointer<ModelInstance>(new ModelInstance(mWorkspace, mScratchDir));
     mModelInstance->loadScratchData();
-    mModelInstance->loadSymbols();
+    mModelInstance->loadTableData();
     mModelInstance->loadMinMaxValues();
 
     auto modelInstanceModel = new ModelInstanceTableModel(ui->miView);

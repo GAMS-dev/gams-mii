@@ -43,6 +43,10 @@ struct ValueFilterSettings;
 // TODO Which default values if something goes wrong (e.g. excel '##ERROR##', -1, ...)? -> something like '##ERROR##'
 
 typedef QMap<int, QVariant> JaccobianRow;
+typedef QVector<JaccobianRow> Jaccobian;
+
+typedef QMap<int, QVariant> AttribeValueLine;
+typedef QMap<int, AttribeValueLine> AttributeValues;
 
 struct SymbolInfo
 {
@@ -172,7 +176,7 @@ public:
     const QVector<SymbolInfo>& symbols(int type) const;
 
     void loadScratchData();
-    void loadSymbols();
+    void loadTableData();
     void loadMinMaxValues();
 
     QPair<double, double> matrixRange() const;
@@ -218,7 +222,7 @@ public:
 
     int predefinedHeaderLength() const;
 
-    QVariant data(int row, int column);
+    QVariant data(int row, int column) const;
 
     ValueFilterSettings valueFilterSettings() const;
     void setValueFilterSettings(const ValueFilterSettings &settings);
@@ -228,8 +232,8 @@ private:
 
     JaccobianRow jaccobianRow(int row);
 
-    QVariant variableAttribute(int row, int column);
-    QVariant equationAttribute(int row, int column);
+    QVariant horizontalAttribute(const QString &header, int column);
+    QVariant verticalAttribute(const QString &header, int row);
 
     QPair<double, double> equationBounds(int row);
 
