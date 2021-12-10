@@ -87,6 +87,11 @@
         </property>
         <item>
          <property name="text">
+          <string>None</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
           <string>Sum</string>
          </property>
         </item>
@@ -107,17 +112,12 @@
         </item>
         <item>
          <property name="text">
-          <string>Min</string>
+          <string>Minimum</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>Max</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Range</string>
+          <string>Maximum</string>
          </property>
         </item>
        </widget>
@@ -147,6 +147,13 @@
        </property>
        <property name="text">
         <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="resetButton">
+       <property name="text">
+        <string>Reset</string>
        </property>
       </widget>
      </item>

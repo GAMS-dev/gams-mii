@@ -1,173 +1,202 @@
 #include "aggregationdialog.h"
 #include "ui_aggregationdialog.h"
-#include "modelinstance.h"
 #include "filtertreeitem.h"
 #include "filtertreemodel.h"
 
-#include <QStandardItem> // TODO remove
 #include <QSortFilterProxyModel>
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
-// TODO check box behaviour
-// TODO Filter symbols and keep dimensions
-
-class TreeGenerator {
-public:
-    void setModelInstance(QSharedPointer<ModelInstance> modelInstance)
-    {
-        mModelInstance = modelInstance;
-    }
-
-    void generate(FilterTreeItem *root)
-    {
-        if (!mModelInstance)
-            return;
-
-        auto eqnRoot = new FilterTreeItem(FilterTreeItem::EquationText, false, root);
-        root->append(eqnRoot);
-        appendSymbols(eqnRoot, mModelInstance->equations());
-
-        auto varRoot = new FilterTreeItem(FilterTreeItem::VariableText, false, root);
-        root->append(varRoot);
-        appendSymbols(varRoot, mModelInstance->variables());
-    }
-
-private:
-    void appendSymbols(FilterTreeItem *parent, const QVector<SymbolInfo> &symbols)
-    {
-        Q_FOREACH(auto sym, symbols) {
-            if (!sym.Dimension)
-                continue;
-            auto item = new FilterTreeItem(sym.Name,
-                                           Qt::Unchecked,
-                                           -1, // TODO mapping
-                                           parent);
-            item->setCheckable(false);
-            parent->append(item);
-            appendDimensions(item, sym.Dimension);
-        }
-    }
-
-    void appendDimensions(FilterTreeItem *parent, int dimensions)
-    {
-        for (int i=1; i<=dimensions; ++i) {
-            auto dim = new FilterTreeItem(QString::number(i),
-                                          Qt::Checked,
-                                          -1, // TODO mapping
-                                          parent);
-            parent->append(dim);
-        }
-    }
-
-private:
-    QSharedPointer<ModelInstance> mModelInstance;
-};
-
 AggregationDialog::AggregationDialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::AggregationDialog)
-    , mTreeGenerator(new TreeGenerator)
 {
     ui->setupUi(this);
 
     connect(ui->filterEdit, &QLineEdit::textChanged,
-            this, &AggregationDialog::leftFilterUpdate);
+            this, &AggregationDialog::filterUpdate);
     connect(this, &QDialog::rejected,
             this, &AggregationDialog::on_cancelButton_clicked);
-
-    setupLeftTreeView(setupAggregationItems());
 }
 
 AggregationDialog::~AggregationDialog()
 {
     delete ui;
-    delete mTreeGenerator;
 }
 
-QString AggregationDialog::statusText() const
-{// TODO show aggregation status None
-    //if () {
-    //    return "None";
-    //}
-    return ui->aggregationBox->currentText();
-}
-
-void AggregationDialog::setModelInstance(QSharedPointer<ModelInstance> modelInstance)
+const Aggregation& AggregationDialog::aggregation() const
 {
-    mModelInstance = modelInstance;
-    mTreeGenerator->setModelInstance(modelInstance);
+    return mAggregation;
+}
 
-    setupLeftTreeView(setupAggregationItems());
+void AggregationDialog::setAggregation(const Aggregation &aggregation,
+                                       const IdentifierFilter &filter)
+{
+    mAggregation = aggregation;
+    mIdentifierFilter = filter;
+    ui->filterEdit->setText("");
+    ui->aggregationBox->setCurrentText(mAggregation.typeText());
+    setupAggregationView();
+}
+
+void AggregationDialog::setDefaultAggregation(const Aggregation &aggregation)
+{
+    mDefaultAggregation = aggregation;
 }
 
 void AggregationDialog::on_selectButton_clicked()
 {
-    setSelection(mFilterModel, true);
+    applyCheckState(true);
 }
 
 void AggregationDialog::on_deselectButton_clicked()
 {
-    setSelection(mFilterModel, false);
+    applyCheckState(false);
 }
 
 void AggregationDialog::on_cancelButton_clicked()
 {
+    setAggregation(mAggregation, mIdentifierFilter);
+    ui->filterEdit->setText("");
     close();
+}
+
+void AggregationDialog::on_resetButton_clicked()
+{
+    setAggregation(mDefaultAggregation, mIdentifierFilter);
+    ui->filterEdit->setText("");
+    mAggregationMethod = 0;
+    ui->aggregationBox->setCurrentIndex(mAggregationMethod);
+    applyAggregation();
+    emit aggregationUpdated();
 }
 
 void AggregationDialog::on_applyButton_clicked()
 {
-    emit updated();
+    if (ui->aggregationBox->currentIndex() == 0)
+        return;
+    applyAggregation();
+    mAggregationMethod = ui->aggregationBox->currentIndex();
+    emit aggregationUpdated();
 }
 
-void AggregationDialog::leftFilterUpdate(const QString &text)
+void AggregationDialog::filterUpdate(const QString &text)
 {
-    if (!mFilterModel) return;
+    if (!mAggregationModel) return;
     if (QRegExp("^\\d+$").exactMatch(text) || text.isEmpty()) {
-        mFilterModel->setFilterWildcard(text);
+        mAggregationModel->setFilterWildcard(text);
         ui->view->expandAll();
     }
 }
 
-void AggregationDialog::setSelection(QSortFilterProxyModel *model, bool state)
+void AggregationDialog::setupAggregationView()
 {
-    QModelIndexList indexes;
-    for(int row=0; row<model->rowCount(); ++row) {
-        indexes.append(model->index(row, 0));
+    auto rootItem = new FilterTreeItem(QString(), false);
+    setupTreeItems(Qt::Vertical, rootItem);
+    setupTreeItems(Qt::Horizontal, rootItem);
+
+    auto oldVarModel = ui->view->selectionModel();
+    auto treeModel = new FilterTreeModel(rootItem, ui->view);
+    mAggregationModel = new QSortFilterProxyModel(ui->view);
+    mAggregationModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    mAggregationModel->setRecursiveFilteringEnabled(true);
+    mAggregationModel->setSourceModel(treeModel);
+    ui->view->setModel(mAggregationModel);
+    ui->view->expandAll();
+    if (oldVarModel)
+        oldVarModel->deleteLater();
+    connect(ui->filterEdit, &QLineEdit::textChanged, this,
+            [this](const QString &text) {
+                                            if (!mAggregationModel) return;
+                                            mAggregationModel->setFilterWildcard(text);
+                                            ui->view->expandAll();
+                                        });
+}
+
+void AggregationDialog::setupTreeItems(Qt::Orientation orientation,
+                                       FilterTreeItem *root)
+{
+    auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ? FilterTreeItem::VariableText :
+                                                                       FilterTreeItem::EquationText,
+                                       Qt::Unchecked, -1, root);
+    typeItem->setCheckable(false);
+    auto identifierStates = mIdentifierFilter[orientation];
+    Q_FOREACH(const auto& item, mAggregation.aggregationSymbols(orientation)) {
+        if (item.checkState().isEmpty())
+            continue;
+        if (identifierStates[item.symbolIndex()].Checked == Qt::Unchecked)
+            continue;
+        auto sItem = new FilterTreeItem(item.text(), Qt::Unchecked,
+                                        item.symbolIndex(), typeItem);
+        sItem->setCheckable(false);
+        typeItem->append(sItem);
+        for (auto iter=item.checkState().keyValueBegin();
+             iter!=item.checkState().constKeyValueEnd(); ++iter)
+        {
+            auto dItem = new FilterTreeItem(QString::number(iter->first),
+                                            iter->second,
+                                            item.symbolIndex(),
+                                            sItem);
+            sItem->append(dItem);
+        }
     }
-    while (!indexes.isEmpty()) {
-        auto index = indexes.takeFirst();
-        if (!model->hasChildren(index))
-            model->setData(index, state, Qt::CheckStateRole);
-        if (model->hasChildren(index)) {
-            for(int row=0; row<model->rowCount(index); ++row)
-                indexes.append(model->index(row, 0, index));
+    typeItem->hasChildren() ? root->append(typeItem) : delete typeItem;
+}
+
+void AggregationDialog::applyAggregation()
+{
+    mAggregation.setType(ui->aggregationBox->currentText());
+    QList<FilterTreeItem*> items {
+        static_cast<FilterTreeModel*>(mAggregationModel->sourceModel())->filterItem()->childs()
+    };
+    while (!items.isEmpty()) {
+        auto item = items.takeFirst();
+        if (item->text() == FilterTreeItem::EquationText) {
+            mAggregation.setAggregationSymbols(Qt::Vertical, checkStates(item));
+        } else if (item->text() == FilterTreeItem::VariableText) {
+            mAggregation.setAggregationSymbols(Qt::Horizontal, checkStates(item));
         }
     }
 }
 
-void AggregationDialog::setupLeftTreeView(FilterTreeItem *root)
+AggregationSymbols AggregationDialog::checkStates(FilterTreeItem *item)
 {
-    auto oldModel = ui->view->selectionModel();
-    auto treeModel = new FilterTreeModel(root, ui->view);
-    mFilterModel = new QSortFilterProxyModel(ui->view);
-    mFilterModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-    mFilterModel->setRecursiveFilteringEnabled(true);
-    mFilterModel->setSourceModel(treeModel);
-    ui->view->setModel(mFilterModel);
-    ui->view->expandAll();
-    if (oldModel)
-        oldModel->deleteLater();
+    QList<FilterTreeItem*> items { item->childs() };
+    QMap<int, AggregationItem> states;
+    while (!items.isEmpty()) {
+        auto item = items.takeFirst();
+        AggregationItem aggrItem;
+        aggrItem.setText(item->text());
+        aggrItem.setSymbolIndex(item->index());
+        for (int d=0; d<item->childs().size(); ++d) {
+            auto child = item->child(d);
+            if (!child) continue;
+            aggrItem.setCheckState(d+1, item->child(d)->checked());
+        }
+        states[aggrItem.symbolIndex()] = aggrItem;
+    }
+    return states;
 }
 
-FilterTreeItem* AggregationDialog::setupAggregationItems()
+void AggregationDialog::applyCheckState(bool state)
 {
-    mRootItem = new FilterTreeItem;
-    mTreeGenerator->generate(mRootItem);
-    return mRootItem;
+    QModelIndexList indexes;
+    for(int row=0; row<mAggregationModel->rowCount(); ++row) {
+        auto index = mAggregationModel->index(row, 0);
+        if (ui->view->isExpanded(index) && !ui->view->isRowHidden(row, QModelIndex()))
+            indexes.append(index);
+    }
+    while (!indexes.isEmpty()) {
+        auto index = indexes.takeFirst();
+        if (!mAggregationModel->hasChildren(index))
+            mAggregationModel->setData(index, state, Qt::CheckStateRole);
+        if (mAggregationModel->hasChildren(index)) {
+            for(int row=0; row<mAggregationModel->rowCount(index); ++row)
+                indexes.append(mAggregationModel->index(row, 0, index));
+        }
+    }
 }
 
 }

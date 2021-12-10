@@ -3,14 +3,15 @@
 
 #include <QHeaderView>
 
+#include "common.h"
+#include "aggregation.h"
+
 class QMenu;
-class QStandardItem;
 
 namespace gams {
 namespace studio{
 namespace modelinspector {
 
-class FilterTreeItem;
 class ModelInstance;
 class LabelFilterWidget;
 
@@ -24,13 +25,22 @@ public:
                            QWidget *parent = nullptr);
     ~HierarchicalHeaderView();
 
+    QSharedPointer<ModelInstance> modelInstance() const;
+
+    void setAppliedAggregation(const AggregationSymbols &appliedAggregation);
+
     void setModel(QAbstractItemModel *model) override;
 
 public slots:
     void customMenuRequested(QPoint position);
+    void resetSymbolLabelFilters();
 
 signals:
-    void filterChanged(FilterTreeItem *item, Qt::Orientation orientation);
+    void filterChanged(const IdentifierState&, Qt::Orientation);
+
+private slots:
+    void on_filterChanged(const IdentifierState& state,
+                          Qt::Orientation orientation);
 
 protected:
     void paintSection(QPainter *painter, const QRect &rect,

@@ -27,9 +27,9 @@ QVariant ModelInstanceTableModel::data(const QModelIndex &index, int role) const
         return Qt::AlignRight;
     }
     if (index.isValid() && role == Qt::DisplayRole) {
-        return mModelInstance->data(index.row(), index.column());
+        auto value = mModelInstance->data(index.row(), index.column());
+        return value == 0.0 ? QVariant() : value;
     }
-
     return QVariant();
 }
 

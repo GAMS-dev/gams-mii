@@ -4,10 +4,7 @@
 #include "filtertreeitem.h"
 
 #include <QSortFilterProxyModel>
-#include <QStandardItem>
 #include <QMenu>
-
-#include <QDebug>
 
 namespace gams {
 namespace studio {
@@ -28,7 +25,6 @@ LabelFilterWidget::~LabelFilterWidget()
 
 void LabelFilterWidget::setData(FilterTreeItem *rootItem)
 {
-    mRootItem = rootItem;
     auto oldModel = ui->labelView->selectionModel();
     auto treeModel = new FilterTreeModel(rootItem, ui->labelView);
     mFilterModel = new QSortFilterProxyModel(ui->labelView);
@@ -51,19 +47,19 @@ void LabelFilterWidget::showEvent(QShowEvent *event)
 
 void LabelFilterWidget::on_applyButton_clicked()
 {
-    emit filterChanged(mRootItem, mOrientation);
+    emit filterChanged(identifierState(), mOrientation);
     static_cast<QMenu*>(this->parent())->close();
     ui->labelEdit->clear();
 }
 
 void LabelFilterWidget::on_selectButton_clicked()
 {
-    setSelection(true);
+    applyCheckState(true);
 }
 
 void LabelFilterWidget::on_deselectButton_clicked()
 {
-    setSelection(false);
+    applyCheckState(false);
 }
 
 void LabelFilterWidget::applyFilter(const QString &text)
@@ -72,7 +68,7 @@ void LabelFilterWidget::applyFilter(const QString &text)
     ui->labelView->expandAll();
 }
 
-void LabelFilterWidget::setSelection(bool state)
+void LabelFilterWidget::applyCheckState(bool state)
 {
     QModelIndexList indexes;
     for(int row=0; row<mFilterModel->rowCount(); ++row) {
@@ -80,6 +76,8 @@ void LabelFilterWidget::setSelection(bool state)
     }
     while (!indexes.isEmpty()) {
         auto index = indexes.takeFirst();
+        if (mFilterModel->flags(index) == Qt::NoItemFlags)
+            continue;
         if (!mFilterModel->hasChildren(index))
             mFilterModel->setData(index, state, Qt::CheckStateRole);
         if (mFilterModel->hasChildren(index)) {
@@ -87,6 +85,24 @@ void LabelFilterWidget::setSelection(bool state)
                 indexes.append(mFilterModel->index(row, 0, index));
         }
     }
+}
+
+IdentifierState LabelFilterWidget::identifierState()
+{
+    QList<FilterTreeItem*> items {
+        static_cast<FilterTreeModel*>(mFilterModel->sourceModel())->filterItem()
+    };
+    IdentifierState state;
+    state.SectionIndex = items.first()->index();
+    state.SymbolIndex = items.first()->symbolIndex();
+    while (!items.isEmpty()) {
+        auto item = items.takeFirst();
+        items.append(item->childs());
+        if (!item->isCheckable())
+            continue;
+        state.LabelCheckStates[item->index()] = item->checked();
+    }
+    return state;
 }
 
 } // namespace modelinspector

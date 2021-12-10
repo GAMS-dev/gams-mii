@@ -27,7 +27,7 @@
 #include "modelinspector/searchresultmodel.h"
 
 #include <QDir>
-#include <QStandardItem>
+#include <QFileDialog>
 #include <QStandardPaths>
 
 #include <QDebug>
@@ -51,11 +51,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->modelInspector->setWorkspace(workspace());
     ui->searchResultView->setModel(new SearchResultModel(ui->searchResultView));
     ui->statusBar->addPermanentWidget(mAggregationStatusLabel);
-    mAggregationStatusLabel->setText(mAggregationDialog->statusText());
+    mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
 
     connect(mProcess->process(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            ui->modelInspector, &ModelInspector::loadModelInstance);
-    connect(ui->modelInspector, &modelinspector::ModelInspector::newLogMessage,
+            this, &MainWindow::loadModelInstance);
+    connect(ui->modelInspector, &ModelInspector::newLogMessage,
             this, &MainWindow::appendLogMessage);
     connect(mLibProcess, &GAMSLibProcess::newStdChannelData,
             this, &MainWindow::appendLogMessage);
@@ -63,20 +63,23 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::appendLogMessage);
     connect(ui->searchEdit, &QLineEdit::returnPressed,
             this, &MainWindow::searchHeaders);
+    connect(ui->openButton, &QPushButton::clicked,
+            this, &MainWindow::on_actionOpen_triggered);
     connect(ui->runButton, &QPushButton::clicked,
             this, &MainWindow::on_actionRun_triggered);
-    connect(mAggregationDialog, &AggregationDialog::updated,
-            this, [this]{ mAggregationStatusLabel->setText(mAggregationDialog->statusText()); });
+    connect(mAggregationDialog, &AggregationDialog::aggregationUpdated,
+             this, &MainWindow::aggregationUpdate);
     connect(mGlobalFilterDialog, &GlobalFilterDialog::filterUpdated,
             this, &MainWindow::globalFilterUpdate);
-    connect(ui->modelInspector, &ModelInspector::filtersUpdated,
-            this, &MainWindow::handleFilterUpdate);
+    connect(ui->modelInspector, &ModelInspector::filtersChanged,
+            this, [this]{
+        static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
+        setGlobalFiltersData();
+        //ui->modelInspector->setAggregation(ui->modelInspector->defaultAggregation());
+        //setAggregationData(); // TODO filter states reset
+    });
     connect(ui->searchResultView, &QTableView::doubleClicked,
             this, &MainWindow::searchResultSelectionChanged);
-    connect(ui->modelInspector, &ModelInspector::newModelInstance,
-            this, &MainWindow::updateModelInstance);
-    connect(ui->menuView, &QMenu::aboutToShow,
-            this, &MainWindow::updateMenuEntries);
 }
 
 MainWindow::~MainWindow()
@@ -87,6 +90,18 @@ MainWindow::~MainWindow()
 void MainWindow::appendLogMessage(const QString &message)
 {
     ui->logEdit->append(message);
+}
+
+void MainWindow::on_actionOpen_triggered()
+{
+    auto fileName = QFileDialog::getOpenFileName(this,
+                                                 tr("Open Model File"),
+                                                 workspace(),
+                                                 tr("GAMS source (*.gms *.dmp)"));
+    if (fileName.isEmpty())
+        return;
+    ui->modelEdit->setText(fileName);
+    ui->gamslibCheckBox->setChecked(false);
 }
 
 void MainWindow::on_actionRun_triggered()
@@ -134,19 +149,13 @@ void MainWindow::searchHeaders()
 
 void MainWindow::on_actionGlobal_Filters_triggered()
 {
-    mGlobalFilterDialog->setSymbolFilter(ui->modelInspector->symbolFilter());
-    mGlobalFilterDialog->setDefaultSymbolFilter(ui->modelInspector->defaultSymbolFilter());
-    mGlobalFilterDialog->setValueFilter(ui->modelInspector->valueFilter());
-    mGlobalFilterDialog->setDefaultValueFilter(ui->modelInspector->defaultValueFilter());
-    mGlobalFilterDialog->setUelFilter(ui->modelInspector->uelFilter());
-    mGlobalFilterDialog->setDefaultUelFilter(ui->modelInspector->defaultUelFilter());
+    setGlobalFiltersData();
     showDialog(mGlobalFilterDialog);
 }
 
 void MainWindow::on_actionAggregation_triggered()
 {
-    if (!mAggregationDialog->isInitialized()) // TODO remove
-        return; // For some reason disabeling the action has no effect on the shortcut on macOS
+    setAggregationData();
     showDialog(mAggregationDialog);
 }
 
@@ -165,21 +174,37 @@ void MainWindow::on_actionAbout_Qt_triggered()
     qApp->aboutQt();
 }
 
-void MainWindow::globalFilterUpdate()
+void MainWindow::loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus)
 {
-    ui->modelInspector->setSymbolFilter(mGlobalFilterDialog->symbolFilter());
-    ui->modelInspector->setValueFilter(mGlobalFilterDialog->valueFilter());
-    ui->modelInspector->setUelFilter(mGlobalFilterDialog->uelFilter());
+    Q_UNUSED(exitStatus);
+    if (exitCode > 0) {
+        appendLogMessage("The GAMSProcess reported an issue. The exit code is " +
+                         QString().number(exitCode));
+        return;
+    }
+
+    ui->modelInspector->loadModelInstance();
+    setGlobalFiltersData();
+    setAggregationData();
 }
 
-void MainWindow::updateMenuEntries()
-{
-    ui->actionAggregation->setEnabled(mAggregationDialog->isInitialized());
-}
-
-void MainWindow::handleFilterUpdate()
+void MainWindow::aggregationUpdate()
 {
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
+    mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
+    ui->modelInspector->setAggregation(mAggregationDialog->aggregation());
+}
+
+void MainWindow::globalFilterUpdate()
+{
+    ui->modelInspector->resetIdentifierLabelFilter();
+    static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
+    ui->modelInspector->setAggregation(ui->modelInspector->defaultAggregation());
+    ui->modelInspector->setIdentifierFilter(mGlobalFilterDialog->idendifierFilter());
+    ui->modelInspector->setValueFilter(mGlobalFilterDialog->valueFilter());
+    ui->modelInspector->setLabelFilter(mGlobalFilterDialog->labelFilter());
+    ui->modelInspector->resetColumnRowFilter();
+    setAggregationData();
 }
 
 void MainWindow::searchResultSelectionChanged(const QModelIndex &index)
@@ -192,7 +217,6 @@ void MainWindow::searchResultSelectionChanged(const QModelIndex &index)
 
 void MainWindow::updateModelInstance()
 {
-    mAggregationDialog->setModelInstance(ui->modelInspector->modelInstance());
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
 }
 
@@ -202,6 +226,23 @@ void MainWindow::loadGAMSModel(const QString &path)
     QString model = ui->modelEdit->text();
     mLibProcess->setModelName(model.replace(".gms", "").trimmed());
     mLibProcess->execute();
+}
+
+void MainWindow::setGlobalFiltersData()
+{
+    mGlobalFilterDialog->setValueFilter(ui->modelInspector->valueFilter());
+    mGlobalFilterDialog->setDefaultValueFilter(ui->modelInspector->defaultValueFilter());
+    mGlobalFilterDialog->setIdentifierFilter(ui->modelInspector->identifierFilter());
+    mGlobalFilterDialog->setDefaultIdentifierFilter(ui->modelInspector->defaultIdentifierFilter());
+    mGlobalFilterDialog->setLabelFilter(ui->modelInspector->labelFilter());
+    mGlobalFilterDialog->setDefaultLabelFilter(ui->modelInspector->defaultLabelFilter());
+}
+
+void MainWindow::setAggregationData()
+{
+    mAggregationDialog->setAggregation(ui->modelInspector->aggregation(),
+                                       ui->modelInspector->identifierFilter());
+    mAggregationDialog->setDefaultAggregation(ui->modelInspector->defaultAggregation());
 }
 
 void MainWindow::showDialog(QDialog *dialog)

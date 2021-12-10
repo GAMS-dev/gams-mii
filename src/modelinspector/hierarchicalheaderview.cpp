@@ -9,13 +9,13 @@
 #include <QMouseEvent>
 #include <QWidgetAction>
 
-#include <QDebug>
-
 namespace gams {
 namespace studio{
 namespace modelinspector {
 
 // TODO (AF) theme stuff (foreground/background color)
+
+typedef QMap<Qt::Orientation, QMap<int, QVector<int>>> IdentifierLabelSections;
 
 class HierarchicalHeaderView::HierarchicalHeaderView_private
 {
@@ -25,23 +25,56 @@ public:
     {
     }
 
-    void init() {
+    IdentifierState& identifierState(int symbolIndex, Qt::Orientation orientation)
+    {
+        return mIdentifierFilter[orientation][symbolIndex];
+    }
+
+    void setIdentifierState(const IdentifierState &state, Qt::Orientation orientation)
+    {
+        mIdentifierFilter[orientation][state.SymbolIndex] = state;
+    }
+
+    void setAppliedAggregation(const AggregationSymbols &appliedAggregation)
+    {
+        mAppliedAggregation = appliedAggregation;
+    }
+
+    void resetSymbolLabelFilters()
+    {
+        mIdentifierFilter.clear();
+        mVisibleLabelSections.clear();
+    }
+
+    void init()
+    {
         QFontMetrics fm(mHeaderView->font());
         mMinHorizontalCellSize = fm.size(0, mHeaderView->mModelInstance->longestVarText());
         mMinVerticalCellSize = fm.size(0, mHeaderView->mModelInstance->longestEqnText());
         mEmptyTextSize = fm.size(0, "");
         mFilterIconSize = QSize(mEmptyTextSize.height(), mEmptyTextSize.height());
 
-        QIcon icon(FilterIconOn);
-        mPixmapFilterOn = icon.pixmap(mFilterIconSize);
+        QIcon iconOn(FilterIconOn);
+        mPixmapFilterOn = iconOn.pixmap(mFilterIconSize);
+        QIcon iconOff(FilterIconOff);
+        mPixmapFilterOff = iconOff.pixmap(mFilterIconSize);
     }
 
-    bool isDimensionFilter(const QPoint &pos) {
-        Q_FOREACH(const auto &rect, mDimensionFilterSpots) {
-            if (rect.contains(pos))
-                return true;
+    bool isDimensionFilter(const QPoint &position)
+    {
+        bool ok;
+        int logicalIndex = mHeaderView->logicalIndexAt(position);
+        int sectionIndex = mHeaderView->model()->headerData(logicalIndex,
+                                                            mHeaderView->orientation()).toInt(&ok);
+        if (sectionIndex < PredefinedHeaderLength)
+            return false;
+        QPoint pos;
+        if (mHeaderView->orientation() == Qt::Horizontal) {
+            pos = QPoint(mHeaderView->sectionViewportPosition(logicalIndex), 0);
+        } else {
+            pos = QPoint(0, mHeaderView->sectionViewportPosition(logicalIndex));
         }
-        return false;
+        return QRect(pos, mFilterIconSize).contains(position);
     }
 
     int sectionIndex(int logicalIndex) const
@@ -63,12 +96,13 @@ public:
         } else {
             symbol = mHeaderView->mModelInstance->equation(sectionIndex);
         }
-        return symbol.Dimension;
+        return symbol.dimension();
     }
 
     void paintHorizontalSection(QPainter *painter,
                                 const QRect &rect,
                                 const QStyleOptionHeader &option,
+                                int logicalIndex,
                                 int sectionIndex)
     {
         int currentTop = rect.y();
@@ -77,16 +111,17 @@ public:
         QStyleOptionHeader styleOption(option);
         if (styleOption.state.testFlag(QStyle::State_Sunken) ||
                 styleOption.state.testFlag(QStyle::State_On)) {
-            // TODO mind sparse cells
             QStyle::State state(QStyle::State_Sunken | QStyle::State_On);
             styleOption.state &= (~state);
         }
 
         paintHorizontalCell(painter, rect, styleOption, currentTop,
-                            mHeaderView->mModelInstance->headerData(sectionIndex, -1, mHeaderView->orientation()));
+                            mHeaderView->mModelInstance->headerData(sectionIndex, -1, mHeaderView->orientation()),
+                            logicalIndex, sectionIndex, -1, true);
         for (int d=0; d<sectionDimension(sectionIndex); ++d) {
             paintHorizontalCell(painter, rect, styleOption, currentTop,
-                                mHeaderView->mModelInstance->headerData(sectionIndex, d, mHeaderView->orientation()));
+                                mHeaderView->mModelInstance->headerData(sectionIndex, d, mHeaderView->orientation()),
+                                logicalIndex, sectionIndex, d, false);
         }
         paintHorizontalCellSpacing(painter, rect, styleOption, currentTop, sectionIndex);
 
@@ -97,18 +132,38 @@ public:
                              const QRect &rect,
                              const QStyleOptionHeader &option,
                              int &currentTop,
-                             const QString &text)
+                             const QString &text,
+                             int logicalIndex,
+                             int sectionIndex,
+                             int dimension,
+                             bool isSymbol)
     {
         QStyleOptionHeader styleOption(option);
         QSize size = cellSize(styleOption);
-        styleOption.text = text;
         styleOption.rect = QRect(rect.x(), currentTop, rect.width(), size.height());
-        currentTop += size.height();
+        auto currentVar = mHeaderView->modelInstance()->variable(sectionIndex);
+        styleOption.text = cellText(logicalIndex, sectionIndex, dimension, isSymbol, currentVar, text);
 
         painter->save();
-        mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
-        mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
+        if (isSymbol && sectionIndex >= PredefinedHeaderLength) {
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
+            styleOption.rect = QRect(rect.x()+mFilterIconSize.width(), currentTop, rect.width(), size.height());
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
+            if (!styleOption.text.isEmpty() &&
+                    mHeaderView->mModelInstance->variable(sectionIndex).isScalar()) {
+                painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
+                                    mFilterIconSize.height(), mPixmapFilterOff);
+            } else if (!styleOption.text.isEmpty()){
+                painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
+                                    mFilterIconSize.height(), mPixmapFilterOn);
+            }
+        } else {
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
+        }
         painter->restore();
+
+        currentTop += size.height();
     }
 
     void paintHorizontalCellSpacing(QPainter *painter,
@@ -129,6 +184,7 @@ public:
     void paintVerticalSection(QPainter *painter,
                               const QRect &rect,
                               QStyleOptionHeader option,
+                              int logicalIndex,
                               int sectionIndex)
     {
         int currentLeft = rect.x();
@@ -137,16 +193,17 @@ public:
         QStyleOptionHeader styleOption(option);
         if (styleOption.state.testFlag(QStyle::State_Sunken) ||
                 styleOption.state.testFlag(QStyle::State_On)) {
-            // TODO mind sparse cells
             QStyle::State state(QStyle::State_Sunken | QStyle::State_On);
             styleOption.state &= (~state);
         }
 
         paintVerticalCell(painter, rect, styleOption, currentLeft,
-                          mHeaderView->mModelInstance->headerData(sectionIndex, -1, mHeaderView->orientation()));
+                          mHeaderView->mModelInstance->headerData(sectionIndex, -1, mHeaderView->orientation()),
+                          logicalIndex, sectionIndex, -1, true);
         for (int d=0; d<sectionDimension(sectionIndex); ++d) {
             paintVerticalCell(painter, rect, styleOption, currentLeft,
-                              mHeaderView->mModelInstance->headerData(sectionIndex, d, mHeaderView->orientation()));
+                              mHeaderView->mModelInstance->headerData(sectionIndex, d, mHeaderView->orientation()),
+                              logicalIndex, sectionIndex, d, false);
         }
         paintVerticalCellSpacing(painter, rect, styleOption, currentLeft, sectionIndex);
 
@@ -157,18 +214,38 @@ public:
                            const QRect &rect,
                            const QStyleOptionHeader &option,
                            int &currentLeft,
-                           const QString &text)
+                           const QString &text,
+                           int logicalIndex,
+                           int sectionIndex,
+                           int dimension,
+                           bool isSymbol)
     {
         QStyleOptionHeader styleOption(option);
         QSize size = cellSize(styleOption);
-        styleOption.text = text;
         styleOption.rect = QRect(currentLeft, rect.y(), size.width(), rect.height());
-        currentLeft += size.width();
+        auto currentEqn = mHeaderView->modelInstance()->equation(sectionIndex);
+        styleOption.text = cellText(logicalIndex, sectionIndex, dimension, isSymbol, currentEqn, text);
 
         painter->save();
-        mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
-        mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
+        if (isSymbol && sectionIndex >= PredefinedHeaderLength) {
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
+            styleOption.rect = QRect(currentLeft+mFilterIconSize.width(), rect.y(), size.width(), rect.height());
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
+            if (!styleOption.text.isEmpty() &&
+                    mHeaderView->mModelInstance->equation(sectionIndex).isScalar()) {
+                painter->drawPixmap(currentLeft, rect.y(), mFilterIconSize.width(),
+                                    mFilterIconSize.height(), mPixmapFilterOff);
+            } else if (!styleOption.text.isEmpty()) {
+                painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
+                                    mFilterIconSize.height(), mPixmapFilterOn);
+            }
+        } else {
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
+            mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
+        }
         painter->restore();
+
+        currentLeft += size.width();
     }
 
     void paintVerticalCellSpacing(QPainter *painter,
@@ -186,6 +263,29 @@ public:
         painter->restore();
     }
 
+    QString cellText(int logicalIndex, int sectionIndex, int dimension,
+                     bool isSymbol, const SymbolInfo &symbol,
+                     const QString &text)
+    {
+        if (dimension >= 0 && mAppliedAggregation.contains(symbol.firstSection())) {
+            return mAppliedAggregation[symbol.firstSection()].label(sectionIndex, dimension);
+        }
+        if (isSymbol && logicalIndex > 0) {
+            int prevSectionIdx = this->sectionIndex(logicalIndex-1);
+            if (symbol.contains(prevSectionIdx))
+                return QString();
+        } else if (logicalIndex > 0) {
+            int prevSectionIdx = this->sectionIndex(logicalIndex-1);
+            if (symbol.contains(prevSectionIdx) &&
+                    symbol.label(sectionIndex, dimension) == symbol.label(prevSectionIdx, dimension) &&
+                        (dimension == 0 ||
+                            symbol.label(sectionIndex, dimension-1) == symbol.label(prevSectionIdx, dimension-1))) {
+                    return QString();
+            }
+        }
+        return text;
+    }
+
     QSize cellSize(QStyleOptionHeader styleOption) const
     {
         QSize size = mHeaderView->orientation() == Qt::Vertical ? mMinVerticalCellSize :
@@ -195,12 +295,130 @@ public:
                                                                      &styleOption,
                                                                      QSize(),
                                                                      mHeaderView));
-        return size + decorationsSize - mEmptyTextSize;
+        QSize iconWidth(mFilterIconSize.width(), 0.0);
+        return size + decorationsSize + iconWidth - mEmptyTextSize;
     }
 
-    inline QSize filterIconSize() const
+    FilterTreeItem* filterTree(int logicalIndex, int sectionIdx, const SymbolInfo &symbol)
     {
-        return mFilterIconSize;
+        auto root = new FilterTreeItem(QString(), false);
+        root->setSymbolIndex(symbol.firstSection());
+        root->setIndex(symbol.firstSection());
+
+        QVector<int> visibleSections = visibleLabelSections(logicalIndex, sectionIdx, symbol);
+
+        QString label;
+        QMap<int, QStringList> subData;
+        auto filter = identifierState(symbol.firstSection(), mHeaderView->orientation());
+        for (int section=symbol.firstSection(); section<=symbol.lastSection(); ++section) {
+            if (symbol.sectionLabels().isEmpty()) {
+                continue;
+            }
+            auto subLabels = symbol.sectionLabels()[section];
+            if (symbol.sectionLabels()[section].isEmpty()) {
+                continue;
+            }
+            if (label.isEmpty()) {
+                label = subLabels.takeFirst();
+                subData[section] = subLabels;
+            } else if (label == symbol.sectionLabels()[section].first()) {
+                subLabels.removeFirst();
+                subData[section] = subLabels;
+            } else {
+                labelFilterTree(label, subData, filter, visibleSections, symbol.firstSection(), root);
+                label = subLabels.takeFirst();
+                subData.clear();
+                subData[section] = subLabels;
+            }
+        }
+        labelFilterTree(label, subData, filter, visibleSections, symbol.firstSection(), root);
+        return root;
+    }
+
+    int maxSymbolDimension(Qt::Orientation orientation)
+    {
+        if (orientation == Qt::Horizontal &&
+                mHeaderView->model()->columnCount() != mHeaderView->modelInstance()->columnCount()) {
+            int dimension = 0;
+            for (int c=0; c<mHeaderView->model()->columnCount(); ++c) {
+                int sectionIdx = sectionIndex(c);
+                dimension = qMax(dimension, mHeaderView->modelInstance()->variable(sectionIdx).dimension());
+            }
+            return  dimension;
+        } else if (orientation == Qt::Vertical &&
+                   mHeaderView->model()->rowCount() != mHeaderView->modelInstance()->rowCount()) {
+            int dimension = 0;
+            for (int c=0; c<mHeaderView->model()->rowCount(); ++c) {
+                int sectionIdx = sectionIndex(c);
+                dimension = qMax(dimension, mHeaderView->modelInstance()->equation(sectionIdx).dimension());
+            }
+            return dimension;
+        }
+        return orientation == Qt::Horizontal ? mHeaderView->modelInstance()->maxVariableDimension() :
+                                               mHeaderView->modelInstance()->maxEquationDimension();
+    }
+
+private:
+    QVector<int> visibleLabelSections(int logicalIndex, int sectionIdx, const SymbolInfo &symbol)
+    {
+        if (mVisibleLabelSections[mHeaderView->orientation()].contains(symbol.firstSection())) {
+            return mVisibleLabelSections[mHeaderView->orientation()][symbol.firstSection()];
+        }
+        QVector<int> visibleSections;
+        int logicalEnd = logicalIndex + symbol.lastSection() - sectionIdx;
+        int logicalStart = logicalEnd - symbol.entries() + 1;
+        for (int i=logicalStart; i<=logicalEnd; ++i) {
+            int sIndex = sectionIndex(i);
+            if (symbol.contains(sIndex))
+                visibleSections.push_back(sIndex);
+        }
+        mVisibleLabelSections[mHeaderView->orientation()][symbol.firstSection()] = visibleSections;
+        return mVisibleLabelSections[mHeaderView->orientation()][symbol.firstSection()];
+    }
+
+    void labelFilterTree(const QString label,
+                         const QMap<int, QStringList> &data,
+                         const IdentifierState &state,
+                         QVector<int> visibleSections,
+                         int symbolIndex,
+                         FilterTreeItem *parent)
+    {
+        if (data.isEmpty() || label.isEmpty()) return;
+        FilterTreeItem *labelItem;
+        bool enabled = visibleSections.contains(data.firstKey());
+        if (state.isValid() && state.LabelCheckStates.contains(data.firstKey())) {
+            labelItem = new FilterTreeItem(label,
+                                         enabled ? state.LabelCheckStates[data.firstKey()] : Qt::Unchecked,
+                                         data.firstKey(), parent);
+            labelItem->setEnabled(enabled);
+        } else {
+            labelItem = new FilterTreeItem(label, enabled ? Qt::Checked : Qt::Unchecked, data.firstKey(), parent);
+            labelItem->setEnabled(enabled);
+        }
+        labelItem->setSymbolIndex(symbolIndex);
+        parent->append(labelItem);
+
+        QString subLabel;
+        QMap<int, QStringList> subData;
+        for (auto iter=data.keyValueBegin(); iter!=data.keyValueEnd(); ++iter) {
+            auto subLabels = iter->second;
+            if (subLabels.isEmpty()) {
+                continue;
+            }
+            if (subLabel.isEmpty()) {
+                subLabel = subLabels.takeFirst();
+                subData[iter->first] = subLabels;
+            } else if (subLabel == subLabels.first()) {
+                subLabels.removeFirst();
+                subData[iter->first] = subLabels;
+            } else {
+                labelFilterTree(subLabel, subData, state, visibleSections, symbolIndex, labelItem);
+                subLabel = subLabels.takeFirst();
+                subData.clear();
+                subData[iter->first] = subLabels;
+            }
+        }
+        labelFilterTree(subLabel, subData, state, visibleSections, symbolIndex, labelItem);
     }
 
 private:
@@ -208,7 +426,6 @@ private:
     const QString FilterIconOff = ":/img/filter-off";
 
     const HierarchicalHeaderView *mHeaderView;
-    QVector<QRect> mDimensionFilterSpots;
 
     QSize mFilterIconSize;
     QSize mMinHorizontalCellSize;
@@ -216,7 +433,12 @@ private:
     QSize mEmptyTextSize;
 
     QPixmap mPixmapFilterOn;
-    //QPixmap mFilterPixmapOff; // TODO (AF) off icon
+    QPixmap mPixmapFilterOff;
+
+    IdentifierFilter mIdentifierFilter;
+    IdentifierLabelSections mVisibleLabelSections;
+
+    AggregationSymbols mAppliedAggregation;
 };
 
 HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
@@ -239,12 +461,22 @@ HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
     connect(this, &HierarchicalHeaderView::customContextMenuRequested,
             this, &HierarchicalHeaderView::customMenuRequested);
     connect(mFilterWidget, &LabelFilterWidget::filterChanged,
-            this, &HierarchicalHeaderView::filterChanged);
+            this, &HierarchicalHeaderView::on_filterChanged);
 }
 
 HierarchicalHeaderView::~HierarchicalHeaderView()
 {
     delete mPrivate;
+}
+
+QSharedPointer<ModelInstance> HierarchicalHeaderView::modelInstance() const
+{
+    return mModelInstance;
+}
+
+void HierarchicalHeaderView::setAppliedAggregation(const AggregationSymbols &appliedAggregation)
+{
+    mPrivate->setAppliedAggregation(appliedAggregation);
 }
 
 void HierarchicalHeaderView::setModel(QAbstractItemModel *model)
@@ -254,19 +486,36 @@ void HierarchicalHeaderView::setModel(QAbstractItemModel *model)
 }
 
 void HierarchicalHeaderView::customMenuRequested(QPoint position)
-{// TODO ...
-    //QStandardItem *item;
-    //if (orientation() == Qt::Horizontal) {
-    //    item =  mModelInstance->horizontalItem(logicalIndexAt(position));
-    //} else {
-    //    item = mModelInstance->verticalItem(logicalIndexAt(position));
-    //}
-    //if (item) {
-    //    TreeGenerator generator(mModelInstance, orientation());
-    //    auto root = generator.generate(item);
-    //    mFilterWidget->setData(root);
-    //    mFilterMenu->popup(viewport()->mapToGlobal(position));
-    //}
+{
+    bool ok;
+    int logicalIndex = logicalIndexAt(position);
+    int sectionIndex = model()->headerData(logicalIndex, orientation()).toInt(&ok);
+    if (!ok) return;
+
+    SymbolInfo symbol;
+    if (orientation() == Qt::Horizontal) {
+        symbol = mModelInstance->variable(sectionIndex);
+    } else {
+        symbol = mModelInstance->equation(sectionIndex);
+    }
+    if (symbol.isScalar())
+        return;
+
+    auto filterTree = mPrivate->filterTree(logicalIndex, sectionIndex, symbol);
+    mFilterWidget->setData(filterTree);
+    mFilterMenu->popup(viewport()->mapToGlobal(position));
+}
+
+void HierarchicalHeaderView::resetSymbolLabelFilters()
+{
+    mPrivate->resetSymbolLabelFilters();
+}
+
+void HierarchicalHeaderView::on_filterChanged(const IdentifierState& state,
+                                              Qt::Orientation orientation)
+{
+    mPrivate->setIdentifierState(state, orientation);
+    emit filterChanged(state, orientation);
 }
 
 void HierarchicalHeaderView::paintSection(QPainter *painter,
@@ -277,9 +526,9 @@ void HierarchicalHeaderView::paintSection(QPainter *painter,
         auto option = styleOptionForCell(logicalIndex);
         int sectionIdx = mPrivate->sectionIndex(logicalIndex);
         if (orientation() == Qt::Horizontal) {
-            mPrivate->paintHorizontalSection(painter, rect, option, sectionIdx);
+            mPrivate->paintHorizontalSection(painter, rect, option, logicalIndex, sectionIdx);
         } else {
-            mPrivate->paintVerticalSection(painter, rect, option, sectionIdx);
+            mPrivate->paintVerticalSection(painter, rect, option, logicalIndex, sectionIdx);
         }
         return;
     }
@@ -291,8 +540,8 @@ QSize HierarchicalHeaderView::sectionSizeFromContents(int logicalIndex) const
     QStyleOptionHeader styleOption(styleOptionForCell(logicalIndex));
     QSize size(mPrivate->cellSize(styleOption));
 
-    int sectionIdx = mPrivate->sectionIndex(logicalIndex);
-    for (int d=0; d<mPrivate->sectionDimension(sectionIdx); ++d) {
+    int dimension = mPrivate->maxSymbolDimension(orientation());
+    for (int d=0; d<dimension; ++d) {
         if (orientation() == Qt::Horizontal) {
             size.rheight() += mPrivate->cellSize(styleOption).height();
         } else {
@@ -306,6 +555,7 @@ void HierarchicalHeaderView::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton && mPrivate->isDimensionFilter(event->pos())) {
         emit customContextMenuRequested(event->pos());
+        event->accept();
         return;
     }
     QHeaderView::mousePressEvent(event);

@@ -21,4 +21,8 @@
 TEMPLATE = subdirs
 
 SUBDIRS += testmodelinspector \
-    testmodelinstance
+    testaggregation \
+    testcommon \
+    testfiltertreeitem \
+    testmodelinstance \
+    testsymbolinfo

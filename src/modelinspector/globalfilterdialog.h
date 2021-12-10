@@ -6,7 +6,6 @@
 #include "common.h"
 
 class QSortFilterProxyModel;
-class QStandardItem;
 class QTreeView;
 
 namespace gams {
@@ -18,8 +17,6 @@ class GlobalFilterDialog;
 }
 
 class FilterTreeItem;
-class FilterTreeModel;
-class ModelInstance;
 
 class GlobalFilterDialog : public QDialog
 {
@@ -29,17 +26,17 @@ public:
     explicit GlobalFilterDialog(QWidget *parent = nullptr);
     ~GlobalFilterDialog();
 
-    SymbolFilterMap symbolFilter() const;
-    void setSymbolFilter(const SymbolFilterMap &filter);
-    void setDefaultSymbolFilter(const SymbolFilterMap &filter);
+    IdentifierFilter idendifierFilter() const;
+    void setIdentifierFilter(const IdentifierFilter &filter);
+    void setDefaultIdentifierFilter(const IdentifierFilter &filter);
 
     ValueFilter valueFilter() const;
     void setValueFilter(const ValueFilter &filter);
     void setDefaultValueFilter(const ValueFilter &filter);
 
-    UelFilterMap uelFilter() const;
-    void setUelFilter(const UelFilterMap &filter);
-    void setDefaultUelFilter(const UelFilterMap &filter);
+    LabelFilter labelFilter() const;
+    void setLabelFilter(const LabelFilter &filter);
+    void setDefaultLabelFilter(const LabelFilter &filter);
 
 signals:
     void filterUpdated();
@@ -59,40 +56,40 @@ private slots:
 
     void on_deselectVarButton_clicked();
 
-    void on_selectUelButton_clicked();
+    void on_selectLabelButton_clicked();
 
-    void on_deselectUelButton_clicked();
+    void on_deselectLabelButton_clicked();
 
-    void on_uelFilterBox_currentIndexChanged(int index);
+    void on_labelFilterBox_currentIndexChanged(int index);
 
 private:
-    void setupEquationFilter(const SymbolFilter &filter);
-    void setupVariableFilter(const SymbolFilter &filter);
-    void setupUelFilter();
-    FilterTreeItem* setupSymTreeItems(Qt::Orientation orientation, const SymbolFilter &filter);
-    void setupUelTreeItems(Qt::Orientation orientation, FilterTreeItem *root);
+    void setupEquationFilter(const IdentifierStates &filter);
+    void setupVariableFilter(const IdentifierStates &filter);
+    void setupLabelFilter();
+    FilterTreeItem* setupSymTreeItems(Qt::Orientation orientation, const IdentifierStates &filter);
+    void setupLabelTreeItems(Qt::Orientation orientation, FilterTreeItem *root);
 
     void applyCheckState(QTreeView* view,
                          QSortFilterProxyModel *model,
                          Qt::CheckState state);
-    SymbolFilter applyHeaderFilter(QSortFilterProxyModel *model);
+    IdentifierStates applyHeaderFilter(QSortFilterProxyModel *model);
     void applyValueFilter();
-    UelFilter applyUelFilter(Qt::Orientation orientation,
+    LabelStates applyLabelFilter(Qt::Orientation orientation,
                              QSortFilterProxyModel *model);
 
 private:
     Ui::GlobalFilterDialog *ui;
 
-    SymbolFilterMap mSymbolFilter;
-    SymbolFilterMap mDefaultSymbolFilter;
+    IdentifierFilter mIdentifierFilter;
+    IdentifierFilter mDefaultIdentifierFilter;
     ValueFilter mValueFilter;
     ValueFilter mDefaultValueFilter;
-    UelFilterMap mUelFilter;
-    UelFilterMap mDefaultUelFilter;
+    LabelFilter mLabelFilter;
+    LabelFilter mDefaultLabelFilter;
 
     QSortFilterProxyModel *mEqnFilterModel;
     QSortFilterProxyModel *mVarFilterModel;
-    QSortFilterProxyModel *mUelFilterModel;
+    QSortFilterProxyModel *mLabelFilterModel;
 };
 
 }

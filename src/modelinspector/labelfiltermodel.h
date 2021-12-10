@@ -1,5 +1,5 @@
-#ifndef SYMBOLFILTERMODEL_H
-#define SYMBOLFILTERMODEL_H
+#ifndef LABELFILTERMODEL_H
+#define LABELFILTERMODEL_H
 
 #include <QSharedPointer>
 #include <QSortFilterProxyModel>
@@ -12,16 +12,16 @@ namespace modelinspector {
 
 class ModelInstance;
 
-class SymbolFilterModel : public QSortFilterProxyModel
+class LabelFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
 public:
-    SymbolFilterModel(QSharedPointer<ModelInstance> modelInstance,
-                      QObject *parent = nullptr);
+    LabelFilterModel(QSharedPointer<ModelInstance> modelInstance,
+                   QObject *parent = nullptr);
 
-    SymbolFilterMap& symbolFilter();
-    void setSymbolFilter(const SymbolFilterMap &filter);
+    LabelFilter labelFilter() const;
+    void setLabelFilter(const LabelFilter &filter);
 
 protected:
     bool filterAcceptsColumn(int sourceColumn,
@@ -32,11 +32,11 @@ protected:
 
 private:
     QSharedPointer<ModelInstance> mModelInstance;
-    SymbolFilterMap mSymbolFilter;
+    LabelFilter mLabelFilter;
 };
 
 }
 }
 }
 
-#endif // SYMBOLFILTERMODEL_H
+#endif // LABELFILTERMODEL_H

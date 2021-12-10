@@ -20,11 +20,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QProcess>
 #include <QMainWindow>
 #include <QSharedPointer>
 
 class QLabel;
-class QStandardItem;
 
 namespace Ui {
 class MainWindow;
@@ -54,6 +54,7 @@ private slots:
     void appendLogMessage(const QString &message);
 
     // File
+    void on_actionOpen_triggered();
     void on_actionRun_triggered();
     void on_action_Quit_triggered();
 
@@ -71,15 +72,17 @@ private slots:
     void on_actionAbout_Qt_triggered();
 
     // Other
+    void loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus);
+    void aggregationUpdate();
     void globalFilterUpdate();
-    void updateMenuEntries();
-    void handleFilterUpdate();
     void searchResultSelectionChanged(const QModelIndex &index);
     void updateModelInstance();
 
-
 private:
     void loadGAMSModel(const QString &path);
+
+    void setGlobalFiltersData();
+    void setAggregationData();
 
     void showDialog(QDialog *dialog);
 

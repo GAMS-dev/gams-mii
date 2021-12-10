@@ -167,7 +167,7 @@
        <item>
         <widget class="QTreeView" name="equationView">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of equations occurring in this column. Check or uncheck equations to decide which are displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of variable attributes and equations occurring in this column. Check or uncheck entries to decide which are displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="alternatingRowColors">
           <bool>true</bool>
@@ -227,7 +227,7 @@
        <item>
         <widget class="QTreeView" name="variableView">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of variables occurring in this column. Check or uncheck variables to decide which are displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of equation attributes and variables occurring in this column. Check or uncheck entries to decide which are displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="alternatingRowColors">
           <bool>true</bool>
@@ -271,15 +271,15 @@
      </widget>
      <widget class="QWidget" name="labelTab">
       <attribute name="title">
-       <string>Uels</string>
+       <string>Labels</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_6">
          <item>
-          <widget class="QLineEdit" name="uelEdit">
+          <widget class="QLineEdit" name="labelEdit">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply a filter string using &lt;span style=&quot; font-weight:600;&quot;&gt;wildcard&lt;/span&gt; syntax.&lt;/p&gt;&lt;p&gt;The content filter string is automatically applied to the list of uels.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply a filter string using &lt;span style=&quot; font-weight:600;&quot;&gt;wildcard&lt;/span&gt; syntax.&lt;/p&gt;&lt;p&gt;The content filter string is automatically applied to the list of labels.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="placeholderText">
             <string>Filter</string>
@@ -287,9 +287,9 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="uelFilterBox">
+          <widget class="QComboBox" name="labelFilterBox">
            <property name="toolTip">
-            <string>Select uel type</string>
+            <string>Select label type</string>
            </property>
            <item>
             <property name="text">
@@ -311,9 +311,9 @@
         </layout>
        </item>
        <item>
-        <widget class="QTreeView" name="uelView">
+        <widget class="QTreeView" name="labelView">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of uels occurring in the equation or variable header.  Check or uncheck uels to decide which are displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of labels occurring in the equation or variable header.  Check or uncheck labels to decide which are displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="alternatingRowColors">
           <bool>true</bool>
@@ -329,9 +329,9 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
-          <widget class="QPushButton" name="selectUelButton">
+          <widget class="QPushButton" name="selectLabelButton">
            <property name="toolTip">
-            <string>Select all uels</string>
+            <string>Select all labels</string>
            </property>
            <property name="text">
             <string>Select All</string>
@@ -342,9 +342,9 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="deselectUelButton">
+          <widget class="QPushButton" name="deselectLabelButton">
            <property name="toolTip">
-            <string>Deselect all uels</string>
+            <string>Deselect all labels</string>
            </property>
            <property name="text">
             <string>Deselect All</string>

@@ -20,13 +20,11 @@
 #ifndef MODELINSPECTOR_H
 #define MODELINSPECTOR_H
 
-#include <QProcess>
 #include <QSharedPointer>
 #include <QWidget>
 
 #include "common.h"
-
-class QStandardItem;
+#include "aggregation.h"
 
 namespace gams {
 namespace studio{
@@ -36,16 +34,17 @@ namespace Ui {
 class ModelInspector;
 }
 
-class FilterTreeItem;
 class ModelInstance;
 class ModelInstanceTableModel;
 class SectionTreeModel;
 class SearchResultModel;
 class ColumnRowFilterModel;
-class SymbolFilterModel;
+class IdentifierFilterModel;
+class IdentifierLabelFilterModel;
 class ValueFormatProxyModel;
-class UelFilterModel;
-struct ValueFilterSettings;
+class LabelFilterModel;
+class AggregationProxyModel;
+class HierarchicalHeaderView;
 
 class ModelInspector : public QWidget
 {
@@ -63,44 +62,53 @@ public:
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx);
 
+    void loadModelInstance();
     QSharedPointer<ModelInstance> modelInstance() const;
 
-    SymbolFilterMap symbolFilter();
-    SymbolFilterMap defaultSymbolFilter();
-    void setSymbolFilter(const SymbolFilterMap &filter);
+    IdentifierFilter identifierFilter() const;
+    IdentifierFilter defaultIdentifierFilter();
+    void setIdentifierFilter(const IdentifierFilter &filter);
 
     ValueFilter valueFilter() const;
     ValueFilter defaultValueFilter() const;
     void setValueFilter(const ValueFilter &filter);
 
-    UelFilterMap uelFilter() const;
-    UelFilterMap defaultUelFilter() const;
-    void setUelFilter(const UelFilterMap &filter);
+    LabelFilter labelFilter() const;
+    LabelFilter defaultLabelFilter() const;
+    void setLabelFilter(const LabelFilter &filter);
+
+    Aggregation aggregation() const;
+    Aggregation defaultAggregation() const;
+    void setAggregation(const Aggregation &aggregation);
+
+    void resetColumnRowFilter();
+    void resetIdentifierLabelFilter();
 
 signals:
-    void filtersUpdated();
+    void newLogMessage(const QString&); // TODO (AF) use message types when integrated into studio
 
-    // TODO (AF) use message types when integrated into studio
-    void newLogMessage(const QString&);
-    void newModelInstance();
+    void filtersChanged();
 
 public slots:
-    void loadModelInstance(int exitCode, QProcess::ExitStatus status);
-    void setupModelInstanceView();
-
     void setCurrentView(int index);
 
     void setSearchSelection(const SearchResult &result);
 
-    void printDebugStuff(); // TODO remove
+    void printDebugStuff();
 
-//private slots: // TODO Symbol Icon filter
-    //void applyHeaderLabelFilter(FilterTreeItem *root, Qt::Orientation orientation);
+private slots:
+    void setIdentifierLabelFilter(const IdentifierState &state,
+                                  Qt::Orientation orientation);
 
 private:
+    void setupModelInstanceView();
+
     void searchHeader(const QString &term, bool isRegEx,
                       Qt::Orientation orientation,
                       QList<SearchResult> &result);
+
+    Aggregation appliedAggregation(const Aggregation &aggregations) const;
+    Aggregation initialAggregation() const;
 
 private:
     Ui::ModelInspector* ui;
@@ -111,8 +119,12 @@ private:
     QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;
     ValueFormatProxyModel* mValueFormatModel = nullptr;
     ColumnRowFilterModel* mColumnRowFilterModel = nullptr;
-    SymbolFilterModel* mSymbolFilterModel = nullptr;
-    UelFilterModel* mUelFilterModel = nullptr;
+    IdentifierFilterModel* mIdentifierFilterModel = nullptr;
+    IdentifierLabelFilterModel* mIdentifierLabelFilterModel = nullptr;
+    LabelFilterModel* mLabelFilterModel = nullptr;
+    AggregationProxyModel* mAggregationModel = nullptr;
+    HierarchicalHeaderView* mHorizontalHeader = nullptr;
+    HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
 
 }

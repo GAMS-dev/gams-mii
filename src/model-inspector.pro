@@ -71,12 +71,17 @@ SOURCES += \
     gamsprocess.cpp \
     commonpaths.cpp \
     gamslibprocess.cpp \
+    modelinspector/aggregation.cpp \
     modelinspector/aggregationdialog.cpp \
+    modelinspector/aggregationproxymodel.cpp \
     modelinspector/columnrowfiltermodel.cpp \
+    modelinspector/datahandler.cpp \
     modelinspector/filtertreeitem.cpp \
     modelinspector/filtertreemodel.cpp \
     modelinspector/globalfilterdialog.cpp \
     modelinspector/hierarchicalheaderview.cpp \
+    modelinspector/identifierfiltermodel.cpp \
+    modelinspector/labelfiltermodel.cpp \
     modelinspector/labelfilterwidget.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
@@ -87,8 +92,7 @@ SOURCES += \
     modelinspector/sectiontreeview.cpp \
     modelinspector/statisticedit.cpp \
     modelinspector/statisticswidget.cpp \
-    modelinspector/symbolfiltermodel.cpp \
-    modelinspector/uelfiltermodel.cpp \
+    modelinspector/symbolinfo.cpp \
     modelinspector/valueformatproxymodel.cpp
 
 HEADERS += \
@@ -97,13 +101,18 @@ HEADERS += \
     gamsprocess.h \
     commonpaths.h \
     gamslibprocess.h    \
+    modelinspector/aggregation.h \
     modelinspector/aggregationdialog.h \
+    modelinspector/aggregationproxymodel.h \
     modelinspector/columnrowfiltermodel.h \
     modelinspector/common.h \
+    modelinspector/datahandler.h \
     modelinspector/filtertreeitem.h \
     modelinspector/filtertreemodel.h \
     modelinspector/globalfilterdialog.h \
     modelinspector/hierarchicalheaderview.h \
+    modelinspector/identifierfiltermodel.h \
+    modelinspector/labelfiltermodel.h \
     modelinspector/labelfilterwidget.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
@@ -114,8 +123,7 @@ HEADERS += \
     modelinspector/sectiontreeview.h \
     modelinspector/statisticedit.h \
     modelinspector/statisticswidget.h \
-    modelinspector/symbolfiltermodel.h \
-    modelinspector/uelfiltermodel.h \
+    modelinspector/symbolinfo.h \
     modelinspector/valueformatproxymodel.h
 
 FORMS += \

@@ -25,8 +25,8 @@
 #include "dctmcc.h"
 
 #include "common.h"
-
-#include <functional>
+#include "symbolinfo.h"
+#include "aggregation.h"
 
 #include <QMap>
 #include <QString>
@@ -39,65 +39,12 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
+class DataHandler;
+class FilterTreeItem;
+
 struct ValueFilterSettings;
 
 // TODO (AF) Which default values if something goes wrong (e.g. excel '##ERROR##', -1, ...)? -> something like '##ERROR##'
-
-typedef QMap<int, QVariant> JaccobianRow;
-typedef QVector<JaccobianRow> Jaccobian;
-
-typedef QMap<int, QVariant> AttribeValueLine;
-typedef QMap<int, AttribeValueLine> AttributeValues;
-
-struct SymbolInfo
-{// TODO review... get/set functions?
-    int Index = -1;
-    int Offset = -1;
-    int Entries = -1;
-    QString Name;
-    int Dimension = -1;
-    int Type = -1;
-
-    ///
-    /// \brief DimensionData Data by section index.
-    ///
-    QMap<int, QStringList> DimensionData;
-
-    QString dimensionData(int sectionIndex, int dimension) const
-    {
-        auto data = DimensionData[sectionIndex];
-        if (dimension < data.size())
-            return data[dimension];
-        return QString();
-    }
-
-    bool isScalar() const
-    {
-        return Entries == 1;
-    }
-
-    int lastOffset() const
-    {
-        return Offset+Entries;
-    }
-
-    int firstSection() const {
-        return mFirstSection;
-    }
-
-    void setFirstSection(int sectionIndex)
-    {
-        mFirstSection = sectionIndex;
-    }
-
-    int lastSection() const
-    {
-        return mFirstSection+Entries-1;
-    }
-
-private:
-    int mFirstSection = -1;
-};
 
 struct MaxMin
 {
@@ -175,7 +122,6 @@ public:
 
     bool isVariable(const QString &name);
 
-
     int symbolCount() const {
         return dctNLSyms(mDCT);
     }
@@ -233,30 +179,37 @@ public:
 
     QVariant data(int row, int column) const;
 
+    void setAppliedAggregation(const Aggregation &aggregation);
+
     QString headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const;
 
     void searchSymbolData(int logicalIndex, int sectionIndex, const QString &term,
                           bool isRegEx, Qt::Orientation orientation,
                           QList<SearchResult> &result);
 
-    SymbolFilter initialSymboldFilter(QAbstractItemModel *model,
+    IdentifierStates initialSymbolFilter(QAbstractItemModel *model,
                                       Qt::Orientation orientation);
 
-    UelFilterMap initialUelFilter() const;
+    LabelFilter initialLabelFilter() const;
 
     ValueFilter initalValueFilter() const;
+
+    DataRow jaccobianRow(int row);
+
+    QVariant horizontalAttribute(const QString &header, int column);
+    QVariant verticalAttribute(const QString &header, int row);
+
+    bool isAggregationActive() const;
 
 private:
     void initialize();
 
     SymbolInfo loadSymbol(int index, int sectionIndex) const;
-    void loadDimensions(SymbolInfo &symbolInf) const;
-    void loadInitialUelFilter(Qt::Orientation orientation);
+    void loadDimensions(SymbolInfo &symbol) const;
+    void loadInitialLabelFilter(Qt::Orientation orientation);
 
-    JaccobianRow jaccobianRow(int row);
-
-    QVariant horizontalAttribute(const QString &header, int column);
-    QVariant verticalAttribute(const QString &header, int row);
+    void loadLabelTree(SymbolInfo &symbol) const;
+    void appendSubItems(LabelTreeItem *parent, QStringList &labels) const;
 
     QPair<double, double> equationBounds(int row);
 
@@ -270,6 +223,8 @@ private:
 private:
     class Cache;
     Cache *mCache;
+
+    DataHandler *mDataHandler;
 
     QString mScratchDir;
     QString mWorkspace;

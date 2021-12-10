@@ -27,8 +27,9 @@
 #include "filtertreeitem.h"
 #include "valueformatproxymodel.h"
 #include "columnrowfiltermodel.h"
-#include "symbolfiltermodel.h"
-#include "uelfiltermodel.h"
+#include "identifierfiltermodel.h"
+#include "labelfiltermodel.h"
+#include "aggregationproxymodel.h"
 
 #include "gclgms.h"
 
@@ -84,7 +85,8 @@ void ModelInspector::setWorkspace(const QString &workingDir)
     mWorkspace = workingDir;
 }
 
-QList<SearchResult> ModelInspector::searchHeaders(const QString &term, bool isRegEx)
+QList<SearchResult> ModelInspector::searchHeaders(const QString &term,
+                                                  bool isRegEx)
 {
     if (term.isEmpty())
         return QList<SearchResult>();
@@ -94,37 +96,51 @@ QList<SearchResult> ModelInspector::searchHeaders(const QString &term, bool isRe
     return result;
 }
 
+void ModelInspector::loadModelInstance()
+{
+    setupModelInstanceView();
+    ui->statisticWidget->showStatistic(mModelInstance);
+    emit newLogMessage(mModelInstance->logMessages());
+}
+
 QSharedPointer<ModelInstance> ModelInspector::modelInstance() const
 {
     return mModelInstance;
 }
 
-SymbolFilterMap ModelInspector::symbolFilter()
+IdentifierFilter ModelInspector::identifierFilter() const
 {
-    if (!mSymbolFilterModel) {
-        return SymbolFilterMap();
+    if (!mIdentifierFilterModel) {
+        return IdentifierFilter();
     }
-    if (mSymbolFilterModel->symbolFilter().isEmpty()) {
-        mSymbolFilterModel->symbolFilter()[Qt::Horizontal] =
-                mModelInstance->initialSymboldFilter(ui->modelInstanceView->model(), Qt::Horizontal);
-        mSymbolFilterModel->symbolFilter()[Qt::Vertical] =
-                mModelInstance->initialSymboldFilter(ui->modelInstanceView->model(), Qt::Vertical);
+    if (mIdentifierFilterModel->identifierFilter().isEmpty()) {
+        mIdentifierFilterModel->identifierFilter()[Qt::Horizontal] =
+                mModelInstance->initialSymbolFilter(ui->modelInstanceView->model(),
+                                                     Qt::Horizontal);
+        mIdentifierFilterModel->identifierFilter()[Qt::Vertical] =
+                mModelInstance->initialSymbolFilter(ui->modelInstanceView->model(),
+                                                     Qt::Vertical);
     }
-    return mSymbolFilterModel->symbolFilter();
+    return mIdentifierFilterModel->identifierFilter();
 }
 
-SymbolFilterMap ModelInspector::defaultSymbolFilter()
+IdentifierFilter ModelInspector::defaultIdentifierFilter()
 {
-    SymbolFilterMap filter;
-    filter[Qt::Horizontal] = mModelInstance->initialSymboldFilter(ui->modelInstanceView->model(), Qt::Horizontal);
-    filter[Qt::Vertical] = mModelInstance->initialSymboldFilter(ui->modelInstanceView->model(), Qt::Vertical);
+    IdentifierFilter filter;
+    if (mIdentifierFilterModel) {
+        filter[Qt::Horizontal] = mModelInstance->initialSymbolFilter(ui->modelInstanceView->model(),
+                                                                      Qt::Horizontal);
+        filter[Qt::Vertical] = mModelInstance->initialSymbolFilter(ui->modelInstanceView->model(),
+                                                                    Qt::Vertical);
+    }
     return filter;
 }
 
-void ModelInspector::setSymbolFilter(const QMap<Qt::Orientation, SymbolFilter> &filter)
+void ModelInspector::setIdentifierFilter(const QMap<Qt::Orientation,
+                                         IdentifierStates> &filter)
 {
-    if (mSymbolFilterModel) {
-        mSymbolFilterModel->setSymbolFilter(filter);
+    if (mIdentifierFilterModel) {
+        mIdentifierFilterModel->setIdentifierFilter(filter);
     }
 }
 
@@ -148,92 +164,74 @@ void ModelInspector::setValueFilter(const ValueFilter &filter)
     }
 }
 
-UelFilterMap ModelInspector::uelFilter() const
+LabelFilter ModelInspector::labelFilter() const
 {
-    if (!mUelFilterModel) {
-        return UelFilterMap();
+    if (!mLabelFilterModel) {
+        return LabelFilter();
     }
-    if (mUelFilterModel->uelFilter().isEmpty()) {
-        mUelFilterModel->setUelFilter(mModelInstance->initialUelFilter());
+    if (mLabelFilterModel->labelFilter().isEmpty()) {
+        mLabelFilterModel->setLabelFilter(defaultLabelFilter());
     }
-    return mUelFilterModel->uelFilter();
+    return mLabelFilterModel->labelFilter();
 }
 
-UelFilterMap ModelInspector::defaultUelFilter() const
+LabelFilter ModelInspector::defaultLabelFilter() const
 {
-    return mModelInstance->initialUelFilter();
+    return mModelInstance->initialLabelFilter();
 }
 
-void ModelInspector::setUelFilter(const UelFilterMap &filter)
+void ModelInspector::setLabelFilter(const LabelFilter &filter)
 {
-    if (mUelFilterModel) {
-        mUelFilterModel->setUelFilter(filter);
+    if (mLabelFilterModel) {
+        mLabelFilterModel->setLabelFilter(filter);
     }
 }
 
-void ModelInspector::loadModelInstance(int exitCode, QProcess::ExitStatus status)
+Aggregation ModelInspector::aggregation() const
 {
-    Q_UNUSED(status);
-    if (exitCode > 0) {
-        emit newLogMessage("The GAMSProcess reported an issue. The exit code is " +
-                           QString().number(exitCode));
-        return;
+    if (!mAggregationModel) {
+        return Aggregation();
     }
-
-    setupModelInstanceView();
-    ui->statisticWidget->showStatistic(mModelInstance);
-
-    emit newLogMessage(mModelInstance->logMessages());
-    emit newLogMessage(QString("Table Row Count >> %1").arg(mModelInstance->rowCount()));
-    emit newLogMessage(QString("Table Column Count >> %1").arg(mModelInstance->columnCount()));
-
-    emit newModelInstance();
+    if (mAggregationModel->aggregation().aggregationMap().isEmpty()) {
+        auto defaultAggr = defaultAggregation();
+        auto appliedAggr = appliedAggregation(defaultAggregation());
+        mHorizontalHeader->setAppliedAggregation(appliedAggr.aggregationSymbols(Qt::Horizontal));
+        mVerticalHeader->setAppliedAggregation(appliedAggr.aggregationSymbols(Qt::Vertical));
+        mAggregationModel->setAggregation(defaultAggr, appliedAggr);
+    }
+    return mAggregationModel->aggregation();
 }
 
-void ModelInspector::setupModelInstanceView()
+Aggregation ModelInspector::defaultAggregation() const
 {
-    mModelInstance = QSharedPointer<ModelInstance>(new ModelInstance(mWorkspace, mScratchDir));
-    mModelInstance->loadScratchData();
-    mModelInstance->loadTableData();
-    mModelInstance->loadMinMaxValues();
+    return initialAggregation();
+}
 
-    auto hHeader = new HierarchicalHeaderView(Qt::Horizontal,
-                                              mModelInstance,
-                                              ui->modelInstanceView);
-    // TODO ResizeToContents is extreamly slow... because it affecst all rows/columns...
-    //      find a better way to implement it
-    //hHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
-    //connect(hHeader, &HierarchicalHeaderView::filterChanged, // TODO Symbol Icon filter
-    //        this, &ModelInspector::applyHeaderLabelFilter);
+void ModelInspector::setAggregation(const Aggregation &aggregation)
+{
+    if (mAggregationModel && mHorizontalHeader && mVerticalHeader) {
+        auto applied = appliedAggregation(aggregation);
+        mHorizontalHeader->setAppliedAggregation(applied.aggregationSymbols(Qt::Horizontal));
+        mVerticalHeader->setAppliedAggregation(applied.aggregationSymbols(Qt::Vertical));
+        mAggregationModel->setAggregation(aggregation, applied);
+    }
+}
 
-    auto vHeader = new HierarchicalHeaderView(Qt::Vertical,
-                                              mModelInstance,
-                                              ui->modelInstanceView);
-    // TODO ResizeToContents is extreamly slow... because it affecst all rows/columns...
-    //      find a better way to implement it
-    //vHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
-    //connect(vHeader, &HierarchicalHeaderView::filterChanged, // TODO Symbol Icon filter
-    //        this, &ModelInspector::applyHeaderLabelFilter);
+void ModelInspector::resetColumnRowFilter()
+{
+    if (mColumnRowFilterModel) {
+        mColumnRowFilterModel->invalidate();
+    }
+}
 
-    auto modelInstanceModel = new ModelInstanceTableModel(ui->modelInstanceView);
-    modelInstanceModel->setModelInstance(mModelInstance);
-    mValueFormatModel = new ValueFormatProxyModel(ui->modelInstanceView);
-    mValueFormatModel->setValueFilter(mModelInstance->initalValueFilter());
-    mValueFormatModel->setSourceModel(modelInstanceModel);
-    mSymbolFilterModel = new SymbolFilterModel(mModelInstance, ui->modelInstanceView);
-    mSymbolFilterModel->setSourceModel(mValueFormatModel);
-    mUelFilterModel = new UelFilterModel(mModelInstance, ui->modelInstanceView);
-    mUelFilterModel->setSourceModel(mSymbolFilterModel);
-    mColumnRowFilterModel = new ColumnRowFilterModel(ui->modelInstanceView);
-    mColumnRowFilterModel->setSourceModel(mUelFilterModel);
-
-    ui->modelInstanceView->setHorizontalHeader(hHeader);
-    ui->modelInstanceView->setVerticalHeader(vHeader);
-    ui->modelInstanceView->setModel(mColumnRowFilterModel);
-    hHeader->setVisible(true);
-    vHeader->setVisible(true);
-
-    mModelInstanceModel = QSharedPointer<ModelInstanceTableModel>(modelInstanceModel);
+void ModelInspector::resetIdentifierLabelFilter()
+{
+    if (mHorizontalHeader)
+        mHorizontalHeader->resetSymbolLabelFilters();
+    if (mVerticalHeader)
+        mVerticalHeader->resetSymbolLabelFilters();
+    if (mIdentifierLabelFilterModel)
+        mIdentifierLabelFilterModel->clearIdentifierFilter();
 }
 
 void ModelInspector::setCurrentView(int index)
@@ -256,44 +254,81 @@ void ModelInspector::setSearchSelection(const SearchResult &result)
 }
 
 void ModelInspector::printDebugStuff()
-{
+{// TODO remove
     Q_FOREACH(auto sym, mModelInstance->variables()) {
-        qDebug() << sym.Name << sym.firstSection();
+        qDebug() << sym.name() << sym.firstSection();
     }
     qDebug() << "##########";
     auto sym = mModelInstance->variable(11);
-    qDebug() << sym.Name << sym.firstSection();
+    qDebug() << sym.name() << sym.firstSection();
 }
 
-//void ModelInspector::applyHeaderLabelFilter(FilterTreeItem *root, Qt::Orientation orientation)
-//{
-//    if (orientation == Qt::Horizontal) {
-//        QList<FilterTreeItem*> filterItems { root };
-//        QList<QStandardItem*> subTree { mModelInstance->horizontalItem(root->index()) };
-//        while (!filterItems.isEmpty()) {
-//            auto filterItem = filterItems.takeFirst();
-//            filterItems.append(filterItem->childs());
-//            auto subItem = subTree.takeFirst();
-//            for (int c=0; c<subItem->columnCount(); ++c)
-//                subTree.append(subItem->child(0, c));
-//            subItem->setCheckState(filterItem->checked());
-//            ui->modelInstanceView->setColumnHidden(filterItem->index(), !filterItem->checked());
-//        }
-//    } else {
-//        QList<FilterTreeItem*> filterItems { root };
-//        QList<QStandardItem*> subTree { mModelInstance->verticalItem(root->index()) };
-//        while (!filterItems.isEmpty()) {
-//            auto filterItem = filterItems.takeFirst();
-//            filterItems.append(filterItem->childs());
-//            auto subItem = subTree.takeFirst();
-//            for (int c=0; c<subItem->columnCount(); ++c)
-//                subTree.append(subItem->child(0, c));
-//            subItem->setCheckState(filterItem->checked());
-//            ui->modelInstanceView->setRowHidden(filterItem->index(), !filterItem->checked());
-//        }
-//    }
-//    emit filtersUpdated();
-//}
+void ModelInspector::setIdentifierLabelFilter(const IdentifierState &state,
+                                              Qt::Orientation orientation)
+{
+    if (!mIdentifierLabelFilterModel) {
+        return;
+    }
+    if (state.disabled() && mIdentifierFilterModel) {
+        mIdentifierFilterModel->setIdentifierCheckState(state.SymbolIndex,
+                                                        Qt::Unchecked,
+                                                        orientation);
+    } else {
+        mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
+    }
+    emit filtersChanged();
+}
+
+void ModelInspector::setupModelInstanceView()
+{
+    mModelInstance = QSharedPointer<ModelInstance>(new ModelInstance(mWorkspace,
+                                                                     mScratchDir));
+    mModelInstance->loadScratchData();
+    mModelInstance->loadTableData();
+    mModelInstance->loadMinMaxValues();
+
+    mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
+                                              mModelInstance,
+                                              ui->modelInstanceView);
+    // TODO ResizeToContents is extreamly slow... because it affecst all rows/columns...
+    //      find a better way to implement it
+    //hHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+    connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
+            this, &ModelInspector::setIdentifierLabelFilter);
+
+    mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
+                                              mModelInstance,
+                                              ui->modelInstanceView);
+    // TODO ResizeToContents is extreamly slow... because it affecst all rows/columns...
+    //      find a better way to implement it
+    //vHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+    connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
+            this, &ModelInspector::setIdentifierLabelFilter);
+
+    auto modelInstanceModel = new ModelInstanceTableModel(ui->modelInstanceView);
+    modelInstanceModel->setModelInstance(mModelInstance);
+    mValueFormatModel = new ValueFormatProxyModel(ui->modelInstanceView);
+    mValueFormatModel->setValueFilter(mModelInstance->initalValueFilter());
+    mValueFormatModel->setSourceModel(modelInstanceModel);
+    mIdentifierFilterModel = new IdentifierFilterModel(mModelInstance, ui->modelInstanceView);
+    mIdentifierFilterModel->setSourceModel(mValueFormatModel);
+    mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->modelInstanceView);
+    mLabelFilterModel->setSourceModel(mIdentifierFilterModel);
+    mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->modelInstanceView);
+    mIdentifierLabelFilterModel->setSourceModel(mLabelFilterModel);
+    mAggregationModel = new AggregationProxyModel(mModelInstance, ui->modelInstanceView);
+    mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
+    mColumnRowFilterModel = new ColumnRowFilterModel(ui->modelInstanceView);
+    mColumnRowFilterModel->setSourceModel(mAggregationModel);
+
+    ui->modelInstanceView->setHorizontalHeader(mHorizontalHeader);
+    ui->modelInstanceView->setVerticalHeader(mVerticalHeader);
+    ui->modelInstanceView->setModel(mColumnRowFilterModel);
+    mHorizontalHeader->setVisible(true);
+    mVerticalHeader->setVisible(true);
+
+    mModelInstanceModel = QSharedPointer<ModelInstanceTableModel>(modelInstanceModel);
+}
 
 void ModelInspector::searchHeader(const QString &term, bool isRegEx,
                                   Qt::Orientation orientation,
@@ -308,6 +343,58 @@ void ModelInspector::searchHeader(const QString &term, bool isRegEx,
             continue;
         mModelInstance->searchSymbolData(s, realSection, term, isRegEx, orientation, result);
     }
+}
+
+Aggregation ModelInspector::appliedAggregation(const Aggregation &aggregation) const
+{
+    AggregationMap map;
+    for (auto mapIter=aggregation.aggregationMap().keyValueBegin();
+         mapIter!=aggregation.aggregationMap().keyValueEnd(); ++mapIter) {
+        Q_FOREACH(auto item, mapIter->second) {
+            for (auto iter=item.checkState().keyValueBegin(); iter!=item.checkState().keyValueEnd(); ++iter) {
+                if (iter->second != Qt::Unchecked) {
+                    auto symbol = mapIter->first == Qt::Horizontal ? mModelInstance->variable(item.symbolIndex()) :
+                                                                     mModelInstance->equation(item.symbolIndex());
+                    Aggregator aggregator(symbol);
+                    aggregator.applyFilterStates(identifierFilter().value(mapIter->first)[symbol.firstSection()],
+                                                 mIdentifierLabelFilterModel->identifierState(symbol.firstSection(), mapIter->first),
+                                                 labelFilter().value(mapIter->first));
+                    aggregator.aggregate(item, aggregation.typeText());
+                    map[mapIter->first][item.symbolIndex()] = item;
+                    break;
+                }
+            }
+        }
+    }
+
+    Aggregation appliedAggregation;
+    appliedAggregation.setType(aggregation.type());
+    appliedAggregation.setAggregationMap(map);
+    appliedAggregation.setIdentifierFilter(identifierFilter());
+    appliedAggregation.setIdentifierLabelFilter(mIdentifierLabelFilterModel->identifierFilter());
+    appliedAggregation.setValueFilter(valueFilter());
+    return appliedAggregation;
+}
+
+Aggregation ModelInspector::initialAggregation() const
+{
+    auto initAggregation = [this](int type) {
+        AggregationSymbols items;
+        Q_FOREACH(const auto& sym, mModelInstance->symbols(type)) {
+            AggregationItem aggrItem;
+            aggrItem.setText(sym.name());
+            aggrItem.setSymbolIndex(sym.firstSection());
+            for (int d=1; d<=sym.dimension(); ++d) {
+                aggrItem.setCheckState(d, Qt::Unchecked);
+            }
+            items[aggrItem.symbolIndex()] = aggrItem;
+        }
+        return items;
+    };
+    Aggregation aggregation;
+    aggregation.setAggregationSymbols(Qt::Horizontal, initAggregation(dctvarSymType));
+    aggregation.setAggregationSymbols(Qt::Vertical, initAggregation(dcteqnSymType));
+    return aggregation;
 }
 
 }

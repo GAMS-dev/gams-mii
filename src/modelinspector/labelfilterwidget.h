@@ -3,8 +3,9 @@
 
 #include <QWidget>
 
+#include "common.h"
+
 class QSortFilterProxyModel;
-class QStandardItem;
 
 namespace gams {
 namespace studio {
@@ -15,7 +16,6 @@ class LabelFilterWidget;
 }
 
 class FilterTreeItem;
-class FilterTreeModel;
 
 class LabelFilterWidget : public QWidget
 {
@@ -32,7 +32,7 @@ protected:
     void showEvent(QShowEvent *event);
 
 signals:
-    void filterChanged(FilterTreeItem *item, Qt::Orientation orientation);
+    void filterChanged(const IdentifierState&, Qt::Orientation);
 
 private slots:
     void on_applyButton_clicked();
@@ -44,12 +44,12 @@ private slots:
     void applyFilter(const QString &text);
 
 private:
-    void setSelection(bool state);
+    void applyCheckState(bool state);
+    IdentifierState identifierState();
 
 private:
     Ui::LabelFilterWidget *ui;
     Qt::Orientation mOrientation;
-    FilterTreeItem *mRootItem;
     QSortFilterProxyModel *mFilterModel;
 };
 
