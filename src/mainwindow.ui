@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>GAMS Model Inspector</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -181,6 +181,7 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
+    <addaction name="actionAbout_Model_Inspector"/>
     <addaction name="actionAbout_Qt"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -308,6 +309,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionAbout_Model_Inspector">
+   <property name="text">
+    <string>About Model Inspector</string>
    </property>
   </action>
  </widget>

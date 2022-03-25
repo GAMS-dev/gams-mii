@@ -69,6 +69,7 @@ private slots:
     void on_actionPrint_DBG_Stuff_triggered(); // TODO remove
 
     // Help
+    void on_actionAbout_Model_Inspector_triggered();
     void on_actionAbout_Qt_triggered();
 
     // Other
@@ -79,6 +80,8 @@ private slots:
     void updateModelInstance();
 
 private:
+    QString aboutModelInspector() const;
+
     void loadGAMSModel(const QString &path);
 
     void setGlobalFiltersData();

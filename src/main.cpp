@@ -24,6 +24,8 @@
 
 int main(int argc, char *argv[])
 {
+    QApplication::setApplicationVersion(MI_VERSION);
+
     QApplication a(argc, argv);
     CommonPaths::setSystemDir();
     MainWindow w;
