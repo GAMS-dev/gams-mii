@@ -38,6 +38,8 @@ void AggregationDialog::setAggregation(const Aggregation &aggregation,
     mIdentifierFilter = filter;
     ui->filterEdit->setText("");
     ui->aggregationBox->setCurrentText(mAggregation.typeText());
+    mAggregationMethod = ui->aggregationBox->currentIndex();
+    ui->absoluteBox->setChecked(mAggregation.useAbsoluteValues());
     setupAggregationView();
 }
 
@@ -59,16 +61,12 @@ void AggregationDialog::on_deselectButton_clicked()
 void AggregationDialog::on_cancelButton_clicked()
 {
     setAggregation(mAggregation, mIdentifierFilter);
-    ui->filterEdit->setText("");
     close();
 }
 
 void AggregationDialog::on_resetButton_clicked()
 {
     setAggregation(mDefaultAggregation, mIdentifierFilter);
-    ui->filterEdit->setText("");
-    mAggregationMethod = 0;
-    ui->aggregationBox->setCurrentIndex(mAggregationMethod);
     applyAggregation();
     emit aggregationUpdated();
 }
@@ -147,6 +145,7 @@ void AggregationDialog::setupTreeItems(Qt::Orientation orientation,
 
 void AggregationDialog::applyAggregation()
 {
+    mAggregation.setUseAbsoluteValues(ui->absoluteBox->isChecked());
     mAggregation.setType(ui->aggregationBox->currentText());
     QList<FilterTreeItem*> items {
         static_cast<FilterTreeModel*>(mAggregationModel->sourceModel())->filterItem()->childs()

@@ -77,7 +77,7 @@ void TestCommon::test_valueFilterBlank()
     ValueFilter filter;
     QCOMPARE(filter.MinValue, std::numeric_limits<double>::min());
     QCOMPARE(filter.MaxValue, std::numeric_limits<double>::max());
-    QCOMPARE(filter.Exclude, false);
+    QCOMPARE(filter.ExcludeRange, false);
     QCOMPARE(filter.ShowPInf, true);
     QCOMPARE(filter.ShowNInf, true);
     QCOMPARE(filter.ShowEps, true);
@@ -93,8 +93,8 @@ void TestCommon::test_valueFilterGetSet()
     filter.MaxValue = 42;
     QCOMPARE(filter.MaxValue, 42);
 
-    filter.Exclude = true;
-    QCOMPARE(filter.Exclude, true);
+    filter.ExcludeRange = true;
+    QCOMPARE(filter.ExcludeRange, true);
 
     filter.ShowPInf = false;
     QCOMPARE(filter.ShowPInf, false);

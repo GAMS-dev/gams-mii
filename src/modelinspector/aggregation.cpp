@@ -276,6 +276,16 @@ const QString Aggregation::MinimumText = "Minimum";
 const QString Aggregation::SumText = "Sum";
 const QString Aggregation::NoneText = "None";
 
+bool Aggregation::useAbsoluteValues() const
+{
+    return mUseAbsoluteValues;
+}
+
+void Aggregation::setUseAbsoluteValues(bool absoluteValues)
+{
+    mUseAbsoluteValues = absoluteValues;
+}
+
 Aggregation::Type Aggregation::type() const
 {
     return mType;

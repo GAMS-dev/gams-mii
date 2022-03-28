@@ -2,6 +2,7 @@
 #include "modelinstance.h"
 
 #include <algorithm>
+#include <functional>
 #include <vector>
 
 using namespace std;
@@ -16,7 +17,6 @@ protected:
     AbstractDataAggregator(DataHandler *dataHandler)
         : mDataHandler(dataHandler)
     {
-
     }
 
 public:
@@ -39,6 +39,11 @@ public:
         return mDataHandler->mAppliedAggregation.aggregationMap();
     }
 
+    bool useAbsoluteValues() const
+    {
+        return mDataHandler->mAppliedAggregation.useAbsoluteValues();
+    }
+
     void setFilterForTargetIndexChecked(Qt::Orientation orientation,
                                         int symIndex, int targetIndex)
     {
@@ -57,6 +62,18 @@ protected:
         auto value = value1.toDouble();
         if (value < 0 || value > 0) {
             return value;
+        }
+        return QVariant();
+    }
+
+    virtual QVariant aggregatedAbsValue(QVariant &value1, QVariant &value2)
+    {
+        if (isSpecialValue(value1))
+            return QVariant();
+        value2 = QVariant();
+        auto value = value1.toDouble();
+        if (value < 0 || value > 0) {
+            return std::abs(value);
         }
         return QVariant();
     }
@@ -172,6 +189,8 @@ public:
 
     virtual void aggregateColumns(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &MeanDataAggregator::aggregatedAbsValue
+                                            : &MeanDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Horizontal]) {
             auto var = modelInstance->variable(item.symbolIndex());
             for (auto iter=aggregatedDataMatrix().keyValueBegin();
@@ -182,7 +201,7 @@ public:
                     double value = 0.0;
                     QVariant specialValue = NA;
                     Q_FOREACH(auto column, sections) {
-                        auto ret = aggregatedValue(iter->second[column], specialValue);
+                        auto ret = std::invoke(getValue, this, iter->second[column], specialValue);
                         if (ret.isValid()) {
                             ++count;
                             value += ret.toDouble();
@@ -199,6 +218,8 @@ public:
 
     virtual void aggregateRows(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &MeanDataAggregator::aggregatedAbsValue
+                                            : &MeanDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Vertical]) {
             auto eqn = modelInstance->equation(item.symbolIndex());
             int targetRow = eqn.firstSection();
@@ -208,7 +229,7 @@ public:
                     double value = 0.0;
                     QVariant specialValue = NA;
                     Q_FOREACH(auto row, sections) {
-                        auto ret = aggregatedValue(aggregatedDataMatrix()[row][column], specialValue);
+                        auto ret = std::invoke(getValue, this, aggregatedDataMatrix()[row][column], specialValue);
                         if (ret.isValid()) {
                             ++count;
                             value += ret.toDouble();
@@ -238,6 +259,8 @@ public:
 
     virtual void aggregateColumns(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &MedianDataAggregator::aggregatedAbsValue
+                                            : &MedianDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Horizontal]) {
             auto var = modelInstance->variable(item.symbolIndex());
             for (auto iter=aggregatedDataMatrix().keyValueBegin();
@@ -247,7 +270,7 @@ public:
                     QVariant value = NA;
                     vector<double> values;
                     Q_FOREACH(auto column, sections) {
-                        auto ret = aggregatedValue(iter->second[column], value);
+                        auto ret = std::invoke(getValue, this, iter->second[column], value);
                         if (ret.isValid())
                             values.push_back(ret.toDouble());
                         iter->second.remove(column);
@@ -262,6 +285,8 @@ public:
 
     virtual void aggregateRows(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &MedianDataAggregator::aggregatedAbsValue
+                                            : &MedianDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Vertical]) {
             auto eqn = modelInstance->equation(item.symbolIndex());
             int targetRow = eqn.firstSection();
@@ -271,7 +296,7 @@ public:
                     QVariant value = NA;
                     vector<double> values;
                     Q_FOREACH(auto row, sections) {
-                        auto ret = aggregatedValue(aggregatedDataMatrix()[row][column], value);
+                        auto ret = std::invoke(getValue, this, aggregatedDataMatrix()[row][column], value);
                         if (ret.isValid())
                             values.push_back(ret.toDouble());
                     }
@@ -314,6 +339,8 @@ public:
 
     virtual void aggregateColumns(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &MinDataAggregator::aggregatedAbsValue
+                                            : &MinDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Horizontal]) {
             auto var = modelInstance->variable(item.symbolIndex());
             for (auto iter=aggregatedDataMatrix().keyValueBegin();
@@ -324,7 +351,7 @@ public:
                     double value = 0.0;
                     QVariant specialValue = NA;
                     Q_FOREACH(auto column, sections) {
-                        auto ret = aggregatedValue(newRow[column], specialValue);
+                        auto ret = std::invoke(getValue, this, newRow[column], specialValue);
                         if (ret.isValid()) {
                             if (value == 0.0) value = ret.toDouble();
                             else value = qMin(value, ret.toDouble());
@@ -342,6 +369,8 @@ public:
 
     virtual void aggregateRows(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &MinDataAggregator::aggregatedAbsValue
+                                            : &MinDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Vertical]) {
             auto eqn = modelInstance->equation(item.symbolIndex());
             int targetRow = eqn.firstSection();
@@ -351,7 +380,7 @@ public:
                     double value = 0.0;
                     QVariant specialValue = NA;
                     Q_FOREACH(auto row, sections) {
-                        auto ret = aggregatedValue(aggregatedDataMatrix()[row][column], specialValue);
+                        auto ret = std::invoke(getValue, this, aggregatedDataMatrix()[row][column], specialValue);
                         if (ret.isValid()) {
                             if (value == 0.0) value = ret.toDouble();
                             else value = qMin(value, ret.toDouble());
@@ -381,6 +410,8 @@ public:
 
     virtual void aggregateColumns(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &MaxDataAggregator::aggregatedAbsValue
+                                            : &MaxDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Horizontal]) {
             auto var = modelInstance->variable(item.symbolIndex());
             for (auto iter=aggregatedDataMatrix().keyValueBegin();
@@ -391,7 +422,7 @@ public:
                     double value = 0.0;
                     QVariant specialValue = NA;
                     Q_FOREACH(auto column, sections) {
-                        auto ret = aggregatedValue(newRow[column], specialValue);
+                        auto ret = std::invoke(getValue, this, newRow[column], specialValue);
                         if (ret.isValid()) {
                             if (value == 0.0) value = ret.toDouble();
                             else value = qMax(value, ret.toDouble());
@@ -409,6 +440,8 @@ public:
 
     virtual void aggregateRows(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &MaxDataAggregator::aggregatedAbsValue
+                                            : &MaxDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Vertical]) {
             auto eqn = modelInstance->equation(item.symbolIndex());
             int targetRow = eqn.firstSection();
@@ -418,7 +451,7 @@ public:
                     double value = 0.0;
                     QVariant specialValue = NA;
                     Q_FOREACH(auto row, sections) {
-                        auto ret = aggregatedValue(aggregatedDataMatrix()[row][column], specialValue);
+                        auto ret = std::invoke(getValue, this, aggregatedDataMatrix()[row][column], specialValue);
                         if (ret.isValid()) {
                             if (value == 0.0) value = ret.toDouble();
                             else value = qMax(value, ret.toDouble());
@@ -448,6 +481,8 @@ public:
 
     virtual void aggregateColumns(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &SumDataAggregator::aggregatedAbsValue
+                                            : &SumDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Horizontal]) {
             auto var = modelInstance->variable(item.symbolIndex());
             for (auto iter=aggregatedDataMatrix().keyValueBegin();
@@ -458,7 +493,7 @@ public:
                     double value = 0.0;
                     QVariant specialValue = NA;
                     Q_FOREACH(auto column, sections) {
-                        auto ret = aggregatedValue(newRow[column], specialValue);
+                        auto ret = std::invoke(getValue, this, newRow[column], specialValue);
                         if (ret.isValid()) value += ret.toDouble();
                         newRow.remove(column);
                     }
@@ -473,6 +508,8 @@ public:
 
     virtual void aggregateRows(ModelInstance *modelInstance) override
     {
+        auto getValue = useAbsoluteValues() ? &SumDataAggregator::aggregatedAbsValue
+                                            : &SumDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Vertical]) {
             auto eqn = modelInstance->equation(item.symbolIndex());
             int targetRow = eqn.firstSection();
@@ -482,7 +519,7 @@ public:
                     double value = 0.0;
                     QVariant specialValue = NA;
                     Q_FOREACH(auto row, sections) {
-                        auto ret = aggregatedValue(aggregatedDataMatrix()[row][column], specialValue);
+                        auto ret = std::invoke(getValue, this, aggregatedDataMatrix()[row][column], specialValue);
                         if (ret.isValid()) value += ret.toDouble();
                     }
                     if (specialValue.isValid()) newRow[column] = specialValue;

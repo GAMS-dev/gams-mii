@@ -98,7 +98,8 @@ struct ValueFilter
 {
     double MinValue = std::numeric_limits<double>::min();
     double MaxValue = std::numeric_limits<double>::max();
-    bool Exclude = false;
+    bool ExcludeRange = false;
+    bool UseAbsoluteValues = false;
 
     bool ShowPInf = true;
     bool ShowNInf = true;
@@ -122,7 +123,7 @@ struct ValueFilter
         double val = value.toDouble(&ok);
         if (!ok)
             return false;
-        if (Exclude) {
+        if (ExcludeRange) {
             return val < MinValue || val > MaxValue;
         } else {
             return val >= MinValue && val <= MaxValue;

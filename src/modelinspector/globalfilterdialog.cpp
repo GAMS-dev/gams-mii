@@ -5,8 +5,6 @@
 
 #include <QSortFilterProxyModel>
 
-#include <QDebug>
-
 namespace gams {
 namespace studio {
 namespace modelinspector {
@@ -22,6 +20,15 @@ GlobalFilterDialog::GlobalFilterDialog(QWidget *parent)
 
     connect(this, &QDialog::rejected,
             this, &GlobalFilterDialog::on_cancelButton_clicked);
+    connect(ui->absoluteBox, &QCheckBox::stateChanged,
+            this, [this](){
+        updateRangeEdit(ui->minEdit, ui->minEdit->text());
+        updateRangeEdit(ui->maxEdit, ui->maxEdit->text());
+    });
+    connect(ui->minEdit, &QLineEdit::textChanged,
+            this, [this](const QString &text) { updateRangeEdit(ui->minEdit, text); });
+    connect(ui->maxEdit, &QLineEdit::textChanged,
+            this, [this](const QString &text) { updateRangeEdit(ui->maxEdit, text); });
 }
 
 GlobalFilterDialog::~GlobalFilterDialog()
@@ -56,7 +63,8 @@ void GlobalFilterDialog::setValueFilter(const ValueFilter &filter)
     mValueFilter = filter;
     ui->minEdit->setText(QString::number(mValueFilter.MinValue));
     ui->maxEdit->setText(QString::number(mValueFilter.MaxValue));
-    ui->excludeBox->setChecked(mValueFilter.Exclude);
+    ui->excludeBox->setChecked(mValueFilter.ExcludeRange);
+    ui->absoluteBox->setChecked(mValueFilter.UseAbsoluteValues);
     ui->epsBox->setChecked(mValueFilter.ShowEps);
     ui->nInfBox->setChecked(mValueFilter.ShowNInf);
     ui->pInfBox->setChecked(mValueFilter.ShowPInf);
@@ -338,7 +346,8 @@ void GlobalFilterDialog::applyValueFilter()
 {
     mValueFilter.MinValue = ui->minEdit->text().toDouble();
     mValueFilter.MaxValue = ui->maxEdit->text().toDouble();
-    mValueFilter.Exclude = ui->excludeBox->isChecked();
+    mValueFilter.ExcludeRange = ui->excludeBox->isChecked();
+    mValueFilter.UseAbsoluteValues = ui->absoluteBox->isChecked();
     mValueFilter.ShowPInf = ui->pInfBox->isChecked();
     mValueFilter.ShowNInf = ui->nInfBox->isChecked();
     mValueFilter.ShowEps = ui->epsBox->isChecked();
@@ -371,6 +380,15 @@ LabelStates GlobalFilterDialog::applyLabelFilter(Qt::Orientation orientation,
         }
     }
     return filter;
+}
+
+void GlobalFilterDialog::updateRangeEdit(QLineEdit *edit, const QString &text)
+{
+    if (ui->absoluteBox->isChecked() && text.startsWith("-")) {
+        edit->setStyleSheet("color: red");
+    } else {
+        edit->setStyleSheet("color: "+QApplication::palette().text().color().name());
+    }
 }
 
 }

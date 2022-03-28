@@ -26,6 +26,7 @@ private:
 
 private:
     ValueFilter mValueFilter;
+    std::function<double(const QVariant &variant, bool *ok)> getValue;
 };
 
 }

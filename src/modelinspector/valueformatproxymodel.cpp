@@ -7,7 +7,11 @@ namespace modelinspector {
 ValueFormatProxyModel::ValueFormatProxyModel(QObject *parent)
     : QIdentityProxyModel(parent)
 {
-
+    getValue = [](const QVariant &variant, bool *ok) {
+        Q_UNUSED(variant);
+        *ok = false;
+        return 0.0;
+    };
 }
 
 ValueFilter ValueFormatProxyModel::valueFilter() const
@@ -19,6 +23,15 @@ void ValueFormatProxyModel::setValueFilter(const ValueFilter &valueFilter)
 {
     beginResetModel();
     mValueFilter = valueFilter;
+    if (mValueFilter.UseAbsoluteValues) {
+        getValue = [](const QVariant &variant, bool *ok) {
+            return std::abs(variant.toDouble(ok));
+        };
+    } else {
+        getValue = [](const QVariant &variant, bool *ok) {
+            return variant.toDouble(ok);
+        };
+    }
     endResetModel();
 }
 
@@ -49,11 +62,11 @@ QVariant ValueFormatProxyModel::applyFilter(const QVariant &data) const
         return QVariant();
     }
     bool ok;
-    double value = data.toDouble(&ok);
+    double value = getValue(data, &ok);
     if (ok) {
-        if (!mValueFilter.Exclude && value >= mValueFilter.MinValue && value <= mValueFilter.MaxValue)
+        if (!mValueFilter.ExcludeRange && value >= mValueFilter.MinValue && value <= mValueFilter.MaxValue)
             return data;
-        else if (mValueFilter.Exclude && (value < mValueFilter.MinValue || value > mValueFilter.MaxValue))
+        else if (mValueFilter.ExcludeRange && (value < mValueFilter.MinValue || value > mValueFilter.MaxValue))
             return data;
     }
     return QVariant();

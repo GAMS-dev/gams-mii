@@ -318,12 +318,13 @@ void ModelInspector::setupModelInstanceView()
     mIdentifierLabelFilterModel->setSourceModel(mLabelFilterModel);
     mAggregationModel = new AggregationProxyModel(mModelInstance, ui->modelInstanceView);
     mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
-    mColumnRowFilterModel = new ColumnRowFilterModel(ui->modelInstanceView);
-    mColumnRowFilterModel->setSourceModel(mAggregationModel);
+    //mColumnRowFilterModel = new ColumnRowFilterModel(ui->modelInstanceView);
+    //mColumnRowFilterModel->setSourceModel(mAggregationModel);
 
     ui->modelInstanceView->setHorizontalHeader(mHorizontalHeader);
     ui->modelInstanceView->setVerticalHeader(mVerticalHeader);
-    ui->modelInstanceView->setModel(mColumnRowFilterModel);
+    //ui->modelInstanceView->setModel(mColumnRowFilterModel); // TODO fix broken header when aggregation is used
+    ui->modelInstanceView->setModel(mAggregationModel);
     mHorizontalHeader->setVisible(true);
     mVerticalHeader->setVisible(true);
 
@@ -368,6 +369,7 @@ Aggregation ModelInspector::appliedAggregation(const Aggregation &aggregation) c
     }
 
     Aggregation appliedAggregation;
+    appliedAggregation.setUseAbsoluteValues(aggregation.useAbsoluteValues());
     appliedAggregation.setType(aggregation.type());
     appliedAggregation.setAggregationMap(map);
     appliedAggregation.setIdentifierFilter(identifierFilter());

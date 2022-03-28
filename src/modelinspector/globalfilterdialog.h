@@ -6,6 +6,7 @@
 #include "common.h"
 
 class QSortFilterProxyModel;
+class QLineEdit;
 class QTreeView;
 
 namespace gams {
@@ -75,7 +76,9 @@ private:
     IdentifierStates applyHeaderFilter(QSortFilterProxyModel *model);
     void applyValueFilter();
     LabelStates applyLabelFilter(Qt::Orientation orientation,
-                             QSortFilterProxyModel *model);
+                                QSortFilterProxyModel *model);
+
+    void updateRangeEdit(QLineEdit *edit, const QString &text);
 
 private:
     Ui::GlobalFilterDialog *ui;

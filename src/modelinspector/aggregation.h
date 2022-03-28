@@ -216,6 +216,9 @@ public:
         None
     };
 
+    bool useAbsoluteValues() const;
+    void setUseAbsoluteValues(bool absoluteValues);
+
     Type type() const;
     void setType(Type type);
     void setType(const QString &text);
@@ -238,6 +241,7 @@ public:
     void setValueFilter(const ValueFilter &filter);
 
 private:
+    bool mUseAbsoluteValues = false;
     Type mType = None;
     AggregationMap mAggregationMap;
     IdentifierFilter mIdentifierFilter;
