@@ -82,6 +82,8 @@ MainWindow::MainWindow(QWidget *parent)
     });
     connect(ui->searchResultView, &QTableView::doubleClicked,
             this, &MainWindow::searchResultSelectionChanged);
+
+    setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
 }
 
 MainWindow::~MainWindow()

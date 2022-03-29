@@ -110,7 +110,7 @@ void GlobalFilterDialog::on_resetButton_clicked()
     ui->equationEdit->setText("");
     ui->variableEdit->setText("");
     ui->labelEdit->setText("");
-    ui->labelFilterBox->setCurrentIndex(0);
+    ui->labelBox->setCurrentIndex(0);
 
     on_applyButton_clicked();
 }
@@ -124,7 +124,7 @@ void GlobalFilterDialog::on_cancelButton_clicked()
     ui->equationEdit->setText("");
     ui->variableEdit->setText("");
     ui->labelEdit->setText("");
-    ui->labelFilterBox->setCurrentIndex(0);
+    ui->labelBox->setCurrentIndex(0);
 
     close();
 }
@@ -165,20 +165,16 @@ void GlobalFilterDialog::on_deselectLabelButton_clicked()
     ui->labelView->dataChanged(QModelIndex(), QModelIndex());
 }
 
-void GlobalFilterDialog::on_labelFilterBox_currentIndexChanged(int index)
+void GlobalFilterDialog::on_labelBox_currentIndexChanged(int index)
 {
     switch (index) {
-    case 1: // Equations
-        ui->labelView->setRowHidden(1, QModelIndex(), true);
-        ui->labelView->setRowHidden(0, QModelIndex(), false);
-        break;
-    case 2: // Variables
-        ui->labelView->setRowHidden(1, QModelIndex(), false);
-        ui->labelView->setRowHidden(0, QModelIndex(), true);
+    case 1: // Any
+        mLabelFilter[Qt::Horizontal].Any = true;
+        mLabelFilter[Qt::Vertical].Any = true;
         break;
     default: // All
-        ui->labelView->reset();
-        ui->labelView->expandAll();
+        mLabelFilter[Qt::Horizontal].Any = false;
+        mLabelFilter[Qt::Vertical].Any = false;
         break;
     }
 }
@@ -291,7 +287,8 @@ void GlobalFilterDialog::setupLabelTreeItems(Qt::Orientation orientation, Filter
     root->append(typeItem);
 
     auto labelFilter = mLabelFilter[orientation];
-    for (auto iter=labelFilter.constKeyValueBegin(); iter!=labelFilter.constKeyValueEnd(); ++iter) {
+    for (auto iter=labelFilter.CheckStates.constKeyValueBegin();
+         iter!=labelFilter.CheckStates.constKeyValueEnd(); ++iter) {
         auto treeItem = new FilterTreeItem(iter->first,
                                            iter->second ? Qt::Checked : Qt::Unchecked,
                                            -1, typeItem);
@@ -369,6 +366,7 @@ LabelStates GlobalFilterDialog::applyLabelFilter(Qt::Orientation orientation,
     }
 
     LabelStates filter;
+    filter.Any = ui->labelBox->currentIndex();
     if (root) {
         QList<FilterTreeItem*> items { root };
         while (!items.isEmpty()) {
@@ -376,7 +374,7 @@ LabelStates GlobalFilterDialog::applyLabelFilter(Qt::Orientation orientation,
             items.append(item->childs());
             if (!item->isCheckable())
                 continue;
-            filter[item->text()] = item->checked();
+            filter.CheckStates[item->text()] = item->checked();
         }
     }
     return filter;

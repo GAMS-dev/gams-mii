@@ -61,7 +61,7 @@ private slots:
 
     void on_deselectLabelButton_clicked();
 
-    void on_labelFilterBox_currentIndexChanged(int index);
+    void on_labelBox_currentIndexChanged(int index);
 
 private:
     void setupEquationFilter(const IdentifierStates &filter);

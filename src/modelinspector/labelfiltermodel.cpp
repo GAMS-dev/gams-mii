@@ -31,20 +31,12 @@ bool LabelFilterModel::filterAcceptsColumn(int sourceColumn,
 
     bool ok;
     auto sectionIndex = sourceModel()->headerData(sourceColumn, Qt::Horizontal).toInt(&ok);
-    if (!ok) return true;
+    if (!ok || sectionIndex < PredefinedHeaderLength) return true;
 
     LabelStates filter = mLabelFilter[Qt::Horizontal];
-    for (auto iter=filter.constKeyValueBegin(); iter!=filter.constKeyValueEnd(); ++iter) {
-        if (iter->second == Qt::Checked || sectionIndex < PredefinedHeaderLength) {
-            continue;
-        }
-        auto sym = mModelInstance->variable(sectionIndex);
-        auto labels = sym.sectionLabels()[sectionIndex];
-        if (labels.contains(iter->first, Qt::CaseInsensitive)) {
-            return false;
-        }
-    }
-    return true;
+    if (filter.Any)
+        return matchesAnyColumnLabels(filter.CheckStates, sectionIndex);
+    return matchesAllColumnLabels(filter.CheckStates, sectionIndex);
 }
 
 bool LabelFilterModel::filterAcceptsRow(int sourceRow,
@@ -54,20 +46,76 @@ bool LabelFilterModel::filterAcceptsRow(int sourceRow,
 
     bool ok;
     auto sectionIndex = sourceModel()->headerData(sourceRow, Qt::Vertical).toInt(&ok);
-    if (!ok) return true;
+    if (!ok || sectionIndex < PredefinedHeaderLength) return true;
 
     LabelStates filter = mLabelFilter[Qt::Vertical];
-    for (auto iter=filter.constKeyValueBegin(); iter!=filter.constKeyValueEnd(); ++iter) {
-        if (iter->second == Qt::Checked || sectionIndex < PredefinedHeaderLength) {
+    if (filter.Any)
+        return matchesAnyRowLabels(filter.CheckStates, sectionIndex);
+    return matchesAllRowLabels(filter.CheckStates, sectionIndex);
+}
+
+bool LabelFilterModel::matchesAllColumnLabels(const QMap<QString, Qt::CheckState> &checkStates,
+                                              int sectionIndex) const
+{
+    auto sym = mModelInstance->variable(sectionIndex);
+    auto labels = sym.sectionLabels()[sectionIndex];
+    for (auto iter=checkStates.constKeyValueBegin();
+         iter!=checkStates.constKeyValueEnd(); ++iter) {
+        if (iter->second == Qt::Checked) {
             continue;
         }
-        auto sym = mModelInstance->equation(sectionIndex);
-        auto labels = sym.sectionLabels()[sectionIndex];
         if (labels.contains(iter->first, Qt::CaseInsensitive)) {
             return false;
         }
     }
     return true;
+}
+
+bool LabelFilterModel::matchesAnyColumnLabels(const QMap<QString, Qt::CheckState> &checkStates,
+                                              int sectionIndex) const
+{
+    auto sym = mModelInstance->variable(sectionIndex);
+    if (sym.isScalar()) return true;
+    auto labels = sym.sectionLabels()[sectionIndex];
+    for (auto iter=checkStates.constKeyValueBegin();
+         iter!=checkStates.constKeyValueEnd(); ++iter) {
+        if (iter->second == Qt::Checked && labels.contains(iter->first, Qt::CaseInsensitive)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool LabelFilterModel::matchesAllRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
+                                           int sectionIndex) const
+{
+    auto sym = mModelInstance->equation(sectionIndex);
+    auto labels = sym.sectionLabels()[sectionIndex];
+    for (auto iter=checkStates.constKeyValueBegin();
+         iter!=checkStates.constKeyValueEnd(); ++iter) {
+        if (iter->second == Qt::Checked) {
+            continue;
+        }
+        if (labels.contains(iter->first, Qt::CaseInsensitive)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool LabelFilterModel::matchesAnyRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
+                                           int sectionIndex) const
+{
+    auto sym = mModelInstance->equation(sectionIndex);
+    if (sym.isScalar()) return true;
+    auto labels = sym.sectionLabels()[sectionIndex];
+    for (auto iter=checkStates.constKeyValueBegin();
+         iter!=checkStates.constKeyValueEnd(); ++iter) {
+        if (iter->second == Qt::Checked && labels.contains(iter->first, Qt::CaseInsensitive)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 }

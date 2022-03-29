@@ -31,6 +31,17 @@ protected:
                           const QModelIndex &sourceParent) const override;
 
 private:
+    bool matchesAllColumnLabels(const QMap<QString, Qt::CheckState> &checkStates,
+                                int sectionIndex) const;
+    bool matchesAnyColumnLabels(const QMap<QString, Qt::CheckState> &checkStates,
+                                int sectionIndex) const;
+
+    bool matchesAllRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
+                             int sectionIndex) const;
+    bool matchesAnyRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
+                             int sectionIndex) const;
+
+private:
     QSharedPointer<ModelInstance> mModelInstance;
     LabelFilter mLabelFilter;
 };

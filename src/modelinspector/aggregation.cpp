@@ -3,6 +3,8 @@
 
 #include <algorithm>
 
+#include <QDebug>
+
 namespace gams {
 namespace studio {
 namespace modelinspector {
@@ -407,20 +409,7 @@ void Aggregator::applyFilterStates(const IdentifierState &identifierState,
                                    const LabelStates &globalLabelStates)
 {
     mLabelTree->setVisible(identifierState.Checked == Qt::Checked);
-    QList<LabelTreeItem*> items { mLabelTree->childs() };
-    IndexCheckState symLabelStates = symbolLabelStates.isValid() ? symbolLabelStates.LabelCheckStates
-                                                                 : IndexCheckState();
-    while (!items.isEmpty()) {
-        auto item = items.takeFirst();
-        if (globalLabelStates[item->text()] == Qt::Checked) {
-            item->setVisible(true);
-            items.append(item->childs());
-        } else {
-            item->setVisible(false);
-        }
-        if (!item->hasChildren() && symLabelStates.contains(item->sectionIndex()))
-            item->setVisible(symLabelStates[item->sectionIndex()] == Qt::Checked);
-    }
+    applyLabelFilter(symbolLabelStates, globalLabelStates);
 }
 
 void Aggregator::aggregate(AggregationItem &item, const QString &type)
@@ -433,6 +422,42 @@ void Aggregator::aggregate(AggregationItem &item, const QString &type)
     item.setVisibleSectionCount(mLabelTree->sectionExtent());
     item.setLabels(sectionLabels(item));
     item.setUnitedSections(mLabelTree->unitedSections());
+}
+
+void Aggregator::applyLabelFilter(const IdentifierState &symbolLabelStates,
+                                  const LabelStates &globalLabelStates)
+{
+    QList<LabelTreeItem*> items { mLabelTree->childs() };
+    IndexCheckState symLabelStates = symbolLabelStates.isValid() ? symbolLabelStates.LabelCheckStates
+                                                                 : IndexCheckState();
+    if (globalLabelStates.Any) {
+        QList<LabelTreeItem*> reverse { mLabelTree->childs() };
+        while (!items.isEmpty()) {
+            auto item = items.takeFirst();
+            items.append(item->childs());
+            reverse.append(item->childs());
+        }
+        for (auto iter=reverse.rbegin(); iter!=reverse.rend(); ++iter) {
+            if (globalLabelStates.CheckStates[(*iter)->text()] == Qt::Checked)
+                (*iter)->setVisible(true);
+            else if (!(*iter)->hasChildren())
+                (*iter)->setVisible(false);
+            if (!(*iter)->hasChildren() && symLabelStates.contains((*iter)->sectionIndex()))
+                (*iter)->setVisible(symLabelStates[(*iter)->sectionIndex()] == Qt::Checked);
+        }
+    } else {
+        while (!items.isEmpty()) {
+            auto item = items.takeFirst();
+            if (globalLabelStates.CheckStates[item->text()] == Qt::Checked) {
+                item->setVisible(true);
+                items.append(item->childs());
+            } else {
+                item->setVisible(false);
+            }
+            if (!item->hasChildren() && symLabelStates.contains(item->sectionIndex()))
+                item->setVisible(symLabelStates[item->sectionIndex()] == Qt::Checked);
+        }
+    }
 }
 
 LabelTreeItem* Aggregator::clone(QSharedPointer<LabelTreeItem> labelTree)

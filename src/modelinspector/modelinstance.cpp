@@ -108,8 +108,8 @@ public:
 
     QString longestEqnLabelText() {
         if (mLongestEqnLabelText.isEmpty()) {
-            for (auto iter=InitialLabelFilter[Qt::Vertical].constKeyValueBegin();
-                 iter!=InitialLabelFilter[Qt::Vertical].constKeyValueEnd(); ++iter) {
+            for (auto iter=InitialLabelFilter[Qt::Vertical].CheckStates.constKeyValueBegin();
+                 iter!=InitialLabelFilter[Qt::Vertical].CheckStates.constKeyValueEnd(); ++iter) {
                 if (iter->first.size() > mLongestEqnLabelText.size())
                     mLongestEqnLabelText = iter->first;
             }
@@ -129,8 +129,8 @@ public:
 
     QString longestVarLabelText() {
         if (mLongestVarLabelText.isEmpty()) {
-            for (auto iter=InitialLabelFilter[Qt::Horizontal].constKeyValueBegin();
-                 iter!=InitialLabelFilter[Qt::Horizontal].constKeyValueEnd(); ++iter) {
+            for (auto iter=InitialLabelFilter[Qt::Horizontal].CheckStates.constKeyValueBegin();
+                 iter!=InitialLabelFilter[Qt::Horizontal].CheckStates.constKeyValueEnd(); ++iter) {
                 if (iter->first.size() > mLongestVarLabelText.size())
                     mLongestVarLabelText = iter->first;
             }
@@ -877,7 +877,7 @@ int ModelInstance::columnCount() const
 void ModelInstance::loadInitialLabelFilter(Qt::Orientation orientation)
 {
     LabelStates filter;
-    Q_FOREACH(const auto &symbolInfo, symbols(dcteqnSymType)) {
+    Q_FOREACH(const auto &symbolInfo, symbols(orientation == Qt::Horizontal ? dctvarSymType : dcteqnSymType)) {
         int nDomains;
         int domains[GLOBAL_MAX_INDEX_DIM];
         for (int j=0; j<symbolInfo.entries(); ++j) {
@@ -897,7 +897,7 @@ void ModelInstance::loadInitialLabelFilter(Qt::Orientation orientation)
             char name[GMS_SSSIZE];
             for (int k=0; k<nDomains; ++k) {
                 dctUelLabel(mDCT, domains[k], &quote, name, GMS_SSSIZE);
-                filter[name] = Qt::Checked;
+                filter.CheckStates[name] = Qt::Checked;
             }
         }
     }

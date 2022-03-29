@@ -22,7 +22,6 @@ protected:
 public:
     virtual ~AbstractDataAggregator()
     {
-
     }
 
     virtual void aggregateColumns(ModelInstance *modelInstance) = 0;

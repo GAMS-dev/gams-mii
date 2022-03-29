@@ -91,7 +91,11 @@ struct IdentifierState
 typedef QMap<int, IdentifierState> IdentifierStates;
 typedef QMap<Qt::Orientation, IdentifierStates> IdentifierFilter;
 
-typedef QMap<QString, Qt::CheckState> LabelStates;
+struct LabelStates
+{
+    bool Any = false;
+    QMap<QString, Qt::CheckState> CheckStates;
+};
 typedef QMap<Qt::Orientation, LabelStates> LabelFilter;
 
 struct ValueFilter
@@ -120,7 +124,8 @@ struct ValueFilter
             return ShowEps ? true : false;
         }
         bool ok;
-        double val = value.toDouble(&ok);
+        double val = UseAbsoluteValues ? abs(value.toDouble(&ok))
+                                       : value.toDouble(&ok);
         if (!ok)
             return false;
         if (ExcludeRange) {

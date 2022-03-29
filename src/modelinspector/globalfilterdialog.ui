@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>481</width>
-    <height>495</height>
+    <width>495</width>
+    <height>555</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -307,40 +307,14 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <item>
-          <widget class="QLineEdit" name="labelEdit">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply a filter string using &lt;span style=&quot; font-weight:600;&quot;&gt;wildcard&lt;/span&gt; syntax.&lt;/p&gt;&lt;p&gt;The content filter string is automatically applied to the list of labels.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="placeholderText">
-            <string>Filter</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="labelFilterBox">
-           <property name="toolTip">
-            <string>Select label type</string>
-           </property>
-           <item>
-            <property name="text">
-             <string>All</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Equations</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Variables</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QLineEdit" name="labelEdit">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply a filter string using &lt;span style=&quot; font-weight:600;&quot;&gt;wildcard&lt;/span&gt; syntax.&lt;/p&gt;&lt;p&gt;The content filter string is automatically applied to the list of labels.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="placeholderText">
+          <string>Filter</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QTreeView" name="labelView">
@@ -356,6 +330,23 @@
          <attribute name="headerVisible">
           <bool>false</bool>
          </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="labelBox">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &lt;span style=&quot; font-weight:600;&quot;&gt;All&lt;/span&gt; is selected the label filter must contain the labels of all dimensions; otherwise the column or row is not shown.&lt;/p&gt;&lt;p&gt;If &lt;span style=&quot; font-weight:600;&quot;&gt;Any&lt;/span&gt; is selected the selected label must be contained in any dimension; otherwise the column or row is not shown.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>All</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Any</string>
+          </property>
+         </item>
         </widget>
        </item>
        <item>

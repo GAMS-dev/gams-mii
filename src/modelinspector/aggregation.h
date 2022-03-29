@@ -268,6 +268,9 @@ public:
     void aggregate(AggregationItem &item, const QString &type);
 
 private:
+    void applyLabelFilter(const IdentifierState &symbolLabelStates,
+                          const LabelStates &globalLabelStates);
+
     LabelTreeItem* clone(QSharedPointer<LabelTreeItem> labelTree);
 
     void aggregateLabels(const AggregationItem &item, const QString &type);
