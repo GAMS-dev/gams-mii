@@ -5,6 +5,23 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
+AggregationTreeItemFilterProxyModel::AggregationTreeItemFilterProxyModel(QObject *parent)
+    : QSortFilterProxyModel(parent)
+{
+
+}
+
+bool AggregationTreeItemFilterProxyModel::filterAcceptsRow(int sourceRow,
+                                                           const QModelIndex &sourceParent) const
+{
+    auto sourceIndex = sourceModel()->index(sourceRow, 0, sourceParent);
+    if (!sourceIndex.isValid()) return false;
+    auto item = static_cast<FilterTreeItem*>(sourceIndex.internalPointer());
+    if (item->isCheckable() && QSortFilterProxyModel::filterAcceptsRow(sourceParent.row(), sourceParent.parent()))
+        return true;
+    return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+}
+
 FilterTreeModel::FilterTreeModel(FilterTreeItem *rootItem, QObject *parent)
     : QAbstractItemModel(parent)
     , mRootItem(rootItem)

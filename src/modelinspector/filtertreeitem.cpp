@@ -8,21 +8,11 @@ const QString FilterTreeItem::EquationText = "Equations";
 const QString FilterTreeItem::VariableText = "Variables";
 
 FilterTreeItem::FilterTreeItem(const QString &text,
-                               bool checkable,
+                               Qt::CheckState checkState,
                                FilterTreeItem *parent)
-    : FilterTreeItem(text, Qt::Unchecked, -1, parent)
-{
-    setCheckable(checkable);
-}
-
-FilterTreeItem::FilterTreeItem(const QString &text,
-                                 Qt::CheckState checkState,
-                                 int index,
-                                 FilterTreeItem *parent)
     : mParent(parent)
     , mText(text)
     , mChecked(checkState)
-    , mIndex(index)
 {
 
 }
@@ -65,7 +55,7 @@ int FilterTreeItem::rowCount() const
 }
 
 int FilterTreeItem::row() const
-{// TODO rename index() ???
+{
     if (mParent)
         return mParent->mChilds.indexOf(const_cast<FilterTreeItem*>(this));
     return 0;
@@ -154,14 +144,14 @@ void FilterTreeItem::setSubTreeState(Qt::CheckState checked)
     }
 }
 
-int FilterTreeItem::index() const
-{// TODO this is mostly a sectionIndex, use symbolIndex if it is one and rename to sectionIndex()
-    return mIndex;
+int FilterTreeItem::sectionIndex() const
+{
+    return mSectionIndex;
 }
 
-void FilterTreeItem::setIndex(int index)
+void FilterTreeItem::setSectionIndex(int index)
 {
-    mIndex = index;
+    mSectionIndex = index;
 }
 
 int FilterTreeItem::symbolIndex() const

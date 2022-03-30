@@ -82,7 +82,6 @@ public:
     void setAggregation(const Aggregation &aggregation);
 
     void resetColumnRowFilter();
-    void resetIdentifierLabelFilter();
 
 signals:
     void newLogMessage(const QString&); // TODO (AF) use message types when integrated into studio
@@ -92,12 +91,10 @@ signals:
 public slots:
     void setCurrentView(int index);
 
-    void setSearchSelection(const SearchResult &result);
-
-    void printDebugStuff();
+    void setSearchSelection(const gams::studio::modelinspector::SearchResult &result);
 
 private slots:
-    void setIdentifierLabelFilter(const IdentifierState &state,
+    void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation);
 
 private:

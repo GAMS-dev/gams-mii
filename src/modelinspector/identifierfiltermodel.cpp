@@ -18,6 +18,11 @@ IdentifierFilter& IdentifierFilterModel::identifierFilter()
     return mIdentifierFilter;
 }
 
+IdentifierFilter& IdentifierFilterModel::defaultIdentifierFilter()
+{
+    return mDefaultIdentifierFilter;
+}
+
 void IdentifierFilterModel::setIdentifierFilter(const IdentifierFilter &filter)
 {
     mIdentifierFilter = filter;
@@ -133,7 +138,7 @@ bool IdentifierLabelFilterModel::filterAcceptsColumn(int sourceColumn,
     int startSection = mModelInstance->variable(sectionIndex).firstSection();
     if (startSection < 0) return true;
     auto item = mIdentifierFilter[Qt::Horizontal][startSection];
-    for (auto iter=item.LabelCheckStates.keyValueBegin(); iter!=item.LabelCheckStates.keyValueEnd(); ++iter) {
+    for (auto iter=item.CheckStates.keyValueBegin(); iter!=item.CheckStates.keyValueEnd(); ++iter) {
         if (sectionIndex == iter->first && iter->second == Qt::Unchecked) {
             return false;
         }
@@ -153,7 +158,7 @@ bool IdentifierLabelFilterModel::filterAcceptsRow(int sourceRow,
     int startSection = mModelInstance->equation(sectionIndex).firstSection();
     if (startSection < 0) return true;
     auto item = mIdentifierFilter[Qt::Vertical][startSection];
-    for (auto iter=item.LabelCheckStates.keyValueBegin(); iter!=item.LabelCheckStates.keyValueEnd(); ++iter) {
+    for (auto iter=item.CheckStates.keyValueBegin(); iter!=item.CheckStates.keyValueEnd(); ++iter) {
         if (sectionIndex == iter->first && iter->second == Qt::Unchecked) {
             return false;
         }

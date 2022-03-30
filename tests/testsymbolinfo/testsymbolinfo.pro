@@ -9,4 +9,4 @@ INCLUDEPATH += $$SRCPATH/modelinspector
 
 SOURCES +=  tst_testsymbolinfo.cpp                  \
             $$SRCPATH/modelinspector/symbolinfo.cpp \
-            $$SRCPATH/modelinspector/filtertreeitem.cpp
+            $$SRCPATH/modelinspector/labeltreeitem.cpp

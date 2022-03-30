@@ -13,13 +13,19 @@ public:
     ~TestCommon();
 
 private slots:
+    void test_specialValues();
     void test_predefinedHeader();
 
-    void test_symbolUelFilterItemBlank();
-    void test_symbolUelFilterItemGetSet();
+    void test_searchResult();
 
-    void test_valueFilterBlank();
-    void test_valueFilterGetSet();
+    void test_default_identifierState();
+    void test_getSet_identifierState();
+    void test_unite_identifierState();
+
+    void test_labelFilter();
+
+    void test_default_valueFilter();
+    void test_getSet_valueFilter();
 };
 
 TestCommon::TestCommon()
@@ -30,6 +36,15 @@ TestCommon::TestCommon()
 TestCommon::~TestCommon()
 {
 
+}
+
+void TestCommon::test_specialValues()
+{
+    QCOMPARE(NA, "NA");
+    QCOMPARE(EPS, "EPS");
+    QCOMPARE(INF, "INF");
+    QCOMPARE(P_INF, "+INF");
+    QCOMPARE(N_INF, "-INF");
 }
 
 void TestCommon::test_predefinedHeader()
@@ -43,47 +58,105 @@ void TestCommon::test_predefinedHeader()
     QCOMPARE(PredefinedHeader.at(4), "upper");
 }
 
-void TestCommon::test_symbolUelFilterItemBlank()
+void TestCommon::test_searchResult()
 {
-    //SymbolUelFilterItem filter;
-    //QCOMPARE(filter.EntireSymbol, false);
-    //QCOMPARE(filter.SectionIndex, -1);
-    //QCOMPARE(filter.SymbolIndex, -1);
-    //QVERIFY(filter.CheckState.isEmpty());
-    //QCOMPARE(filter.isValid(), false);
+    SearchResult defaultResult;
+    QCOMPARE(defaultResult.Index, -1);
+    QCOMPARE(defaultResult.Orientation, Qt::Horizontal);
+
+    SearchResult result { 5, Qt::Vertical };
+    QCOMPARE(result.Index, 5);
+    QCOMPARE(result.Orientation, Qt::Vertical);
 }
 
-void TestCommon::test_symbolUelFilterItemGetSet()
+void TestCommon::test_default_identifierState()
 {
-    //SymbolUelFilterItem filter;
-    //
-    //filter.EntireSymbol = true;
-    //QCOMPARE(filter.EntireSymbol, true);
-    //
-    //filter.SectionIndex = 0;
-    //QCOMPARE(filter.SectionIndex, 0);
-    //
-    //filter.SymbolIndex = 1;
-    //QCOMPARE(filter.SymbolIndex, 1);
-    //
-    //filter.CheckState[0] = Qt::Checked;
-    //QCOMPARE(filter.CheckState[0], Qt::Checked);
-    //
-    //QVERIFY(filter.isValid());
+    IdentifierState state;
+    QCOMPARE(state.Enabled, false);
+    QCOMPARE(state.SectionIndex, -1);
+    QCOMPARE(state.SymbolIndex, -1);
+    QCOMPARE(state.Text, QString());
+    QCOMPARE(state.Checked, Qt::Unchecked);
+    QCOMPARE(state.CheckStates, IndexCheckStates());
+    QVERIFY(!state.isValid());
+    QVERIFY(!state.disabled());
 }
 
-void TestCommon::test_valueFilterBlank()
+void TestCommon::test_getSet_identifierState()
+{
+    IdentifierState state;
+
+    state.Enabled = true;
+    QCOMPARE(state.Enabled, true);
+
+    state.SectionIndex = 4;
+    QCOMPARE(state.SectionIndex, 4);
+
+    state.SymbolIndex = 2;
+    QCOMPARE(state.SymbolIndex, 2);
+
+    state.Text = "x";
+    QCOMPARE(state.Text, "x");
+
+    state.Checked = Qt::Checked;
+    QCOMPARE(state.Checked, Qt::Checked);
+
+    IndexCheckStates checkStates { { 0, Qt::Unchecked },
+                                  { 0, Qt::Unchecked },
+                                  { 0, Qt::Unchecked } };
+    state.CheckStates = checkStates;
+    QCOMPARE(state.CheckStates, checkStates);
+
+    QVERIFY(state.isValid());
+    QVERIFY(state.disabled());
+}
+
+void TestCommon::test_unite_identifierState()
+{
+    IdentifierState state_1;
+    IndexCheckStates checkStates { { 0, Qt::Unchecked },
+                                  { 0, Qt::Unchecked },
+                                  { 0, Qt::Unchecked } };
+    IdentifierState state_2;
+    state_2.SectionIndex = 4;
+    state_2.CheckStates = checkStates;
+
+    state_1.unite(state_2);
+    QCOMPARE(state_1.SectionIndex, 4);
+    QCOMPARE(state_1.CheckStates, checkStates);
+}
+
+void TestCommon::test_labelFilter()
+{
+    LabelFilter defaultFilter;
+    QCOMPARE(defaultFilter.Any, false);
+    QVERIFY(defaultFilter.LabelCheckStates.isEmpty());
+
+    LabelCheckStates states = { { "l1", Qt::Checked},
+                                { "l2", Qt::Unchecked } };
+    LabelFilter labelFilter { true, { { Qt::Horizontal, states } } };
+    QCOMPARE(labelFilter.Any, true);
+    QCOMPARE(labelFilter.LabelCheckStates[Qt::Horizontal], states);
+}
+
+void TestCommon::test_default_valueFilter()
 {
     ValueFilter filter;
     QCOMPARE(filter.MinValue, std::numeric_limits<double>::min());
     QCOMPARE(filter.MaxValue, std::numeric_limits<double>::max());
     QCOMPARE(filter.ExcludeRange, false);
+    QCOMPARE(filter.UseAbsoluteValues, false);
     QCOMPARE(filter.ShowPInf, true);
     QCOMPARE(filter.ShowNInf, true);
     QCOMPARE(filter.ShowEps, true);
+    QVERIFY(filter.accepts(EPS));
+    QVERIFY(filter.accepts(N_INF));
+    QVERIFY(filter.accepts(P_INF));
+    QVERIFY(filter.accepts(std::numeric_limits<double>::min()));
+    QVERIFY(filter.accepts(std::numeric_limits<double>::max()));
 }
 
-void TestCommon::test_valueFilterGetSet()
+void TestCommon::test_getSet_valueFilter()
 {
     ValueFilter filter;
 
@@ -96,6 +169,9 @@ void TestCommon::test_valueFilterGetSet()
     filter.ExcludeRange = true;
     QCOMPARE(filter.ExcludeRange, true);
 
+    filter.UseAbsoluteValues = true;
+    QCOMPARE(filter.UseAbsoluteValues, true);
+
     filter.ShowPInf = false;
     QCOMPARE(filter.ShowPInf, false);
 
@@ -104,6 +180,12 @@ void TestCommon::test_valueFilterGetSet()
 
     filter.ShowEps = false;
     QCOMPARE(filter.ShowEps, false);
+
+    QVERIFY(!filter.accepts(EPS));
+    QVERIFY(!filter.accepts(N_INF));
+    QVERIFY(!filter.accepts(P_INF));
+    QVERIFY(filter.accepts(1001.2));
+    QVERIFY(!filter.accepts(-42));
 }
 
 QTEST_APPLESS_MAIN(TestCommon)

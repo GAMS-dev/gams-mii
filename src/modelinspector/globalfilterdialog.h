@@ -67,7 +67,8 @@ private:
     void setupEquationFilter(const IdentifierStates &filter);
     void setupVariableFilter(const IdentifierStates &filter);
     void setupLabelFilter();
-    FilterTreeItem* setupSymTreeItems(Qt::Orientation orientation, const IdentifierStates &filter);
+    FilterTreeItem* setupSymTreeItems(Qt::Orientation orientation,
+                                      const IdentifierStates &filter);
     void setupLabelTreeItems(Qt::Orientation orientation, FilterTreeItem *root);
 
     void applyCheckState(QTreeView* view,
@@ -75,8 +76,8 @@ private:
                          Qt::CheckState state);
     IdentifierStates applyHeaderFilter(QSortFilterProxyModel *model);
     void applyValueFilter();
-    LabelStates applyLabelFilter(Qt::Orientation orientation,
-                                QSortFilterProxyModel *model);
+    LabelCheckStates applyLabelFilter(Qt::Orientation orientation,
+                                      QSortFilterProxyModel *model);
 
     void updateRangeEdit(QLineEdit *edit, const QString &text);
 

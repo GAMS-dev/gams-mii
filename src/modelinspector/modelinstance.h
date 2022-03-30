@@ -181,6 +181,8 @@ public:
 
     void setAppliedAggregation(const Aggregation &aggregation);
 
+    int headerData(int logicalIndex, Qt::Orientation orientation) const;
+
     QString headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const;
 
     void searchSymbolData(int logicalIndex, int sectionIndex, const QString &term,
@@ -199,7 +201,7 @@ public:
     QVariant horizontalAttribute(const QString &header, int column);
     QVariant verticalAttribute(const QString &header, int row);
 
-    bool isAggregationActive() const;
+    bool aggregationActive() const;
 
 private:
     void initialize();

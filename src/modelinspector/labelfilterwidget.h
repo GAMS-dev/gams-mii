@@ -32,7 +32,7 @@ protected:
     void showEvent(QShowEvent *event);
 
 signals:
-    void filterChanged(const IdentifierState&, Qt::Orientation);
+    void filterChanged(const gams::studio::modelinspector::IdentifierState&, Qt::Orientation);
 
 private slots:
     void on_applyButton_clicked();

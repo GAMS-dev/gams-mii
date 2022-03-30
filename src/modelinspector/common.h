@@ -24,8 +24,8 @@ static const QString Marginal = "marginal";
 static const QString Scale = "scale";
 static const QString Upper = "upper";
 
-const QStringList PredefinedHeader { Level, Lower, Marginal, Scale, Upper };
-const int PredefinedHeaderLength = PredefinedHeader.size();
+static const QStringList PredefinedHeader { Level, Lower, Marginal, Scale, Upper };
+static const int PredefinedHeaderLength = PredefinedHeader.size();
 
 ///
 /// \brief Labels by section index.
@@ -35,9 +35,19 @@ const int PredefinedHeaderLength = PredefinedHeader.size();
 typedef QMap<int, QStringList> SectionLabels;
 
 ///
+/// \brief A set of section which will be united during aggregation.
+///
+typedef QVector<QSet<int>> UnitedSections;
+
+///
 /// \brief Check state by index, like dimension or section index.
 ///
-typedef QMap<int, Qt::CheckState> IndexCheckState;
+typedef QMap<int, Qt::CheckState> IndexCheckStates;
+
+///
+/// \brief Check states by label.
+///
+typedef QMap<QString, Qt::CheckState> LabelCheckStates;
 
 typedef QMap<int, QVariant> DataRow;
 typedef QMap<int, DataRow> DataMatrix;
@@ -45,7 +55,7 @@ typedef QMap<int, DataRow> DataMatrix;
 struct SearchResult
 {
     int Index = -1;
-    Qt::Orientation Orientation;
+    Qt::Orientation Orientation = Qt::Horizontal;
 };
 
 struct IdentifierState
@@ -53,21 +63,21 @@ struct IdentifierState
     ///
     /// \brief Enable tree selection.
     ///
-    bool Enabled;
+    bool Enabled = false;
 
     int SectionIndex = -1;
 
     int SymbolIndex = -1;
 
     QString Text;
-    Qt::CheckState Checked;
-    IndexCheckState LabelCheckStates;
+    Qt::CheckState Checked = Qt::Unchecked;
+    IndexCheckStates CheckStates;
 
     bool isValid() const
     {
         return SectionIndex != -1 &&
                 SymbolIndex != -1 &&
-                !LabelCheckStates.isEmpty();
+                !CheckStates.isEmpty();
     }
 
     ///
@@ -76,14 +86,14 @@ struct IdentifierState
     ///
     bool disabled() const
     {
-        Q_FOREACH(auto state, LabelCheckStates)
+        Q_FOREACH(auto state, CheckStates)
             if (state == Qt::Checked) return false;
-        return !LabelCheckStates.isEmpty();
+        return !CheckStates.isEmpty();
     }
 
     void unite(const IdentifierState &other)
     {
-        LabelCheckStates = other.LabelCheckStates;
+        CheckStates = other.CheckStates;
         SectionIndex = other.SectionIndex;
     }
 };
@@ -91,12 +101,13 @@ struct IdentifierState
 typedef QMap<int, IdentifierState> IdentifierStates;
 typedef QMap<Qt::Orientation, IdentifierStates> IdentifierFilter;
 
-struct LabelStates
+typedef QMap<Qt::Orientation, LabelCheckStates> LabelStates;
+
+struct LabelFilter
 {
     bool Any = false;
-    QMap<QString, Qt::CheckState> CheckStates;
+    LabelStates LabelCheckStates;
 };
-typedef QMap<Qt::Orientation, LabelStates> LabelFilter;
 
 struct ValueFilter
 {

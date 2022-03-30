@@ -20,9 +20,11 @@
 
 TEMPLATE = subdirs
 
-SUBDIRS += testmodelinspector \
-    testaggregation \
-    testcommon \
-    testfiltertreeitem \
-    testmodelinstance \
+SUBDIRS +=              \
+    testaggregation     \
+    testcommon          \
+    testdatahandler \
+    testfiltertreeitem  \
+    testlabeltreeitem \
+    testmodelinstance   \
     testsymbolinfo

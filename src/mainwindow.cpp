@@ -77,8 +77,6 @@ MainWindow::MainWindow(QWidget *parent)
             this, [this]{
         static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
         setGlobalFiltersData();
-        //ui->modelInspector->setAggregation(ui->modelInspector->defaultAggregation());
-        //setAggregationData(); // TODO filter states reset
     });
     connect(ui->searchResultView, &QTableView::doubleClicked,
             this, &MainWindow::searchResultSelectionChanged);
@@ -168,11 +166,6 @@ void MainWindow::on_actionShow_search_result_triggered()
     ui->dockWidget->show();
 }
 
-void MainWindow::on_actionPrint_DBG_Stuff_triggered()
-{
-    ui->modelInspector->printDebugStuff();
-}
-
 void MainWindow::on_actionAbout_Model_Inspector_triggered()
 {
     QMessageBox about(this);
@@ -213,7 +206,6 @@ void MainWindow::aggregationUpdate()
 
 void MainWindow::globalFilterUpdate()
 {
-    ui->modelInspector->resetIdentifierLabelFilter();
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
     ui->modelInspector->setAggregation(ui->modelInspector->defaultAggregation());
     ui->modelInspector->setIdentifierFilter(mGlobalFilterDialog->idendifierFilter());
@@ -301,6 +293,6 @@ void MainWindow::showDialog(QDialog *dialog)
 QString MainWindow::workspace() const
 {
     auto path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) +
-            "/modelinspector";
+            "/GAMS/ModelInspector";
     return path;
 }

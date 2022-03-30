@@ -96,8 +96,9 @@ void GlobalFilterDialog::on_applyButton_clicked()
     mIdentifierFilter[Qt::Horizontal] = applyHeaderFilter(mVarFilterModel);
     mIdentifierFilter[Qt::Vertical] = applyHeaderFilter(mEqnFilterModel);
     applyValueFilter();
-    mLabelFilter[Qt::Horizontal] = applyLabelFilter(Qt::Horizontal, mLabelFilterModel);
-    mLabelFilter[Qt::Vertical] = applyLabelFilter(Qt::Vertical, mLabelFilterModel);
+    mLabelFilter.LabelCheckStates[Qt::Horizontal] = applyLabelFilter(Qt::Horizontal, mLabelFilterModel);
+    mLabelFilter.LabelCheckStates[Qt::Vertical] = applyLabelFilter(Qt::Vertical, mLabelFilterModel);
+    mLabelFilter.Any = ui->labelBox->currentIndex();
     emit filterUpdated();
 }
 
@@ -169,12 +170,10 @@ void GlobalFilterDialog::on_labelBox_currentIndexChanged(int index)
 {
     switch (index) {
     case 1: // Any
-        mLabelFilter[Qt::Horizontal].Any = true;
-        mLabelFilter[Qt::Vertical].Any = true;
+        mLabelFilter.Any = true;
         break;
     default: // All
-        mLabelFilter[Qt::Horizontal].Any = false;
-        mLabelFilter[Qt::Vertical].Any = false;
+        mLabelFilter.Any = false;
         break;
     }
 }
@@ -223,6 +222,7 @@ void GlobalFilterDialog::setupVariableFilter(const IdentifierStates &filter)
 
 void GlobalFilterDialog::setupLabelFilter()
 {
+    ui->labelBox->setCurrentIndex(mLabelFilter.Any);
     auto labelFilterItem = new FilterTreeItem("", Qt::Unchecked);
     labelFilterItem->setCheckable(false);
     setupLabelTreeItems(Qt::Horizontal, labelFilterItem);
@@ -250,27 +250,27 @@ FilterTreeItem* GlobalFilterDialog::setupSymTreeItems(Qt::Orientation orientatio
 {
     auto root = new FilterTreeItem(QString(), Qt::Unchecked);
     root->setCheckable(false);
-    auto attributes = new FilterTreeItem("Attributes", Qt::Unchecked, -1, root);
+    auto attributes = new FilterTreeItem("Attributes", Qt::Unchecked, root);
     attributes->setCheckable(false);
     root->append(attributes);
     auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ? FilterTreeItem::VariableText :
                                                                        FilterTreeItem::EquationText,
-                                       Qt::Unchecked, -1, root);
+                                       Qt::Unchecked, root);
     typeItem->setCheckable(false);
     root->append(typeItem);
     Q_FOREACH(auto item, filter) {
         if (item.SymbolIndex < PredefinedHeaderLength) {
             auto fItem = new FilterTreeItem(item.Text,
                                             item.Checked,
-                                            item.SymbolIndex,
                                             attributes);
+            fItem->setSymbolIndex(item.SymbolIndex);
             fItem->setEnabled(item.Enabled);
             attributes->append(fItem);
         } else {
             auto fItem = new FilterTreeItem(item.Text,
                                             item.Checked,
-                                            item.SymbolIndex,
                                             typeItem);
+            fItem->setSymbolIndex(item.SymbolIndex);
             typeItem->append(fItem);
         }
     }
@@ -282,16 +282,16 @@ void GlobalFilterDialog::setupLabelTreeItems(Qt::Orientation orientation, Filter
     auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ?
                                            FilterTreeItem::VariableText :
                                            FilterTreeItem::EquationText,
-                                       Qt::Unchecked, -1, root);
+                                       Qt::Unchecked, root);
     typeItem->setCheckable(false);
     root->append(typeItem);
 
-    auto labelFilter = mLabelFilter[orientation];
-    for (auto iter=labelFilter.CheckStates.constKeyValueBegin();
-         iter!=labelFilter.CheckStates.constKeyValueEnd(); ++iter) {
+    auto checkStates = mLabelFilter.LabelCheckStates[orientation];
+    for (auto iter=checkStates.constKeyValueBegin();
+         iter!=checkStates.constKeyValueEnd(); ++iter) {
         auto treeItem = new FilterTreeItem(iter->first,
                                            iter->second ? Qt::Checked : Qt::Unchecked,
-                                           -1, typeItem);
+                                           typeItem);
         typeItem->append(treeItem);
     }
 }
@@ -331,10 +331,10 @@ IdentifierStates GlobalFilterDialog::applyHeaderFilter(QSortFilterProxyModel *mo
             continue;
         IdentifierState identifierState;
         identifierState.Enabled = item->isEnabled();
-        identifierState.SymbolIndex = item->index();
+        identifierState.SymbolIndex = item->symbolIndex();
         identifierState.Text =  item->text();
         identifierState.Checked = item->checked();
-        filter[item->index()] = identifierState;
+        filter[item->symbolIndex()] = identifierState;
     }
     return filter;
 }
@@ -350,8 +350,8 @@ void GlobalFilterDialog::applyValueFilter()
     mValueFilter.ShowEps = ui->epsBox->isChecked();
 }
 
-LabelStates GlobalFilterDialog::applyLabelFilter(Qt::Orientation orientation,
-                                                 QSortFilterProxyModel *model)
+LabelCheckStates GlobalFilterDialog::applyLabelFilter(Qt::Orientation orientation,
+                                                      QSortFilterProxyModel *model)
 {
     FilterTreeItem* root = nullptr;
     auto childs = static_cast<FilterTreeModel*>(model->sourceModel())->filterItem()->childs();
@@ -365,8 +365,7 @@ LabelStates GlobalFilterDialog::applyLabelFilter(Qt::Orientation orientation,
         }
     }
 
-    LabelStates filter;
-    filter.Any = ui->labelBox->currentIndex();
+    LabelCheckStates filter;
     if (root) {
         QList<FilterTreeItem*> items { root };
         while (!items.isEmpty()) {
@@ -374,7 +373,7 @@ LabelStates GlobalFilterDialog::applyLabelFilter(Qt::Orientation orientation,
             items.append(item->childs());
             if (!item->isCheckable())
                 continue;
-            filter.CheckStates[item->text()] = item->checked();
+            filter[item->text()] = item->checked();
         }
     }
     return filter;

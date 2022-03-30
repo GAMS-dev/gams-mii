@@ -1,11 +1,12 @@
 #include <QtTest>
 
 #include "symbolinfo.h"
+#include "labeltreeitem.h"
 
 using namespace gams::studio::modelinspector;
 
+Q_DECLARE_METATYPE(LabelTreeItem)
 Q_DECLARE_METATYPE(SymbolInfo)
-
 
 class TestSymbolInfo : public QObject
 {
@@ -16,7 +17,7 @@ public:
     ~TestSymbolInfo();
 
 private slots:
-    void test_blank();
+    void test_default();
     void test_getSet();
 };
 
@@ -30,7 +31,7 @@ TestSymbolInfo::~TestSymbolInfo()
 
 }
 
-void TestSymbolInfo::test_blank()
+void TestSymbolInfo::test_default()
 {
     SymbolInfo symInfo;
     QCOMPARE(symInfo.offset(), -1);
@@ -38,8 +39,7 @@ void TestSymbolInfo::test_blank()
     QCOMPARE(symInfo.name(), QString());
     QCOMPARE(symInfo.dimension(), -1);
     QCOMPARE(symInfo.type(), -1);
-    QMap<int, QStringList> uels;
-    QCOMPARE(symInfo.sectionLabels(), uels);
+    QCOMPARE(symInfo.sectionLabels(), SectionLabels());
     QCOMPARE(symInfo.label(0,0), QString());
     QCOMPARE(symInfo.contains(0), false);
     QCOMPARE(symInfo.isScalar(), false);
@@ -78,6 +78,11 @@ void TestSymbolInfo::test_getSet()
     ++i;
     symInfo.setFirstSection(value+i);
     QCOMPARE(symInfo.firstSection(), value+i);
+    QCOMPARE(symInfo.lastSection(), value+i+symInfo.entries()-1);
+    QCOMPARE(symInfo.firstJaccSection(), value+i-PredefinedHeaderLength);
+    QCOMPARE(symInfo.lastJaccSection(), symInfo.lastSection()-PredefinedHeaderLength);
+    QVERIFY(symInfo.contains(value+i));
+    QVERIFY(symInfo.contains(symInfo.lastSection()));
 
     ++i;
     QStringList data { "a", "b" };
@@ -85,6 +90,12 @@ void TestSymbolInfo::test_getSet()
     QCOMPARE(symInfo.label(value+i, 0), "a");
     QCOMPARE(symInfo.label(value+i, 1), "b");
     QCOMPARE(symInfo.label(value+i, 2), QString());
+    SectionLabels sectionLabels { { value+i, data } };
+    QCOMPARE(symInfo.sectionLabels(), sectionLabels);
+
+    QSharedPointer<LabelTreeItem> labelTree(new LabelTreeItem);
+    symInfo.setLabelTree(labelTree);
+    QVERIFY(symInfo.labelTree() == labelTree);
 }
 
 QTEST_APPLESS_MAIN(TestSymbolInfo)

@@ -2,12 +2,25 @@
 #define FILTERTREEMODEL_H
 
 #include <QAbstractItemModel>
+#include <QSortFilterProxyModel>
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
 class FilterTreeItem;
+
+class AggregationTreeItemFilterProxyModel : public QSortFilterProxyModel
+{
+    Q_OBJECT
+
+public:
+    AggregationTreeItemFilterProxyModel(QObject *parent = nullptr);
+
+protected:
+    bool filterAcceptsRow(int sourceRow,
+                          const QModelIndex &sourceParent) const override;
+};
 
 class FilterTreeModel : public QAbstractItemModel
 {

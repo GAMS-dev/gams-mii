@@ -21,6 +21,7 @@
 #include "commonpaths.h" // TODO remove common path dependency!!!
 #include "datahandler.h"
 #include "filtertreeitem.h"
+#include "labeltreeitem.h"
 
 #include <QAbstractItemModel>
 #include <QDir>
@@ -108,8 +109,8 @@ public:
 
     QString longestEqnLabelText() {
         if (mLongestEqnLabelText.isEmpty()) {
-            for (auto iter=InitialLabelFilter[Qt::Vertical].CheckStates.constKeyValueBegin();
-                 iter!=InitialLabelFilter[Qt::Vertical].CheckStates.constKeyValueEnd(); ++iter) {
+            for (auto iter=InitialLabelFilter.LabelCheckStates[Qt::Vertical].constKeyValueBegin();
+                 iter!=InitialLabelFilter.LabelCheckStates[Qt::Vertical].constKeyValueEnd(); ++iter) {
                 if (iter->first.size() > mLongestEqnLabelText.size())
                     mLongestEqnLabelText = iter->first;
             }
@@ -129,8 +130,8 @@ public:
 
     QString longestVarLabelText() {
         if (mLongestVarLabelText.isEmpty()) {
-            for (auto iter=InitialLabelFilter[Qt::Horizontal].CheckStates.constKeyValueBegin();
-                 iter!=InitialLabelFilter[Qt::Horizontal].CheckStates.constKeyValueEnd(); ++iter) {
+            for (auto iter=InitialLabelFilter.LabelCheckStates[Qt::Horizontal].constKeyValueBegin();
+                 iter!=InitialLabelFilter.LabelCheckStates[Qt::Horizontal].constKeyValueEnd(); ++iter) {
                 if (iter->first.size() > mLongestVarLabelText.size())
                     mLongestVarLabelText = iter->first;
             }
@@ -876,7 +877,7 @@ int ModelInstance::columnCount() const
 
 void ModelInstance::loadInitialLabelFilter(Qt::Orientation orientation)
 {
-    LabelStates filter;
+    LabelCheckStates filter;
     Q_FOREACH(const auto &symbolInfo, symbols(orientation == Qt::Horizontal ? dctvarSymType : dcteqnSymType)) {
         int nDomains;
         int domains[GLOBAL_MAX_INDEX_DIM];
@@ -897,11 +898,11 @@ void ModelInstance::loadInitialLabelFilter(Qt::Orientation orientation)
             char name[GMS_SSSIZE];
             for (int k=0; k<nDomains; ++k) {
                 dctUelLabel(mDCT, domains[k], &quote, name, GMS_SSSIZE);
-                filter.CheckStates[name] = Qt::Checked;
+                filter[name] = Qt::Checked;
             }
         }
     }
-    mCache->InitialLabelFilter[orientation] = filter;
+    mCache->InitialLabelFilter.LabelCheckStates[orientation] = filter;
 }
 
 QVariant ModelInstance::data(int row, int column) const
@@ -913,6 +914,11 @@ void ModelInstance::setAppliedAggregation(const Aggregation &aggregation)
 {
     mDataHandler->setAppliedAggregation(aggregation);
     mDataHandler->aggregate(this);
+}
+
+int ModelInstance::headerData(int logicalIndex, Qt::Orientation orientation) const
+{
+    return mDataHandler->headerData(logicalIndex, orientation);
 }
 
 QString ModelInstance::headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const
@@ -972,10 +978,6 @@ IdentifierStates ModelInstance::initialSymbolFilter(QAbstractItemModel *model,
     bool ok;
     IdentifierStates states;
     QSet<QString> symNames;
-    //for (int s=0; s<PredefinedHeaderLength; ++s) { // TODO handle disabled sections/needed?
-    //    auto data = headerData(s, -1, orientation);
-    //    //filter[]IdentifierState{ false, -1, data, Qt::Unchecked });
-    //}
     for (int s=0; s<sections; ++s) {
         int realSection = model->headerData(s, orientation).toInt(&ok);
         if (!ok) continue;
@@ -985,7 +987,7 @@ IdentifierStates ModelInstance::initialSymbolFilter(QAbstractItemModel *model,
             identifierState.Enabled = true;
             identifierState.SymbolIndex = realSection;
             identifierState.Text = data;
-            identifierState.Checked = Qt::Checked ;
+            identifierState.Checked = Qt::Checked;
             states[realSection] = identifierState;
         } else if (!symNames.contains(data)) {
             symNames.insert(data);
@@ -1122,7 +1124,7 @@ QVariant ModelInstance::verticalAttribute(const QString &header, int row)
     return specialValue(value);
 }
 
-bool ModelInstance::isAggregationActive() const
+bool ModelInstance::aggregationActive() const
 {
     return mDataHandler->isAggregationActive();
 }

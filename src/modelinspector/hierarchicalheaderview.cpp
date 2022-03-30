@@ -155,7 +155,8 @@ public:
                                     mFilterIconSize.height(), mPixmapFilterOff);
             } else if (!styleOption.text.isEmpty()){
                 painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
-                                    mFilterIconSize.height(), mPixmapFilterOn);
+                                    mFilterIconSize.height(),
+                                    mHeaderView->aggregationActive() ? mPixmapFilterOff : mPixmapFilterOn);
             }
         } else {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
@@ -237,7 +238,8 @@ public:
                                     mFilterIconSize.height(), mPixmapFilterOff);
             } else if (!styleOption.text.isEmpty()) {
                 painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
-                                    mFilterIconSize.height(), mPixmapFilterOn);
+                                    mFilterIconSize.height(),
+                                    mHeaderView->aggregationActive() ? mPixmapFilterOff : mPixmapFilterOn);
             }
         } else {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
@@ -301,9 +303,10 @@ public:
 
     FilterTreeItem* filterTree(int logicalIndex, int sectionIdx, const SymbolInfo &symbol)
     {
-        auto root = new FilterTreeItem(QString(), false);
+        auto root = new FilterTreeItem;
+        root->setCheckable(false);
         root->setSymbolIndex(symbol.firstSection());
-        root->setIndex(symbol.firstSection());
+        root->setSectionIndex(symbol.firstSection());
 
         QVector<int> visibleSections = visibleLabelSections(logicalIndex, sectionIdx, symbol);
 
@@ -386,13 +389,15 @@ private:
         if (data.isEmpty() || label.isEmpty()) return;
         FilterTreeItem *labelItem;
         bool enabled = visibleSections.contains(data.firstKey());
-        if (state.isValid() && state.LabelCheckStates.contains(data.firstKey())) {
+        if (state.isValid() && state.CheckStates.contains(data.firstKey())) {
             labelItem = new FilterTreeItem(label,
-                                         enabled ? state.LabelCheckStates[data.firstKey()] : Qt::Unchecked,
-                                         data.firstKey(), parent);
+                                           enabled ? state.CheckStates[data.firstKey()] : Qt::Unchecked,
+                                           parent);
+            labelItem->setSectionIndex(data.firstKey());
             labelItem->setEnabled(enabled);
         } else {
-            labelItem = new FilterTreeItem(label, enabled ? Qt::Checked : Qt::Unchecked, data.firstKey(), parent);
+            labelItem = new FilterTreeItem(label, enabled ? Qt::Checked : Qt::Unchecked, parent);
+            labelItem->setSectionIndex(data.firstKey());
             labelItem->setEnabled(enabled);
         }
         labelItem->setSymbolIndex(symbolIndex);
@@ -487,6 +492,9 @@ void HierarchicalHeaderView::setModel(QAbstractItemModel *model)
 
 void HierarchicalHeaderView::customMenuRequested(QPoint position)
 {
+    if (aggregationActive())
+        return;
+
     bool ok;
     int logicalIndex = logicalIndexAt(position);
     int sectionIndex = model()->headerData(logicalIndex, orientation()).toInt(&ok);
@@ -559,6 +567,11 @@ void HierarchicalHeaderView::mousePressEvent(QMouseEvent *event)
         return;
     }
     QHeaderView::mousePressEvent(event);
+}
+
+bool HierarchicalHeaderView::aggregationActive() const
+{
+    return mModelInstance->aggregationActive();
 }
 
 QStyleOptionHeader HierarchicalHeaderView::styleOptionForCell(int logicalIndex) const

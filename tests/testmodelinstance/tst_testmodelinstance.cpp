@@ -3,7 +3,7 @@
 // add necessary includes here
 
 class TestModelInstance : public QObject
-{
+{// TODO tests
     Q_OBJECT
 
 public:

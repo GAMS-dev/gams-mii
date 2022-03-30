@@ -21,6 +21,7 @@ public:
                           QObject *parent = nullptr);
 
     IdentifierFilter& identifierFilter();
+    IdentifierFilter& defaultIdentifierFilter();
     void setIdentifierFilter(const IdentifierFilter &filter);
 
     void setIdentifierCheckState(int symbolIndex, Qt::CheckState state,
@@ -36,6 +37,7 @@ protected:
 private:
     QSharedPointer<ModelInstance> mModelInstance;
     IdentifierFilter mIdentifierFilter;
+    IdentifierFilter mDefaultIdentifierFilter;
 };
 
 class IdentifierLabelFilterModel : public QSortFilterProxyModel

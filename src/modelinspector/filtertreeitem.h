@@ -11,14 +11,9 @@ namespace modelinspector {
 class FilterTreeItem
 {
 public:
-    explicit FilterTreeItem(const QString &text,
-                            bool checkable,
+    explicit FilterTreeItem(const QString &text = QString(),
+                            Qt::CheckState checkState = Qt::Checked,
                             FilterTreeItem *parent = nullptr);
-
-    explicit FilterTreeItem(const QString &text = "",
-                             Qt::CheckState checkState = Qt::Checked,
-                             int index = -1,
-                             FilterTreeItem *parent = nullptr);
 
     ~FilterTreeItem();
 
@@ -51,10 +46,14 @@ public:
     Qt::CheckState checked();
     void setChecked(Qt::CheckState state);
 
+    ///
+    /// \brief Set sub tree state, i.e. set the state for all child items.
+    /// \param Check state for childs items.
+    ///
     void setSubTreeState(Qt::CheckState checked);
 
-    int index() const;
-    void setIndex(int index);
+    int sectionIndex() const;
+    void setSectionIndex(int index);
 
     int symbolIndex() const;
     void setSymbolIndex(int index);
@@ -71,12 +70,9 @@ private:
 
     Qt::CheckState mChecked;
 
-    ///
-    /// \brief mIndex Logical, section or symbol index.
-    ///
-    int mIndex;
+    int mSectionIndex = -1;
 
-    int mSymbolIndex;
+    int mSymbolIndex = -1;
 
     bool mCheckable = true;
     bool mEnabled = true;

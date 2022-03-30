@@ -51,6 +51,7 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
 
 private:
+    bool aggregationActive() const;
     QStyleOptionHeader styleOptionForCell(int logicalIndex) const;
 
 private:

@@ -33,10 +33,10 @@ bool LabelFilterModel::filterAcceptsColumn(int sourceColumn,
     auto sectionIndex = sourceModel()->headerData(sourceColumn, Qt::Horizontal).toInt(&ok);
     if (!ok || sectionIndex < PredefinedHeaderLength) return true;
 
-    LabelStates filter = mLabelFilter[Qt::Horizontal];
-    if (filter.Any)
-        return matchesAnyColumnLabels(filter.CheckStates, sectionIndex);
-    return matchesAllColumnLabels(filter.CheckStates, sectionIndex);
+    auto filter = mLabelFilter.LabelCheckStates[Qt::Horizontal];
+    if (mLabelFilter.Any)
+        return matchesAnyColumnLabels(filter, sectionIndex);
+    return matchesAllColumnLabels(filter, sectionIndex);
 }
 
 bool LabelFilterModel::filterAcceptsRow(int sourceRow,
@@ -48,10 +48,10 @@ bool LabelFilterModel::filterAcceptsRow(int sourceRow,
     auto sectionIndex = sourceModel()->headerData(sourceRow, Qt::Vertical).toInt(&ok);
     if (!ok || sectionIndex < PredefinedHeaderLength) return true;
 
-    LabelStates filter = mLabelFilter[Qt::Vertical];
-    if (filter.Any)
-        return matchesAnyRowLabels(filter.CheckStates, sectionIndex);
-    return matchesAllRowLabels(filter.CheckStates, sectionIndex);
+    auto filter = mLabelFilter.LabelCheckStates[Qt::Vertical];
+    if (mLabelFilter.Any)
+        return matchesAnyRowLabels(filter, sectionIndex);
+    return matchesAllRowLabels(filter, sectionIndex);
 }
 
 bool LabelFilterModel::matchesAllColumnLabels(const QMap<QString, Qt::CheckState> &checkStates,

@@ -91,13 +91,14 @@ void AggregationDialog::filterUpdate(const QString &text)
 
 void AggregationDialog::setupAggregationView()
 {
-    auto rootItem = new FilterTreeItem(QString(), false);
+    auto rootItem = new FilterTreeItem;
+    rootItem->setCheckable(false);
     setupTreeItems(Qt::Vertical, rootItem);
     setupTreeItems(Qt::Horizontal, rootItem);
 
     auto oldVarModel = ui->view->selectionModel();
     auto treeModel = new FilterTreeModel(rootItem, ui->view);
-    mAggregationModel = new QSortFilterProxyModel(ui->view);
+    mAggregationModel = new AggregationTreeItemFilterProxyModel(ui->view);
     mAggregationModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     mAggregationModel->setRecursiveFilteringEnabled(true);
     mAggregationModel->setSourceModel(treeModel);
@@ -118,25 +119,25 @@ void AggregationDialog::setupTreeItems(Qt::Orientation orientation,
 {
     auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ? FilterTreeItem::VariableText :
                                                                        FilterTreeItem::EquationText,
-                                       Qt::Unchecked, -1, root);
+                                       Qt::Unchecked, root);
     typeItem->setCheckable(false);
     auto identifierStates = mIdentifierFilter[orientation];
     Q_FOREACH(const auto& item, mAggregation.aggregationSymbols(orientation)) {
-        if (item.checkState().isEmpty())
+        if (item.checkStates().isEmpty())
             continue;
         if (identifierStates[item.symbolIndex()].Checked == Qt::Unchecked)
             continue;
-        auto sItem = new FilterTreeItem(item.text(), Qt::Unchecked,
-                                        item.symbolIndex(), typeItem);
+        auto sItem = new FilterTreeItem(item.text(), Qt::Unchecked, typeItem);
+        sItem->setSymbolIndex(item.symbolIndex());
         sItem->setCheckable(false);
         typeItem->append(sItem);
-        for (auto iter=item.checkState().keyValueBegin();
-             iter!=item.checkState().constKeyValueEnd(); ++iter)
+        for (auto iter=item.checkStates().keyValueBegin();
+             iter!=item.checkStates().constKeyValueEnd(); ++iter)
         {
             auto dItem = new FilterTreeItem(QString::number(iter->first),
                                             iter->second,
-                                            item.symbolIndex(),
                                             sItem);
+            sItem->setSymbolIndex(item.symbolIndex());
             sItem->append(dItem);
         }
     }
@@ -168,7 +169,7 @@ AggregationSymbols AggregationDialog::checkStates(FilterTreeItem *item)
         auto item = items.takeFirst();
         AggregationItem aggrItem;
         aggrItem.setText(item->text());
-        aggrItem.setSymbolIndex(item->index());
+        aggrItem.setSymbolIndex(item->symbolIndex());
         for (int d=0; d<item->childs().size(); ++d) {
             auto child = item->child(d);
             if (!child) continue;

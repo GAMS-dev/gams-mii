@@ -83,6 +83,7 @@ SOURCES += \
     modelinspector/identifierfiltermodel.cpp \
     modelinspector/labelfiltermodel.cpp \
     modelinspector/labelfilterwidget.cpp \
+    modelinspector/labeltreeitem.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
     modelinspector/modelinstancetablemodel.cpp \
@@ -114,6 +115,7 @@ HEADERS += \
     modelinspector/identifierfiltermodel.h \
     modelinspector/labelfiltermodel.h \
     modelinspector/labelfilterwidget.h \
+    modelinspector/labeltreeitem.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
     modelinspector/modelinstancetablemodel.h \

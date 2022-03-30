@@ -193,7 +193,6 @@
     <addaction name="separator"/>
     <addaction name="actionShow_search_result"/>
     <addaction name="separator"/>
-    <addaction name="actionPrint_DBG_Stuff"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>

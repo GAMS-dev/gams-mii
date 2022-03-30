@@ -128,7 +128,7 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If enabled, the aggregation method is applied to absolute values instead of actual values.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>User absolute values</string>
+         <string>Use absolute values</string>
         </property>
        </widget>
       </item>

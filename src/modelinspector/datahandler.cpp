@@ -5,6 +5,8 @@
 #include <functional>
 #include <vector>
 
+#include <QSet>
+
 using namespace std;
 
 namespace gams {
@@ -315,7 +317,7 @@ protected:
     double median(vector<double> &values)
     {
         if (values.empty()) return 0.0;
-        int size = values.size();
+        auto size = values.size();
         if (size % 2 == 0) {
             nth_element(values.begin(), values.begin() + size/2, values.end());
             nth_element(values.begin(), values.begin() + (size-1)/2, values.end());
@@ -325,7 +327,6 @@ protected:
         return (double)values[size/2];
     }
 };
-
 
 class MinDataAggregator : public DataHandler::AbstractDataAggregator
 {
@@ -546,6 +547,7 @@ const Aggregation& DataHandler::appliedAggregation() const
 
 void DataHandler::setAppliedAggregation(const Aggregation &aggregation)
 {
+    mLogicalSectionMapping.clear();
     mAppliedAggregation = aggregation;
     setDataAggregator(mAppliedAggregation.type());
 }
@@ -563,6 +565,13 @@ void DataHandler::aggregate(ModelInstance *modelInstance)
 QVariant DataHandler::data(int row, int column) const
 {// TODO check if IdentityModel stuff is needed
     return isAggregationActive() ? mAggrMatrix[row][column] : mDataMatrix[row][column];
+}
+
+int DataHandler::headerData(int logicalIndex, Qt::Orientation orientation) const
+{
+    if (logicalIndex < mLogicalSectionMapping[orientation].size())
+        return mLogicalSectionMapping[orientation][logicalIndex];
+    return -1;
 }
 
 void DataHandler::loadDataMatrix(ModelInstance *modelInstance)
@@ -642,6 +651,7 @@ void DataHandler::applyRowFilter(ModelInstance *modelInstance)
     Q_FOREACH(auto key, mAggrMatrix.keys()) {
         if (checkState[key] == Qt::Checked) {
             tmpMatrix[row++] = mAggrMatrix[key];
+            mLogicalSectionMapping[Qt::Vertical].append(key);
         }
     }
     mAggrMatrix = tmpMatrix;
@@ -654,6 +664,9 @@ void DataHandler::applyColumnFilter(ModelInstance *modelInstance)
         Q_FOREACH(auto column, rIter->second.keys()) {
             if (checkState[column] == Qt::Unchecked)
                 rIter->second.remove(column);
+        }
+        if (mLogicalSectionMapping[Qt::Horizontal].isEmpty()) {
+            mLogicalSectionMapping[Qt::Horizontal] = rIter->second.keys();
         }
         int column = 0;
         DataRow newRow;
@@ -674,10 +687,10 @@ void DataHandler::setDefaultColumnValues(int columnCount)
     }
 }
 
-IndexCheckState DataHandler::checkStates(Qt::Orientation orientation,
+IndexCheckStates DataHandler::checkStates(Qt::Orientation orientation,
                                          ModelInstance *modelInstance) const
 {
-    IndexCheckState states;
+    IndexCheckStates states;
     Q_FOREACH(auto index, mAppliedAggregation.identifierFilter()[orientation].keys()) {
         if (index < PredefinedHeaderLength) {
             states[index] = mAppliedAggregation.identifierFilter()[orientation][index].Checked;
@@ -685,12 +698,12 @@ IndexCheckState DataHandler::checkStates(Qt::Orientation orientation,
         }
         auto symbol = orientation == Qt::Vertical ? modelInstance->equation(index)
                                                   : modelInstance->variable(index);
-        if (mAppliedAggregation.identifierFilter()[orientation][index].LabelCheckStates.isEmpty()) {
+        if (mAppliedAggregation.identifierFilter()[orientation][index].CheckStates.isEmpty()) {
             for (int i=symbol.firstSection(); i<=symbol.lastSection(); ++i) {
                 states[i] = mAppliedAggregation.identifierFilter()[orientation][index].Checked;
             }
         } else {
-            states.insert(mAppliedAggregation.identifierFilter()[orientation][index].LabelCheckStates);
+            states.insert(mAppliedAggregation.identifierFilter()[orientation][index].CheckStates);
         }
     }
     return states;

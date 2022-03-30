@@ -93,14 +93,14 @@ IdentifierState LabelFilterWidget::identifierState()
         static_cast<FilterTreeModel*>(mFilterModel->sourceModel())->filterItem()
     };
     IdentifierState state;
-    state.SectionIndex = items.first()->index();
+    state.SectionIndex = items.first()->sectionIndex();
     state.SymbolIndex = items.first()->symbolIndex();
     while (!items.isEmpty()) {
         auto item = items.takeFirst();
         items.append(item->childs());
         if (!item->isCheckable())
             continue;
-        state.LabelCheckStates[item->index()] = item->checked();
+        state.CheckStates[item->sectionIndex()] = item->checked();
     }
     return state;
 }

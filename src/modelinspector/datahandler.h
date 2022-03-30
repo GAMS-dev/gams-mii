@@ -25,7 +25,11 @@ public:
     void aggregate(ModelInstance *modelInstance);
 
     QVariant data(int row, int column) const;
+
+    int headerData(int logicalIndex, Qt::Orientation orientation) const;
+
     void loadDataMatrix(ModelInstance *modelInstance);
+
 
     bool isAggregationActive() const;
 
@@ -39,7 +43,7 @@ private:
 
     void setDefaultColumnValues(int columnCount);
 
-    IndexCheckState checkStates(Qt::Orientation orientation,
+    IndexCheckStates checkStates(Qt::Orientation orientation,
                                 ModelInstance *modelInstance) const;
 
 private:
@@ -48,6 +52,7 @@ private:
 
     DataMatrix mDataMatrix;
     DataMatrix mAggrMatrix;
+    QMap<int, QList<int>> mLogicalSectionMapping;
 };
 
 }

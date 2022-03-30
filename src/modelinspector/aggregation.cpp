@@ -1,5 +1,6 @@
 #include "aggregation.h"
 #include "symbolinfo.h"
+#include "labeltreeitem.h"
 
 #include <algorithm>
 
@@ -8,171 +9,6 @@
 namespace gams {
 namespace studio {
 namespace modelinspector {
-
-LabelTreeItem::LabelTreeItem(LabelTreeItem *parent)
-    : mParent(parent)
-{
-
-}
-
-LabelTreeItem::LabelTreeItem(const QString &text, LabelTreeItem *parent)
-    : mParent(parent)
-    , mText(text)
-{
-
-}
-
-LabelTreeItem* LabelTreeItem::child(int index)
-{
-    if (index < 0 || index >= mChilds.size())
-        return nullptr;
-    return mChilds.at(index);
-}
-
-LabelTreeItem* LabelTreeItem::clone(LabelTreeItem* newParent) const
-{
-    auto root = new LabelTreeItem(newParent);
-    root->setText(mText);
-    root->setSectionIndex(mSectionIndex);
-    root->setSections(mSections);
-    Q_FOREACH(auto child, mChilds) {
-        auto newChild = child->clone(root);
-        root->append(newChild);
-    }
-    return root;
-}
-
-void LabelTreeItem::remove(LabelTreeItem *child)
-{
-    mChilds.removeAll(child);
-    child->setParent(nullptr);
-}
-
-int LabelTreeItem::firstSectionIndex() const
-{
-    if (mSections.isEmpty())
-        return -1;
-    auto sections = mSections.values();
-    std::sort(sections.begin(), sections.end());
-    return sections.first();
-}
-
-QSet<int> LabelTreeItem::sections() const
-{
-    if (!hasChildren())
-        return mSections;
-    QSet<int> allSections;
-    Q_FOREACH(auto child, mChilds) {
-        allSections.unite(child->sections());
-    }
-    return allSections;
-}
-
-UnitedSections LabelTreeItem::unitedSections() const
-{
-    UnitedSections united;
-    QList<LabelTreeItem*> items { mChilds };
-    while (!items.isEmpty()) {
-        auto item = items.takeFirst();
-        if (item->hasChildren()) {
-            items.append(item->childs());
-        } else if (item->isVisible()) {
-            united.append(item->sections());
-        }
-    }
-    return united;
-}
-
-QList<int> LabelTreeItem::visibleSections() const
-{
-    if (!hasChildren() && isVisible())
-        return mSections.values();
-    QList<int> allSections;
-    Q_FOREACH(auto child, mChilds) {
-        if (child->isVisible())
-            allSections.append(child->visibleSections());
-    }
-    return allSections;
-}
-
-bool LabelTreeItem::isVisible() const
-{
-    if (!hasChildren())
-        return mIsVisible;
-    Q_FOREACH(auto child, mChilds) {
-        if (child->isVisible()) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void LabelTreeItem::setVisible(bool visible)
-{
-    mIsVisible = visible;
-    Q_FOREACH(auto child, mChilds) {
-        child->setVisible(visible);
-    }
-}
-
-int LabelTreeItem::sectionExtent() const
-{
-    QList<LabelTreeItem*> leafs;
-    QList<LabelTreeItem*> items { mChilds };
-    while (!items.isEmpty()) {
-        auto item = items.takeFirst();
-        if (!item->isVisible())
-            continue;
-        items.append(item->childs());
-        if (!item->hasChildren())
-            leafs.append(item);
-    }
-    return leafs.size();
-}
-
-void LabelTreeItem::unite(LabelTreeItem *other)
-{
-    if (!other)
-        return;
-    if (hasChildren()) {
-        unite(other->childs());
-    } else {
-        auto visible = other->visibleSections();
-        mSections.unite(QSet<int>(visible.begin(), visible.end()));
-    }
-}
-
-void LabelTreeItem::unite(QList<LabelTreeItem*> childs)
-{
-    QList<LabelTreeItem*> invisible;
-    QHash<QString, LabelTreeItem*> unified;
-    Q_FOREACH(auto child, mChilds) {
-        if (child->isVisible()) {
-            unified[child->text()] = child;
-        } else {
-            child->setParent(nullptr);
-            invisible.append(child);
-        }
-    }
-    qDeleteAll(invisible);
-    Q_FOREACH(auto child, childs) {
-        if (!child->isVisible())
-            continue;
-        if (unified.contains(child->text())) {
-            unified[child->text()]->unite(child);
-        } else {
-            auto newChild = child->clone(this);
-            unified[newChild->text()] = newChild;
-        }
-    }
-    QMap<int, LabelTreeItem*> newChilds;
-    Q_FOREACH(auto child, unified) {
-        auto firstSection = child->firstSectionIndex();
-        if (firstSection < 0) continue;
-        newChilds[firstSection] = child;
-    }
-    mChilds = newChilds.values();
-}
 
 QString AggregationItem::text() const
 {
@@ -194,7 +30,7 @@ void AggregationItem::setSymbolIndex(int index)
     mSymbolIndex = index;
 }
 
-const IndexCheckState& AggregationItem::checkState() const
+const IndexCheckStates& AggregationItem::checkStates() const
 {
     return mCheckState;
 }
@@ -221,8 +57,10 @@ void AggregationItem::setAggregatedLabelTree(QSharedPointer<LabelTreeItem> label
 
 QString AggregationItem::label(int sectionIndex, int dimension) const
 {
+    if (!mLabels.contains(sectionIndex))
+        return QString();
     auto data = mLabels[sectionIndex];
-    if (dimension < data.size())
+    if (dimension >= 0 && dimension < data.size())
         return data[dimension];
     return QString();
 }
@@ -385,7 +223,7 @@ void Aggregation::setLabelState(Qt::Orientation orientation,
                                 int symIndex, int stateIndex,
                                 Qt::CheckState state)
 {
-    mIdentifierFilter[orientation][symIndex].LabelCheckStates[stateIndex] = state;
+    mIdentifierFilter[orientation][symIndex].CheckStates[stateIndex] = state;
 }
 
 const ValueFilter& Aggregation::valueFilter() const
@@ -406,31 +244,31 @@ Aggregator::Aggregator(const SymbolInfo &symbol)
 
 void Aggregator::applyFilterStates(const IdentifierState &identifierState,
                                    const IdentifierState &symbolLabelStates,
-                                   const LabelStates &globalLabelStates)
+                                   const LabelCheckStates &globalLabelStates,
+                                   bool labelFilterAny)
 {
     mLabelTree->setVisible(identifierState.Checked == Qt::Checked);
-    applyLabelFilter(symbolLabelStates, globalLabelStates);
+    applyLabelFilter(symbolLabelStates, globalLabelStates, labelFilterAny);
 }
 
 void Aggregator::aggregate(AggregationItem &item, const QString &type)
 {
-    auto visibleSections = mLabelTree->visibleSections();
-    std::sort(visibleSections.begin(), visibleSections.end());
-    item.setVisibleSections(visibleSections);
+    item.setVisibleSections(mLabelTree->visibleSectionsSorted());
     aggregateLabels(item, type);
     item.setAggregatedLabelTree(mLabelTree);
     item.setVisibleSectionCount(mLabelTree->sectionExtent());
-    item.setLabels(sectionLabels(item));
+    item.setLabels(mLabelTree->sectionLabels(mSymbol.firstSection(), mSymbol.dimension()));
     item.setUnitedSections(mLabelTree->unitedSections());
 }
 
 void Aggregator::applyLabelFilter(const IdentifierState &symbolLabelStates,
-                                  const LabelStates &globalLabelStates)
+                                  const LabelCheckStates &globalLabelStates,
+                                  bool labelFilterAny)
 {
     QList<LabelTreeItem*> items { mLabelTree->childs() };
-    IndexCheckState symLabelStates = symbolLabelStates.isValid() ? symbolLabelStates.LabelCheckStates
-                                                                 : IndexCheckState();
-    if (globalLabelStates.Any) {
+    IndexCheckStates symLabelStates = symbolLabelStates.isValid() ? symbolLabelStates.CheckStates
+                                                                 : IndexCheckStates();
+    if (labelFilterAny) {
         QList<LabelTreeItem*> reverse { mLabelTree->childs() };
         while (!items.isEmpty()) {
             auto item = items.takeFirst();
@@ -438,7 +276,7 @@ void Aggregator::applyLabelFilter(const IdentifierState &symbolLabelStates,
             reverse.append(item->childs());
         }
         for (auto iter=reverse.rbegin(); iter!=reverse.rend(); ++iter) {
-            if (globalLabelStates.CheckStates[(*iter)->text()] == Qt::Checked)
+            if (globalLabelStates[(*iter)->text()] == Qt::Checked)
                 (*iter)->setVisible(true);
             else if (!(*iter)->hasChildren())
                 (*iter)->setVisible(false);
@@ -448,7 +286,7 @@ void Aggregator::applyLabelFilter(const IdentifierState &symbolLabelStates,
     } else {
         while (!items.isEmpty()) {
             auto item = items.takeFirst();
-            if (globalLabelStates.CheckStates[item->text()] == Qt::Checked) {
+            if (globalLabelStates[item->text()] == Qt::Checked) {
                 item->setVisible(true);
                 items.append(item->childs());
             } else {
@@ -520,32 +358,6 @@ void Aggregator::aggregateLabels(const AggregationItem &item, const QString &typ
             currentLevel = nextLevel;
         }
     }
-}
-
-SectionLabels Aggregator::sectionLabels(const AggregationItem &item)
-{// TODO header drawing rules... when to generate empty label cells
-    SectionLabels sectionLabels;
-    int sections = item.visibleSectionCount();
-    QList<LabelTreeItem*> levelItems { item.aggregatedLabelTree()->childs() };
-    auto visibleSections = item.visibleSections();
-    for (int d=1, s=0; d<=mSymbol.dimension(); ++d, s=0) {
-        QList<LabelTreeItem*> newItems;
-        int duplicate = sections / levelItems.size();
-        while (!levelItems.isEmpty()) {
-            auto item = levelItems.takeFirst();
-            if (!item->isVisible())
-                continue;
-            newItems.append(item->visibleChilds());
-            for (int repeat=0; repeat<duplicate; ++repeat) {
-                auto data = sectionLabels[visibleSections[s]];
-                data << item->text();
-                sectionLabels[visibleSections[s]] = data;
-                ++s;
-            }
-        }
-        levelItems = newItems;
-    }
-    return sectionLabels;
 }
 
 LabelTreeItem* Aggregator::visibleBranch(QList<LabelTreeItem*> &currentLevel,
