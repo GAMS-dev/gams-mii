@@ -1,6 +1,8 @@
 #include <QtTest>
 
-// add necessary includes here
+#include "modelinstance.h"
+
+using namespace gams::studio::modelinspector;
 
 class TestModelInstance : public QObject
 {// TODO tests
@@ -11,7 +13,7 @@ public:
     ~TestModelInstance();
 
 private slots:
-    void test_case1();
+    void test_defaultConstructor();
 
 };
 
@@ -25,9 +27,10 @@ TestModelInstance::~TestModelInstance()
 
 }
 
-void TestModelInstance::test_case1()
+void TestModelInstance::test_defaultConstructor()
 {
-
+    ModelInstance instance;
+    QVERIFY(!instance.isInitialized());
 }
 
 QTEST_APPLESS_MAIN(TestModelInstance)

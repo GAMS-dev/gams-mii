@@ -60,6 +60,9 @@ public:
     QString workspace() const;
     void setWorkspace(const QString &workspace);
 
+    QString systemDirectory() const;
+    void setSystemDirectory(const QString &systemDir);
+
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx);
 
     void loadModelInstance();
@@ -111,6 +114,7 @@ private:
     Ui::ModelInspector* ui;
     QString mScratchDir;
     QString mWorkspace;
+    QString mSystemDir;
     SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<ModelInstance> mModelInstance;
     QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;

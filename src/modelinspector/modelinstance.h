@@ -56,9 +56,17 @@ struct MaxMin
 class ModelInstance
 {
 public:
-    ModelInstance(const QString &workingDir = ".", const QString &scratchDir = QString());
+    ModelInstance(const QString &workingDir = ".",
+                  const QString &systemDir = QString(),
+                  const QString &scratchDir = QString());
 
     ~ModelInstance();
+
+    void initialize();
+    bool isInitialized() const
+    {
+        return mInitialized;
+    }
 
     QString modelName() const;
 
@@ -204,8 +212,6 @@ public:
     bool aggregationActive() const;
 
 private:
-    void initialize();
-
     SymbolInfo loadSymbol(int index, int sectionIndex) const;
     void loadDimensions(SymbolInfo &symbol) const;
     void loadInitialLabelFilter(Qt::Orientation orientation);
@@ -226,10 +232,13 @@ private:
     class Cache;
     Cache *mCache;
 
+    bool mInitialized = false;
+
     DataHandler *mDataHandler;
 
     QString mScratchDir;
     QString mWorkspace;
+    QString mSystemDir;
 
     gevHandle_t mGEV = nullptr;
     gmoHandle_t mGMO = nullptr;

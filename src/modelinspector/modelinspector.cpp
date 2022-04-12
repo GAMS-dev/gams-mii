@@ -85,6 +85,16 @@ void ModelInspector::setWorkspace(const QString &workingDir)
     mWorkspace = workingDir;
 }
 
+QString ModelInspector::systemDirectory() const
+{
+    return mSystemDir;
+}
+
+void ModelInspector::setSystemDirectory(const QString &systemDir)
+{
+    mSystemDir = systemDir;
+}
+
 QList<SearchResult> ModelInspector::searchHeaders(const QString &term,
                                                   bool isRegEx)
 {
@@ -273,7 +283,9 @@ void ModelInspector::setIdentifierLabelFilter(const gams::studio::modelinspector
 void ModelInspector::setupModelInstanceView()
 {
     mModelInstance = QSharedPointer<ModelInstance>(new ModelInstance(mWorkspace,
+                                                                     mSystemDir,
                                                                      mScratchDir));
+    mModelInstance->initialize();
     mModelInstance->loadScratchData();
     mModelInstance->loadTableData();
     mModelInstance->loadMinMaxValues();
@@ -324,13 +336,13 @@ void ModelInspector::searchHeader(const QString &term, bool isRegEx,
                                   Qt::Orientation orientation,
                                   QList<SearchResult> &result)
 {
+    if (!mModelInstance->isInitialized()) return;
     bool ok;
     int sections = orientation == Qt::Horizontal ? ui->modelInstanceView->model()->columnCount() :
                                                    ui->modelInstanceView->model()->rowCount();
     for (int s=0; s<sections; ++s) {
         int realSection = ui->modelInstanceView->model()->headerData(s, orientation).toInt(&ok);
-        if (!ok)
-            continue;
+        if (!ok) continue;
         mModelInstance->searchSymbolData(s, realSection, term, isRegEx, orientation, result);
     }
 }

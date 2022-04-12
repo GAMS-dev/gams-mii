@@ -18,7 +18,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "modelinstance.h"
-#include "commonpaths.h" // TODO remove common path dependency!!!
 #include "datahandler.h"
 #include "filtertreeitem.h"
 #include "labeltreeitem.h"
@@ -172,13 +171,15 @@ private:
     QString mLongestVarLabelText;
 };
 
-ModelInstance::ModelInstance(const QString &workspace, const QString &scratchDir)
+ModelInstance::ModelInstance(const QString &workspace,
+                             const QString &systemDir,
+                             const QString &scratchDir)
     : mCache(new Cache(this))
     , mDataHandler(new DataHandler)
     , mScratchDir(scratchDir)
     , mWorkspace(QDir(workspace).absolutePath())
+    , mSystemDir(systemDir)
 {
-    initialize();
 }
 
 ModelInstance::~ModelInstance()
@@ -1018,11 +1019,11 @@ void ModelInstance::initialize()
     gevSetScreenIndicator(0); // switch off std lib output
     gevSetErrorCallback(ModelInstance::errorCallback);
 
-    mLogMessages << "GAMS System Dir: " + CommonPaths::systemDir();
+    mLogMessages << "GAMS System Dir: " + mSystemDir;
 
     char msg[GMS_SSSIZE];
     if (!gevCreateD(&mGEV,
-                    CommonPaths::systemDir().toStdString().c_str(),
+                    mSystemDir.toStdString().c_str(),
                     msg,
                     sizeof(msg)))
         mLogMessages << "ERROR: " + QString(msg);
@@ -1032,7 +1033,7 @@ void ModelInstance::initialize()
     gmoSetErrorCallback(ModelInstance::errorCallback);
 
     if (!gmoCreateD(&mGMO,
-                    CommonPaths::systemDir().toStdString().c_str(),
+                    mSystemDir.toStdString().c_str(),
                     msg,
                     sizeof(msg)))
         mLogMessages << "ERROR: " + QString(msg);
@@ -1057,11 +1058,13 @@ void ModelInstance::initialize()
     dctSetErrorCallback(ModelInstance::errorCallback);
 
     if (!dctCreateD(&mDCT,
-                    CommonPaths::systemDir().toStdString().c_str(),
+                    mSystemDir.toStdString().c_str(),
                     msg,
                     sizeof(msg))) {
         mLogMessages << "ERROR: " + QString(msg);
     }
+
+    mInitialized = true;
 }
 
 DataRow ModelInstance::jaccobianRow(int row)

@@ -19,6 +19,7 @@
  */
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "commonpaths.h"
 #include "gamsprocess.h"
 #include "gamslibprocess.h"
 #include "modelinspector/aggregationdialog.h"
@@ -50,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->modelInspector->setWorkspace(workspace());
+    ui->modelInspector->setSystemDirectory(CommonPaths::systemDir());
     ui->searchResultView->setModel(new SearchResultModel(ui->searchResultView));
     ui->statusBar->addPermanentWidget(mAggregationStatusLabel);
     setWindowTitle(windowTitle() + " " + QApplication::applicationVersion());
