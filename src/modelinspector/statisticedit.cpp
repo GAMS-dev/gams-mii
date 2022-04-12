@@ -27,7 +27,6 @@ bool StatisticEdit::event(QEvent *event)
         pos.setX(pos.x() - viewportMargins().left());
         pos.setY(pos.y() - viewportMargins().right());
 
-        // TODO =E=,... not working... because it is not a word
         QTextCursor cursor = cursorForPosition(helpEvent->pos());
         cursor.select(QTextCursor::WordUnderCursor);
         auto text = cursor.selectedText().toLower();

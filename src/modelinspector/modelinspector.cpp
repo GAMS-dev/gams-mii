@@ -293,18 +293,12 @@ void ModelInspector::setupModelInstanceView()
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                               mModelInstance,
                                               ui->modelInstanceView);
-    // TODO ResizeToContents is extreamly slow... because it affecst all rows/columns...
-    //      find a better way to implement it
-    //hHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &ModelInspector::setIdentifierLabelFilter);
 
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                               mModelInstance,
                                               ui->modelInstanceView);
-    // TODO ResizeToContents is extreamly slow... because it affecst all rows/columns...
-    //      find a better way to implement it
-    //vHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &ModelInspector::setIdentifierLabelFilter);
 
