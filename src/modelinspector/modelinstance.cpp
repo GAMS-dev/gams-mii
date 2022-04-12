@@ -23,7 +23,6 @@
 #include "labeltreeitem.h"
 
 #include <QAbstractItemModel>
-#include <QDir>
 #include <QVector>
 
 #include <QDebug>

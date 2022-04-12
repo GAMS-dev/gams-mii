@@ -28,6 +28,7 @@
 #include "symbolinfo.h"
 #include "aggregation.h"
 
+#include <QDir>
 #include <QMap>
 #include <QString>
 #include <QStringList>
@@ -66,6 +67,36 @@ public:
     bool isInitialized() const
     {
         return mInitialized;
+    }
+
+    QString workspace() const
+    {
+        return mWorkspace;
+    }
+
+    void setWorkspace(const QString &workspace)
+    {
+        mWorkspace = QDir(workspace).absolutePath();
+    }
+
+    QString systemDirectory() const
+    {
+        return mSystemDir;
+    }
+
+    QString scratchDirectory() const
+    {
+        return mScratchDir;
+    }
+
+    void setScratchDirectory(const QString &scratchDir)
+    {
+        mScratchDir = scratchDir;
+    }
+
+    void setSystemDirectory(const QString &systemDir)
+    {
+        mSystemDir = systemDir;
     }
 
     QString modelName() const;
