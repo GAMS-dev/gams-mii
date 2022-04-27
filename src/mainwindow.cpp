@@ -75,6 +75,8 @@ MainWindow::MainWindow(QWidget *parent)
              this, &MainWindow::aggregationUpdate);
     connect(mGlobalFilterDialog, &GlobalFilterDialog::filterUpdated,
             this, &MainWindow::globalFilterUpdate);
+    connect(ui->modelInspector, &ModelInspector::viewChanged,
+            mGlobalFilterDialog, &GlobalFilterDialog::viewChanged);
     connect(ui->modelInspector, &ModelInspector::filtersChanged,
             this, [this]{
         static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
@@ -166,6 +168,14 @@ void MainWindow::on_actionAggregation_triggered()
 void MainWindow::on_actionShow_search_result_triggered()
 {
     ui->dockWidget->show();
+}
+
+void MainWindow::on_actionShow_Output_triggered()
+{
+    ui->modelInspector->setShowOutput(ui->actionShow_Output->isChecked());
+    ui->modelInspector->reloadModelInstance();
+    setGlobalFiltersData();
+    setAggregationData();
 }
 
 void MainWindow::on_actionAbout_Model_Inspector_triggered()
@@ -272,7 +282,7 @@ void MainWindow::setGlobalFiltersData()
 }
 
 void MainWindow::setAggregationData()
-{
+{// TODO the line below triggers the aggregation processing
     mAggregationDialog->setAggregation(ui->modelInspector->aggregation(),
                                        ui->modelInspector->identifierFilter());
     mAggregationDialog->setDefaultAggregation(ui->modelInspector->defaultAggregation());

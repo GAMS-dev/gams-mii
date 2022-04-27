@@ -1,51 +1,12 @@
 #include "sectiontreemodel.h"
+#include "sectiontreeitem.h"
+#include "common.h"
+
+#include <QDebug>
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
-
-SectionTreeItem::SectionTreeItem(const QString &name, int page,
-                                 SectionTreeItem *parent)
-    : mName(name)
-    , mParent(parent)
-    , mPage(page)
-{
-
-}
-
-SectionTreeItem::~SectionTreeItem()
-{
-    qDeleteAll(mChilds);
-}
-
-void SectionTreeItem::append(SectionTreeItem *child)
-{
-    mChilds.append(child);
-}
-
-SectionTreeItem *SectionTreeItem::child(int row)
-{
-    if (row < 0 || row >= mChilds.size())
-        return nullptr;
-    return mChilds.at(row);
-}
-
-int SectionTreeItem::childCount() const
-{
-    return mChilds.count();
-}
-
-int SectionTreeItem::row() const
-{
-    if (mParent)
-        return mParent->mChilds.indexOf(const_cast<SectionTreeItem*>(this));
-    return 0;
-}
-
-SectionTreeItem *SectionTreeItem::parent()
-{
-    return mParent;
-}
 
 SectionTreeModel::SectionTreeModel(QObject *parent)
     : QAbstractItemModel(parent)
@@ -155,19 +116,29 @@ int SectionTreeModel::columnCount(const QModelIndex &parent) const
 
 void SectionTreeModel::loadModelData()
 {
-    QStringList mainItems { "Statistic", "Full View" };
+    auto viewItem = new SectionTreeItem("Predefined Views", mRoot);
+    mRoot->append(viewItem);
 
     SectionTreeItem *mainItem;
-    for (int i=0; i<mainItems.size(); ++i) {
-        if (mainItems.at(i) == "Full View") {
-            mainItem = new SectionTreeItem(mainItems.at(i), i, mRoot);
-            mainItem->setType(SectionTreeItem::Blockpic);
+    for (int i=0; i<PredefinedViews.size(); ++i) {
+        if (PredefinedViews.at(i) == EquationAttributes) {
+            mainItem = new SectionTreeItem(PredefinedViews.at(i), 2, viewItem);
+            mainItem->setType(PredefinedViews.at(i));
+        } else if (PredefinedViews.at(i) == VariableAttributes) {
+            mainItem = new SectionTreeItem(PredefinedViews.at(i), 3, viewItem);
+            mainItem->setType(PredefinedViews.at(i));
+        } else if (PredefinedViews.at(i) == Statistic) {
+            mainItem = new SectionTreeItem(PredefinedViews.at(i), 0, viewItem);
+            mainItem->setType(PredefinedViewEnum::Statistic);
         } else {
-            mainItem = new SectionTreeItem(mainItems.at(i), i, mRoot);
-            mainItem->setType(SectionTreeItem::Statistic);
+            mainItem = new SectionTreeItem(PredefinedViews.at(i), 1, viewItem);
+            mainItem->setType(PredefinedViews.at(i));
         }
-        mRoot->append(mainItem);
+        viewItem->append(mainItem);
     }
+
+    viewItem = new SectionTreeItem("Custom Views", mRoot);
+    mRoot->append(viewItem);
 }
 
 }

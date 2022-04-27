@@ -26,6 +26,8 @@
 #include "common.h"
 #include "aggregation.h"
 
+class QAbstractItemModel;
+
 namespace gams {
 namespace studio{
 namespace modelinspector {
@@ -63,9 +65,13 @@ public:
     QString systemDirectory() const;
     void setSystemDirectory(const QString &systemDir);
 
+    bool showOutput() const;
+    void setShowOutput(bool showOutpu);
+
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx);
 
     void loadModelInstance();
+    void reloadModelInstance();
     QSharedPointer<ModelInstance> modelInstance() const;
 
     IdentifierFilter identifierFilter() const;
@@ -91,6 +97,8 @@ signals:
 
     void filtersChanged();
 
+    void viewChanged(PredefinedViewEnum);
+
 public slots:
     void setCurrentView(int index);
 
@@ -110,11 +118,19 @@ private:
     Aggregation appliedAggregation(const Aggregation &aggregations) const;
     Aggregation initialAggregation() const;
 
+    LabelFilter initialLabelFilter() const;
+
+    IdentifierStates initialSymbolFilter(QAbstractItemModel *model,
+                                         Qt::Orientation orientation) const;
+
+    ValueFilter initalValueFilter() const;
+
 private:
     Ui::ModelInspector* ui;
     QString mScratchDir;
     QString mWorkspace;
     QString mSystemDir;
+    bool mShowOutput = false;
     SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<ModelInstance> mModelInstance;
     QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;
@@ -126,6 +142,9 @@ private:
     AggregationProxyModel* mAggregationModel = nullptr;
     HierarchicalHeaderView* mHorizontalHeader = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
+
+    LabelFilter mInitialLabelFilter;
+    ValueFilter mInitialValueFilter;
 };
 
 }

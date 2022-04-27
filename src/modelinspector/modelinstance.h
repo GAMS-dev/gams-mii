@@ -69,6 +69,16 @@ public:
         return mInitialized;
     }
 
+    bool useOutput() const
+    {
+        return mUseOutput;
+    }
+
+    void setUseOutput(bool useOutput)
+    {
+        mUseOutput = useOutput;
+    }
+
     QString workspace() const
     {
         return mWorkspace;
@@ -200,9 +210,8 @@ public:
 
     const QVector<SymbolInfo>& symbols(int type) const;
 
-    void loadScratchData();
-    void loadTableData();
-    void loadMinMaxValues();
+    void loadScratchData(bool useOutput);
+    void loadTableData(LabelFilter &labelFilter);
 
     QPair<double, double> matrixRange() const;
 
@@ -228,13 +237,6 @@ public:
                           bool isRegEx, Qt::Orientation orientation,
                           QList<SearchResult> &result);
 
-    IdentifierStates initialSymbolFilter(QAbstractItemModel *model,
-                                      Qt::Orientation orientation);
-
-    LabelFilter initialLabelFilter() const;
-
-    ValueFilter initalValueFilter() const;
-
     DataRow jaccobianRow(int row);
 
     QVariant horizontalAttribute(const QString &header, int column);
@@ -242,10 +244,20 @@ public:
 
     bool aggregationActive() const;
 
+    double modelMinimum() const
+    {
+        return mModelMinimum;
+    }
+
+    double modelMaximum() const
+    {
+        return mModelMaximum;
+    }
+
 private:
     SymbolInfo loadSymbol(int index, int sectionIndex) const;
     void loadDimensions(SymbolInfo &symbol) const;
-    void loadInitialLabelFilter(Qt::Orientation orientation);
+    void loadInitialLabelFilter(Qt::Orientation orientation, LabelFilter &labelFilter);
 
     void loadLabelTree(SymbolInfo &symbol) const;
     void appendSubItems(LabelTreeItem *parent, QStringList &labels) const;
@@ -253,6 +265,7 @@ private:
     QPair<double, double> equationBounds(int row);
 
     QVariant specialValue(double value);
+    QVariant specialValueMinMax(double value);
     QVariant specialMarginalValue(double value);
     QVariant specialMarginalEquValueBasis(double value, int rIndex);
     QVariant specialMarginalVarValueBasis(double value, int cIndex);
@@ -264,6 +277,10 @@ private:
     Cache *mCache;
 
     bool mInitialized = false;
+    bool mUseOutput = false;
+
+    double mModelMinimum = 0.0;
+    double mModelMaximum = 0.0;
 
     DataHandler *mDataHandler;
 

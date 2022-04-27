@@ -20,6 +20,11 @@ class HierarchicalHeaderView : public QHeaderView
     Q_OBJECT
 
 public:
+    enum DataSource {
+        EquationData,
+        VariableData
+    };
+
     HierarchicalHeaderView(Qt::Orientation orientation,
                            QSharedPointer<ModelInstance> modelInstance,
                            QWidget *parent = nullptr);
@@ -30,6 +35,8 @@ public:
     void setAppliedAggregation(const AggregationSymbols &appliedAggregation);
 
     void setModel(QAbstractItemModel *model) override;
+
+    void setDataSource(DataSource dataSource);
 
 public slots:
     void customMenuRequested(QPoint position);

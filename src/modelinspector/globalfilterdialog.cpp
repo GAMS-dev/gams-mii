@@ -5,6 +5,8 @@
 
 #include <QSortFilterProxyModel>
 
+#include <QDebug>
+
 namespace gams {
 namespace studio {
 namespace modelinspector {
@@ -89,6 +91,24 @@ void GlobalFilterDialog::setLabelFilter(const LabelFilter &filter)
 void GlobalFilterDialog::setDefaultLabelFilter(const LabelFilter &filter)
 {
     mDefaultLabelFilter = filter;
+}
+
+void GlobalFilterDialog::viewChanged(PredefinedViewEnum viewType)
+{
+    switch (viewType) {
+    case PredefinedViewEnum::Full:
+        on_resetButton_clicked();
+        on_applyButton_clicked();
+        break;
+    case PredefinedViewEnum::Jaccobian:
+        on_resetButton_clicked();
+        disableAttributes(mEqnFilterModel);
+        disableAttributes(mVarFilterModel);
+        on_applyButton_clicked();
+        break;
+    default:
+        break;
+    }
 }
 
 void GlobalFilterDialog::on_applyButton_clicked()
@@ -250,7 +270,7 @@ FilterTreeItem* GlobalFilterDialog::setupSymTreeItems(Qt::Orientation orientatio
 {
     auto root = new FilterTreeItem(QString(), Qt::Unchecked);
     root->setCheckable(false);
-    auto attributes = new FilterTreeItem("Attributes", Qt::Unchecked, root);
+    auto attributes = new FilterTreeItem(FilterTreeItem::AttributesText, Qt::Unchecked, root);
     attributes->setCheckable(false);
     root->append(attributes);
     auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ? FilterTreeItem::VariableText :
@@ -385,6 +405,16 @@ void GlobalFilterDialog::updateRangeEdit(QLineEdit *edit, const QString &text)
         edit->setStyleSheet("color: red");
     } else {
         edit->setStyleSheet("color: "+QApplication::palette().text().color().name());
+    }
+}
+
+void GlobalFilterDialog::disableAttributes(QSortFilterProxyModel *model)
+{
+    auto* item = static_cast<FilterTreeModel*>(model->sourceModel())->filterItem();
+    auto attrItem = item->findChild(FilterTreeItem::AttributesText);
+    if (!attrItem) return;
+    Q_FOREACH(auto child, attrItem->childs()) {
+        child->setChecked(Qt::Unchecked);
     }
 }
 

@@ -159,7 +159,7 @@
      <x>0</x>
      <y>0</y>
      <width>1446</width>
-     <height>21</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -190,6 +190,8 @@
     </property>
     <addaction name="actionGlobal_Filters"/>
     <addaction name="actionAggregation"/>
+    <addaction name="separator"/>
+    <addaction name="actionShow_Output"/>
     <addaction name="separator"/>
     <addaction name="actionShow_search_result"/>
     <addaction name="separator"/>
@@ -313,6 +315,14 @@
   <action name="actionAbout_Model_Inspector">
    <property name="text">
     <string>About Model Inspector</string>
+   </property>
+  </action>
+  <action name="actionShow_Output">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Output</string>
    </property>
   </action>
  </widget>

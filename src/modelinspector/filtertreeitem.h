@@ -17,6 +17,8 @@ public:
 
     ~FilterTreeItem();
 
+    FilterTreeItem* findChild(const QString &text);
+
     void append(FilterTreeItem *child);
 
     FilterTreeItem* child(int index);
@@ -58,6 +60,7 @@ public:
     int symbolIndex() const;
     void setSymbolIndex(int index);
 
+    static const QString AttributesText;
     static const QString EquationText;
     static const QString VariableText;
 

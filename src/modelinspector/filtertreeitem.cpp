@@ -4,6 +4,7 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
+const QString FilterTreeItem::AttributesText = "Attributes";
 const QString FilterTreeItem::EquationText = "Equations";
 const QString FilterTreeItem::VariableText = "Variables";
 
@@ -20,6 +21,15 @@ FilterTreeItem::FilterTreeItem(const QString &text,
 FilterTreeItem::~FilterTreeItem()
 {
     qDeleteAll(mChilds);
+}
+
+FilterTreeItem* FilterTreeItem::findChild(const QString &text)
+{
+    Q_FOREACH(auto item, mChilds) {
+        if (!item->text().compare(text, Qt::CaseInsensitive))
+            return item;
+    }
+    return nullptr;
 }
 
 void FilterTreeItem::append(FilterTreeItem *child)

@@ -39,6 +39,9 @@ public:
     void setLabelFilter(const LabelFilter &filter);
     void setDefaultLabelFilter(const LabelFilter &filter);
 
+public:
+    void viewChanged(PredefinedViewEnum viewType);
+
 signals:
     void filterUpdated();
 
@@ -80,6 +83,8 @@ private:
                                       QSortFilterProxyModel *model);
 
     void updateRangeEdit(QLineEdit *edit, const QString &text);
+
+    void disableAttributes(QSortFilterProxyModel *model);
 
 private:
     Ui::GlobalFilterDialog *ui;

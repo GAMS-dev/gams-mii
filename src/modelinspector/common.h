@@ -27,6 +27,24 @@ static const QString Upper = "upper";
 static const QStringList PredefinedHeader { Level, Lower, Marginal, Scale, Upper };
 static const int PredefinedHeaderLength = PredefinedHeader.size();
 
+static const QString Statistic = "Statistic";
+static const QString EquationAttributes = "Equation Attributes";
+static const QString VariableAttributes = "Variable Attributes";
+static const QString Jaccobian = "Jaccobian";
+static const QString FullView = "Full View";
+static const QStringList PredefinedViews = { Statistic, EquationAttributes,
+                                             VariableAttributes, Jaccobian, FullView };
+
+enum class PredefinedViewEnum
+{
+    Attributes,
+    Full,
+    Jaccobian,
+    Statistic,
+    Unknown,
+    UserView
+};
+
 ///
 /// \brief Labels by section index.
 ///

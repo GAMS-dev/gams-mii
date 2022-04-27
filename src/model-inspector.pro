@@ -74,6 +74,7 @@ SOURCES += \
     modelinspector/aggregation.cpp \
     modelinspector/aggregationdialog.cpp \
     modelinspector/aggregationproxymodel.cpp \
+    modelinspector/attributetablemodel.cpp \
     modelinspector/columnrowfiltermodel.cpp \
     modelinspector/datahandler.cpp \
     modelinspector/filtertreeitem.cpp \
@@ -89,6 +90,7 @@ SOURCES += \
     modelinspector/modelinstancetablemodel.cpp \
     modelinspector/modelinstancetableview.cpp \
     modelinspector/searchresultmodel.cpp \
+    modelinspector/sectiontreeitem.cpp \
     modelinspector/sectiontreemodel.cpp \
     modelinspector/sectiontreeview.cpp \
     modelinspector/statisticedit.cpp \
@@ -105,6 +107,7 @@ HEADERS += \
     modelinspector/aggregation.h \
     modelinspector/aggregationdialog.h \
     modelinspector/aggregationproxymodel.h \
+    modelinspector/attributetablemodel.h \
     modelinspector/columnrowfiltermodel.h \
     modelinspector/common.h \
     modelinspector/datahandler.h \
@@ -121,6 +124,7 @@ HEADERS += \
     modelinspector/modelinstancetablemodel.h \
     modelinspector/modelinstancetableview.h \
     modelinspector/searchresultmodel.h \
+    modelinspector/sectiontreeitem.h \
     modelinspector/sectiontreemodel.h \
     modelinspector/sectiontreeview.h \
     modelinspector/statisticedit.h \

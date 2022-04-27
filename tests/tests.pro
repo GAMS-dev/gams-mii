@@ -27,4 +27,5 @@ SUBDIRS +=              \
     testfiltertreeitem  \
     testlabeltreeitem \
     testmodelinstance   \
+    testsectiontreeitem \
     testsymbolinfo

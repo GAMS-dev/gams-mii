@@ -52,6 +52,28 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="page">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="gams::studio::modelinspector::ModelInstanceTableView" name="eqnAttributeView">
+           <attribute name="verticalHeaderCascadingSectionResizes">
+            <bool>false</bool>
+           </attribute>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="page_2">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <widget class="gams::studio::modelinspector::ModelInstanceTableView" name="varAttributeView">
+           <attribute name="verticalHeaderCascadingSectionResizes">
+            <bool>false</bool>
+           </attribute>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </item>
     </layout>

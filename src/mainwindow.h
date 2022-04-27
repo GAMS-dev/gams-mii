@@ -66,6 +66,7 @@ private slots:
     void on_actionGlobal_Filters_triggered();
     void on_actionAggregation_triggered();
     void on_actionShow_search_result_triggered();
+    void on_actionShow_Output_triggered();
 
     // Help
     void on_actionAbout_Model_Inspector_triggered();
