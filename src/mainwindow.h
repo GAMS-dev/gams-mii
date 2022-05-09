@@ -37,7 +37,7 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 class AggregationDialog;
-class GlobalFilterDialog;
+class FilterDialog;
 }
 }
 }
@@ -55,15 +55,17 @@ private slots:
 
     // File
     void on_actionOpen_triggered();
+    void on_actionOpen_Project_triggered();
     void on_actionRun_triggered();
     void on_action_Quit_triggered();
 
     // Edit
     void on_action_Search_triggered();
     void searchHeaders();
+    void editMenuAboutToShow();
 
     // View
-    void on_actionGlobal_Filters_triggered();
+    void on_actionFilters_triggered();
     void on_actionAggregation_triggered();
     void on_actionShow_search_result_triggered();
     void on_actionShow_Output_triggered();
@@ -76,27 +78,34 @@ private slots:
     void loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus);
     void aggregationUpdate();
     void globalFilterUpdate();
+    void setGlobalFiltersData();
     void searchResultSelectionChanged(const QModelIndex &index);
     void updateModelInstance();
+    void viewChanged(int viewType);
 
 private:
+    void setupConnections();
+
+    void createProjectDirectory();
+
     QString aboutModelInspector() const;
 
     void loadGAMSModel(const QString &path);
 
-    void setGlobalFiltersData();
     void setAggregationData();
 
     void showDialog(QDialog *dialog);
 
     QString workspace() const;
 
+    QString projectDirectory() const;
+
 private:
     Ui::MainWindow *ui;
     GAMSLibProcess *mLibProcess;
     QSharedPointer<GAMSProcess> mProcess;
     gams::studio::modelinspector::AggregationDialog *mAggregationDialog;
-    gams::studio::modelinspector::GlobalFilterDialog *mGlobalFilterDialog;
+    gams::studio::modelinspector::FilterDialog *mFilterDialog;
     QLabel *mAggregationStatusLabel;
 };
 

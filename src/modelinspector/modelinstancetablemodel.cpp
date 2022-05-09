@@ -7,6 +7,7 @@ namespace modelinspector {
 
 ModelInstanceTableModel::ModelInstanceTableModel(QObject *parent)
     : QAbstractTableModel(parent)
+    , mViewType(PredefinedViewEnum::Full)
 {
 }
 
@@ -27,7 +28,7 @@ QVariant ModelInstanceTableModel::data(const QModelIndex &index, int role) const
         return Qt::AlignRight;
     }
     if (index.isValid() && role == Qt::DisplayRole) {
-        auto value = mModelInstance->data(index.row(), index.column());
+        auto value = mModelInstance->data(index.row(), index.column(), mView);
         return value == 0.0 ? QVariant() : value;
     }
     return QVariant();
@@ -62,13 +63,13 @@ QModelIndex ModelInstanceTableModel::index(int row, int column,
 int ModelInstanceTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->rowCount();
+    return mModelInstance->rowCount(PredefinedViewEnum::Full);
 }
 
 int ModelInstanceTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->columnCount();
+    return mModelInstance->columnCount(PredefinedViewEnum::Full);
 }
 
 }

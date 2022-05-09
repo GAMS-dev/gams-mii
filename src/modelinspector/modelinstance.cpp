@@ -19,7 +19,6 @@
  */
 #include "modelinstance.h"
 #include "datahandler.h"
-#include "filtertreeitem.h"
 #include "labeltreeitem.h"
 
 #include <QAbstractItemModel>
@@ -33,10 +32,10 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-class ModelInstance::Cache
+class ModelInstance::SymbolCache
 {
 public:
-    Cache(ModelInstance* const modelInstance)
+    SymbolCache(ModelInstance* const modelInstance)
         : mModelInstance(modelInstance)
     {
 
@@ -168,7 +167,7 @@ private:
 ModelInstance::ModelInstance(const QString &workspace,
                              const QString &systemDir,
                              const QString &scratchDir)
-    : mCache(new Cache(this))
+    : mSymbolCache(new SymbolCache(this))
     , mDataHandler(new DataHandler)
     , mScratchDir(scratchDir)
     , mWorkspace(QDir(workspace).absolutePath())
@@ -181,7 +180,7 @@ ModelInstance::~ModelInstance()
     if (mGMO) gmoFree(&mGMO);
     if (mGEV) gevFree(&mGEV);
     // don't delete mDCT... it is handled in GMO
-    delete mCache;
+    delete mSymbolCache;
     delete mDataHandler;
 }
 
@@ -248,12 +247,12 @@ int ModelInstance::nonLinearCoefficents() const
 
 SymbolInfo ModelInstance::equation(int sectionIndex) const
 {
-    return mCache->sectionSymbol(sectionIndex, Qt::Vertical);
+    return mSymbolCache->sectionSymbol(sectionIndex, Qt::Vertical);
 }
 
 const QVector<SymbolInfo>& ModelInstance::equations() const
 {
-    return mCache->symbols(dcteqnSymType);
+    return mSymbolCache->symbols(dcteqnSymType);
 }
 
 int ModelInstance::equationCount() const
@@ -287,8 +286,8 @@ bool ModelInstance::isEquation(const QString &name)
 
 QString ModelInstance::longestEqnText() const
 {
-    auto eqn = mCache->longestEqnText();
-    auto label = mCache->longestEqnLabelText();
+    auto eqn = mSymbolCache->longestEqnText();
+    auto label = mSymbolCache->longestEqnLabelText();
     if (eqn.size() > label.size())
         return eqn;
     return label;
@@ -296,8 +295,8 @@ QString ModelInstance::longestEqnText() const
 
 QString ModelInstance::longestVarText() const
 {
-    auto var = mCache->longestVarText();
-    auto label = mCache->longestVarLabelText();
+    auto var = mSymbolCache->longestVarText();
+    auto label = mSymbolCache->longestVarLabelText();
     if (var.size() > label.size())
         return var;
     return label;
@@ -305,12 +304,12 @@ QString ModelInstance::longestVarText() const
 
 SymbolInfo ModelInstance::variable(int sectionIndex) const
 {
-    return mCache->sectionSymbol(sectionIndex, Qt::Horizontal);
+    return mSymbolCache->sectionSymbol(sectionIndex, Qt::Horizontal);
 }
 
 const QVector<SymbolInfo>& ModelInstance::variables() const
 {
-    return mCache->symbols(dctvarSymType);
+    return mSymbolCache->symbols(dctvarSymType);
 }
 
 int ModelInstance::variableCount() const
@@ -320,12 +319,12 @@ int ModelInstance::variableCount() const
 
 int ModelInstance::maxEquationDimension() const
 {
-    return mCache->MaxEquationDimension;
+    return mSymbolCache->MaxEquationDimension;
 }
 
 int ModelInstance::maxVariableDimension() const
 {
-    return mCache->MaxVariableDimension;
+    return mSymbolCache->MaxVariableDimension;
 }
 
 int ModelInstance::variableCount(int type) const
@@ -388,14 +387,14 @@ void ModelInstance::loadScratchData(bool useOutput)
 
 void ModelInstance::loadTableData(LabelFilter &labelFilter)
 {
-    mCache->loadSymbols(dcteqnSymType);
-    mCache->loadSymbols(dctvarSymType);
+    mSymbolCache->loadSymbols(dcteqnSymType);
+    mSymbolCache->loadSymbols(dctvarSymType);
     loadInitialLabelFilter(Qt::Horizontal, labelFilter);
     loadInitialLabelFilter(Qt::Vertical, labelFilter);
 
     mDataHandler->loadDataMatrix(this);
-    mCache->loadHorizontalHeaderData();
-    mCache->loadVerticalHeaderData();
+    mSymbolCache->loadHorizontalHeaderData();
+    mSymbolCache->loadVerticalHeaderData();
 }
 
 QString ModelInstance::equationType(int offset) const
@@ -723,7 +722,7 @@ const SymbolInfo& ModelInstance::symbol(int index, int type) const
 
 const QVector<SymbolInfo>& ModelInstance::symbols(int type) const
 {
-    return mCache->symbols(type);
+    return mSymbolCache->symbols(type);
 }
 
 QPair<double, double> ModelInstance::matrixRange() const
@@ -845,14 +844,38 @@ QPair<double, double> ModelInstance::rhsRange() const
     return range;
 }
 
-int ModelInstance::rowCount() const
+int ModelInstance::rowCount(PredefinedViewEnum viewType) const
 {
-    return PredefinedHeaderLength + mCache->symbolEntries(dcteqnSymType);
+    switch (viewType) {
+    case PredefinedViewEnum::EqnAttributes:
+        return PredefinedHeaderLength + mSymbolCache->symbolEntries(dcteqnSymType);
+    case PredefinedViewEnum::VarAttributes:
+        return PredefinedHeaderLength;
+    default:
+        return PredefinedHeaderLength + mSymbolCache->symbolEntries(dcteqnSymType);
+    }
 }
 
-int ModelInstance::columnCount() const
+int ModelInstance::jaccRowCount() const
 {
-    return PredefinedHeaderLength + mCache->symbolEntries(dctvarSymType);
+    return mSymbolCache->symbolEntries(dcteqnSymType);
+}
+
+int ModelInstance::columnCount(PredefinedViewEnum viewType) const
+{
+    switch (viewType) {
+    case PredefinedViewEnum::EqnAttributes:
+        return PredefinedHeaderLength;
+    case PredefinedViewEnum::VarAttributes:
+        return PredefinedHeaderLength + mSymbolCache->symbolEntries(dctvarSymType);
+    default:
+        return PredefinedHeaderLength + mSymbolCache->symbolEntries(dctvarSymType);
+    }
+}
+
+int ModelInstance::jaccColumnCount() const
+{
+    return mSymbolCache->symbolEntries(dctvarSymType);
 }
 
 void ModelInstance::loadInitialLabelFilter(Qt::Orientation orientation, LabelFilter &labelFilter)
@@ -883,23 +906,24 @@ void ModelInstance::loadInitialLabelFilter(Qt::Orientation orientation, LabelFil
         }
     }
     labelFilter.LabelCheckStates[orientation] = filter;
-    mCache->setLongestLabelText(orientation, labelFilter);
+    mSymbolCache->setLongestLabelText(orientation, labelFilter);
 }
 
-QVariant ModelInstance::data(int row, int column) const
+QVariant ModelInstance::data(int row, int column, int view) const
 {
-    return mDataHandler->data(row, column);
+    return mDataHandler->data(row, column, view);
 }
 
-void ModelInstance::setAppliedAggregation(const Aggregation &aggregation)
+void ModelInstance::aggregate(const Aggregation &aggregation)
 {
-    mDataHandler->setAppliedAggregation(aggregation);
-    mDataHandler->aggregate(this);
+    mDataHandler->aggregate(aggregation, this);
 }
 
-int ModelInstance::headerData(int logicalIndex, Qt::Orientation orientation) const
+int ModelInstance::headerData(int logicalIndex,
+                              Qt::Orientation orientation,
+                              int view) const
 {
-    return mDataHandler->headerData(logicalIndex, orientation);
+    return mDataHandler->headerData(logicalIndex, orientation, view);
 }
 
 QString ModelInstance::headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const
@@ -918,10 +942,11 @@ QString ModelInstance::headerData(int sectionIndex, int dimension, Qt::Orientati
     return eqn.label(sectionIndex, dimension);
 }
 
-void ModelInstance::searchSymbolData(int logicalIndex,
+void ModelInstance::searchHeaderData(int logicalIndex,
                                      int sectionIndex,
                                      const QString &term,
                                      bool isRegEx,
+                                     DataSource dataSource,
                                      Qt::Orientation orientation,
                                      QList<SearchResult> &result)
 {
@@ -937,7 +962,14 @@ void ModelInstance::searchSymbolData(int logicalIndex,
         };
     }
 
-    auto sym = mCache->sectionSymbol(sectionIndex, orientation);
+    if (sectionIndex < PredefinedHeaderLength && compare(PredefinedHeader.at(sectionIndex))) {
+        result.append(SearchResult{logicalIndex, orientation});
+        return;
+    }
+
+    auto sourceOrientation = dataSource == DataSource::VariableData ? Qt::Horizontal
+                                                                    : Qt::Vertical;
+    auto sym = mSymbolCache->sectionSymbol(sectionIndex, sourceOrientation);
     if (compare(sym.name())) {
         result.append(SearchResult{logicalIndex, orientation});
     } else {
@@ -1065,11 +1097,6 @@ QVariant ModelInstance::verticalAttribute(const QString &header, int row)
         value = bounds.second;
     }
     return specialValueMinMax(value);
-}
-
-bool ModelInstance::aggregationActive() const
-{
-    return mDataHandler->isAggregationActive();
 }
 
 QPair<double, double> ModelInstance::equationBounds(int row)

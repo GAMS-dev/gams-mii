@@ -1,5 +1,5 @@
-#ifndef GLOBALFILTERDIALOG_H
-#define GLOBALFILTERDIALOG_H
+#ifndef FILTERDIALOG_H
+#define FILTERDIALOG_H
 
 #include <QDialog>
 
@@ -14,18 +14,18 @@ namespace studio {
 namespace modelinspector {
 
 namespace Ui {
-class GlobalFilterDialog;
+class FilterDialog;
 }
 
 class FilterTreeItem;
 
-class GlobalFilterDialog : public QDialog
+class FilterDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit GlobalFilterDialog(QWidget *parent = nullptr);
-    ~GlobalFilterDialog();
+    explicit FilterDialog(QWidget *parent = nullptr);
+    ~FilterDialog();
 
     IdentifierFilter idendifierFilter() const;
     void setIdentifierFilter(const IdentifierFilter &filter);
@@ -39,8 +39,14 @@ public:
     void setLabelFilter(const LabelFilter &filter);
     void setDefaultLabelFilter(const LabelFilter &filter);
 
-public:
-    void viewChanged(PredefinedViewEnum viewType);
+    DataSource horizontalDataSource() const;
+    void setHorizontalDataSource(DataSource dataSource);
+
+    DataSource verticalDataSource() const;
+    void setVerticalDataSource(DataSource dataSource);
+
+    PredefinedViewEnum viewType() const;
+    void setViewType(PredefinedViewEnum viewType);
 
 signals:
     void filterUpdated();
@@ -70,14 +76,17 @@ private:
     void setupEquationFilter(const IdentifierStates &filter);
     void setupVariableFilter(const IdentifierStates &filter);
     void setupLabelFilter();
-    FilterTreeItem* setupSymTreeItems(Qt::Orientation orientation,
-                                      const IdentifierStates &filter);
-    void setupLabelTreeItems(Qt::Orientation orientation, FilterTreeItem *root);
+    FilterTreeItem* setupSymTreeItems(const QString &text,
+                                      const IdentifierStates &filter,
+                                      bool showAttributes,
+                                      bool showSymbols);
+    void setupLabelTreeItems(const QString &text, Qt::Orientation orientation, FilterTreeItem *root);
 
     void applyCheckState(QTreeView* view,
                          QSortFilterProxyModel *model,
                          Qt::CheckState state);
-    IdentifierStates applyHeaderFilter(QSortFilterProxyModel *model);
+    IdentifierStates applyHeaderFilter(QSortFilterProxyModel *model,
+                                       DataSource dataSource);
     void applyValueFilter();
     LabelCheckStates applyLabelFilter(Qt::Orientation orientation,
                                       QSortFilterProxyModel *model);
@@ -86,8 +95,18 @@ private:
 
     void disableAttributes(QSortFilterProxyModel *model);
 
+    Qt::Orientation equationOrientation() const {
+        return mVerticalDataSource == DataSource::EquationData ? Qt::Vertical : Qt::Horizontal;
+    }
+
+    Qt::Orientation variableOrientation() const {
+        return mHorizontalDataSource == DataSource::VariableData ? Qt::Horizontal : Qt::Vertical;
+    }
+
 private:
-    Ui::GlobalFilterDialog *ui;
+    Ui::FilterDialog *ui;
+
+    PredefinedViewEnum mViewType;
 
     IdentifierFilter mIdentifierFilter;
     IdentifierFilter mDefaultIdentifierFilter;
@@ -99,10 +118,13 @@ private:
     QSortFilterProxyModel *mEqnFilterModel;
     QSortFilterProxyModel *mVarFilterModel;
     QSortFilterProxyModel *mLabelFilterModel;
+
+    DataSource mHorizontalDataSource;
+    DataSource mVerticalDataSource;
 };
 
 }
 }
 }
 
-#endif // GLOBALFILTERDIALOG_H
+#endif // FILTERDIALOG_H

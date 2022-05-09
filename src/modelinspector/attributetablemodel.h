@@ -4,6 +4,7 @@
 #include <QAbstractTableModel>
 #include <QSharedPointer>
 
+#include "common.h"
 
 namespace gams {
 namespace studio{
@@ -11,8 +12,7 @@ namespace modelinspector {
 
 class ModelInstance;
 
-class AttributeTableModel
-        : public QAbstractTableModel
+class AttributeTableModel : public QAbstractTableModel
 {
     Q_OBJECT
 
@@ -37,12 +37,22 @@ public:
 
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
+    int view() const
+    {
+        return mView;
+    }
+
+    void setView(int view)
+    {
+        mView = view;
+    }
+
 protected:
     QSharedPointer<ModelInstance> mModelInstance;
+    int mView;
 };
 
-class EquationAttributeTableModel
-        : public AttributeTableModel
+class EquationAttributeTableModel : public AttributeTableModel
 {
     Q_OBJECT
 
@@ -54,8 +64,7 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 };
 
-class VariableAttributeTableModel
-        : public AttributeTableModel
+class VariableAttributeTableModel : public AttributeTableModel
 {
     Q_OBJECT
 
@@ -65,6 +74,8 @@ public:
     ~VariableAttributeTableModel();
 
     QVariant data(const QModelIndex &index, int role) const override;
+
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 };

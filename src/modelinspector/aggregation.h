@@ -3,11 +3,15 @@
 
 #include "common.h"
 
+#include <QSet>
 #include <QSharedPointer>
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
+
+typedef QMap<int, QVariant> DataRow;
+typedef QMap<int, DataRow> DataMatrix;
 
 typedef QVector<QSet<int>> UnitedSections;
 
@@ -109,12 +113,22 @@ public:
     const ValueFilter& valueFilter() const;
     void setValueFilter(const ValueFilter &filter);
 
+    PredefinedViewEnum viewType() const;
+    void setViewType(PredefinedViewEnum viewType);
+
+    int view() const;
+    void setView(int view);
+
+    bool isActive() const;
+
 private:
     bool mUseAbsoluteValues = false;
     Type mType = None;
     AggregationMap mAggregationMap;
     IdentifierFilter mIdentifierFilter;
     ValueFilter mValueFilter;
+    PredefinedViewEnum mViewType = PredefinedViewEnum::Unknown;
+    int mView = -1;
 
     static const QString CountText;
     static const QString MeanText;

@@ -1,7 +1,6 @@
 #ifndef DATAHANDLER_H
 #define DATAHANDLER_H
 
-#include "common.h"
 #include "aggregation.h"
 
 #include <QVariant>
@@ -12,6 +11,9 @@ namespace modelinspector {
 
 class ModelInstance;
 
+typedef int View;
+typedef QMap<int, QList<int>> SectionMapping;
+
 class DataHandler
 {
 public:
@@ -19,22 +21,16 @@ public:
 
     DataHandler();
 
-    const Aggregation& appliedAggregation() const;
-    void setAppliedAggregation(const Aggregation &aggregation);
+    void aggregate(const Aggregation &aggregation, ModelInstance *modelInstance);
 
-    void aggregate(ModelInstance *modelInstance);
+    QVariant data(int row, int column, int view) const;
 
-    QVariant data(int row, int column) const;
-
-    int headerData(int logicalIndex, Qt::Orientation orientation) const;
+    int headerData(int logicalIndex, Qt::Orientation orientation, int view) const;
 
     void loadDataMatrix(ModelInstance *modelInstance);
 
-
-    bool isAggregationActive() const;
-
 private:
-    void setDataAggregator(Aggregation::Type type);
+    void setDataAggregator(const Aggregation &appliedAggregation);
 
     void applyValueFilter();
 
@@ -44,15 +40,17 @@ private:
     void setDefaultColumnValues(int columnCount);
 
     IndexCheckStates checkStates(Qt::Orientation orientation,
-                                ModelInstance *modelInstance) const;
+                                 ModelInstance *modelInstance) const;
+
+    bool keepColumn(int column);
+    bool keepRow(int row);
 
 private:
     QSharedPointer<AbstractDataAggregator> mDataAggregator;
-    Aggregation mAppliedAggregation;
 
     DataMatrix mDataMatrix;
-    DataMatrix mAggrMatrix;
-    QMap<int, QList<int>> mLogicalSectionMapping;
+    QMap<View, DataMatrix> mAggrCache;
+    QMap<View, SectionMapping> mLogicalSectionMapping;
 };
 
 }

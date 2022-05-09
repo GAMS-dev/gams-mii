@@ -77,11 +77,12 @@ SOURCES += \
     modelinspector/attributetablemodel.cpp \
     modelinspector/columnrowfiltermodel.cpp \
     modelinspector/datahandler.cpp \
+    modelinspector/filterdialog.cpp \
     modelinspector/filtertreeitem.cpp \
     modelinspector/filtertreemodel.cpp \
-    modelinspector/globalfilterdialog.cpp \
     modelinspector/hierarchicalheaderview.cpp \
     modelinspector/identifierfiltermodel.cpp \
+    modelinspector/jaccobiantablemodel.cpp \
     modelinspector/labelfiltermodel.cpp \
     modelinspector/labelfilterwidget.cpp \
     modelinspector/labeltreeitem.cpp \
@@ -94,8 +95,8 @@ SOURCES += \
     modelinspector/sectiontreemodel.cpp \
     modelinspector/sectiontreeview.cpp \
     modelinspector/statisticedit.cpp \
-    modelinspector/statisticswidget.cpp \
     modelinspector/symbolinfo.cpp \
+    modelinspector/tableviewframe.cpp \
     modelinspector/valueformatproxymodel.cpp
 
 HEADERS += \
@@ -111,11 +112,12 @@ HEADERS += \
     modelinspector/columnrowfiltermodel.h \
     modelinspector/common.h \
     modelinspector/datahandler.h \
+    modelinspector/filterdialog.h \
     modelinspector/filtertreeitem.h \
     modelinspector/filtertreemodel.h \
-    modelinspector/globalfilterdialog.h \
     modelinspector/hierarchicalheaderview.h \
     modelinspector/identifierfiltermodel.h \
+    modelinspector/jaccobiantablemodel.h \
     modelinspector/labelfiltermodel.h \
     modelinspector/labelfilterwidget.h \
     modelinspector/labeltreeitem.h \
@@ -128,17 +130,17 @@ HEADERS += \
     modelinspector/sectiontreemodel.h \
     modelinspector/sectiontreeview.h \
     modelinspector/statisticedit.h \
-    modelinspector/statisticswidget.h \
     modelinspector/symbolinfo.h \
+    modelinspector/tableviewframe.h \
     modelinspector/valueformatproxymodel.h
 
 FORMS += \
     mainwindow.ui \
     modelinspector/aggregationdialog.ui \
-    modelinspector/globalfilterdialog.ui \
+    modelinspector/filterdialog.ui \
     modelinspector/labelfilterwidget.ui \
     modelinspector/modelinspector.ui \
-    modelinspector/statisticwidget.ui
+    modelinspector/tableviewframe.ui
 
 RESOURCES += \
     ../icons/icons.qrc

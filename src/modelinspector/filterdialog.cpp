@@ -1,5 +1,5 @@
-#include "globalfilterdialog.h"
-#include "ui_globalfilterdialog.h"
+#include "filterdialog.h"
+#include "ui_filterdialog.h"
 #include "filtertreeitem.h"
 #include "filtertreemodel.h"
 
@@ -11,9 +11,11 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-GlobalFilterDialog::GlobalFilterDialog(QWidget *parent)
+// TODO consolidate filters, aggregation, row/column data source... struct/class?
+
+FilterDialog::FilterDialog(QWidget *parent)
     : QDialog(parent)
-    , ui(new Ui::GlobalFilterDialog)
+    , ui(new Ui::FilterDialog)
 {
     ui->setupUi(this);
     ui->labelView->sortByColumn(0, Qt::AscendingOrder);
@@ -21,7 +23,7 @@ GlobalFilterDialog::GlobalFilterDialog(QWidget *parent)
     ui->maxEdit->setValidator(new QDoubleValidator(ui->maxEdit));
 
     connect(this, &QDialog::rejected,
-            this, &GlobalFilterDialog::on_cancelButton_clicked);
+            this, &FilterDialog::on_cancelButton_clicked);
     connect(ui->absoluteBox, &QCheckBox::stateChanged,
             this, [this](){
         updateRangeEdit(ui->minEdit, ui->minEdit->text());
@@ -33,34 +35,34 @@ GlobalFilterDialog::GlobalFilterDialog(QWidget *parent)
             this, [this](const QString &text) { updateRangeEdit(ui->maxEdit, text); });
 }
 
-GlobalFilterDialog::~GlobalFilterDialog()
+FilterDialog::~FilterDialog()
 {
     delete ui;
 }
 
-IdentifierFilter GlobalFilterDialog::idendifierFilter() const
+IdentifierFilter FilterDialog::idendifierFilter() const
 {
     return mIdentifierFilter;
 }
 
-void GlobalFilterDialog::setIdentifierFilter(const IdentifierFilter &filter)
+void FilterDialog::setIdentifierFilter(const IdentifierFilter &filter)
 {
     mIdentifierFilter = filter;
-    setupEquationFilter(mIdentifierFilter[Qt::Vertical]);
-    setupVariableFilter(mIdentifierFilter[Qt::Horizontal]);
+    setupEquationFilter(mIdentifierFilter[equationOrientation()]);
+    setupVariableFilter(mIdentifierFilter[variableOrientation()]);
 }
 
-void GlobalFilterDialog::setDefaultIdentifierFilter(const IdentifierFilter &filter)
+void FilterDialog::setDefaultIdentifierFilter(const IdentifierFilter &filter)
 {
     mDefaultIdentifierFilter = filter;
 }
 
-ValueFilter GlobalFilterDialog::valueFilter() const
+ValueFilter FilterDialog::valueFilter() const
 {
     return mValueFilter;
 }
 
-void GlobalFilterDialog::setValueFilter(const ValueFilter &filter)
+void FilterDialog::setValueFilter(const ValueFilter &filter)
 {
     mValueFilter = filter;
     ui->minEdit->setText(QString::number(mValueFilter.MinValue));
@@ -72,121 +74,135 @@ void GlobalFilterDialog::setValueFilter(const ValueFilter &filter)
     ui->pInfBox->setChecked(mValueFilter.ShowPInf);
 }
 
-void GlobalFilterDialog::setDefaultValueFilter(const ValueFilter &filter)
+void FilterDialog::setDefaultValueFilter(const ValueFilter &filter)
 {
     mDefaultValueFilter = filter;
 }
 
-LabelFilter GlobalFilterDialog::labelFilter() const
+LabelFilter FilterDialog::labelFilter() const
 {
     return mLabelFilter;
 }
 
-void GlobalFilterDialog::setLabelFilter(const LabelFilter &filter)
+void FilterDialog::setLabelFilter(const LabelFilter &filter)
 {
     mLabelFilter = filter;
     setupLabelFilter();
 }
 
-void GlobalFilterDialog::setDefaultLabelFilter(const LabelFilter &filter)
+void FilterDialog::setDefaultLabelFilter(const LabelFilter &filter)
 {
     mDefaultLabelFilter = filter;
 }
 
-void GlobalFilterDialog::viewChanged(PredefinedViewEnum viewType)
+DataSource FilterDialog::horizontalDataSource() const
 {
-    switch (viewType) {
-    case PredefinedViewEnum::Full:
-        on_resetButton_clicked();
-        on_applyButton_clicked();
-        break;
-    case PredefinedViewEnum::Jaccobian:
-        on_resetButton_clicked();
-        disableAttributes(mEqnFilterModel);
-        disableAttributes(mVarFilterModel);
-        on_applyButton_clicked();
-        break;
-    default:
-        break;
-    }
+    return mHorizontalDataSource;
 }
 
-void GlobalFilterDialog::on_applyButton_clicked()
+void FilterDialog::setHorizontalDataSource(DataSource dataSource)
 {
-    mIdentifierFilter[Qt::Horizontal] = applyHeaderFilter(mVarFilterModel);
-    mIdentifierFilter[Qt::Vertical] = applyHeaderFilter(mEqnFilterModel);
+    mHorizontalDataSource = dataSource;
+}
+
+DataSource FilterDialog::verticalDataSource() const
+{
+    return mVerticalDataSource;
+}
+
+void FilterDialog::setVerticalDataSource(DataSource dataSource)
+{
+    mVerticalDataSource = dataSource;
+}
+
+PredefinedViewEnum FilterDialog::viewType() const
+{
+    return mViewType;
+}
+
+void FilterDialog::setViewType(PredefinedViewEnum viewType)
+{
+    mViewType = viewType;
+}
+
+void FilterDialog::on_applyButton_clicked()
+{
+    mIdentifierFilter[variableOrientation()] = applyHeaderFilter(mVarFilterModel, DataSource::VariableData);
+    mIdentifierFilter[equationOrientation()] = applyHeaderFilter(mEqnFilterModel, DataSource::EquationData);
     applyValueFilter();
-    mLabelFilter.LabelCheckStates[Qt::Horizontal] = applyLabelFilter(Qt::Horizontal, mLabelFilterModel);
-    mLabelFilter.LabelCheckStates[Qt::Vertical] = applyLabelFilter(Qt::Vertical, mLabelFilterModel);
+    mLabelFilter.LabelCheckStates[variableOrientation()] = applyLabelFilter(variableOrientation(), mLabelFilterModel);
+    mLabelFilter.LabelCheckStates[equationOrientation()] = applyLabelFilter(equationOrientation(), mLabelFilterModel);
+    mLabelFilter.ColumnDataSource = mHorizontalDataSource;
+    mLabelFilter.RowDataSource = mVerticalDataSource;
     mLabelFilter.Any = ui->labelBox->currentIndex();
     emit filterUpdated();
 }
 
-void GlobalFilterDialog::on_resetButton_clicked()
+void FilterDialog::on_resetButton_clicked()
 {
     setIdentifierFilter(mDefaultIdentifierFilter);
     setValueFilter(mDefaultValueFilter);
     setLabelFilter(mDefaultLabelFilter);
 
-    ui->equationEdit->setText("");
-    ui->variableEdit->setText("");
+    ui->rowEdit->setText("");
+    ui->columnEdit->setText("");
     ui->labelEdit->setText("");
     ui->labelBox->setCurrentIndex(0);
 
     on_applyButton_clicked();
 }
 
-void GlobalFilterDialog::on_cancelButton_clicked()
+void FilterDialog::on_cancelButton_clicked()
 {
     setIdentifierFilter(mIdentifierFilter);
     setValueFilter(mValueFilter);
     setLabelFilter(mLabelFilter);
 
-    ui->equationEdit->setText("");
-    ui->variableEdit->setText("");
+    ui->rowEdit->setText("");
+    ui->columnEdit->setText("");
     ui->labelEdit->setText("");
     ui->labelBox->setCurrentIndex(0);
 
     close();
 }
 
-void GlobalFilterDialog::on_selectEqnButton_clicked()
+void FilterDialog::on_selectEqnButton_clicked()
 {
-    applyCheckState(ui->equationView, mEqnFilterModel, Qt::Checked);
-    ui->equationView->dataChanged(QModelIndex(), QModelIndex());
+    applyCheckState(ui->rowView, mEqnFilterModel, Qt::Checked);
+    ui->rowView->dataChanged(QModelIndex(), QModelIndex());
 }
 
-void GlobalFilterDialog::on_deselectEqnButton_clicked()
+void FilterDialog::on_deselectEqnButton_clicked()
 {
-    applyCheckState(ui->equationView, mEqnFilterModel, Qt::Unchecked);
-    ui->equationView->dataChanged(QModelIndex(), QModelIndex());
+    applyCheckState(ui->rowView, mEqnFilterModel, Qt::Unchecked);
+    ui->rowView->dataChanged(QModelIndex(), QModelIndex());
 }
 
-void GlobalFilterDialog::on_selectVarButton_clicked()
+void FilterDialog::on_selectVarButton_clicked()
 {
-    applyCheckState(ui->variableView, mVarFilterModel, Qt::Checked);
-    ui->variableView->dataChanged(QModelIndex(), QModelIndex());
+    applyCheckState(ui->columnView, mVarFilterModel, Qt::Checked);
+    ui->columnView->dataChanged(QModelIndex(), QModelIndex());
 }
 
-void GlobalFilterDialog::on_deselectVarButton_clicked()
+void FilterDialog::on_deselectVarButton_clicked()
 {
-    applyCheckState(ui->variableView, mVarFilterModel, Qt::Unchecked);
-    ui->variableView->dataChanged(QModelIndex(), QModelIndex());
+    applyCheckState(ui->columnView, mVarFilterModel, Qt::Unchecked);
+    ui->columnView->dataChanged(QModelIndex(), QModelIndex());
 }
 
-void GlobalFilterDialog::on_selectLabelButton_clicked()
+void FilterDialog::on_selectLabelButton_clicked()
 {
     applyCheckState(ui->labelView, mLabelFilterModel, Qt::Checked);
     ui->labelView->dataChanged(QModelIndex(), QModelIndex());
 }
 
-void GlobalFilterDialog::on_deselectLabelButton_clicked()
+void FilterDialog::on_deselectLabelButton_clicked()
 {
     applyCheckState(ui->labelView, mLabelFilterModel, Qt::Unchecked);
     ui->labelView->dataChanged(QModelIndex(), QModelIndex());
 }
 
-void GlobalFilterDialog::on_labelBox_currentIndexChanged(int index)
+void FilterDialog::on_labelBox_currentIndexChanged(int index)
 {
     switch (index) {
     case 1: // Any
@@ -198,55 +214,67 @@ void GlobalFilterDialog::on_labelBox_currentIndexChanged(int index)
     }
 }
 
-void GlobalFilterDialog::setupEquationFilter(const IdentifierStates &filter)
+void FilterDialog::setupEquationFilter(const IdentifierStates &filter)
 {
-    auto filterItem = setupSymTreeItems(Qt::Vertical, filter);
-    auto oldEqnModel = ui->equationView->selectionModel();
-    auto eqnTreeModel = new FilterTreeModel(filterItem, ui->equationView);
-    mEqnFilterModel = new QSortFilterProxyModel(ui->equationView);
+    bool showAttributes = !(mViewType == PredefinedViewEnum::EqnAttributes ||
+                           mViewType == PredefinedViewEnum::Jaccobian);
+    bool showSymbols = mViewType != PredefinedViewEnum::VarAttributes;
+    auto filterItem = setupSymTreeItems(FilterTreeItem::EquationText, filter,
+                                        showAttributes, showSymbols);
+    auto oldEqnModel = ui->rowView->selectionModel();
+    auto eqnTreeModel = new FilterTreeModel(filterItem, ui->rowView);
+    mEqnFilterModel = new QSortFilterProxyModel(ui->rowView);
     mEqnFilterModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     mEqnFilterModel->setRecursiveFilteringEnabled(true);
     mEqnFilterModel->setSourceModel(eqnTreeModel);
-    ui->equationView->setModel(mEqnFilterModel);
-    ui->equationView->expandAll();
+    ui->rowView->setModel(mEqnFilterModel);
+    ui->rowView->expandAll();
     if (oldEqnModel)
         oldEqnModel->deleteLater();
-    connect(ui->equationEdit, &QLineEdit::textChanged,
+    connect(ui->rowEdit, &QLineEdit::textChanged,
             this, [this](const QString &text){
                             if (!mEqnFilterModel) return;
                             mEqnFilterModel->setFilterWildcard(text);
-                            ui->equationView->expandAll();
+                            ui->rowView->expandAll();
                         });
 }
 
-void GlobalFilterDialog::setupVariableFilter(const IdentifierStates &filter)
+void FilterDialog::setupVariableFilter(const IdentifierStates &filter)
 {
-    auto filterItem = setupSymTreeItems(Qt::Horizontal, filter);
-    auto oldVarModel = ui->variableView->selectionModel();
-    auto varTreeModel = new FilterTreeModel(filterItem, ui->variableView);
-    mVarFilterModel = new QSortFilterProxyModel(ui->variableEdit);
+    bool showAttributes = !(mViewType == PredefinedViewEnum::VarAttributes ||
+                            mViewType == PredefinedViewEnum::Jaccobian);
+    bool showSymbols = mViewType != PredefinedViewEnum::EqnAttributes;
+    auto filterItem = setupSymTreeItems(FilterTreeItem::VariableText, filter,
+                                        showAttributes, showSymbols);
+    auto oldVarModel = ui->columnView->selectionModel();
+    auto varTreeModel = new FilterTreeModel(filterItem, ui->columnView);
+    mVarFilterModel = new QSortFilterProxyModel(ui->columnEdit);
     mVarFilterModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     mVarFilterModel->setRecursiveFilteringEnabled(true);
     mVarFilterModel->setSourceModel(varTreeModel);
-    ui->variableView->setModel(mVarFilterModel);
-    ui->variableView->expandAll();
+    ui->columnView->setModel(mVarFilterModel);
+    ui->columnView->expandAll();
     if (oldVarModel)
         oldVarModel->deleteLater();
-    connect(ui->variableEdit, &QLineEdit::textChanged,
+    connect(ui->columnEdit, &QLineEdit::textChanged,
             this, [this](const QString &text) {
                                                 if (!mVarFilterModel) return;
                                                 mVarFilterModel->setFilterWildcard(text);
-                                                ui->variableView->expandAll();
+                                                ui->columnView->expandAll();
                                               });
 }
 
-void GlobalFilterDialog::setupLabelFilter()
+void FilterDialog::setupLabelFilter()
 {
     ui->labelBox->setCurrentIndex(mLabelFilter.Any);
     auto labelFilterItem = new FilterTreeItem("", Qt::Unchecked);
     labelFilterItem->setCheckable(false);
-    setupLabelTreeItems(Qt::Horizontal, labelFilterItem);
-    setupLabelTreeItems(Qt::Vertical, labelFilterItem);
+    setupLabelTreeItems(FilterTreeItem::EquationText,
+                        equationOrientation(),
+                        labelFilterItem);
+    setupLabelTreeItems(FilterTreeItem::VariableText,
+                        variableOrientation(),
+                        labelFilterItem);
 
     auto oldLabelModel = ui->labelView->selectionModel();
     auto labelTreeModel = new FilterTreeModel(labelFilterItem, ui->labelView);
@@ -265,21 +293,20 @@ void GlobalFilterDialog::setupLabelFilter()
                                               });
 }
 
-FilterTreeItem* GlobalFilterDialog::setupSymTreeItems(Qt::Orientation orientation,
-                                                      const IdentifierStates &filter)
+FilterTreeItem* FilterDialog::setupSymTreeItems(const QString &text,
+                                                const IdentifierStates &filter,
+                                                bool showAttributes,
+                                                bool showSymbols)
 {
     auto root = new FilterTreeItem(QString(), Qt::Unchecked);
     root->setCheckable(false);
     auto attributes = new FilterTreeItem(FilterTreeItem::AttributesText, Qt::Unchecked, root);
     attributes->setCheckable(false);
-    root->append(attributes);
-    auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ? FilterTreeItem::VariableText :
-                                                                       FilterTreeItem::EquationText,
-                                       Qt::Unchecked, root);
-    typeItem->setCheckable(false);
-    root->append(typeItem);
+    auto symbols = new FilterTreeItem(text, Qt::Unchecked, root);
+    symbols->setCheckable(false);
     Q_FOREACH(auto item, filter) {
         if (item.SymbolIndex < PredefinedHeaderLength) {
+            if (!showAttributes) continue;
             auto fItem = new FilterTreeItem(item.Text,
                                             item.Checked,
                                             attributes);
@@ -287,22 +314,24 @@ FilterTreeItem* GlobalFilterDialog::setupSymTreeItems(Qt::Orientation orientatio
             fItem->setEnabled(item.Enabled);
             attributes->append(fItem);
         } else {
+            if (!showSymbols) continue;
             auto fItem = new FilterTreeItem(item.Text,
                                             item.Checked,
-                                            typeItem);
+                                            symbols);
             fItem->setSymbolIndex(item.SymbolIndex);
-            typeItem->append(fItem);
+            symbols->append(fItem);
         }
     }
+    showAttributes ? root->append(attributes) : delete attributes;
+    showSymbols ? root->append(symbols) : delete symbols;
     return root;
 }
 
-void GlobalFilterDialog::setupLabelTreeItems(Qt::Orientation orientation, FilterTreeItem *root)
+void FilterDialog::setupLabelTreeItems(const QString &text,
+                                       Qt::Orientation orientation,
+                                       FilterTreeItem *root)
 {
-    auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ?
-                                           FilterTreeItem::VariableText :
-                                           FilterTreeItem::EquationText,
-                                       Qt::Unchecked, root);
+    auto typeItem = new FilterTreeItem(text, Qt::Unchecked, root);
     typeItem->setCheckable(false);
     root->append(typeItem);
 
@@ -316,9 +345,9 @@ void GlobalFilterDialog::setupLabelTreeItems(Qt::Orientation orientation, Filter
     }
 }
 
-void GlobalFilterDialog::applyCheckState(QTreeView *view,
-                                         QSortFilterProxyModel *model,
-                                         Qt::CheckState state)
+void FilterDialog::applyCheckState(QTreeView *view,
+                                   QSortFilterProxyModel *model,
+                                   Qt::CheckState state)
 {
     QModelIndexList indexes;
     for(int row=0; row<model->rowCount(); ++row) {
@@ -338,7 +367,8 @@ void GlobalFilterDialog::applyCheckState(QTreeView *view,
     }
 }
 
-IdentifierStates GlobalFilterDialog::applyHeaderFilter(QSortFilterProxyModel *model)
+IdentifierStates FilterDialog::applyHeaderFilter(QSortFilterProxyModel *model,
+                                                 DataSource dataSource)
 {
     QList<FilterTreeItem*> items {
         static_cast<FilterTreeModel*>(model->sourceModel())->filterItem()
@@ -352,6 +382,7 @@ IdentifierStates GlobalFilterDialog::applyHeaderFilter(QSortFilterProxyModel *mo
         IdentifierState identifierState;
         identifierState.Enabled = item->isEnabled();
         identifierState.SymbolIndex = item->symbolIndex();
+        identifierState.SymbolType = dataSource;
         identifierState.Text =  item->text();
         identifierState.Checked = item->checked();
         filter[item->symbolIndex()] = identifierState;
@@ -359,7 +390,7 @@ IdentifierStates GlobalFilterDialog::applyHeaderFilter(QSortFilterProxyModel *mo
     return filter;
 }
 
-void GlobalFilterDialog::applyValueFilter()
+void FilterDialog::applyValueFilter()
 {
     mValueFilter.MinValue = ui->minEdit->text().toDouble();
     mValueFilter.MaxValue = ui->maxEdit->text().toDouble();
@@ -370,16 +401,16 @@ void GlobalFilterDialog::applyValueFilter()
     mValueFilter.ShowEps = ui->epsBox->isChecked();
 }
 
-LabelCheckStates GlobalFilterDialog::applyLabelFilter(Qt::Orientation orientation,
-                                                      QSortFilterProxyModel *model)
+LabelCheckStates FilterDialog::applyLabelFilter(Qt::Orientation orientation,
+                                                QSortFilterProxyModel *model)
 {
     FilterTreeItem* root = nullptr;
     auto childs = static_cast<FilterTreeModel*>(model->sourceModel())->filterItem()->childs();
     Q_FOREACH(auto child, childs) {
-        if (orientation == Qt::Horizontal && child->text() == FilterTreeItem::VariableText) {
+        if (orientation == variableOrientation() && child->text() == FilterTreeItem::VariableText) {
             root = child;
             break;
-        } else if (orientation == Qt::Vertical && child->text() == FilterTreeItem::EquationText) {
+        } else if (orientation == equationOrientation() && child->text() == FilterTreeItem::EquationText) {
             root = child;
             break;
         }
@@ -399,7 +430,7 @@ LabelCheckStates GlobalFilterDialog::applyLabelFilter(Qt::Orientation orientatio
     return filter;
 }
 
-void GlobalFilterDialog::updateRangeEdit(QLineEdit *edit, const QString &text)
+void FilterDialog::updateRangeEdit(QLineEdit *edit, const QString &text)
 {
     if (ui->absoluteBox->isChecked() && text.startsWith("-")) {
         edit->setStyleSheet("color: red");
@@ -408,7 +439,7 @@ void GlobalFilterDialog::updateRangeEdit(QLineEdit *edit, const QString &text)
     }
 }
 
-void GlobalFilterDialog::disableAttributes(QSortFilterProxyModel *model)
+void FilterDialog::disableAttributes(QSortFilterProxyModel *model)
 {
     auto* item = static_cast<FilterTreeModel*>(model->sourceModel())->filterItem();
     auto attrItem = item->findChild(FilterTreeItem::AttributesText);

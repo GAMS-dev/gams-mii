@@ -5,6 +5,8 @@
 
 #include <QSortFilterProxyModel>
 
+#include <QDebug>
+
 namespace gams {
 namespace studio {
 namespace modelinspector {

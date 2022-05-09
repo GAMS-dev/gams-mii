@@ -1,5 +1,5 @@
-#ifndef MODELINSTANCETABLEMODEL_H
-#define MODELINSTANCETABLEMODEL_H
+#ifndef JACCOBIANTABLEMODEL_H
+#define JACCOBIANTABLEMODEL_H
 
 #include <QAbstractTableModel>
 #include <QSharedPointer>
@@ -12,14 +12,14 @@ namespace modelinspector {
 
 class ModelInstance;
 
-class ModelInstanceTableModel : public QAbstractTableModel
+class JaccobianTableModel : public QAbstractTableModel
 {
     Q_OBJECT
 
 public:
-    explicit ModelInstanceTableModel(QObject *parent = nullptr);
+    explicit JaccobianTableModel(QObject *parent = nullptr);
 
-    ~ModelInstanceTableModel();
+    ~JaccobianTableModel();
 
     void setModelInstance(const QSharedPointer<ModelInstance> &modelInstance);
 
@@ -57,4 +57,4 @@ private:
 }
 }
 
-#endif // MODELINSTANCETABLEMODEL_H
+#endif // JACCOBIANTABLEMODEL_H

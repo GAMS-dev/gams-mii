@@ -8,6 +8,8 @@
 #include <QVariant>
 #include <QVector>
 
+// TODO Do not use Qt::Orientation as filter/aggregation key!
+
 namespace gams {
 namespace studio {
 namespace modelinspector {
@@ -32,17 +34,39 @@ static const QString EquationAttributes = "Equation Attributes";
 static const QString VariableAttributes = "Variable Attributes";
 static const QString Jaccobian = "Jaccobian";
 static const QString FullView = "Full View";
-static const QStringList PredefinedViews = { Statistic, EquationAttributes,
-                                             VariableAttributes, Jaccobian, FullView };
+static const QStringList PredefinedViewTexts = { Statistic,
+                                                 EquationAttributes,
+                                                 VariableAttributes,
+                                                 Jaccobian,
+                                                 FullView };
+
+enum class ViewType
+{
+    Predefined  = 0,
+    Custom      = 1
+};
 
 enum class PredefinedViewEnum
 {
-    Attributes,
-    Full,
-    Jaccobian,
-    Statistic,
-    Unknown,
-    UserView
+    Statistic       = 0,
+    EqnAttributes   = 1,
+    VarAttributes   = 2,
+    Jaccobian       = 3,
+    Full            = 4,
+    Unknown         = 127
+};
+
+enum class DataSource
+{
+    EquationData,
+    VariableData
+};
+
+struct ViewActionStates
+{
+    bool SaveEnabled = true;
+    bool RemoveEnabled = true;
+    bool RenameEnabled = true;
 };
 
 ///
@@ -67,9 +91,6 @@ typedef QMap<int, Qt::CheckState> IndexCheckStates;
 ///
 typedef QMap<QString, Qt::CheckState> LabelCheckStates;
 
-typedef QMap<int, QVariant> DataRow;
-typedef QMap<int, DataRow> DataMatrix;
-
 struct SearchResult
 {
     int Index = -1;
@@ -90,6 +111,8 @@ struct IdentifierState
     QString Text;
     Qt::CheckState Checked = Qt::Unchecked;
     IndexCheckStates CheckStates;
+
+    DataSource  SymbolType;
 
     bool isValid() const
     {
@@ -125,11 +148,14 @@ struct LabelFilter
 {
     bool Any = false;
     LabelStates LabelCheckStates;
+
+    DataSource ColumnDataSource;
+    DataSource RowDataSource;
 };
 
 struct ValueFilter
 {
-    double MinValue = std::numeric_limits<double>::min();
+    double MinValue = std::numeric_limits<double>::lowest();
     double MaxValue = std::numeric_limits<double>::max();
     bool ExcludeRange = false;
     bool UseAbsoluteValues = false;

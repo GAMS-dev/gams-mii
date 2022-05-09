@@ -23,7 +23,7 @@
 #include "gamsprocess.h"
 #include "gamslibprocess.h"
 #include "modelinspector/aggregationdialog.h"
-#include "modelinspector/globalfilterdialog.h"
+#include "modelinspector/filterdialog.h"
 #include "modelinspector/modelinspector.h"
 #include "modelinspector/searchresultmodel.h"
 
@@ -36,9 +36,10 @@
 
 using namespace gams::studio;
 using gams::studio::modelinspector::AggregationDialog;
-using gams::studio::modelinspector::GlobalFilterDialog;
+using gams::studio::modelinspector::FilterDialog;
 using gams::studio::modelinspector::ModelInspector;
 using gams::studio::modelinspector::SearchResultModel;
+using gams::studio::modelinspector::PredefinedViewEnum;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -46,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
     , mLibProcess(new GAMSLibProcess(this))
     , mProcess(new GAMSProcess(this))
     , mAggregationDialog(new AggregationDialog(this))
-    , mGlobalFilterDialog(new GlobalFilterDialog(this))
+    , mFilterDialog(new FilterDialog(this))
     , mAggregationStatusLabel(new QLabel(QString(), this))
 {
     ui->setupUi(this);
@@ -56,36 +57,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->statusBar->addPermanentWidget(mAggregationStatusLabel);
     setWindowTitle(windowTitle() + " " + QApplication::applicationVersion());
     mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
-
-    connect(mProcess->process(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this, &MainWindow::loadModelInstance);
-    connect(ui->modelInspector, &ModelInspector::newLogMessage,
-            this, &MainWindow::appendLogMessage);
-    connect(mLibProcess, &GAMSLibProcess::newStdChannelData,
-            this, &MainWindow::appendLogMessage);
-    connect(mProcess.get(), &GAMSProcess::newStdChannelData,
-            this, &MainWindow::appendLogMessage);
-    connect(ui->searchEdit, &QLineEdit::returnPressed,
-            this, &MainWindow::searchHeaders);
-    connect(ui->openButton, &QPushButton::clicked,
-            this, &MainWindow::on_actionOpen_triggered);
-    connect(ui->runButton, &QPushButton::clicked,
-            this, &MainWindow::on_actionRun_triggered);
-    connect(mAggregationDialog, &AggregationDialog::aggregationUpdated,
-             this, &MainWindow::aggregationUpdate);
-    connect(mGlobalFilterDialog, &GlobalFilterDialog::filterUpdated,
-            this, &MainWindow::globalFilterUpdate);
-    connect(ui->modelInspector, &ModelInspector::viewChanged,
-            mGlobalFilterDialog, &GlobalFilterDialog::viewChanged);
-    connect(ui->modelInspector, &ModelInspector::filtersChanged,
-            this, [this]{
-        static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
-        setGlobalFiltersData();
-    });
-    connect(ui->searchResultView, &QTableView::doubleClicked,
-            this, &MainWindow::searchResultSelectionChanged);
-
+    setupConnections();
     setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+    createProjectDirectory();
 }
 
 MainWindow::~MainWindow()
@@ -110,12 +84,17 @@ void MainWindow::on_actionOpen_triggered()
     ui->gamslibCheckBox->setChecked(false);
 }
 
+void MainWindow::on_actionOpen_Project_triggered()
+{
+    QMessageBox::information(this, "T.B.D.", "T.B.D.");
+}
+
 void MainWindow::on_actionRun_triggered()
 {
     auto path = workspace();
     QDir dir(path);
     if (!dir.mkpath(path))
-        ui->logEdit->append("Error: Could not create path " + path);
+        ui->logEdit->append("Error: Could not create workspace " + path);
 
     QStringList params = ui->paramsEdit->text().split(" ",
                                                       Qt::SkipEmptyParts,
@@ -153,10 +132,18 @@ void MainWindow::searchHeaders()
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData(result);
 }
 
-void MainWindow::on_actionGlobal_Filters_triggered()
+void MainWindow::editMenuAboutToShow()
+{
+    auto states = ui->modelInspector->viewActionStates();
+    ui->actionSaveView->setEnabled(states.SaveEnabled);
+    ui->actionRemoveView->setEnabled(states.RemoveEnabled);
+    ui->actionRenameView->setEnabled(states.RenameEnabled);
+}
+
+void MainWindow::on_actionFilters_triggered()
 {
     setGlobalFiltersData();
-    showDialog(mGlobalFilterDialog);
+    showDialog(mFilterDialog);
 }
 
 void MainWindow::on_actionAggregation_triggered()
@@ -220,9 +207,9 @@ void MainWindow::globalFilterUpdate()
 {
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
     ui->modelInspector->setAggregation(ui->modelInspector->defaultAggregation());
-    ui->modelInspector->setIdentifierFilter(mGlobalFilterDialog->idendifierFilter());
-    ui->modelInspector->setValueFilter(mGlobalFilterDialog->valueFilter());
-    ui->modelInspector->setLabelFilter(mGlobalFilterDialog->labelFilter());
+    ui->modelInspector->setIdentifierFilter(mFilterDialog->idendifierFilter());
+    ui->modelInspector->setValueFilter(mFilterDialog->valueFilter());
+    ui->modelInspector->setLabelFilter(mFilterDialog->labelFilter());
     ui->modelInspector->resetColumnRowFilter();
     setAggregationData();
 }
@@ -238,6 +225,70 @@ void MainWindow::searchResultSelectionChanged(const QModelIndex &index)
 void MainWindow::updateModelInstance()
 {
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
+}
+
+void MainWindow::viewChanged(int viewType)
+{
+    if (viewType == (int)PredefinedViewEnum::Statistic || viewType == (int)PredefinedViewEnum::Unknown) {
+        ui->action_Search->setEnabled(false);
+        ui->searchEdit->setEnabled(false);
+        ui->actionFilters->setEnabled(false);
+        ui->actionAggregation->setEnabled(false);
+    } else {
+        ui->action_Search->setEnabled(true);
+        ui->searchEdit->setEnabled(true);
+        ui->actionFilters->setEnabled(true);
+        ui->actionAggregation->setEnabled(true);
+        static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
+        setGlobalFiltersData();
+        setAggregationData();
+        mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
+    }
+}
+
+void MainWindow::setupConnections()
+{
+    connect(mProcess->process(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &MainWindow::loadModelInstance);
+    connect(ui->modelInspector, &ModelInspector::newLogMessage,
+            this, &MainWindow::appendLogMessage);
+    connect(mLibProcess, &GAMSLibProcess::newStdChannelData,
+            this, &MainWindow::appendLogMessage);
+    connect(mProcess.get(), &GAMSProcess::newStdChannelData,
+            this, &MainWindow::appendLogMessage);
+    connect(ui->searchEdit, &QLineEdit::returnPressed,
+            this, &MainWindow::searchHeaders);
+    connect(ui->openButton, &QPushButton::clicked,
+            this, &MainWindow::on_actionOpen_triggered);
+    connect(ui->runButton, &QPushButton::clicked,
+            this, &MainWindow::on_actionRun_triggered);
+    connect(mAggregationDialog, &AggregationDialog::aggregationUpdated,
+             this, &MainWindow::aggregationUpdate);
+    connect(mFilterDialog, &FilterDialog::filterUpdated,
+            this, &MainWindow::globalFilterUpdate);
+    connect(ui->modelInspector, &ModelInspector::viewChanged,
+            this, &MainWindow::viewChanged);
+    connect(ui->modelInspector, &ModelInspector::filtersChanged,
+            this, [this]{
+        static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
+        setGlobalFiltersData();
+    });
+    connect(ui->searchResultView, &QTableView::doubleClicked,
+            this, &MainWindow::searchResultSelectionChanged);
+    connect(ui->actionSaveView, &QAction::triggered,
+            ui->modelInspector, &ModelInspector::saveModelView);
+    connect(ui->actionRemoveView, &QAction::triggered,
+            ui->modelInspector, &ModelInspector::removeModelView);
+    connect(ui->menu_Edit, &QMenu::aboutToShow,
+            this, &MainWindow::editMenuAboutToShow);
+}
+
+void MainWindow::createProjectDirectory()
+{
+    auto path = projectDirectory();
+    QDir dir(path);
+    if (!dir.mkpath(path))
+        ui->logEdit->append("Error: Could not create project directory " + path);
 }
 
 QString MainWindow::aboutModelInspector() const
@@ -273,16 +324,19 @@ void MainWindow::loadGAMSModel(const QString &path)
 
 void MainWindow::setGlobalFiltersData()
 {
-    mGlobalFilterDialog->setValueFilter(ui->modelInspector->valueFilter());
-    mGlobalFilterDialog->setDefaultValueFilter(ui->modelInspector->defaultValueFilter());
-    mGlobalFilterDialog->setIdentifierFilter(ui->modelInspector->identifierFilter());
-    mGlobalFilterDialog->setDefaultIdentifierFilter(ui->modelInspector->defaultIdentifierFilter());
-    mGlobalFilterDialog->setLabelFilter(ui->modelInspector->labelFilter());
-    mGlobalFilterDialog->setDefaultLabelFilter(ui->modelInspector->defaultLabelFilter());
+    mFilterDialog->setViewType(ui->modelInspector->viewType());
+    mFilterDialog->setHorizontalDataSource(ui->modelInspector->horizontalDataSource());
+    mFilterDialog->setVerticalDataSource(ui->modelInspector->verticalDataSource());
+    mFilterDialog->setValueFilter(ui->modelInspector->valueFilter());
+    mFilterDialog->setDefaultValueFilter(ui->modelInspector->defaultValueFilter());
+    mFilterDialog->setIdentifierFilter(ui->modelInspector->identifierFilter());
+    mFilterDialog->setDefaultIdentifierFilter(ui->modelInspector->defaultIdentifierFilter());
+    mFilterDialog->setLabelFilter(ui->modelInspector->labelFilter());
+    mFilterDialog->setDefaultLabelFilter(ui->modelInspector->defaultLabelFilter());
 }
 
 void MainWindow::setAggregationData()
-{// TODO the line below triggers the aggregation processing
+{
     mAggregationDialog->setAggregation(ui->modelInspector->aggregation(),
                                        ui->modelInspector->identifierFilter());
     mAggregationDialog->setDefaultAggregation(ui->modelInspector->defaultAggregation());
@@ -305,6 +359,13 @@ void MainWindow::showDialog(QDialog *dialog)
 QString MainWindow::workspace() const
 {
     auto path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) +
-            "/GAMS/ModelInspector";
+            "/GAMS/ModelInspector/workspace";
+    return path;
+}
+
+QString MainWindow::projectDirectory() const
+{
+    auto path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) +
+            "/GAMS/ModelInspector/projects";
     return path;
 }

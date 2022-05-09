@@ -20,11 +20,6 @@ class HierarchicalHeaderView : public QHeaderView
     Q_OBJECT
 
 public:
-    enum DataSource {
-        EquationData,
-        VariableData
-    };
-
     HierarchicalHeaderView(Qt::Orientation orientation,
                            QSharedPointer<ModelInstance> modelInstance,
                            QWidget *parent = nullptr);
@@ -32,10 +27,11 @@ public:
 
     QSharedPointer<ModelInstance> modelInstance() const;
 
-    void setAppliedAggregation(const AggregationSymbols &appliedAggregation);
+    void setAppliedAggregation(const Aggregation &appliedAggregation);
 
     void setModel(QAbstractItemModel *model) override;
 
+    DataSource dataSource() const;
     void setDataSource(DataSource dataSource);
 
 public slots:
@@ -58,7 +54,6 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
 
 private:
-    bool aggregationActive() const;
     QStyleOptionHeader styleOptionForCell(int logicalIndex) const;
 
 private:

@@ -31,16 +31,16 @@ void AggregationProxyModel::setAggregation(const Aggregation &aggregation,
 {
     mAggregation = aggregation;
     mAppliedAggregation = appliedAggregation;
-    mModelInstance->setAppliedAggregation(mAppliedAggregation);
+    mModelInstance->aggregate(mAppliedAggregation);
     invalidate();
 }
 
 QVariant AggregationProxyModel::data(const QModelIndex &index, int role) const
 {
-    if (role == Qt::DisplayRole && mModelInstance->aggregationActive()) {
+    if (role == Qt::DisplayRole && mAppliedAggregation.isActive()) {
         if (!index.isValid())
             return QVariant();
-        auto value = mModelInstance->data(index.row(), index.column());
+        QVariant value = mModelInstance->data(index.row(), index.column(), mView);
         return value == 0.0 ? QVariant() : value;
     }
     return QSortFilterProxyModel::data(index, role);
@@ -50,8 +50,8 @@ QVariant AggregationProxyModel::headerData(int section,
                                            Qt::Orientation orientation,
                                            int role) const
 {
-    if (role == Qt::DisplayRole && mModelInstance->aggregationActive()) {
-        auto realIndex = mModelInstance->headerData(section, orientation);
+    if (role == Qt::DisplayRole && mAppliedAggregation.isActive()) {
+        auto realIndex = mModelInstance->headerData(section, orientation, mView);
         return realIndex < 0 ? QVariant() : realIndex;
     }
     return QSortFilterProxyModel::headerData(section, orientation, role);

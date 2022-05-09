@@ -134,15 +134,20 @@ void TestCommon::test_labelFilter()
 
     LabelCheckStates states = { { "l1", Qt::Checked},
                                 { "l2", Qt::Unchecked } };
-    LabelFilter labelFilter { true, { { Qt::Horizontal, states } } };
+    LabelFilter labelFilter { true,
+                              { { Qt::Horizontal, states } },
+                              DataSource::VariableData,
+                              DataSource::EquationData };
     QCOMPARE(labelFilter.Any, true);
     QCOMPARE(labelFilter.LabelCheckStates[Qt::Horizontal], states);
+    QVERIFY(labelFilter.ColumnDataSource == DataSource::VariableData);
+    QVERIFY(labelFilter.RowDataSource == DataSource::EquationData);
 }
 
 void TestCommon::test_default_valueFilter()
 {
     ValueFilter filter;
-    QCOMPARE(filter.MinValue, std::numeric_limits<double>::min());
+    QCOMPARE(filter.MinValue, std::numeric_limits<double>::lowest());
     QCOMPARE(filter.MaxValue, std::numeric_limits<double>::max());
     QCOMPARE(filter.ExcludeRange, false);
     QCOMPARE(filter.UseAbsoluteValues, false);

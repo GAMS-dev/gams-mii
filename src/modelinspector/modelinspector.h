@@ -26,8 +26,6 @@
 #include "common.h"
 #include "aggregation.h"
 
-class QAbstractItemModel;
-
 namespace gams {
 namespace studio{
 namespace modelinspector {
@@ -36,17 +34,10 @@ namespace Ui {
 class ModelInspector;
 }
 
+class TableViewFrame;
 class ModelInstance;
-class ModelInstanceTableModel;
 class SectionTreeModel;
 class SearchResultModel;
-class ColumnRowFilterModel;
-class IdentifierFilterModel;
-class IdentifierLabelFilterModel;
-class ValueFormatProxyModel;
-class LabelFilterModel;
-class AggregationProxyModel;
-class HierarchicalHeaderView;
 
 class ModelInspector : public QWidget
 {
@@ -70,12 +61,14 @@ public:
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx);
 
+    ViewActionStates viewActionStates() const;
+
     void loadModelInstance();
     void reloadModelInstance();
     QSharedPointer<ModelInstance> modelInstance() const;
 
     IdentifierFilter identifierFilter() const;
-    IdentifierFilter defaultIdentifierFilter();
+    IdentifierFilter defaultIdentifierFilter() const;
     void setIdentifierFilter(const IdentifierFilter &filter);
 
     ValueFilter valueFilter() const;
@@ -90,40 +83,39 @@ public:
     Aggregation defaultAggregation() const;
     void setAggregation(const Aggregation &aggregation);
 
+    DataSource horizontalDataSource() const;
+    DataSource verticalDataSource() const;
+
+    PredefinedViewEnum viewType() const;
+
     void resetColumnRowFilter();
 
 signals:
-    void newLogMessage(const QString&); // TODO (AF) use message types when integrated into studio
-
     void filtersChanged();
 
-    void viewChanged(PredefinedViewEnum);
+    void viewChanged(int);
+
+    void newLogMessage(const QString&); // TODO (AF) use message types when integrated into studio
 
 public slots:
+    void saveModelView();
+
+    void removeModelView();
+
     void setCurrentView(int index);
+
+    void setCurrentViewIndex(gams::studio::modelinspector::ViewType type);
 
     void setSearchSelection(const gams::studio::modelinspector::SearchResult &result);
 
-private slots:
-    void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
-                                  Qt::Orientation orientation);
-
 private:
+    void setupConnections();
+
     void setupModelInstanceView();
 
-    void searchHeader(const QString &term, bool isRegEx,
-                      Qt::Orientation orientation,
-                      QList<SearchResult> &result);
+    void clearCustomViews();
 
-    Aggregation appliedAggregation(const Aggregation &aggregations) const;
-    Aggregation initialAggregation() const;
-
-    LabelFilter initialLabelFilter() const;
-
-    IdentifierStates initialSymbolFilter(QAbstractItemModel *model,
-                                         Qt::Orientation orientation) const;
-
-    ValueFilter initalValueFilter() const;
+    TableViewFrame* currentView() const;
 
 private:
     Ui::ModelInspector* ui;
@@ -131,20 +123,10 @@ private:
     QString mWorkspace;
     QString mSystemDir;
     bool mShowOutput = false;
+
     SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<ModelInstance> mModelInstance;
-    QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;
-    ValueFormatProxyModel* mValueFormatModel = nullptr;
-    ColumnRowFilterModel* mColumnRowFilterModel = nullptr;
-    IdentifierFilterModel* mIdentifierFilterModel = nullptr;
-    IdentifierLabelFilterModel* mIdentifierLabelFilterModel = nullptr;
-    LabelFilterModel* mLabelFilterModel = nullptr;
-    AggregationProxyModel* mAggregationModel = nullptr;
-    HierarchicalHeaderView* mHorizontalHeader = nullptr;
-    HierarchicalHeaderView* mVerticalHeader = nullptr;
-
-    LabelFilter mInitialLabelFilter;
-    ValueFilter mInitialValueFilter;
+    QMap<int, TableViewFrame*> mCustomViews;
 };
 
 }

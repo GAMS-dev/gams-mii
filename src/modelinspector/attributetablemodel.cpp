@@ -29,7 +29,7 @@ QVariant AttributeTableModel::data(const QModelIndex &index, int role) const
         return Qt::AlignRight;
     }
     if (index.isValid() && role == Qt::DisplayRole) {
-        auto value = mModelInstance->data(index.row(), index.column());
+        auto value = mModelInstance->data(index.row(), index.column(), mView);
         return value == 0.0 ? QVariant() : value;
     }
     return QVariant();
@@ -81,7 +81,7 @@ EquationAttributeTableModel::~EquationAttributeTableModel()
 int EquationAttributeTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->rowCount();
+    return mModelInstance->rowCount(PredefinedViewEnum::EqnAttributes);
 }
 
 VariableAttributeTableModel::VariableAttributeTableModel(QObject *parent)
@@ -101,16 +101,22 @@ QVariant VariableAttributeTableModel::data(const QModelIndex &index, int role) c
         return Qt::AlignRight;
     }
     if (index.isValid() && role == Qt::DisplayRole) {
-        auto value = mModelInstance->data(index.column(), index.row());
+        auto value = mModelInstance->data(index.row(), index.column(), mView);
         return value == 0.0 ? QVariant() : value;
     }
     return QVariant();
 }
 
+int VariableAttributeTableModel::columnCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+    return mModelInstance->columnCount(PredefinedViewEnum::VarAttributes);
+}
+
 int VariableAttributeTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->columnCount();
+    return mModelInstance->rowCount(PredefinedViewEnum::VarAttributes);
 }
 
 }

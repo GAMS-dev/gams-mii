@@ -39,6 +39,11 @@ void LabelFilterWidget::setData(FilterTreeItem *rootItem)
             this, &LabelFilterWidget::applyFilter);
 }
 
+void LabelFilterWidget::setSymbolType(DataSource type)
+{
+    mSymbolType = type;
+}
+
 void LabelFilterWidget::showEvent(QShowEvent *event)
 {
     applyFilter(ui->labelEdit->text());
@@ -93,6 +98,7 @@ IdentifierState LabelFilterWidget::identifierState()
         static_cast<FilterTreeModel*>(mFilterModel->sourceModel())->filterItem()
     };
     IdentifierState state;
+    state.SymbolType = mSymbolType;
     state.SectionIndex = items.first()->sectionIndex();
     state.SymbolIndex = items.first()->symbolIndex();
     while (!items.isEmpty()) {

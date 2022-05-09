@@ -236,6 +236,32 @@ void Aggregation::setValueFilter(const ValueFilter &filter)
     mValueFilter = filter;
 }
 
+PredefinedViewEnum Aggregation::viewType() const
+{
+    return mViewType;
+}
+
+void Aggregation::setViewType(PredefinedViewEnum viewType)
+{
+    mViewType = viewType;
+}
+
+int Aggregation::view() const
+{
+    return mView;
+}
+
+void Aggregation::setView(int view)
+{
+    mView = view;
+}
+
+bool Aggregation::isActive() const
+{
+    return !mAggregationMap[Qt::Horizontal].isEmpty() ||
+            !mAggregationMap[Qt::Vertical].isEmpty();
+}
+
 Aggregator::Aggregator(const SymbolInfo &symbol)
     : mSymbol(symbol)
 {

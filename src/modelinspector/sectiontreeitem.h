@@ -22,6 +22,8 @@ public:
 
     void append(SectionTreeItem *child);
 
+    void remove(int index, int count);
+
     SectionTreeItem *child(int row);
 
     int childCount() const;

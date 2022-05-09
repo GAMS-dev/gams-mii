@@ -5,6 +5,7 @@
 #include <QSortFilterProxyModel>
 
 #include "common.h"
+#include "symbolinfo.h"
 
 namespace gams {
 namespace studio {
@@ -21,11 +22,7 @@ public:
                           QObject *parent = nullptr);
 
     IdentifierFilter& identifierFilter();
-    IdentifierFilter& defaultIdentifierFilter();
     void setIdentifierFilter(const IdentifierFilter &filter);
-
-    void setIdentifierCheckState(int symbolIndex, Qt::CheckState state,
-                                 Qt::Orientation orientation);
 
 protected:
     bool filterAcceptsColumn(int sourceColumn,
@@ -35,9 +32,11 @@ protected:
                           const QModelIndex &sourceParent) const override;
 
 private:
+    SymbolInfo symbol(DataSource dataSource, int sectionIndex) const;
+
+private:
     QSharedPointer<ModelInstance> mModelInstance;
     IdentifierFilter mIdentifierFilter;
-    IdentifierFilter mDefaultIdentifierFilter;
 };
 
 class IdentifierLabelFilterModel : public QSortFilterProxyModel
@@ -62,6 +61,9 @@ protected:
 
     bool filterAcceptsRow(int sourceRow,
                           const QModelIndex &sourceParent) const override;
+
+private:
+    int startSection(DataSource dataSource, int sectionIndex) const;
 
 private:
     QSharedPointer<ModelInstance> mModelInstance;

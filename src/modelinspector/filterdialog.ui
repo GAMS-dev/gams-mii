@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>gams::studio::modelinspector::GlobalFilterDialog</class>
- <widget class="QDialog" name="gams::studio::modelinspector::GlobalFilterDialog">
+ <class>gams::studio::modelinspector::FilterDialog</class>
+ <widget class="QDialog" name="gams::studio::modelinspector::FilterDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Global Filters</string>
+   <string>Filters</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_7">
    <item>
@@ -181,73 +181,13 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="equationTab">
+     <widget class="QWidget" name="columnTab">
       <attribute name="title">
-       <string>Equations</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QLineEdit" name="equationEdit">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply a filter string using &lt;span style=&quot; font-weight:600;&quot;&gt;wildcard&lt;/span&gt; syntax.&lt;/p&gt;&lt;p&gt;The content filter string is automatically applied to the list of equations.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="placeholderText">
-          <string>Filter</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTreeView" name="equationView">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of variable attributes and equations occurring in this column. Check or uncheck entries to decide which are displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="alternatingRowColors">
-          <bool>true</bool>
-         </property>
-         <attribute name="headerVisible">
-          <bool>false</bool>
-         </attribute>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QPushButton" name="selectEqnButton">
-           <property name="toolTip">
-            <string>Select all equations</string>
-           </property>
-           <property name="text">
-            <string>Select All</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="deselectEqnButton">
-           <property name="toolTip">
-            <string>Deselect all equations</string>
-           </property>
-           <property name="text">
-            <string>Deselect All</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="variableTab">
-      <attribute name="title">
-       <string>Variables</string>
+       <string>Columns</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QLineEdit" name="variableEdit">
+        <widget class="QLineEdit" name="columnEdit">
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply a filter string using &lt;span style=&quot; font-weight:600;&quot;&gt;wildcard&lt;/span&gt; syntax.&lt;/p&gt;&lt;p&gt;The content filter string is automatically applied to the list of variables.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -257,7 +197,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QTreeView" name="variableView">
+        <widget class="QTreeView" name="columnView">
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of equation attributes and variables occurring in this column. Check or uncheck entries to decide which are displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -288,6 +228,66 @@
           <widget class="QPushButton" name="deselectVarButton">
            <property name="toolTip">
             <string>Deselect all variables</string>
+           </property>
+           <property name="text">
+            <string>Deselect All</string>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="rowTab">
+      <attribute name="title">
+       <string>Rows</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLineEdit" name="rowEdit">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply a filter string using &lt;span style=&quot; font-weight:600;&quot;&gt;wildcard&lt;/span&gt; syntax.&lt;/p&gt;&lt;p&gt;The content filter string is automatically applied to the list of equations.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="placeholderText">
+          <string>Filter</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTreeView" name="rowView">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of variable attributes and equations occurring in this column. Check or uncheck entries to decide which are displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+         <attribute name="headerVisible">
+          <bool>false</bool>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QPushButton" name="selectEqnButton">
+           <property name="toolTip">
+            <string>Select all equations</string>
+           </property>
+           <property name="text">
+            <string>Select All</string>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="deselectEqnButton">
+           <property name="toolTip">
+            <string>Deselect all equations</string>
            </property>
            <property name="text">
             <string>Deselect All</string>

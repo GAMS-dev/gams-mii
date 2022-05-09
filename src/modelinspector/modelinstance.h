@@ -29,7 +29,6 @@
 #include "aggregation.h"
 
 #include <QDir>
-#include <QMap>
 #include <QString>
 #include <QStringList>
 #include <QVariant>
@@ -41,7 +40,6 @@ namespace studio {
 namespace modelinspector {
 
 class DataHandler;
-class FilterTreeItem;
 
 struct ValueFilterSettings;
 
@@ -64,6 +62,7 @@ public:
     ~ModelInstance();
 
     void initialize();
+
     bool isInitialized() const
     {
         return mInitialized;
@@ -221,28 +220,28 @@ public:
 
     QPair<double, double> rhsRange() const;
 
-    int rowCount() const;
+    int rowCount(PredefinedViewEnum viewType) const;
+    int jaccRowCount() const;
 
-    int columnCount() const;
+    int columnCount(PredefinedViewEnum viewType) const;
+    int jaccColumnCount() const;
 
-    QVariant data(int row, int column) const;
+    QVariant data(int row, int column, int view) const;
 
-    void setAppliedAggregation(const Aggregation &aggregation);
+    void aggregate(const Aggregation &aggregation);
 
-    int headerData(int logicalIndex, Qt::Orientation orientation) const;
+    int headerData(int logicalIndex, Qt::Orientation orientation, int view) const;
 
     QString headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const;
 
-    void searchSymbolData(int logicalIndex, int sectionIndex, const QString &term,
-                          bool isRegEx, Qt::Orientation orientation,
+    void searchHeaderData(int logicalIndex, int sectionIndex, const QString &term,
+                          bool isRegEx, DataSource symbolType, Qt::Orientation orientation,
                           QList<SearchResult> &result);
 
     DataRow jaccobianRow(int row);
 
     QVariant horizontalAttribute(const QString &header, int column);
     QVariant verticalAttribute(const QString &header, int row);
-
-    bool aggregationActive() const;
 
     double modelMinimum() const
     {
@@ -273,8 +272,8 @@ private:
     static int errorCallback(int count, const char *message);
 
 private:
-    class Cache;
-    Cache *mCache;
+    class SymbolCache;
+    SymbolCache *mSymbolCache;
 
     bool mInitialized = false;
     bool mUseOutput = false;

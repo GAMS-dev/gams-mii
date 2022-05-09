@@ -9,8 +9,7 @@ ValueFormatProxyModel::ValueFormatProxyModel(QObject *parent)
 {
     getValue = [](const QVariant &variant, bool *ok) {
         Q_UNUSED(variant);
-        *ok = false;
-        return 0.0;
+        return variant.toDouble(ok);
     };
 }
 
@@ -65,9 +64,9 @@ QVariant ValueFormatProxyModel::applyFilter(const QVariant &data) const
     double value = getValue(data, &ok);
     if (ok) {
         if (!mValueFilter.ExcludeRange && value >= mValueFilter.MinValue && value <= mValueFilter.MaxValue)
-            return data;
+            return value;
         else if (mValueFilter.ExcludeRange && (value < mValueFilter.MinValue || value > mValueFilter.MaxValue))
-            return data;
+            return value;
     }
     return QVariant();
 }

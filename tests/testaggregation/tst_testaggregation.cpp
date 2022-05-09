@@ -79,7 +79,7 @@ void TestAggregation::test_default_aggregation()
     QVERIFY(aggregation.aggregationSymbols(Qt::Horizontal).isEmpty());
     QVERIFY(aggregation.aggregationSymbols(Qt::Vertical).isEmpty());
     QVERIFY(aggregation.identifierFilter().isEmpty());
-    QCOMPARE(aggregation.valueFilter().MinValue, std::numeric_limits<double>::min());
+    QCOMPARE(aggregation.valueFilter().MinValue, std::numeric_limits<double>::lowest());
     QCOMPARE(aggregation.valueFilter().MaxValue, std::numeric_limits<double>::max());
     QCOMPARE(aggregation.valueFilter().ExcludeRange, false);
     QCOMPARE(aggregation.valueFilter().UseAbsoluteValues, false);
