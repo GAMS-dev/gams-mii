@@ -85,6 +85,7 @@ public:
         Median,
         Maximum,
         Minimum,
+        MinMax,
         Sum,
         None
     };
@@ -135,6 +136,7 @@ private:
     static const QString MedianText;
     static const QString MaximumText;
     static const QString MinimumText;
+    static const QString MinMaxText;
     static const QString SumText;
     static const QString NoneText;
 };

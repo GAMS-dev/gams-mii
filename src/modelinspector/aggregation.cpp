@@ -113,6 +113,7 @@ const QString Aggregation::MeanText = "Mean";
 const QString Aggregation::MedianText = "Median";
 const QString Aggregation::MaximumText = "Maximum";
 const QString Aggregation::MinimumText = "Minimum";
+const QString Aggregation::MinMaxText = "MinMax";
 const QString Aggregation::SumText = "Sum";
 const QString Aggregation::NoneText = "None";
 
@@ -148,6 +149,8 @@ void Aggregation::setType(const QString &text)
         mType = Maximum;
     } else if (!text.compare(MinimumText, Qt::CaseInsensitive)) {
         mType = Minimum;
+    } else if (!text.compare(MinMaxText, Qt::CaseInsensitive)) {
+        mType = MinMax;
     } else if (!text.compare(SumText, Qt::CaseInsensitive)) {
         mType = Sum;
     } else if (!text.compare(NoneText, Qt::CaseInsensitive)) {
@@ -168,6 +171,8 @@ const QString& Aggregation::typeText() const
         return MaximumText;
     case Minimum:
         return MinimumText;
+    case MinMax:
+        return MinMaxText;
     case Sum:
         return SumText;
     default:
