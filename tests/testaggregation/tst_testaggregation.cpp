@@ -29,6 +29,9 @@ private slots:
     void test_getSet_aggregation();
 
     void test_default_aggregator();
+
+    void test_aggregateLabels_aggregator();
+    void test_aggregateLabels_aggregator_minmax();
 };
 
 TestAggregation::TestAggregation()
@@ -94,6 +97,16 @@ void TestAggregation::test_getSet_aggregation()
 }
 
 void TestAggregation::test_default_aggregator()
+{
+
+}
+
+void TestAggregation::test_aggregateLabels_aggregator()
+{
+
+}
+
+void TestAggregation::test_aggregateLabels_aggregator_minmax()
 {
 
 }

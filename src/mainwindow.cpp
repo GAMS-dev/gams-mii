@@ -194,6 +194,7 @@ void MainWindow::loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus
     ui->modelInspector->loadModelInstance();
     setGlobalFiltersData();
     setAggregationData();
+    emit ui->actionShow_Absolute->triggered();
 }
 
 void MainWindow::aggregationUpdate()
@@ -206,7 +207,8 @@ void MainWindow::aggregationUpdate()
 void MainWindow::globalFilterUpdate()
 {
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
-    ui->modelInspector->setAggregation(ui->modelInspector->defaultAggregation());
+    if (ui->modelInspector->aggregation().viewType() != PredefinedViewEnum::MinMax)
+        ui->modelInspector->setAggregation(ui->modelInspector->defaultAggregation());
     ui->modelInspector->setIdentifierFilter(mFilterDialog->idendifierFilter());
     ui->modelInspector->setValueFilter(mFilterDialog->valueFilter());
     ui->modelInspector->setLabelFilter(mFilterDialog->labelFilter());
@@ -243,6 +245,9 @@ void MainWindow::viewChanged(int viewType)
         setGlobalFiltersData();
         setAggregationData();
         mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
+        ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
+        setAggregationData();
+        setGlobalFiltersData();
     }
 }
 
@@ -272,6 +277,7 @@ void MainWindow::setupConnections()
             this, [this]{
         static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
         setGlobalFiltersData();
+        setAggregationData();
     });
     connect(ui->searchResultView, &QTableView::doubleClicked,
             this, &MainWindow::searchResultSelectionChanged);
@@ -281,6 +287,12 @@ void MainWindow::setupConnections()
             ui->modelInspector, &ModelInspector::removeModelView);
     connect(ui->menu_Edit, &QMenu::aboutToShow,
             this, &MainWindow::editMenuAboutToShow);
+    connect(ui->actionShow_Absolute, &QAction::triggered,
+            this, [this]{
+        ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
+        setGlobalFiltersData();
+        setAggregationData();
+    });
 }
 
 void MainWindow::createProjectDirectory()

@@ -1,7 +1,7 @@
 #include "hierarchicalheaderview.h"
 #include "filtertreeitem.h"
 #include "labelfilterwidget.h"
-#include "modelinstance.h"
+#include "abstractmodelinstance.h"
 
 #include <QPainter>
 #include <QPointer>
@@ -80,6 +80,8 @@ public:
     {
         bool ok;
         int logicalIndex = mHeaderView->logicalIndexAt(position);
+        if (logicalIndex < 0)
+            return false;
         int sectionIndex = mHeaderView->model()->headerData(logicalIndex,
                                                             mHeaderView->orientation()).toInt(&ok);
         if (sectionIndex < PredefinedHeaderLength)
@@ -102,10 +104,20 @@ public:
         return index;
     }
 
-    int sectionDimension(int sectionIndex)
+    int horizontalSectionDimension(int sectionIndex)
     {
         if (sectionIndex < PredefinedHeaderLength)
             return 0;
+        return symbol(sectionIndex).dimension();
+    }
+
+    int verticalSectionDimension(int sectionIndex)
+    {
+        if (sectionIndex < PredefinedHeaderLength)
+            return 0;
+        if (mAppliedAggregation.isActive() && mAppliedAggregation.type() == Aggregation::MinMax) {
+            return 1;
+        }
         return symbol(sectionIndex).dimension();
     }
 
@@ -128,12 +140,14 @@ public:
         paintHorizontalCell(painter, rect, styleOption, currentTop,
                             mHeaderView->mModelInstance->headerData(sectionIndex, -1, symbolOrientation()),
                             logicalIndex, sectionIndex, -1, true);
-        for (int d=0; d<sectionDimension(sectionIndex); ++d) {
-            paintHorizontalCell(painter, rect, styleOption, currentTop,
-                                mHeaderView->mModelInstance->headerData(sectionIndex, d, symbolOrientation()),
-                                logicalIndex, sectionIndex, d, false);
+        if (mAppliedAggregation.type() != Aggregation::MinMax) {
+            for (int d=0; d<horizontalSectionDimension(sectionIndex); ++d) {
+                paintHorizontalCell(painter, rect, styleOption, currentTop,
+                                    mHeaderView->mModelInstance->headerData(sectionIndex, d, symbolOrientation()),
+                                    logicalIndex, sectionIndex, d, false);
+            }
+            paintHorizontalCellSpacing(painter, rect, styleOption, currentTop, sectionIndex);
         }
-        paintHorizontalCellSpacing(painter, rect, styleOption, currentTop, sectionIndex);
 
         painter->setBrushOrigin(oldBrushOrigin);
     }
@@ -152,7 +166,7 @@ public:
         QSize size = cellSize(styleOption);
         styleOption.rect = QRect(rect.x(), currentTop, rect.width(), size.height());
         auto currentSym = symbol(sectionIndex);
-        styleOption.text = cellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
+        styleOption.text = horizontalCellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
 
         painter->save();
         if (isSymbol && sectionIndex >= PredefinedHeaderLength) {
@@ -184,7 +198,7 @@ public:
     {
         QStyleOptionHeader styleOption(option);
         painter->save();
-        if (sectionDimension(sectionIndex) < symbolDimension()) {
+        if (horizontalSectionDimension(sectionIndex) < symbolDimension()) {
             styleOption.rect = QRect(rect.x(), currentTop, rect.width(), rect.height());
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
         }
@@ -210,7 +224,7 @@ public:
         paintVerticalCell(painter, rect, styleOption, currentLeft,
                           mHeaderView->mModelInstance->headerData(sectionIndex, -1, symbolOrientation()),
                           logicalIndex, sectionIndex, -1, true);
-        for (int d=0; d<sectionDimension(sectionIndex); ++d) {
+        for (int d=0; d<verticalSectionDimension(sectionIndex); ++d) {
             paintVerticalCell(painter, rect, styleOption, currentLeft,
                               mHeaderView->mModelInstance->headerData(sectionIndex, d, symbolOrientation()),
                               logicalIndex, sectionIndex, d, false);
@@ -234,7 +248,7 @@ public:
         QSize size = cellSize(styleOption);
         styleOption.rect = QRect(currentLeft, rect.y(), size.width(), rect.height());
         auto currentSym = symbol(sectionIndex);
-        styleOption.text = cellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
+        styleOption.text = verticalCellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
 
         painter->save();
         if (isSymbol && sectionIndex >= PredefinedHeaderLength) {
@@ -266,19 +280,54 @@ public:
     {
         QStyleOptionHeader styleOption(option);
         painter->save();
-        if (sectionDimension(sectionIndex) < symbolDimension()) {
+        if (verticalSectionDimension(sectionIndex) < symbolDimension()) {
             styleOption.rect = QRect(currentLeft, rect.y(), rect.width(), rect.height());
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
         }
         painter->restore();
     }
 
-    QString cellText(int logicalIndex, int sectionIndex, int dimension,
-                     bool isSymbol, const SymbolInfo &symbol,
-                     const QString &text)
+    QString horizontalCellText(int logicalIndex, int sectionIndex, int dimension,
+                               bool isSymbol, const Symbol &symbol,
+                               const QString &text)
     {// TODO header drawing rules... simplify and no on the fly stuff
         if (dimension >= 0 && mAppliedAggregation.aggregationMap()[mHeaderView->orientation()].contains(symbol.firstSection())) {
             return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][symbol.firstSection()].label(sectionIndex, dimension);
+        }
+        if (isSymbol && logicalIndex > 0) {
+            int prevSectionIdx = this->sectionIndex(logicalIndex-1);
+            if (symbol.contains(prevSectionIdx))
+                return QString();
+        } else if (logicalIndex > 0) {
+            int prevSectionIdx = this->sectionIndex(logicalIndex-1);
+            if (symbol.contains(prevSectionIdx) &&
+                    symbol.label(sectionIndex, dimension) == symbol.label(prevSectionIdx, dimension) &&
+                        (dimension == 0 ||
+                            symbol.label(sectionIndex, dimension-1) == symbol.label(prevSectionIdx, dimension-1))) {
+                    return QString();
+            }
+        }
+        return text;
+    }
+
+    QString verticalCellText(int logicalIndex, int sectionIndex, int dimension,
+                             bool isSymbol, const Symbol &symbol,
+                             const QString &text)
+    {// TODO header drawing rules... simplify and no on the fly stuff
+        if (mAppliedAggregation.type() != Aggregation::MinMax) {
+            if (dimension >= 0 && mAppliedAggregation.aggregationMap()[mHeaderView->orientation()].contains(symbol.firstSection())) {
+                return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][symbol.firstSection()].label(sectionIndex, dimension);
+            }
+        } else {
+            if (mAppliedAggregation.indexToSymbol(DataSource::EquationData).contains(sectionIndex)) {
+                if (dimension < 0) {
+                    return mAppliedAggregation.indexToSymbol(DataSource::EquationData)[sectionIndex].name();
+                } else {
+                    auto index = mAppliedAggregation.indexToSymbol(DataSource::EquationData)[sectionIndex].firstSection();
+                    auto startIndex = mAppliedAggregation.startSectionMapping()[index];
+                    return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][startIndex].label(sectionIndex, dimension);
+                }
+            }
         }
         if (isSymbol && logicalIndex > 0) {
             int prevSectionIdx = this->sectionIndex(logicalIndex-1);
@@ -306,12 +355,13 @@ public:
         return mMinCellSize + decorationsSize + iconWidth - mEmptyTextSize;
     }
 
-    FilterTreeItem* filterTree(int logicalIndex, int sectionIdx, const SymbolInfo &symbol)
+    FilterTreeItem* filterTree(int logicalIndex, int sectionIdx, const Symbol &symbol)
     {
         auto root = new FilterTreeItem;
         root->setCheckable(false);
         root->setSymbolIndex(symbol.firstSection());
         root->setSectionIndex(symbol.firstSection());
+        root->setText(symbol.name());
 
         QVector<int> visibleSections = visibleLabelSections(logicalIndex, sectionIdx, symbol);
 
@@ -345,6 +395,12 @@ public:
 
     int maxSymbolDimension(Qt::Orientation orientation)
     {
+        if (mAppliedAggregation.isActive() && mAppliedAggregation.type() == Aggregation::MinMax) {
+            if (orientation == Qt::Vertical)
+                return 1; // MinMax view has always diminsion 1
+            else
+                return 0; // Don't show any dimensions for variables
+        }
         if (orientation == Qt::Horizontal &&
                 mHeaderView->model()->columnCount() != mHeaderView->modelInstance()->columnCount(PredefinedViewEnum::Full)) {
             int dimension = 0;
@@ -365,7 +421,7 @@ public:
         return symbolDimension();
     }
 
-    SymbolInfo symbol(int sectionIndex) const
+    Symbol symbol(int sectionIndex) const
     {
         if (mDataSource == DataSource::EquationData)
             return mHeaderView->modelInstance()->equation(sectionIndex);
@@ -375,15 +431,20 @@ public:
 private:
     int symbolDimension() const
     {
-        return mDataSource == DataSource::VariableData ? mHeaderView->modelInstance()->maxVariableDimension() :
-                                                         mHeaderView->modelInstance()->maxEquationDimension();
+        if (mAppliedAggregation.isActive() &&
+                mAppliedAggregation.type() == Aggregation::MinMax &&
+                mDataSource == DataSource::EquationData) {
+            return 1; // MinMax view has always diminsion 1
+        }
+        return mDataSource == DataSource::VariableData ? mHeaderView->modelInstance()->maximumVariableDimension() :
+                                                         mHeaderView->modelInstance()->maximumEquationDimension();
     }
 
     QString longestSymbolText() const
     {
         if (mDataSource == DataSource::VariableData)
-            return mHeaderView->mModelInstance->longestVarText();
-        return mHeaderView->mModelInstance->longestEqnText();
+            return mHeaderView->mModelInstance->longestVariableText();
+        return mHeaderView->mModelInstance->longestEquationText();
     }
 
     Qt::Orientation symbolOrientation() const
@@ -391,7 +452,7 @@ private:
         return mDataSource == DataSource::EquationData ? Qt::Vertical : Qt::Horizontal;
     }
 
-    QVector<int> visibleLabelSections(int logicalIndex, int sectionIdx, const SymbolInfo &symbol)
+    QVector<int> visibleLabelSections(int logicalIndex, int sectionIdx, const Symbol &symbol)
     {
         if (mVisibleLabelSections[mHeaderView->orientation()].contains(symbol.firstSection())) {
             return mVisibleLabelSections[mHeaderView->orientation()][symbol.firstSection()];
@@ -477,7 +538,7 @@ private:
 };
 
 HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
-                                               QSharedPointer<ModelInstance> modelInstance,
+                                               QSharedPointer<AbstractModelInstance> modelInstance,
                                                QWidget *parent)
     : QHeaderView(orientation, parent)
     , mPrivate(new HierarchicalHeaderView_private(this))
@@ -504,7 +565,7 @@ HierarchicalHeaderView::~HierarchicalHeaderView()
     delete mPrivate;
 }
 
-QSharedPointer<ModelInstance> HierarchicalHeaderView::modelInstance() const
+QSharedPointer<AbstractModelInstance> HierarchicalHeaderView::modelInstance() const
 {
     return mModelInstance;
 }
@@ -530,7 +591,7 @@ void HierarchicalHeaderView::setDataSource(DataSource dataSource)
     mPrivate->setDataSource(dataSource);
 }
 
-void HierarchicalHeaderView::customMenuRequested(QPoint position)
+void HierarchicalHeaderView::customMenuRequested(const QPoint &position)
 {
     if (mPrivate->appliedAggregation().isActive())
         return;
@@ -540,7 +601,7 @@ void HierarchicalHeaderView::customMenuRequested(QPoint position)
     int sectionIndex = model()->headerData(logicalIndex, orientation()).toInt(&ok);
     if (!ok) return;
 
-    SymbolInfo symbol = mPrivate->symbol(sectionIndex);
+    Symbol symbol = mPrivate->symbol(sectionIndex);
     if (symbol.isScalar())
         return;
 

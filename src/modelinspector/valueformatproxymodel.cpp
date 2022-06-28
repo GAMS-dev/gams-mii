@@ -40,7 +40,7 @@ QVariant ValueFormatProxyModel::data(const QModelIndex &index, int role) const
         return QVariant();
     if (role != Qt::DisplayRole)
         return QIdentityProxyModel::data(index, role);
-    return applyFilter(sourceModel()->data(index, role));
+    return applyFilter(QIdentityProxyModel::data(index, role));
 }
 
 QVariant ValueFormatProxyModel::applyFilter(const QVariant &data) const

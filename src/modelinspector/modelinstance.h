@@ -20,20 +20,13 @@
 #ifndef MODELINSTANCE_H
 #define MODELINSTANCE_H
 
+#include "abstractmodelinstance.h"
+
 #include "gevmcc.h"
 #include "gmomcc.h"
 #include "dctmcc.h"
 
-#include "common.h"
-#include "symbolinfo.h"
-#include "aggregation.h"
-
-#include <QDir>
-#include <QString>
-#include <QStringList>
 #include <QVariant>
-
-class QAbstractItemModel;
 
 namespace gams {
 namespace studio {
@@ -43,8 +36,6 @@ class DataHandler;
 
 struct ValueFilterSettings;
 
-// TODO (AF) Which default values if something goes wrong (e.g. excel '##ERROR##', -1, ...)? -> something like '##ERROR##'
-
 struct MaxMin
 {
     bool Valid = false;
@@ -52,213 +43,109 @@ struct MaxMin
     double Min;
 };
 
-class ModelInstance
+class ModelInstance : public AbstractModelInstance
 {
 public:
-    ModelInstance(const QString &workingDir = ".",
+    ModelInstance(const QString &workspace = ".",
                   const QString &systemDir = QString(),
                   const QString &scratchDir = QString());
 
     ~ModelInstance();
 
-    void initialize();
+    void initialize() override;
 
-    bool isInitialized() const
-    {
-        return mInitialized;
-    }
+    QString modelName() const override;
 
-    bool useOutput() const
-    {
-        return mUseOutput;
-    }
+    int equationCount() const override;
 
-    void setUseOutput(bool useOutput)
-    {
-        mUseOutput = useOutput;
-    }
+    int equationCount(EquationType type) const override;
 
-    QString workspace() const
-    {
-        return mWorkspace;
-    }
+    int equationRowCount() const override;
 
-    void setWorkspace(const QString &workspace)
-    {
-        mWorkspace = QDir(workspace).absolutePath();
-    }
+    Symbol equation(int sectionIndex) const override;
 
-    QString systemDirectory() const
-    {
-        return mSystemDir;
-    }
+    const QVector<Symbol>& equations() const override;
 
-    QString scratchDirectory() const
-    {
-        return mScratchDir;
-    }
+    int variableCount() const override;
 
-    void setScratchDirectory(const QString &scratchDir)
-    {
-        mScratchDir = scratchDir;
-    }
+    int variableCount(VariableType type) const override;
 
-    void setSystemDirectory(const QString &systemDir)
-    {
-        mSystemDir = systemDir;
-    }
+    int variableRowCount() const override;
 
-    QString modelName() const;
+    Symbol variable(int sectionIndex) const override;
 
-    int coefficents() const;
+    const QVector<Symbol>& variables() const override;
 
-    int positiveCoefficents() const;
+    int coefficents() const override;
 
-    int negativeCoefficents() const;
+    int positiveCoefficents() const override;
 
-    int nonLinearCoefficents() const;
+    int negativeCoefficents() const override;
 
-    SymbolInfo equation(int sectionIndex) const;
+    int nonLinearCoefficents() const override;
 
-    const QVector<SymbolInfo>& equations() const;
+    Range matrixRange() const override;
 
-    /**
-     * @brief Total number of equations.
-     */
-    int equationCount() const;
+    Range objectiveRange() const override;
 
-    /**
-     * @brief Number of equations defined by <c>type</c>.
-     * @param Equation type.
-     */
-    int equationCount(int type) const;
+    Range boundsRange() const override;
 
-    int equationBlocks();
+    Range rhsRange() const override;
 
-    bool isEquation(int type);
+    QString longestEquationText() const override;
 
-    bool isEquation(const QString &name);
+    QString longestVariableText() const override;
 
-    QString longestEqnText() const;
+    int maximumEquationDimension() const override;
 
-    QString longestVarText() const;
+    int maximumVariableDimension() const override;
 
-    SymbolInfo variable(int sectionIndex) const;
+    const QVector<Symbol>& symbols(Symbol::Type type) const override;
 
-    const QVector<SymbolInfo>& variables() const;
+    void loadData(bool useOutput, LabelFilter &labelFilter) override;
 
-    /**
-     * @brief Total number of variables.
-     */
-    int variableCount() const;
+    int rowCount(PredefinedViewEnum viewType) const override;
 
-    int maxEquationDimension() const;
+    int columnCount(PredefinedViewEnum viewType) const override;
 
-    int maxVariableDimension() const;
+    QVariant data(int row, int column, int view) const override;
 
-    /**
-     * @brief Number of variables defined by <c>type</c>.
-     * @param Equation type.
-     */
-    int variableCount(int type) const;
+    QString headerData(int sectionIndex,
+                       int dimension,
+                       Qt::Orientation orientation) const override;
 
-    int variableBlocks();
+    void aggregate(const Aggregation &aggregation) override;
 
-    bool isVariable(int symType) const {
-        return symType == dctvarSymType ? true : false;
-    }
+    int headerData(int logicalIndex,
+                   Qt::Orientation orientation,
+                   int view) const override;
 
-    bool isVariable(const QString &name);
 
-    int symbolCount() const {
-        return dctNLSyms(mDCT);
-    }
+    void searchHeaderData(int logicalIndex,
+                          int sectionIndex,
+                          const QString &term,
+                          bool isRegEx,
+                          DataSource symbolType,
+                          Qt::Orientation orientation,
+                          QList<SearchResult> &result) override;
 
-    QString equationType(int offset) const;
 
-    QVector<QVariant> scalarEquationData(int offset) const;
-    QMap<int,QVariant> equationData(int currentRow) const;
+    // TODO review,move,scope: used by DataHandler only
+    DataRow jaccobianRow(int row);
+    QVariant horizontalAttribute(const QString &header, int column);
+    QVariant verticalAttribute(const QString &header, int row);
 
-    QVector<MaxMin> equationVariableScaling(const SymbolInfo &symbol);
-    QVector<MaxMin> totalScaling();
-    MaxMin equationScaling(const SymbolInfo &symbol);
-
-    QPair<double,double> maxminRhs(int offset, int entries) const;
-    QPair<double,double> totalRhs();
-    QString aggregatedRhs(const SymbolInfo &symbol) const;
-
-    int rowIndex(int offset) const;
-
-    QString logMessages() {
-        auto messages = mLogMessages.join("\n");
-        mLogMessages.clear();
-        return messages;
-    }
-
-    QStringList symbolNames() const;
-
-    int symbolIndex(const QString &label) const;
-
-    /**
-    * @brief Symbol offset to get records.
-    * @return dctSymOffset, offset < 0 is failiure
-    */
-    int symbolOffset(const QString &label) const;
-
-    const SymbolInfo& symbol(int index, int type) const;
-
-    const QVector<SymbolInfo>& symbols(int type) const;
+private:
+    int symbolCount() const;
 
     void loadScratchData(bool useOutput);
     void loadTableData(LabelFilter &labelFilter);
 
-    QPair<double, double> matrixRange() const;
-
-    QPair<double, double> objectiveRange() const;
-
-    QPair<double, double> boundsRange() const;
-
-    QPair<double, double> rhsRange() const;
-
-    int rowCount(PredefinedViewEnum viewType) const;
-    int jaccRowCount() const;
-
-    int columnCount(PredefinedViewEnum viewType) const;
-    int jaccColumnCount() const;
-
-    QVariant data(int row, int column, int view) const;
-
-    void aggregate(const Aggregation &aggregation);
-
-    int headerData(int logicalIndex, Qt::Orientation orientation, int view) const;
-
-    QString headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const;
-
-    void searchHeaderData(int logicalIndex, int sectionIndex, const QString &term,
-                          bool isRegEx, DataSource symbolType, Qt::Orientation orientation,
-                          QList<SearchResult> &result);
-
-    DataRow jaccobianRow(int row);
-
-    QVariant horizontalAttribute(const QString &header, int column);
-    QVariant verticalAttribute(const QString &header, int row);
-
-    double modelMinimum() const
-    {
-        return mModelMinimum;
-    }
-
-    double modelMaximum() const
-    {
-        return mModelMaximum;
-    }
-
-private:
-    SymbolInfo loadSymbol(int index, int sectionIndex) const;
-    void loadDimensions(SymbolInfo &symbol) const;
+    Symbol loadSymbol(int index, int sectionIndex) const;
+    void loadDimensions(Symbol &symbol) const;
     void loadInitialLabelFilter(Qt::Orientation orientation, LabelFilter &labelFilter);
 
-    void loadLabelTree(SymbolInfo &symbol) const;
+    void loadLabelTree(Symbol &symbol) const;
     void appendSubItems(LabelTreeItem *parent, QStringList &labels) const;
 
     QPair<double, double> equationBounds(int row);
@@ -275,25 +162,13 @@ private:
     class SymbolCache;
     SymbolCache *mSymbolCache;
 
-    bool mInitialized = false;
-    bool mUseOutput = false;
-
-    double mModelMinimum = 0.0;
-    double mModelMaximum = 0.0;
-
     DataHandler *mDataHandler;
-
-    QString mScratchDir;
-    QString mWorkspace;
-    QString mSystemDir;
 
     gevHandle_t mGEV = nullptr;
     gmoHandle_t mGMO = nullptr;
     dctHandle_t mDCT = nullptr;
     std::function<QVariant(double, int)> specialMarginalEquValuePtr;
     std::function<QVariant(double, int)> specialMarginalVarValuePtr;
-
-    QStringList mLogMessages;
 };
 
 }

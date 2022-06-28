@@ -20,7 +20,6 @@ public:
     virtual ~SectionTreeModel();
 
     void appendCustomView(const QString &text, PredefinedViewEnum type, int page);
-    void removeCustomView();
 
     QVariant data(const QModelIndex &index, int role) const override;
     bool setData(const QModelIndex &index, const QVariant &value,

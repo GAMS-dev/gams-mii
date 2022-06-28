@@ -5,7 +5,7 @@
 using namespace gams::studio::modelinspector;
 
 class TestModelInstance : public QObject
-{// TODO tests
+{// TODO tests... also mind error state/messages
     Q_OBJECT
 
 public:
@@ -13,7 +13,7 @@ public:
     ~TestModelInstance();
 
 private slots:
-    void test_constructor();
+    void test_constructor_initialize();
     void test_default();
     void test_getSet();
 };
@@ -28,28 +28,40 @@ TestModelInstance::~TestModelInstance()
 
 }
 
-void TestModelInstance::test_constructor()
+void TestModelInstance::test_constructor_initialize()
 {
     const QString workspace = "myWorkDir";
     const QString systemDir = "mySysDir";
     const QString scratchDir = "myScratchDir";
     ModelInstance instance(workspace, systemDir, scratchDir);
-    QVERIFY(!instance.isInitialized());
     auto realWorkspace = QDir(workspace).absolutePath();
     QCOMPARE(instance.workspace(), realWorkspace);
     QCOMPARE(instance.systemDirectory(), systemDir);
     QCOMPARE(instance.scratchDirectory(), scratchDir);
+    instance.initialize();
 }
 
 void TestModelInstance::test_default()
 {
     ModelInstance instance;
-    QVERIFY(!instance.isInitialized());
+    QCOMPARE(instance.workspace(), QDir(".").absolutePath());
+    QCOMPARE(instance.systemDirectory(), QString());
+    QCOMPARE(instance.scratchDirectory(), QString());
+    QCOMPARE(instance.useOutput(), false);
+    QCOMPARE(instance.modelName(), QString());
 }
 
 void TestModelInstance::test_getSet()
 {
-
+    ModelInstance instance;
+    instance.setWorkspace("my_workspace");
+    QCOMPARE(instance.workspace(), QDir("my_workspace").absolutePath());
+    instance.setSystemDirectory("my_system_dir");
+    QCOMPARE(instance.systemDirectory(), "my_system_dir");
+    instance.setScratchDirectory("my_scratch_dir");
+    QCOMPARE(instance.scratchDirectory(), "my_scratch_dir");
+    instance.setUseOutput(true);
+    QCOMPARE(instance.useOutput(), true);
 }
 
 QTEST_APPLESS_MAIN(TestModelInstance)

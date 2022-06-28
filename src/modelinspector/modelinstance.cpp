@@ -41,25 +41,23 @@ public:
 
     }
 
-    void loadSymbols(int type)
+    void loadSymbols(Symbol::Type type)
     {
         int sectionIndex = PredefinedHeaderLength;
-        int &symEntries = (type == dcteqnSymType) ? mEquationEntries : mVariableEntries;
-        QVector<SymbolInfo> &syms = (type == dcteqnSymType) ? mEquations : mVariables;
+        QVector<Symbol> &syms = (type == Symbol::Equation) ? mEquations : mVariables;
         for (int i=1; i<=mModelInstance->symbolCount(); ++i) {
             auto sym = mModelInstance->loadSymbol(i, sectionIndex);
             if (type != sym.type())
                 continue;
             sectionIndex += sym.entries();
             syms.append(sym);
-            symEntries += sym.entries();
         }
     }
 
     void loadHorizontalHeaderData()
     {
         int itemIndex = PredefinedHeaderLength;
-        Q_FOREACH(const auto &var, symbols(dctvarSymType)) {
+        Q_FOREACH(const auto &var, symbols(Symbol::Variable)) {
             MaxVariableDimension = qMax(MaxVariableDimension, var.dimension());
             for (int i=itemIndex; i<itemIndex+var.entries(); ++i) {
                 hSectionIndexToSymbol[i] = var;
@@ -71,7 +69,7 @@ public:
     void loadVerticalHeaderData()
     {
         int itemIndex = PredefinedHeaderLength;
-        Q_FOREACH(const auto &eqn, symbols(dcteqnSymType)) {
+        Q_FOREACH(const auto &eqn, symbols(Symbol::Equation)) {
             MaxEquationDimension = qMax(MaxEquationDimension, eqn.dimension());
             for (int i=itemIndex; i<itemIndex+eqn.entries(); ++i) {
                 vSectionIndexToSymbol[i] = eqn;
@@ -80,16 +78,13 @@ public:
         }
     }
 
-    int symbolEntries(int type) const {
-        return type == dcteqnSymType ? mEquationEntries : mVariableEntries;
-    }
-
-    const QVector<SymbolInfo>& symbols(int type) const
+    const QVector<Symbol>& symbols(Symbol::Type type) const
     {
-        return type == dcteqnSymType ? mEquations : mVariables;
+        return type == Symbol::Equation ? mEquations : mVariables;
     }
 
-    QString longestEqnText() {
+    QString longestEqnText()
+    {
         if (mLongestEqnText.isEmpty()) {
             Q_FOREACH(auto symbol, mModelInstance->equations()) {
                 if (symbol.name().size() > mLongestEqnText.size())
@@ -99,7 +94,8 @@ public:
         return mLongestEqnText;
     }
 
-    QString longestEqnLabelText() const {
+    QString longestEqnLabelText() const
+    {
         return mLongestEqnLabelText;
     }
 
@@ -113,11 +109,13 @@ public:
         return mLongestVarText;
     }
 
-    QString longestVarLabelText() const {
+    QString longestVarLabelText() const
+    {
         return mLongestVarLabelText;
     }
 
-    void setLongestLabelText(Qt::Orientation orientation, const LabelFilter &labelFilter) {
+    void setLongestLabelText(Qt::Orientation orientation, const LabelFilter &labelFilter)
+    {
         for (auto iter=labelFilter.LabelCheckStates[orientation].constKeyValueBegin();
              iter!=labelFilter.LabelCheckStates[orientation].constKeyValueEnd(); ++iter) {
             switch (orientation) {
@@ -135,7 +133,7 @@ public:
         }
     }
 
-    const SymbolInfo& sectionSymbol(int sectionIndex, Qt::Orientation orientation)
+    const Symbol& sectionSymbol(int sectionIndex, Qt::Orientation orientation)
     {
         if (orientation == Qt::Horizontal)
             return hSectionIndexToSymbol[sectionIndex];
@@ -149,13 +147,10 @@ public:
 private:
     ModelInstance* const mModelInstance;
 
-    QVector<SymbolInfo> mEquations;
-    QVector<SymbolInfo> mVariables;
-    QMap<int, SymbolInfo> hSectionIndexToSymbol;
-    QMap<int, SymbolInfo> vSectionIndexToSymbol;
-
-    int mEquationEntries = 0;
-    int mVariableEntries = 0;
+    QVector<Symbol> mEquations;
+    QVector<Symbol> mVariables;
+    QMap<int, Symbol> hSectionIndexToSymbol;
+    QMap<int, Symbol> vSectionIndexToSymbol;
 
     QString mLongestEqnText;
     QString mLongestEqnLabelText;
@@ -167,11 +162,9 @@ private:
 ModelInstance::ModelInstance(const QString &workspace,
                              const QString &systemDir,
                              const QString &scratchDir)
-    : mSymbolCache(new SymbolCache(this))
+    : AbstractModelInstance(workspace, systemDir, scratchDir)
+    , mSymbolCache(new SymbolCache(this))
     , mDataHandler(new DataHandler)
-    , mScratchDir(scratchDir)
-    , mWorkspace(QDir(workspace).absolutePath())
-    , mSystemDir(systemDir)
 {
 }
 
@@ -186,9 +179,12 @@ ModelInstance::~ModelInstance()
 
 QString ModelInstance::modelName() const
 {
-    char name[GMS_SSSIZE];
-    gmoNameModel(mGMO, name);
-    return name;
+    if (mGMO) {
+        char name[GMS_SSSIZE];
+        gmoNameModel(mGMO, name);
+        return name;
+    }
+    return QString();
 }
 
 int ModelInstance::coefficents() const
@@ -198,14 +194,14 @@ int ModelInstance::coefficents() const
 
 int ModelInstance::positiveCoefficents() const
 {
-    const int columns = variableCount();
+    const int columns = variableRowCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];
     int nz;
     int nlnz;
     int positiveCoeffs = 0;
-    for (int row=0; row<equationCount(); ++row) {
+    for (int row=0; row<equationRowCount(); ++row) {
         gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
         for (int idx = 0; idx<nz+nlnz; ++idx) {
             if (jacval[idx] >= 0)
@@ -220,14 +216,14 @@ int ModelInstance::positiveCoefficents() const
 
 int ModelInstance::negativeCoefficents() const
 {
-    const int columns = variableCount();
+    const int columns = variableRowCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];
     int nz;
     int nlnz;
     int negativeCoeffs = 0;
-    for (int row=0; row<equationCount(); ++row) {
+    for (int row=0; row<equationRowCount(); ++row) {
         gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
         for (int idx = 0; idx<nz+nlnz; ++idx) {
             if (jacval[idx] < 0)
@@ -245,46 +241,81 @@ int ModelInstance::nonLinearCoefficents() const
     return gmoNLNZ(mGMO);
 }
 
-SymbolInfo ModelInstance::equation(int sectionIndex) const
+Symbol ModelInstance::equation(int sectionIndex) const
 {
     return mSymbolCache->sectionSymbol(sectionIndex, Qt::Vertical);
 }
 
-const QVector<SymbolInfo>& ModelInstance::equations() const
+const QVector<Symbol>& ModelInstance::equations() const
 {
-    return mSymbolCache->symbols(dcteqnSymType);
+    return mSymbolCache->symbols(Symbol::Equation);
 }
 
 int ModelInstance::equationCount() const
 {
+    return symbols(Symbol::Equation).count();
+}
+
+int ModelInstance::equationCount(EquationType type) const
+{
+    switch (type) {
+    case EquationType::E:
+        return gmoGetEquTypeCnt(mGMO, gmoequ_E);
+    case EquationType::G:
+        return gmoGetEquTypeCnt(mGMO, gmoequ_G);
+    case EquationType::L:
+        return gmoGetEquTypeCnt(mGMO, gmoequ_L);
+    case EquationType::N:
+        return gmoGetEquTypeCnt(mGMO, gmoequ_N);
+    case EquationType::X:
+        return gmoGetEquTypeCnt(mGMO, gmoequ_X);
+    case EquationType::C:
+        return gmoGetEquTypeCnt(mGMO, gmoequ_C);
+    case EquationType::B:
+        return gmoGetEquTypeCnt(mGMO, gmoequ_B);
+    default:
+        return 0;
+    }
+}
+
+int ModelInstance::equationRowCount() const
+{
     return gmoM(mGMO);
 }
 
-int ModelInstance::equationCount(int type) const
+int ModelInstance::variableCount() const
 {
-    return gmoGetEquTypeCnt(mGMO, type);
+    return symbols(Symbol::Variable).count();
 }
 
-int ModelInstance::equationBlocks()
+int ModelInstance::variableCount(VariableType type) const
 {
-    return symbols(dcteqnSymType).count();
-}
-
-bool ModelInstance::isEquation(int symType)
-{
-    return symType == dcteqnSymType ? true : false;
-}
-
-bool ModelInstance::isEquation(const QString &name)
-{
-    Q_FOREACH(const auto& sym, symbols(dcteqnSymType)) {
-        if (sym.name() == name)
-            return true;
+    switch (type) {
+    case VariableType::X:
+        return gmoGetVarTypeCnt(mGMO, gmovar_X);
+    case VariableType::B:
+        return gmoGetVarTypeCnt(mGMO, gmovar_B);
+    case VariableType::I:
+        return gmoGetVarTypeCnt(mGMO, gmovar_I);
+    case VariableType::S1:
+        return gmoGetVarTypeCnt(mGMO, gmovar_S1);
+    case VariableType::S2:
+        return gmoGetVarTypeCnt(mGMO, gmovar_S2);
+    case VariableType::SC:
+        return gmoGetVarTypeCnt(mGMO, gmovar_SC);
+    case VariableType::SI:
+        return gmoGetVarTypeCnt(mGMO, gmovar_SI);
+    default:
+        return 0;
     }
-    return false;
 }
 
-QString ModelInstance::longestEqnText() const
+int ModelInstance::variableRowCount() const
+{
+    return gmoN(mGMO);
+}
+
+QString ModelInstance::longestEquationText() const
 {
     auto eqn = mSymbolCache->longestEqnText();
     auto label = mSymbolCache->longestEqnLabelText();
@@ -293,7 +324,7 @@ QString ModelInstance::longestEqnText() const
     return label;
 }
 
-QString ModelInstance::longestVarText() const
+QString ModelInstance::longestVariableText() const
 {
     auto var = mSymbolCache->longestVarText();
     auto label = mSymbolCache->longestVarLabelText();
@@ -302,48 +333,28 @@ QString ModelInstance::longestVarText() const
     return label;
 }
 
-SymbolInfo ModelInstance::variable(int sectionIndex) const
+Symbol ModelInstance::variable(int sectionIndex) const
 {
     return mSymbolCache->sectionSymbol(sectionIndex, Qt::Horizontal);
 }
 
-const QVector<SymbolInfo>& ModelInstance::variables() const
+const QVector<Symbol>& ModelInstance::variables() const
 {
-    return mSymbolCache->symbols(dctvarSymType);
+    return mSymbolCache->symbols(Symbol::Variable);
 }
 
-int ModelInstance::variableCount() const
-{
-    return gmoN(mGMO);
+int ModelInstance::symbolCount() const {
+    return dctNLSyms(mDCT);
 }
 
-int ModelInstance::maxEquationDimension() const
+int ModelInstance::maximumEquationDimension() const
 {
     return mSymbolCache->MaxEquationDimension;
 }
 
-int ModelInstance::maxVariableDimension() const
+int ModelInstance::maximumVariableDimension() const
 {
     return mSymbolCache->MaxVariableDimension;
-}
-
-int ModelInstance::variableCount(int type) const
-{
-    return gmoGetVarTypeCnt(mGMO, type);
-}
-
-int ModelInstance::variableBlocks()
-{
-    return symbols(dctvarSymType).count();
-}
-
-bool ModelInstance::isVariable(const QString &name)
-{
-    Q_FOREACH(const auto& sym, symbols(dctvarSymType)) {
-        if (sym.name() == name)
-            return true;
-    }
-    return false;
 }
 
 void ModelInstance::loadScratchData(bool useOutput)
@@ -387,8 +398,8 @@ void ModelInstance::loadScratchData(bool useOutput)
 
 void ModelInstance::loadTableData(LabelFilter &labelFilter)
 {
-    mSymbolCache->loadSymbols(dcteqnSymType);
-    mSymbolCache->loadSymbols(dctvarSymType);
+    mSymbolCache->loadSymbols(Symbol::Equation);
+    mSymbolCache->loadSymbols(Symbol::Variable);
     loadInitialLabelFilter(Qt::Horizontal, labelFilter);
     loadInitialLabelFilter(Qt::Vertical, labelFilter);
 
@@ -397,208 +408,9 @@ void ModelInstance::loadTableData(LabelFilter &labelFilter)
     mSymbolCache->loadVerticalHeaderData();
 }
 
-QString ModelInstance::equationType(int offset) const
+Symbol ModelInstance::loadSymbol(int index, int sectionIndex) const
 {
-    char type[GMS_SSSIZE];
-    gmoGetEquTypeTxt(mGMO, offset, type);
-    return type;
-}
-
-QVector<QVariant> ModelInstance::scalarEquationData(int offset) const
-{
-    int *colidx = new int[gmoN(mGMO)];
-    int *nlflag = new int[gmoN(mGMO)];
-    double *jacval = new double[gmoN(mGMO)];
-    int nnz, nlnnz;
-
-    QVector<QVariant> jacvals;
-    int rowidx = rowIndex(offset);
-    if (rowidx >= 0 && !gmoGetRowSparse(mGMO, rowidx, colidx, jacval, nlflag, &nnz, &nlnnz)) {
-        for (int k=0; k<nnz; ++k) {
-            jacvals.append(jacval[k]);
-        }
-    }
-
-    delete [] colidx;
-    delete [] nlflag;
-    delete [] jacval;
-    return jacvals;
-}
-
-QMap<int,QVariant> ModelInstance::equationData(int currentRow) const
-{
-    int *colidx = new int[gmoN(mGMO)];
-    int *nlflag = new int[gmoN(mGMO)];
-    double *jacval = new double[gmoN(mGMO)];
-    int nnz, nlnnz;
-
-    QMap<int,QVariant> jacvals;
-    if (gmoGetRowSparse(mGMO, currentRow, colidx, jacval, nlflag, &nnz, &nlnnz)) {
-        return jacvals;
-    }
-
-    for (int k=0; k<nnz; ++k) {
-        jacvals[colidx[k]] = jacval[k];
-    }
-
-    delete [] colidx;
-    delete [] nlflag;
-    delete [] jacval;
-    return jacvals;
-}
-
-QVector<MaxMin> ModelInstance::equationVariableScaling(const SymbolInfo &symbol)
-{
-    int *colidx = new int[gmoN(mGMO)];
-    int *nlflag = new int[gmoN(mGMO)];
-    double *jacval = new double[gmoN(mGMO)];
-    int nnz, nlnnz;
-
-    int rowidx = rowIndex(symbol.offset());
-    QVector<MaxMin> scaling;
-    if (rowidx >= 0 && !gmoGetRowSparse(mGMO, rowidx, colidx, jacval, nlflag, &nnz, &nlnnz)) {
-        Q_FOREACH(const auto& var, symbols(dctvarSymType)) {
-            MaxMin maxmin { false, gmoMinf(mGMO), gmoPinf(mGMO) };
-            for (int i=0; i<nnz; ++i) {
-                if (colidx[i] >= var.offset() && colidx[i] < var.lastOffset()) {
-                    maxmin.Valid = true;
-                    maxmin.Max = std::max(maxmin.Max, jacval[i]);
-                    maxmin.Min = std::min(maxmin.Min, jacval[i]);
-                }
-            }
-            scaling.push_back(maxmin);
-        }
-    }
-
-    delete [] colidx;
-    delete [] nlflag;
-    delete [] jacval;
-
-    return scaling;
-}
-
-QVector<MaxMin> ModelInstance::totalScaling()
-{
-    QVector<MaxMin> scaling;
-    Q_FOREACH(const auto& eqn, symbols(dcteqnSymType)) {
-        if (scaling.isEmpty()) {
-            scaling.append(equationVariableScaling(eqn));
-        } else {
-            auto tmp = equationVariableScaling(eqn);
-            for (int i=0; i<scaling.size(); ++i) {
-                if (!tmp.at(i).Valid)
-                    continue;
-                if (scaling.at(i).Valid) {
-                    scaling[i].Max = std::max(scaling.at(i).Max, tmp.at(i).Max);
-                    scaling[i].Min = std::min(scaling.at(i).Min, tmp.at(i).Min);
-                } else {
-                    scaling[i].Valid = true;
-                    scaling[i].Max = tmp.at(i).Max;
-                    scaling[i].Min = tmp.at(i).Min;
-                }
-            }
-        }
-    }
-    return scaling;
-}
-
-MaxMin ModelInstance::equationScaling(const SymbolInfo &symbol)
-{
-    int *colidx = new int[gmoN(mGMO)];
-    int *nlflag = new int[gmoN(mGMO)];
-    double *jacval = new double[gmoN(mGMO)];
-    int nnz, nlnnz;
-
-    MaxMin maxmin { true, gmoMinf(mGMO), gmoPinf(mGMO) };
-    int rowidx = rowIndex(symbol.offset());
-    if (rowidx >= 0 && !gmoGetRowSparse(mGMO, rowidx, colidx, jacval, nlflag, &nnz, &nlnnz)) {
-        for (int i=0; i<nnz; ++i) {
-            maxmin.Max = std::max(maxmin.Max, jacval[i]);
-            maxmin.Min = std::min(maxmin.Min, jacval[i]);
-        }
-    }
-
-    delete [] colidx;
-    delete [] nlflag;
-    delete [] jacval;
-
-    return maxmin;
-}
-
-QPair<double,double> ModelInstance::maxminRhs(int offset, int entries) const
-{
-    QPair<double,double> maxmin { gmoMinf(mGMO), gmoPinf(mGMO) };
-    for (int i=offset; i<offset+entries; ++i) {
-        maxmin.first = std::max(maxmin.first, gmoGetRhsOne(mGMO, i));
-        maxmin.second = std::min(maxmin.second, gmoGetRhsOne(mGMO, i));
-    }
-    return maxmin;
-}
-
-QPair<double,double> ModelInstance::totalRhs()
-{
-    QPair<double,double> maxmin { gmoMinf(mGMO), gmoPinf(mGMO) };
-    Q_FOREACH(auto const& symbol, symbols(dcteqnSymType)) {
-        if (symbol.isScalar())
-            continue;
-        for (int i=symbol.offset(); i<symbol.offset()+symbol.entries(); ++i) {
-            maxmin.first = std::max(maxmin.first, gmoGetRhsOne(mGMO, i));
-            maxmin.second = std::min(maxmin.second, gmoGetRhsOne(mGMO, i));
-        }
-    }
-    return maxmin;
-}
-
-QString ModelInstance::aggregatedRhs(const SymbolInfo &symbol) const
-{
-    double min = gmoGetRhsOne(mGMO, symbol.offset());
-    double max = gmoGetRhsOne(mGMO, symbol.offset());
-    if (symbol.entries()) {
-        for (int i=1; i<symbol.entries(); ++i) {
-            min = std::min(min, gmoGetRhsOne(mGMO, symbol.offset()+i));
-            max = std::max(max, gmoGetRhsOne(mGMO, symbol.offset()+i));
-        }
-    }
-
-    if (max <= 0) return "-";
-    if (min >= 0) return "+";
-    if (min < 0 && max > 0) return "u";
-    return "0";
-}
-
-int ModelInstance::rowIndex(int offset) const
-{
-    return gmoGetjSolverQuiet(mGMO, offset);
-}
-
-QStringList ModelInstance::symbolNames() const
-{
-    QStringList names;
-    for (int i=1; i<=symbolCount(); ++i) {
-        char name[GMS_SSSIZE];
-        if (dctSymName(mDCT, i, name, GMS_SSSIZE))
-            continue;
-        names << name;
-    }
-    return names;
-}
-
-int ModelInstance::symbolIndex(const QString &label) const
-{
-    return dctSymIndex(mDCT, label.toLatin1().toStdString().c_str());
-}
-
-int ModelInstance::symbolOffset(const QString &label) const
-{
-    int index = dctSymIndex(mDCT, label.toLatin1().toStdString().c_str());
-    if (index <= 0)
-        return -1;
-    return dctSymOffset(mDCT, index);
-}
-
-SymbolInfo ModelInstance::loadSymbol(int index, int sectionIndex) const
-{
-    SymbolInfo info;
+    Symbol info;
     if (index > symbolCount())
         return info;
 
@@ -609,27 +421,36 @@ SymbolInfo ModelInstance::loadSymbol(int index, int sectionIndex) const
 
     char symbolName[GMS_SSSIZE];
     if (dctSymName(mDCT, index, symbolName, GMS_SSSIZE))
-        info.setName("ERROR");
+        info.setName("##ERROR##");
     else
         info.setName(symbolName);
 
-    info.setType(dctSymType(mDCT, index));
+    auto type = dctSymType(mDCT, index);
+    if (type == dcteqnSymType)
+        info.setType(Symbol::Equation);
+    else if (type == dctvarSymType)
+        info.setType(Symbol::Variable);
+    else // TODO (AF/LW) more dct types to consider
+        info.setType(Symbol::Unknown);
     loadDimensions(info);
     loadLabelTree(info);
 
     return info;
 }
 
-void ModelInstance::loadDimensions(SymbolInfo &symbol) const
+void ModelInstance::loadDimensions(Symbol &symbol) const
 {
     int nDomains;
     int domains[GLOBAL_MAX_INDEX_DIM];
     for (int j=0; j<symbol.entries(); ++j) {
-        if (gmoGetjSolverQuiet(mGMO, symbol.offset() + j) < 0)
+        if (symbol.isVariable() && gmoGetjSolverQuiet(mGMO, symbol.offset() + j) < 0) {
             continue;
+        } else if (gmoGetiSolverQuiet(mGMO, symbol.offset() + j) < 0) {
+            continue;
+        }
 
         int symIndex;
-        if (symbol.type() == dctvarSymType) {
+        if (symbol.isVariable()) {
             if (dctColUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains))
                 continue;
         } else {
@@ -648,7 +469,7 @@ void ModelInstance::loadDimensions(SymbolInfo &symbol) const
     }
 }
 
-void ModelInstance::loadLabelTree(SymbolInfo &symbol) const
+void ModelInstance::loadLabelTree(Symbol &symbol) const
 {
     int nDomains;
     int domains[GLOBAL_MAX_INDEX_DIM];
@@ -658,7 +479,7 @@ void ModelInstance::loadLabelTree(SymbolInfo &symbol) const
             continue;
 
         int symIndex;
-        if (symbol.type() == dctvarSymType) {
+        if (symbol.isVariable()) {
             if (dctColUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains))
                 continue;
         } else {
@@ -715,28 +536,29 @@ void ModelInstance::appendSubItems(LabelTreeItem *parent, QStringList &labels) c
     }
 }
 
-const SymbolInfo& ModelInstance::symbol(int index, int type) const
-{
-    return symbols(type).at(index);
-}
-
-const QVector<SymbolInfo>& ModelInstance::symbols(int type) const
+const QVector<Symbol>& ModelInstance::symbols(Symbol::Type type) const
 {
     return mSymbolCache->symbols(type);
 }
 
-QPair<double, double> ModelInstance::matrixRange() const
+void ModelInstance::loadData(bool useOutput, LabelFilter &labelFilter)
+{
+    loadScratchData(useOutput);
+    loadTableData(labelFilter);
+}
+
+Range ModelInstance::matrixRange() const
 {
     gmoObjStyleSet(mGMO, gmoObjType_Fun);
-    QPair<double, double> range;
-    const int columns = variableCount();
+    Range range;
+    const int columns = variableRowCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];
     int nz;
     int nlnz;
 
-    for (int row=0; row<equationCount(); ++row) {
+    for (int row=0; row<equationRowCount(); ++row) {
         gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
         for (int idx = 0; idx<nz+nlnz; ++idx) {
             if (row == 0 && idx == 0) {
@@ -756,18 +578,18 @@ QPair<double, double> ModelInstance::matrixRange() const
     return range;
 }
 
-QPair<double, double> ModelInstance::objectiveRange() const
+Range ModelInstance::objectiveRange() const
 {
     gmoObjStyleSet(mGMO, gmoObjType_Fun);
-    QPair<double, double> range;
-    const int columns = variableCount();
+    Range range;
+    const int columns = variableRowCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];
     int nz;
     int nlnz;
 
-    for (int row=0; row<equationCount(); ++row) {
+    for (int row=0; row<equationRowCount(); ++row) {
         gmoGetObjSparse(mGMO, colidx, jacval, nlflag, &nz, &nlnz);
         for (int idx=0; idx<nz+nlnz; ++idx) {
             if (row == 0 && idx == 0) {
@@ -787,11 +609,11 @@ QPair<double, double> ModelInstance::objectiveRange() const
     return range;
 }
 
-QPair<double, double> ModelInstance::boundsRange() const
+Range ModelInstance::boundsRange() const
 {
     gmoObjStyleSet(mGMO, gmoObjType_Fun);
-    QPair<double, double> range;
-    auto columns = variableCount();
+    Range range;
+    auto columns = variableRowCount();
 
     auto lowerVals = new double[columns];
     if (!gmoGetVarLower(mGMO, lowerVals)) {
@@ -821,11 +643,11 @@ QPair<double, double> ModelInstance::boundsRange() const
     return range;
 }
 
-QPair<double, double> ModelInstance::rhsRange() const
+Range ModelInstance::rhsRange() const
 {
     gmoObjStyleSet(mGMO, gmoObjType_Fun);
-    QPair<double, double> range;
-    auto rows = equationCount();
+    Range range;
+    auto rows = equationRowCount();
     auto *vals = new double[rows];
     if (gmoGetRhs(mGMO, vals))
         return range;
@@ -847,18 +669,13 @@ QPair<double, double> ModelInstance::rhsRange() const
 int ModelInstance::rowCount(PredefinedViewEnum viewType) const
 {
     switch (viewType) {
-    case PredefinedViewEnum::EqnAttributes:
-        return PredefinedHeaderLength + mSymbolCache->symbolEntries(dcteqnSymType);
     case PredefinedViewEnum::VarAttributes:
         return PredefinedHeaderLength;
+    case PredefinedViewEnum::MinMax: // one row for max and min
+        return PredefinedHeaderLength + (equationCount() * 2);
     default:
-        return PredefinedHeaderLength + mSymbolCache->symbolEntries(dcteqnSymType);
+        return PredefinedHeaderLength + equationRowCount();
     }
-}
-
-int ModelInstance::jaccRowCount() const
-{
-    return mSymbolCache->symbolEntries(dcteqnSymType);
 }
 
 int ModelInstance::columnCount(PredefinedViewEnum viewType) const
@@ -866,22 +683,17 @@ int ModelInstance::columnCount(PredefinedViewEnum viewType) const
     switch (viewType) {
     case PredefinedViewEnum::EqnAttributes:
         return PredefinedHeaderLength;
-    case PredefinedViewEnum::VarAttributes:
-        return PredefinedHeaderLength + mSymbolCache->symbolEntries(dctvarSymType);
+    case PredefinedViewEnum::MinMax:
+        return PredefinedHeaderLength + variableCount();
     default:
-        return PredefinedHeaderLength + mSymbolCache->symbolEntries(dctvarSymType);
+        return PredefinedHeaderLength + variableRowCount();
     }
-}
-
-int ModelInstance::jaccColumnCount() const
-{
-    return mSymbolCache->symbolEntries(dctvarSymType);
 }
 
 void ModelInstance::loadInitialLabelFilter(Qt::Orientation orientation, LabelFilter &labelFilter)
 {
     LabelCheckStates filter;
-    Q_FOREACH(const auto &symbolInfo, symbols(orientation == Qt::Horizontal ? dctvarSymType : dcteqnSymType)) {
+    Q_FOREACH(const auto &symbolInfo, symbols(orientation == Qt::Horizontal ? Symbol::Variable : Symbol::Equation)) {
         int nDomains;
         int domains[GLOBAL_MAX_INDEX_DIM];
         for (int j=0; j<symbolInfo.entries(); ++j) {
@@ -995,8 +807,10 @@ void ModelInstance::initialize()
     if (!gevCreateD(&mGEV,
                     mSystemDir.toStdString().c_str(),
                     msg,
-                    sizeof(msg)))
+                    sizeof(msg))) {
         mLogMessages << "ERROR: " + QString(msg);
+        return;
+    }
 
     gmoSetExitIndicator(0); // switch of lib exit() call
     gmoSetScreenIndicator(0); // switch off std lib output
@@ -1005,8 +819,10 @@ void ModelInstance::initialize()
     if (!gmoCreateD(&mGMO,
                     mSystemDir.toStdString().c_str(),
                     msg,
-                    sizeof(msg)))
+                    sizeof(msg))) {
         mLogMessages << "ERROR: " + QString(msg);
+        return;
+    }
 
     if (gmoHaveBasis(mGMO)){
         specialMarginalEquValuePtr = std::bind(&ModelInstance::specialMarginalVarValueBasis,
@@ -1032,14 +848,13 @@ void ModelInstance::initialize()
                     msg,
                     sizeof(msg))) {
         mLogMessages << "ERROR: " + QString(msg);
+        return;
     }
-
-    mInitialized = true;
 }
 
 DataRow ModelInstance::jaccobianRow(int row)
 {
-    const int columns = variableCount();
+    const int columns = variableRowCount();
     int *colidx = new int[columns];
     double *jacval = new double[columns];
     int *nlflag = new int[columns];
@@ -1101,8 +916,7 @@ QVariant ModelInstance::verticalAttribute(const QString &header, int row)
 
 QPair<double, double> ModelInstance::equationBounds(int row)
 {
-    QPair<double, double> bounds(-1, -1); // TODO (AF) keep these default values?
-
+    QPair<double, double> bounds;
     switch (gmoGetEquTypeOne(mGMO, row)) {
     case gmoequ_B:
     case gmoequ_E:

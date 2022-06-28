@@ -28,11 +28,6 @@ void SectionTreeModel::appendCustomView(const QString &text, PredefinedViewEnum 
     endResetModel();
 }
 
-void SectionTreeModel::removeCustomView()
-{
-
-}
-
 QVariant SectionTreeModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
@@ -176,7 +171,12 @@ void SectionTreeModel::loadModelData()
                                            (int)PredefinedViewEnum::Jaccobian,
                                            viewItem);
             mainItem->setType(PredefinedViewTexts.at(i));
-        } else  {
+        } else if (PredefinedViewTexts.at(i) == MinMax) {
+            mainItem = new SectionTreeItem(PredefinedViewTexts.at(i),
+                                           (int)PredefinedViewEnum::MinMax,
+                                           viewItem);
+            mainItem->setType(PredefinedViewTexts.at(i));
+        } else {
             mainItem = new SectionTreeItem(PredefinedViewTexts.at(i),
                                            (int)PredefinedViewEnum::Full,
                                            viewItem);

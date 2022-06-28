@@ -1,4 +1,4 @@
-#include "datahandler.h"
+﻿#include "datahandler.h"
 #include "modelinstance.h"
 
 #include <algorithm>
@@ -6,6 +6,8 @@
 #include <vector>
 
 #include <QSet>
+
+#include <QDebug>
 
 using namespace std;
 
@@ -351,8 +353,7 @@ public:
                                             : &MinDataAggregator::aggregatedValue;
         Q_FOREACH(auto item, aggregationMap()[Qt::Horizontal]) {
             auto var = modelInstance->variable(item.symbolIndex());
-            for (auto iter=aggregatedMatrix().keyValueBegin();
-                 iter!=aggregatedMatrix().keyValueEnd(); ++iter) {
+            for (auto iter=aggregatedMatrix().keyValueBegin(); iter!=aggregatedMatrix().keyValueEnd(); ++iter) {
                 int targetColumn = var.firstSection();
                 DataRow newRow = iter->second;
                 Q_FOREACH(auto sections, item.unitedSections()) {
@@ -543,6 +544,129 @@ public:
     }
 };
 
+class MinMaxDataAggregator : public DataHandler::AbstractDataAggregator
+{
+public:
+    MinMaxDataAggregator(DataHandler *dataHandler, const Aggregation &appliedAggregation)
+        : DataHandler::AbstractDataAggregator(dataHandler, appliedAggregation)
+    {
+
+    }
+
+    virtual void aggregateColumns(ModelInstance *modelInstance) override
+    {
+        Q_FOREACH(auto item, aggregationMap()[Qt::Horizontal]) {
+            auto var = modelInstance->variable(item.symbolIndex());
+            for (auto iter=aggregatedMatrix().keyValueBegin(); iter!=aggregatedMatrix().keyValueEnd(); ++iter) {
+                DataRow newRow = iter->second;
+                int targetColumn = var.firstSection();
+                Q_FOREACH(auto sections, item.unitedSections()) {
+                    QVariant value;
+                    if (!(iter->first % 2)) {
+                        Q_FOREACH(auto column, sections) {
+                            if (value.isValid()) {
+                                if (newRow[column].isValid() && newRow[column].toDouble() != 0.0)
+                                    value = std::min(value.toDouble(), newRow[column].toDouble());
+                            } else if (newRow[column].isValid()) {
+                                value = newRow[column].toDouble();
+                            }
+                            newRow.remove(column);
+                        }
+                    } else {
+                        Q_FOREACH(auto column, sections) {
+                            if (value.isValid()) {
+                                if (newRow[column].isValid() && newRow[column].toDouble() != 0.0)
+                                    value = std::max(value.toDouble(), newRow[column].toDouble());
+                            } else if (newRow[column].isValid()) {
+                                value = newRow[column].toDouble();
+                            }
+                            newRow.remove(column);
+                        }
+                    }
+                    newRow[targetColumn++] = value;
+                }
+                setFilterForTargetIndexChecked(Qt::Vertical, var.firstSection(), iter->first);
+                aggregatedMatrix()[iter->first] = newRow;
+            }
+        }
+    }
+
+    virtual void aggregateRows(ModelInstance *modelInstance) override
+    {
+        DataMatrix tmpAggrMatrix;
+        for (int r=0; r<PredefinedHeaderLength; ++r) {
+            tmpAggrMatrix[r] = aggregatedMatrix()[r];
+        }
+        int targetRow = -1;
+        Q_FOREACH(auto item, aggregationMap()[Qt::Vertical]) {
+            auto eqn = modelInstance->equation(item.symbolIndex());
+            if (targetRow < 0) targetRow = eqn.firstSection();
+            DataRow newMaxRow, newMinRow;
+            if (eqn.isScalar()) {
+                aggregateRows(newMaxRow, newMinRow, {eqn.firstSection(), eqn.firstSection()}, modelInstance);
+                aggregatedMatrix().remove(eqn.firstSection());
+            } else {
+                aggregateRows(newMaxRow, newMinRow, item.mappedSections(), modelInstance);
+                Q_FOREACH(auto row, item.mappedSections()) {
+                    aggregatedMatrix().remove(row);
+                }
+            }
+            tmpAggrMatrix[targetRow++] = newMaxRow;
+            tmpAggrMatrix[targetRow++] = newMinRow;
+        }
+        aggregatedMatrix() = tmpAggrMatrix;
+    }
+
+protected:
+    virtual QVariant aggregatedValue(QVariant &value1, QVariant &value2) override
+    {
+        if (isSpecialValue(value1))
+            return value2;
+        auto value = value1.toDouble();
+        if (value < 0 || value > 0) {
+            return value;
+        }
+        return QVariant();
+    }
+
+    virtual QVariant aggregatedAbsValue(QVariant &value1, QVariant &value2) override
+    {
+        if (isSpecialValue(value1))
+            return value2;
+        auto value = value1.toDouble();
+        if (value < 0 || value > 0) {
+            return std::abs(value);
+        }
+        return QVariant();
+    }
+
+private:
+    void aggregateRows(DataRow &newMaxRow, DataRow &newMinRow,
+                       const QList<int>& visibleSections,
+                       ModelInstance *modelInstance)
+    {
+        QVariant specialValue = NA;
+        auto getValue = useAbsoluteValues() ? &MinMaxDataAggregator::aggregatedAbsValue
+                                            : &MinMaxDataAggregator::aggregatedValue;
+        Q_FOREACH(auto row, visibleSections) {
+            for (int column=0; column<modelInstance->columnCount(PredefinedViewEnum::Full); ++column) {
+                auto value = std::invoke(getValue, this, aggregatedMatrix()[row][column], specialValue);
+                if (!value.isValid()) continue;
+                if (newMaxRow.contains(column) && isSpecialValue(newMaxRow[column])) {
+                    newMaxRow[column] = NA;
+                    newMinRow[column] = NA;
+                } else if (newMaxRow.contains(column) && newMinRow.contains(column)) {
+                    newMaxRow[column] = std::max(newMaxRow[column], value);
+                    newMinRow[column] = std::min(newMinRow[column], value);
+                } else {
+                    newMaxRow[column] = value;
+                    newMinRow[column] = value;
+                }
+            }
+        }
+    }
+};
+
 DataHandler::DataHandler()
     : mDataAggregator(QSharedPointer<AbstractDataAggregator>(new IdentityDataAggregator(this)))
 {
@@ -555,7 +679,6 @@ void DataHandler::aggregate(const Aggregation &aggregation, ModelInstance *model
     mAggrCache.remove(aggregation.view());
     if (aggregation.type() == Aggregation::None)
         return;
-
     applyValueFilter();
     mDataAggregator->aggregateRows(modelInstance);
     applyRowFilter(modelInstance);
@@ -574,7 +697,7 @@ int DataHandler::headerData(int logicalIndex,
                             Qt::Orientation orientation,
                             int view) const
 {
-    if (logicalIndex < mLogicalSectionMapping[view][orientation].size()) {
+    if (logicalIndex >= 0 && logicalIndex < mLogicalSectionMapping[view][orientation].size()) {
         return mLogicalSectionMapping[view][orientation][logicalIndex];
     }
     return -1;
@@ -582,7 +705,7 @@ int DataHandler::headerData(int logicalIndex,
 
 void DataHandler::loadDataMatrix(ModelInstance *modelInstance)
 {
-    for (int row=0; row<modelInstance->equationCount(); ++row) {
+    for (int row=0; row<modelInstance->equationRowCount(); ++row) {
         auto data = modelInstance->jaccobianRow(row);
         for (auto iter=data.keyValueBegin(); iter!=data.keyValueEnd(); ++iter) {
             mDataMatrix[row+PredefinedHeaderLength][iter->first+PredefinedHeaderLength] = iter->second;
@@ -590,13 +713,13 @@ void DataHandler::loadDataMatrix(ModelInstance *modelInstance)
     }
     for (int r=0; r<PredefinedHeaderLength; ++r) {
         auto header = PredefinedHeader.at(r).toLower();
-        for (int c=0; c<modelInstance->jaccColumnCount(); ++c) {
+        for (int c=0; c<modelInstance->variableRowCount(); ++c) {
             mDataMatrix[r][c+PredefinedHeaderLength] = modelInstance->horizontalAttribute(header, c);
         }
     }
     for (int c=0; c<PredefinedHeaderLength; ++c) {
         auto header = PredefinedHeader.at(c).toLower();
-        for (int r=0; r<modelInstance->jaccRowCount(); ++r) {
+        for (int r=0; r<modelInstance->equationRowCount(); ++r) {
             mDataMatrix[r+PredefinedHeaderLength][c] = modelInstance->verticalAttribute(header, r);
         }
     }
@@ -623,6 +746,9 @@ void DataHandler::setDataAggregator(const Aggregation &appliedAggregation)
     case Aggregation::Sum:
         mDataAggregator = QSharedPointer<AbstractDataAggregator>(new SumDataAggregator(this, appliedAggregation));
         break;
+    case Aggregation::MinMax:
+        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new MinMaxDataAggregator(this, appliedAggregation));
+        break;
     default:
         mDataAggregator = QSharedPointer<AbstractDataAggregator>(new IdentityDataAggregator(this));
         break;
@@ -645,36 +771,69 @@ void DataHandler::applyValueFilter()
 
 void DataHandler::applyRowFilter(ModelInstance *modelInstance)
 {
-    int row = 0;
-    DataMatrix tmpMatrix;
-    auto checkState = checkStates(Qt::Vertical, modelInstance);
-    Q_FOREACH(auto key, mDataAggregator->aggregatedMatrix().keys()) {
-        if (checkState[key] == Qt::Checked) {
-            tmpMatrix[row++] = mDataAggregator->aggregatedMatrix()[key];
-            mLogicalSectionMapping[mDataAggregator->aggregation().view()][Qt::Vertical].append(key);
+    if (mDataAggregator->aggregation().type() == Aggregation::MinMax) {
+        int row = 0;
+        DataMatrix tmpMatrix;
+        auto checkState = checkStates(Qt::Vertical, modelInstance);
+        Q_FOREACH(auto key, mDataAggregator->aggregatedMatrix().keys()) {
+            if (!checkState.contains(key) || checkState[key] == Qt::Checked) {
+                tmpMatrix[row++] = mDataAggregator->aggregatedMatrix()[key];
+                mLogicalSectionMapping[mDataAggregator->aggregation().view()][Qt::Vertical].append(key);
+            }
         }
+        mDataAggregator->aggregatedMatrix() = tmpMatrix;
+    } else {
+        int row = 0;
+        DataMatrix tmpMatrix;
+        auto checkState = checkStates(Qt::Vertical, modelInstance);
+        Q_FOREACH(auto key, mDataAggregator->aggregatedMatrix().keys()) {
+            if (checkState[key] == Qt::Checked) {
+                tmpMatrix[row++] = mDataAggregator->aggregatedMatrix()[key];
+                mLogicalSectionMapping[mDataAggregator->aggregation().view()][Qt::Vertical].append(key);
+            }
+        }
+        mDataAggregator->aggregatedMatrix() = tmpMatrix;
     }
-    mDataAggregator->aggregatedMatrix() = tmpMatrix;
 }
 
 void DataHandler::applyColumnFilter(ModelInstance *modelInstance)
 {
-    auto checkState = checkStates(Qt::Horizontal, modelInstance);
-    for (auto rIter=mDataAggregator->aggregatedMatrix().keyValueBegin();
-         rIter!=mDataAggregator->aggregatedMatrix().keyValueEnd(); ++rIter) {
-        Q_FOREACH(auto column, rIter->second.keys()) {
-            if (checkState[column] == Qt::Unchecked)
-                rIter->second.remove(column);
+    if (mDataAggregator->aggregation().type() == Aggregation::MinMax) {
+        auto checkState = checkStates(Qt::Horizontal, modelInstance);
+        for (auto rIter=mDataAggregator->aggregatedMatrix().keyValueBegin();
+             rIter!=mDataAggregator->aggregatedMatrix().keyValueEnd(); ++rIter) {
+            Q_FOREACH(auto column, rIter->second.keys()) {
+                if (checkState.contains(column) && checkState[column] == Qt::Unchecked)
+                    rIter->second.remove(column);
+            }
+            if (mLogicalSectionMapping[mDataAggregator->aggregation().view()][Qt::Horizontal].isEmpty()) {
+                mLogicalSectionMapping[mDataAggregator->aggregation().view()][Qt::Horizontal] = rIter->second.keys();
+            }
+            int column = 0;
+            DataRow newRow;
+            Q_FOREACH(auto value, rIter->second.values()) {
+                newRow[column++] = value;
+            }
+            rIter->second = newRow;
         }
-        if (mLogicalSectionMapping[mDataAggregator->aggregation().view()][Qt::Horizontal].isEmpty()) {
-            mLogicalSectionMapping[mDataAggregator->aggregation().view()][Qt::Horizontal] = rIter->second.keys();
+    } else {
+        auto checkState = checkStates(Qt::Horizontal, modelInstance);
+        for (auto rIter=mDataAggregator->aggregatedMatrix().keyValueBegin();
+             rIter!=mDataAggregator->aggregatedMatrix().keyValueEnd(); ++rIter) {
+            Q_FOREACH(auto column, rIter->second.keys()) {
+                if (checkState[column] == Qt::Unchecked)
+                    rIter->second.remove(column);
+            }
+            if (mLogicalSectionMapping[mDataAggregator->aggregation().view()][Qt::Horizontal].isEmpty()) {
+                mLogicalSectionMapping[mDataAggregator->aggregation().view()][Qt::Horizontal] = rIter->second.keys();
+            }
+            int column = 0;
+            DataRow newRow;
+            Q_FOREACH(auto value, rIter->second.values()) {
+                newRow[column++] = value;
+            }
+            rIter->second = newRow;
         }
-        int column = 0;
-        DataRow newRow;
-        Q_FOREACH(auto value, rIter->second.values()) {
-            newRow[column++] = value;
-        }
-        rIter->second = newRow;
     }
 }
 
@@ -690,7 +849,7 @@ void DataHandler::setDefaultColumnValues(int columnCount)
 }
 
 IndexCheckStates DataHandler::checkStates(Qt::Orientation orientation,
-                                         ModelInstance *modelInstance) const
+                                          ModelInstance *modelInstance) const
 {
     IndexCheckStates states;
     Q_FOREACH(auto index, mDataAggregator->aggregation().identifierFilter()[orientation].keys()) {
@@ -719,7 +878,8 @@ bool DataHandler::keepColumn(int column)
     if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::VarAttributes) {
         return column < PredefinedHeaderLength ? false : true;
     }
-    if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::Jaccobian) {
+    if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::Jaccobian ||
+            mDataAggregator->aggregation().viewType() == PredefinedViewEnum::MinMax) {
         return column < PredefinedHeaderLength ? false : true;
     }
     return true;
@@ -727,7 +887,8 @@ bool DataHandler::keepColumn(int column)
 
 bool DataHandler::keepRow(int row)
 {
-    if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::Jaccobian) {
+    if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::Jaccobian ||
+            mDataAggregator->aggregation().viewType() == PredefinedViewEnum::MinMax) {
         return row < PredefinedHeaderLength ? false : true;
     }
     return true;

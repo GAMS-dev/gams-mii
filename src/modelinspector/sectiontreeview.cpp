@@ -1,5 +1,4 @@
 #include "sectiontreeview.h"
-#include "sectiontreemodel.h"
 #include "sectiontreeitem.h"
 
 #include <QDebug>

@@ -1,5 +1,5 @@
 #include "attributetablemodel.h"
-#include "modelinstance.h"
+#include "abstractmodelinstance.h"
 
 namespace gams {
 namespace studio{
@@ -16,7 +16,7 @@ AttributeTableModel::~AttributeTableModel()
 
 }
 
-void AttributeTableModel::setModelInstance(const QSharedPointer<ModelInstance> &modelInstance)
+void AttributeTableModel::setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     beginResetModel();
     mModelInstance = modelInstance;

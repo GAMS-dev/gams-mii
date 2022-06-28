@@ -8,6 +8,7 @@
 #include "aggregation.h"
 
 class QAbstractItemModel;
+class QMenu;
 
 namespace gams {
 namespace studio{
@@ -28,7 +29,8 @@ class AggregationProxyModel;
 class HierarchicalHeaderView;
 class JaccobianTableModel;
 class ModelInstanceTableModel;
-class ModelInstance;
+class MinMaxModelInstanceTableModel;
+class AbstractModelInstance;
 
 class TableViewFrame : public QFrame
 {
@@ -39,81 +41,41 @@ public:
 
     virtual TableViewFrame* clone(int view) = 0;
 
-    const IdentifierFilter& identifierFilter() const
-    {
-        return mCurrentIdentifierFilter;
-    }
+    const IdentifierFilter& identifierFilter() const;
 
-    const IdentifierFilter& defaultIdentifierFilter() const
-    {
-        return mDefaultIdentifierFilter;
-    }
+    const IdentifierFilter& defaultIdentifierFilter() const;
 
-    virtual void setIdentifierFilter(const IdentifierFilter &filter)
-    {
-        mCurrentIdentifierFilter = filter;
-    }
+    virtual void setIdentifierFilter(const IdentifierFilter &filter);
 
-    const ValueFilter& valueFilter() const
-    {
-        return mCurrentValueFilter;
-    }
+    const ValueFilter& valueFilter() const;
 
-    const ValueFilter& defaultValueFilter() const
-    {
-        return mDefaultValueFilter;
-    }
+    const ValueFilter& defaultValueFilter() const;
 
-    virtual void setValueFilter(const ValueFilter &filter)
-    {
-        mCurrentValueFilter = filter;
-    }
+    virtual void setValueFilter(const ValueFilter &filter);
 
-    const LabelFilter& labelFilter() const
-    {
-        return mCurrentLabelFilter;
-    }
+    const LabelFilter& labelFilter() const;
 
-    const LabelFilter& defaultLabelFilter() const
-    {
-        return mDefaultLabelFilter;
-    }
+    const LabelFilter& defaultLabelFilter() const;
 
-    virtual void setLabelFilter(const LabelFilter &filter)
-    {
-        mCurrentLabelFilter = filter;
-    }
+    virtual void setLabelFilter(const LabelFilter &filter);
 
-    const Aggregation& aggregation() const
-    {
-        return mCurrentAggregation;
-    }
+    const Aggregation& aggregation() const;
 
-    const Aggregation& defaultAggregation() const
-    {
-        return mDefaultAggregation;
-    }
+    const Aggregation& defaultAggregation() const;
 
     virtual void setAggregation(const Aggregation &aggregation, int view);
 
-    virtual PredefinedViewEnum type() const
-    {
-        return PredefinedViewEnum::Unknown;
-    }
+    virtual PredefinedViewEnum type() const;
 
-    virtual DataSource horizontalDataSource() const
-    {
-        return DataSource::VariableData;
-    }
+    virtual DataSource horizontalDataSource() const;
 
-    virtual DataSource verticalDataSource() const
-    {
-        return DataSource::EquationData;
-    }
+    virtual DataSource verticalDataSource() const;
+
+    virtual void setShowAbsoluteValues(bool absoluteValues);
 
     virtual QAbstractItemModel* model() const = 0;
 
-    virtual void setupView(QSharedPointer<ModelInstance> modelInstance, int view) = 0;
+    virtual void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) = 0;
 
     virtual QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) = 0;
 
@@ -122,6 +84,9 @@ public:
     virtual void resetColumnRowFilter() = 0;
 
     virtual void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter);
+
+signals:
+    void newModelView(gams::studio::modelinspector::PredefinedViewEnum type);
 
 private slots:
     virtual void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
@@ -141,13 +106,13 @@ protected:
 
     virtual Aggregation getDefaultAggregation() const;
 
-    Aggregation appliedAggregation(const Aggregation &aggregations, int view) const;
+    virtual Aggregation appliedAggregation(const Aggregation &aggregation, int view) const;
 
     void cloneFilterAndAggregation(TableViewFrame *clone, int newView);
 
 protected:
     Ui::TableViewFrame* ui;
-    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<AbstractModelInstance> mModelInstance;
 
     LabelFilter mCurrentLabelFilter;
     LabelFilter mDefaultLabelFilter;
@@ -167,7 +132,7 @@ protected:
     IdentifierFilterModel* mIdentifierFilterModel = nullptr;
     IdentifierLabelFilterModel* mIdentifierLabelFilterModel = nullptr;
     LabelFilterModel* mLabelFilterModel = nullptr;
-    AggregationProxyModel* mAggregationModel = nullptr;
+    AggregationProxyModel* mAggregationModel = nullptr; // TODO not used in all views... additinal abstract class?
     ColumnRowFilterModel* mColumnRowFilterModel = nullptr;
 };
 
@@ -187,7 +152,7 @@ public:
         return PredefinedViewEnum::EqnAttributes;
     }
 
-    void setupView(QSharedPointer<ModelInstance> modelInstance, int view) override;
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
@@ -242,7 +207,7 @@ public:
         return DataSource::EquationData;
     }
 
-    void setupView(QSharedPointer<ModelInstance> modelInstance, int view) override;
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
@@ -289,7 +254,7 @@ public:
         return PredefinedViewEnum::Jaccobian;
     }
 
-    void setupView(QSharedPointer<ModelInstance> modelInstance, int view) override;
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
@@ -331,7 +296,7 @@ public:
         return PredefinedViewEnum::Full;
     }
 
-    void setupView(QSharedPointer<ModelInstance> modelInstance, int view) override;
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
@@ -355,6 +320,71 @@ private:
 
 private:
     QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;
+};
+
+class MinMaxTableViewFrame : public TableViewFrame
+{
+    Q_OBJECT
+
+public:
+    MinMaxTableViewFrame(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+
+    TableViewFrame* clone(int view) override;
+
+    QAbstractItemModel* model() const override;
+
+    PredefinedViewEnum type() const override
+    {
+        return PredefinedViewEnum::MinMax;
+    }
+
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
+
+    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
+
+    void setIdentifierFilter(const IdentifierFilter &filter) override;
+
+    void setLabelFilter(const LabelFilter &filter) override;
+
+    void setValueFilter(const ValueFilter &filter) override;
+
+    void setAggregation(const Aggregation &aggregation, int view) override;
+
+    void setShowAbsoluteValues(bool absoluteValues) override;
+
+    void resetColumnRowFilter() override;
+
+    QList<Symbol> selectedEquations() const;
+    QList<Symbol> selectedVariables() const;
+
+public slots:
+    void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
+                                  Qt::Orientation orientation) override;
+
+private slots:
+    void customMenuRequested(const QPoint &pos);
+
+protected:
+    Aggregation getDefaultAggregation() const override;
+
+    Aggregation appliedAggregation(const Aggregation &aggregation, int view) const override;
+
+private:
+    void setupSelectionMenu();
+    void handleRowColumnSelection(PredefinedViewEnum type);
+
+    void searchHeader(const QString &term, bool isRegEx,
+                      DataSource dataSource,
+                      Qt::Orientation orientation,
+                      QList<SearchResult> &result);
+
+
+private:
+    QSharedPointer<MinMaxModelInstanceTableModel> mModelInstanceModel;
+    QMenu *mSelectionMenu;
+
+    QList<Symbol> mSelectedEquations;
+    QList<Symbol> mSelectedVariables;
 };
 
 }

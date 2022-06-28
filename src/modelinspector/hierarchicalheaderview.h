@@ -12,7 +12,7 @@ namespace gams {
 namespace studio{
 namespace modelinspector {
 
-class ModelInstance;
+class AbstractModelInstance;
 class LabelFilterWidget;
 
 class HierarchicalHeaderView : public QHeaderView
@@ -21,11 +21,11 @@ class HierarchicalHeaderView : public QHeaderView
 
 public:
     HierarchicalHeaderView(Qt::Orientation orientation,
-                           QSharedPointer<ModelInstance> modelInstance,
+                           QSharedPointer<AbstractModelInstance> modelInstance,
                            QWidget *parent = nullptr);
     ~HierarchicalHeaderView();
 
-    QSharedPointer<ModelInstance> modelInstance() const;
+    QSharedPointer<AbstractModelInstance> modelInstance() const;
 
     void setAppliedAggregation(const Aggregation &appliedAggregation);
 
@@ -35,14 +35,14 @@ public:
     void setDataSource(DataSource dataSource);
 
 public slots:
-    void customMenuRequested(QPoint position);
+    void customMenuRequested(const QPoint &position);
     void resetSymbolLabelFilters();
 
 signals:
-    void filterChanged(const IdentifierState&, Qt::Orientation);
+    void filterChanged(const gams::studio::modelinspector::IdentifierState&, Qt::Orientation);
 
 private slots:
-    void on_filterChanged(const IdentifierState& state,
+    void on_filterChanged(const gams::studio::modelinspector::IdentifierState& state,
                           Qt::Orientation orientation);
 
 protected:
@@ -59,7 +59,7 @@ private:
 private:
     class HierarchicalHeaderView_private;
     HierarchicalHeaderView_private *mPrivate;
-    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<AbstractModelInstance> mModelInstance;
 
     QMenu *mFilterMenu;
     LabelFilterWidget *mFilterWidget;

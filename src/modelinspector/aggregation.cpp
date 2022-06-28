@@ -1,5 +1,5 @@
 #include "aggregation.h"
-#include "symbolinfo.h"
+#include "symbol.h"
 #include "labeltreeitem.h"
 
 #include <algorithm>
@@ -28,6 +28,10 @@ int AggregationItem::symbolIndex() const
 void AggregationItem::setSymbolIndex(int index)
 {
     mSymbolIndex = index;
+}
+
+int AggregationItem::newSymbolIndex() const {
+    return mAggregatedLabelTree ? mAggregatedLabelTree->sectionIndex() : -1;
 }
 
 const IndexCheckStates& AggregationItem::checkStates() const
@@ -68,6 +72,16 @@ QString AggregationItem::label(int sectionIndex, int dimension) const
 void AggregationItem::setLabels(const SectionLabels &labels)
 {
     mLabels = labels;
+}
+
+const QList<int>& AggregationItem::mappedSections() const
+{
+    return mMappedSections;
+}
+
+void AggregationItem::setMappedSections(const QList<int> &visibleSections)
+{
+    mMappedSections = visibleSections;
 }
 
 int AggregationItem::visibleSectionCount() const
@@ -113,6 +127,7 @@ const QString Aggregation::MeanText = "Mean";
 const QString Aggregation::MedianText = "Median";
 const QString Aggregation::MaximumText = "Maximum";
 const QString Aggregation::MinimumText = "Minimum";
+const QString Aggregation::MinMaxText = "MinMax";
 const QString Aggregation::SumText = "Sum";
 const QString Aggregation::NoneText = "None";
 
@@ -125,6 +140,17 @@ void Aggregation::setUseAbsoluteValues(bool absoluteValues)
 {
     mUseAbsoluteValues = absoluteValues;
 }
+
+bool Aggregation::useAbsoluteValuesGlobal() const
+{
+    return mUseAbsoluteValues;
+}
+
+void Aggregation::setUseAbsoluteValuesGlobal(bool absoluteValues)
+{
+    mUseAbsoluteValuesGlobal = absoluteValues;
+}
+
 
 Aggregation::Type Aggregation::type() const
 {
@@ -148,6 +174,8 @@ void Aggregation::setType(const QString &text)
         mType = Maximum;
     } else if (!text.compare(MinimumText, Qt::CaseInsensitive)) {
         mType = Minimum;
+    } else if (text.startsWith(MinMaxText, Qt::CaseInsensitive)) {
+        mType = MinMax;
     } else if (!text.compare(SumText, Qt::CaseInsensitive)) {
         mType = Sum;
     } else if (!text.compare(NoneText, Qt::CaseInsensitive)) {
@@ -168,6 +196,8 @@ const QString& Aggregation::typeText() const
         return MaximumText;
     case Minimum:
         return MinimumText;
+    case MinMax:
+        return MinMaxText;
     case Sum:
         return SumText;
     default:
@@ -204,10 +234,6 @@ const IdentifierFilter& Aggregation::identifierFilter() const
 void Aggregation::setIdentifierFilter(const IdentifierFilter& filter)
 {
     mIdentifierFilter = filter;
-}
-
-void Aggregation::setIdentifierLabelFilter(const IdentifierFilter& filter)
-{
     for (auto oIter=filter.keyValueBegin(); oIter!=filter.keyValueEnd(); ++oIter) {
         for (auto sIter=oIter->second.keyValueBegin(); sIter!=oIter->second.keyValueEnd(); ++sIter) {
             if (mIdentifierFilter[oIter->first].contains(sIter->first)) {
@@ -262,29 +288,45 @@ bool Aggregation::isActive() const
             !mAggregationMap[Qt::Vertical].isEmpty();
 }
 
-Aggregator::Aggregator(const SymbolInfo &symbol)
+Aggregator::Aggregator(const Symbol &symbol)
     : mSymbol(symbol)
 {
-    mLabelTree = QSharedPointer<LabelTreeItem>(clone(mSymbol.labelTree()));
+    mLabelTree = QSharedPointer<LabelTreeItem>(mSymbol.labelTree()->clone());
 }
 
-void Aggregator::applyFilterStates(const IdentifierState &identifierState,
-                                   const IdentifierState &symbolLabelStates,
+void Aggregator::applyFilterStates(const IdentifierState &identifierStates,
                                    const LabelCheckStates &globalLabelStates,
                                    bool labelFilterAny)
 {
-    mLabelTree->setVisible(identifierState.Checked == Qt::Checked);
-    applyLabelFilter(symbolLabelStates, globalLabelStates, labelFilterAny);
+    mLabelTree->setVisible(identifierStates.Checked == Qt::Checked);
+    applyLabelFilter(identifierStates, globalLabelStates, labelFilterAny);
 }
 
-void Aggregator::aggregate(AggregationItem &item, const QString &type)
+void Aggregator::aggregate(AggregationItem &item, Aggregation::Type type,
+                           const QString &typeText, int &lastSymEndIndex)
 {
-    item.setVisibleSections(mLabelTree->visibleSectionsSorted());
-    aggregateLabels(item, type);
-    item.setAggregatedLabelTree(mLabelTree);
-    item.setVisibleSectionCount(mLabelTree->sectionExtent());
-    item.setLabels(mLabelTree->sectionLabels(mSymbol.firstSection(), mSymbol.dimension()));
-    item.setUnitedSections(mLabelTree->unitedSections());
+    if (type == Aggregation::MinMax) {
+        if (mSymbol.isScalar())
+            item.setMappedSections({mSymbol.firstSection()});
+        else
+            item.setMappedSections(mLabelTree->visibleSectionsSorted());
+        aggregateLabels(item, type, typeText, lastSymEndIndex);
+        item.setVisibleSections(mLabelTree->visibleSectionsSorted());
+        auto labels = mLabelTree->sectionLabels(mLabelTree->sectionIndex(),
+                                                mSymbol.isScalar() ? 1 : mSymbol.dimension());
+        item.setLabels(labels);
+        item.setAggregatedLabelTree(mLabelTree);
+        item.setVisibleSectionCount(mLabelTree->sectionExtent());
+        item.setUnitedSections(mLabelTree->unitedSections());
+    } else {
+        item.setVisibleSections(mLabelTree->visibleSectionsSorted());
+        aggregateLabels(item, typeText);
+        item.setAggregatedLabelTree(mLabelTree);
+        item.setVisibleSectionCount(mLabelTree->sectionExtent());
+        auto labels = mLabelTree->sectionLabels(mSymbol.firstSection(), mSymbol.dimension());
+        item.setLabels(labels);
+        item.setUnitedSections(mLabelTree->unitedSections());
+    }
 }
 
 void Aggregator::applyLabelFilter(const IdentifierState &symbolLabelStates,
@@ -293,7 +335,7 @@ void Aggregator::applyLabelFilter(const IdentifierState &symbolLabelStates,
 {
     QList<LabelTreeItem*> items { mLabelTree->childs() };
     IndexCheckStates symLabelStates = symbolLabelStates.isValid() ? symbolLabelStates.CheckStates
-                                                                 : IndexCheckStates();
+                                                                  : IndexCheckStates();
     if (labelFilterAny) {
         QList<LabelTreeItem*> reverse { mLabelTree->childs() };
         while (!items.isEmpty()) {
@@ -324,27 +366,47 @@ void Aggregator::applyLabelFilter(const IdentifierState &symbolLabelStates,
     }
 }
 
-LabelTreeItem* Aggregator::clone(QSharedPointer<LabelTreeItem> labelTree)
-{
-    if (!labelTree) return nullptr;
-    LabelTreeItem *root = new LabelTreeItem;
-    Q_FOREACH(auto child, labelTree->childs()) {
-        auto newChild = child->clone(root);
-        root->append(newChild);
-    }
-    return root;
-}
-
-void Aggregator::aggregateLabels(const AggregationItem &item, const QString &type)
+void Aggregator::aggregateLabels(const AggregationItem &item,
+                                 Aggregation::Type type,
+                                 const QString &typeText,
+                                 int &lastSymEndIndex)
 {
     if (!mLabelTree->isVisible()) return;
+    if (type == Aggregation::MinMax) {
+        if (mSymbol.isEquation()) {
+            QList<LabelTreeItem*> currentLevel { mLabelTree->childs() };
+            while (!currentLevel.isEmpty()) {
+                auto oldItem = currentLevel.takeFirst();
+                oldItem->parent()->remove(oldItem);
+                delete oldItem;
+            }
+            auto maxItem = new LabelTreeItem("Max", mLabelTree.get());
+            int index = lastSymEndIndex < 0 ? mSymbol.firstSection() : lastSymEndIndex + 1;
+            mLabelTree->setSectionIndex(index);
+            maxItem->setSectionIndex(index);
+            maxItem->setSections({maxItem->sectionIndex()});
+            mLabelTree->append(maxItem);
+            auto minItem = new LabelTreeItem("Min", mLabelTree.get());
+            minItem->setSectionIndex(index + 1);
+            minItem->setSections({minItem->sectionIndex()});
+            mLabelTree->append(minItem);
+            lastSymEndIndex = minItem->sectionIndex();
+            return;
+        }
+    }
+    aggregateLabels(item, typeText);
+}
+
+void Aggregator::aggregateLabels(const AggregationItem &item, const QString &typeText)
+{
+    mLabelTree->setSectionIndex(mSymbol.firstSection());
     QList<LabelTreeItem*> currentLevel { mLabelTree->childs() };
     for (int d=1; d<=mSymbol.dimension(); ++d) {
         if (currentLevel.isEmpty())
             continue;
         if (item.isChecked(d)) {
             if (currentLevel.first()->parent()->isRoot()) {
-                LabelTreeItem* newItem = visibleBranch(currentLevel, type, d);
+                LabelTreeItem* newItem = LabelTreeItem::visibleBranch(currentLevel, typeText, d);
                 if (!newItem) return;
                 while (!currentLevel.isEmpty()) {
                     auto oldItem = currentLevel.takeFirst();
@@ -356,7 +418,7 @@ void Aggregator::aggregateLabels(const AggregationItem &item, const QString &typ
             } else {
                 QList<LabelTreeItem*> nextLevel;
                 while (!currentLevel.isEmpty()) {
-                    LabelTreeItem* newItem = visibleBranch(currentLevel, type, d);
+                    LabelTreeItem* newItem = LabelTreeItem::visibleBranch(currentLevel, typeText, d);
                     if (!newItem) return;
                     Q_FOREACH(auto sibling, newItem->siblings()) {
                         if (newItem == sibling)
@@ -384,24 +446,6 @@ void Aggregator::aggregateLabels(const AggregationItem &item, const QString &typ
             currentLevel = nextLevel;
         }
     }
-}
-
-LabelTreeItem* Aggregator::visibleBranch(QList<LabelTreeItem*> &currentLevel,
-                                         const QString &type, int dimension)
-{
-    LabelTreeItem* newItem = nullptr;
-    do {
-        newItem = currentLevel.takeFirst();
-        if (newItem->isVisible()) {
-            newItem->setText(type + " - " + QString::number(dimension));
-            break;
-        } else {
-            newItem->parent()->remove(newItem);
-            delete newItem;
-            newItem = nullptr;
-        }
-    } while (!currentLevel.isEmpty());
-    return newItem;
 }
 
 }

@@ -1,5 +1,5 @@
 #include "jaccobiantablemodel.h"
-#include "modelinstance.h"
+#include "abstractmodelinstance.h"
 
 namespace gams {
 namespace studio{
@@ -16,7 +16,7 @@ JaccobianTableModel::~JaccobianTableModel()
 {
 }
 
-void JaccobianTableModel::setModelInstance(const QSharedPointer<ModelInstance> &modelInstance)
+void JaccobianTableModel::setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     beginResetModel();
     mModelInstance = modelInstance;

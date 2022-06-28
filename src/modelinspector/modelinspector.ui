@@ -93,7 +93,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>5</number>
       </property>
       <widget class="QWidget" name="statisticPage">
        <property name="sizePolicy">
@@ -264,7 +264,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="fullViewPage">
+      <widget class="QWidget" name="fullPage">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -285,7 +285,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="gams::studio::modelinspector::FullTableViewFrame" name="fullViewFrame">
+         <widget class="gams::studio::modelinspector::FullTableViewFrame" name="fullFrame">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -294,6 +294,32 @@
           </property>
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="minMaxPage">
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="gams::studio::modelinspector::MinMaxTableViewFrame" name="minMaxFrame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
@@ -338,6 +364,12 @@
   </customwidget>
   <customwidget>
    <class>gams::studio::modelinspector::JaccTableViewFrame</class>
+   <extends>QFrame</extends>
+   <header>modelinspector/tableviewframe.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>gams::studio::modelinspector::MinMaxTableViewFrame</class>
    <extends>QFrame</extends>
    <header>modelinspector/tableviewframe.h</header>
    <container>1</container>

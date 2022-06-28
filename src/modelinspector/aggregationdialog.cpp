@@ -4,6 +4,7 @@
 #include "filtertreemodel.h"
 
 #include <QSortFilterProxyModel>
+#include <QStandardItemModel>
 
 #include <QDebug>
 
@@ -42,7 +43,12 @@ void AggregationDialog::setAggregation(const Aggregation &aggregation,
     ui->aggregationBox->setCurrentText(mAggregation.typeText());
     mAggregationMethod = ui->aggregationBox->currentIndex();
     ui->absoluteBox->setChecked(mAggregation.useAbsoluteValues());
+    setAggregationMethodAvailability();
     setupAggregationView();
+    if (aggregation.useAbsoluteValuesGlobal())
+        ui->absoluteBox->setEnabled(false);
+    else
+        ui->absoluteBox->setEnabled(true);
 }
 
 void AggregationDialog::setDefaultAggregation(const Aggregation &aggregation)
@@ -143,7 +149,38 @@ void AggregationDialog::setupTreeItems(Qt::Orientation orientation,
             sItem->append(dItem);
         }
     }
+    if (mAggregation.type() == Aggregation::MinMax)
+        typeItem->setEnabled(false);
     typeItem->hasChildren() ? root->append(typeItem) : delete typeItem;
+}
+
+void AggregationDialog::setAggregationMethodAvailability()
+{
+    auto model = qobject_cast<QStandardItemModel*>(ui->aggregationBox->model());
+    if (!model) return;
+    for (int r=0; r<model->rowCount()-1; ++r) {
+        auto item = model->item(r);
+        if (!item) continue;
+        if (mAggregation.viewType() == PredefinedViewEnum::MinMax) {
+            auto flags = item->flags();
+            flags.setFlag(Qt::ItemIsEnabled, false);
+            item->setFlags(flags);
+        } else {
+            auto flags = item->flags();
+            flags.setFlag(Qt::ItemIsEnabled, true);
+            item->setFlags(flags);
+        }
+    }
+    auto item = model->item(model->rowCount()-1);
+    if (item && mAggregation.viewType() == PredefinedViewEnum::MinMax) {
+        auto flags = item->flags();
+        flags.setFlag(Qt::ItemIsEnabled, true);
+        item->setFlags(flags);
+    } else if (item) {
+        auto flags = item->flags();
+        flags.setFlag(Qt::ItemIsEnabled, false);
+        item->setFlags(flags);
+    }
 }
 
 void AggregationDialog::applyAggregation()

@@ -2,6 +2,7 @@
 #define AGGREGATION_H
 
 #include "common.h"
+#include "symbol.h"
 
 #include <QSet>
 #include <QSharedPointer>
@@ -15,7 +16,7 @@ typedef QMap<int, DataRow> DataMatrix;
 
 typedef QVector<QSet<int>> UnitedSections;
 
-class SymbolInfo;
+class Symbol;
 class LabelTreeItem;
 
 class AggregationItem
@@ -27,6 +28,8 @@ public:
     int symbolIndex() const;
     void setSymbolIndex(int index);
 
+    int newSymbolIndex() const;
+
     const IndexCheckStates& checkStates() const;
     void setCheckState(int dimension, Qt::CheckState state);
     bool isChecked(int dimension) const;
@@ -36,6 +39,9 @@ public:
 
     QString label(int sectionIndex, int dimension) const;
     void setLabels(const SectionLabels &labels);
+
+    const QList<int>& mappedSections() const;
+    void setMappedSections(const QList<int> &visibleSections);
 
     int visibleSectionCount() const;
     void setVisibleSectionCount(int sections);
@@ -48,10 +54,19 @@ public:
     const UnitedSections& unitedSections() const;
     void setUnitedSections(const UnitedSections& sections);
 
+    bool isScalar() const {
+        return mScalar;
+    }
+
+    void setScalar(bool scalar) {
+        mScalar = scalar;
+    }
+
 private:
     QString mText;
     int mSymbolIndex = -1;
     int mVisibleSectionCount = -1;
+    bool mScalar = false;
 
     /**
      * @brief CheckState Dimension to Qt::CheckState mapping.
@@ -69,6 +84,7 @@ private:
 
     UnitedSections mUnitedSections;
 
+    QList<int> mMappedSections;
     QList<int> mVisibleSections;
 };
 
@@ -85,12 +101,15 @@ public:
         Median,
         Maximum,
         Minimum,
+        MinMax,
         Sum,
         None
     };
 
     bool useAbsoluteValues() const;
     void setUseAbsoluteValues(bool absoluteValues);
+    bool useAbsoluteValuesGlobal() const;
+    void setUseAbsoluteValuesGlobal(bool absoluteValues);
 
     Type type() const;
     void setType(Type type);
@@ -106,7 +125,6 @@ public:
 
     const IdentifierFilter& identifierFilter() const;
     void setIdentifierFilter(const IdentifierFilter& filter);
-    void setIdentifierLabelFilter(const IdentifierFilter& filter);
     void setLabelState(Qt::Orientation orientation,
                        int symIndex, int stateIndex, Qt::CheckState state);
 
@@ -116,6 +134,31 @@ public:
     PredefinedViewEnum viewType() const;
     void setViewType(PredefinedViewEnum viewType);
 
+    /**
+     * @brief Start section mapping equation mapping for MinMax view.
+     */
+    QMap<int, int>& startSectionMapping() {
+        return mStartSectionMapping;
+    }
+
+    /**
+     * @brief Index to equation mapping for MinMax view.
+     * @todo Probably extended to variables.
+     */
+    QMap<int, Symbol>& indexToSymbol(DataSource dataSource) {
+        if (DataSource::EquationData == dataSource)
+            return mIndexToEquations;
+        return mIndexToVariables;
+    }
+
+    const QMap<int, Symbol>& indexToEquation() const {
+        return mIndexToEquations;
+    }
+
+    const QMap<int, Symbol>& indexToVariable() const {
+        return mIndexToVariables;
+    }
+
     int view() const;
     void setView(int view);
 
@@ -123,6 +166,7 @@ public:
 
 private:
     bool mUseAbsoluteValues = false;
+    bool mUseAbsoluteValuesGlobal = false;
     Type mType = None;
     AggregationMap mAggregationMap;
     IdentifierFilter mIdentifierFilter;
@@ -130,11 +174,19 @@ private:
     PredefinedViewEnum mViewType = PredefinedViewEnum::Unknown;
     int mView = -1;
 
+    ///
+    /// \brief Map origial start section to new start section.
+    ///
+    QMap<int, int> mStartSectionMapping;
+    QMap<int, Symbol> mIndexToEquations;
+    QMap<int, Symbol> mIndexToVariables;
+
     static const QString CountText;
     static const QString MeanText;
     static const QString MedianText;
     static const QString MaximumText;
     static const QString MinimumText;
+    static const QString MinMaxText;
     static const QString SumText;
     static const QString NoneText;
 };
@@ -142,29 +194,31 @@ private:
 class Aggregator
 {
 public:
-    Aggregator(const SymbolInfo &symbol);
+    Aggregator(const Symbol &symbol);
 
-    void applyFilterStates(const IdentifierState &identifierState,
-                           const IdentifierState &symbolLabelStates,
+    void applyFilterStates(const IdentifierState &identifierStates,
                            const LabelCheckStates &globalLabelStates,
                            bool labelFilterAny);
 
-    void aggregate(AggregationItem &item, const QString &type);
+    void aggregate(AggregationItem &item,
+                   Aggregation::Type type,
+                   const QString &typeText,
+                   int &lastSymEndIndex);
 
 private:
     void applyLabelFilter(const IdentifierState &symbolLabelStates,
                           const LabelCheckStates &globalLabelStates,
                           bool labelFilterAny);
 
-    LabelTreeItem* clone(QSharedPointer<LabelTreeItem> labelTree);
+    void aggregateLabels(const AggregationItem &item,
+                         Aggregation::Type type,
+                         const QString &typeText,
+                         int &lastSymEndIndex);
 
-    void aggregateLabels(const AggregationItem &item, const QString &type);
-
-    LabelTreeItem* visibleBranch(QList<LabelTreeItem*> &currentLevel,
-                                 const QString &type, int dimension);
+    void aggregateLabels(const AggregationItem &item, const QString &typeText);
 
 private:
-    const SymbolInfo &mSymbol;
+    const Symbol &mSymbol;
     QSharedPointer<LabelTreeItem> mLabelTree;
 };
 

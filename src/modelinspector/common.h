@@ -34,11 +34,16 @@ static const QString EquationAttributes = "Equation Attributes";
 static const QString VariableAttributes = "Variable Attributes";
 static const QString Jaccobian = "Jaccobian";
 static const QString FullView = "Full View";
+static const QString MinMax = "Min Max";
+static const QString SymbolView = "Symbol View";
+static const QString SymbolEqnView = "Symbol Equation View";
+static const QString SymbolVarView = "Symbol Variable View";
 static const QStringList PredefinedViewTexts = { Statistic,
                                                  EquationAttributes,
                                                  VariableAttributes,
                                                  Jaccobian,
-                                                 FullView };
+                                                 FullView,
+                                                 MinMax };
 
 enum class ViewType
 {
@@ -53,6 +58,10 @@ enum class PredefinedViewEnum
     VarAttributes   = 2,
     Jaccobian       = 3,
     Full            = 4,
+    MinMax          = 5,
+    SymbolView      = 6,
+    SymbolEqnView   = 7,
+    SymbolVarView   = 8,
     Unknown         = 127
 };
 
@@ -60,6 +69,28 @@ enum class DataSource
 {
     EquationData,
     VariableData
+};
+
+enum class EquationType
+{
+    E,
+    G,
+    L,
+    N,
+    X,
+    C,
+    B
+};
+
+enum class VariableType
+{
+    X,
+    B,
+    I,
+    S1,
+    S2,
+    SC,
+    SI
 };
 
 struct ViewActionStates
@@ -122,7 +153,7 @@ struct IdentifierState
     }
 
     ///
-    /// \brief Retures if all labels are disabled.
+    /// \brief Returns if all labels are disabled.
     /// \return <c>true</c> if all visible labels are disabled; otherwise <c>false</c>.
     ///
     bool disabled() const
@@ -159,6 +190,7 @@ struct ValueFilter
     double MaxValue = std::numeric_limits<double>::max();
     bool ExcludeRange = false;
     bool UseAbsoluteValues = false;
+    bool UseAbsoluteValuesGlobal = false;
 
     bool ShowPInf = true;
     bool ShowNInf = true;

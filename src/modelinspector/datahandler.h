@@ -12,7 +12,7 @@ namespace modelinspector {
 class ModelInstance;
 
 typedef int View;
-typedef QMap<int, QList<int>> SectionMapping;
+typedef QMap<Qt::Orientation, QList<int>> SectionMapping;
 
 class DataHandler
 {

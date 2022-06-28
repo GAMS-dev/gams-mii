@@ -58,7 +58,7 @@ bool FilterTreeModel::setData(const QModelIndex &index, const QVariant &value,
 {
     if (role == Qt::CheckStateRole && index.column() == 0) {
         auto item = static_cast<FilterTreeItem*>(index.internalPointer());
-        if (item->isCheckable()) {
+        if (item->isEnabled() && item->isCheckable()) {
             item->setChecked(value.toBool() ? Qt::Checked : Qt::Unchecked);
             item->setSubTreeState(value.toBool() ? Qt::Checked : Qt::Unchecked);
             updateParents(index, { Qt::CheckStateRole });

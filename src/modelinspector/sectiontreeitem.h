@@ -28,35 +28,21 @@ public:
 
     int childCount() const;
 
-    int columnCount() const {
-        return 1;
-    }
+    int columnCount() const;
 
-    QString name() const {
-        return mName;
-    }
+    QString name() const;
 
-    void setName(const QString &name) {
-        mName = name;
-    }
+    void setName(const QString &name);
 
-    int page() const {
-        return mPage;
-    }
+    int page() const;
 
-    void setPage(int page) {
-        mPage = page;
-    }
+    void setPage(int page);
 
     int row() const;
 
-    PredefinedViewEnum type() const {
-        return mType;
-    }
+    PredefinedViewEnum type() const;
 
-    void setType(PredefinedViewEnum type) {
-        mType = type;
-    }
+    void setType(PredefinedViewEnum type);
 
     void setType(const QString &text);
 

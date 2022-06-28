@@ -4,13 +4,11 @@
 #include <QAbstractTableModel>
 #include <QSharedPointer>
 
-#include "common.h"
-
 namespace gams {
 namespace studio{
 namespace modelinspector {
 
-class ModelInstance;
+class AbstractModelInstance;
 
 class AttributeTableModel : public QAbstractTableModel
 {
@@ -21,7 +19,7 @@ public:
 
     virtual ~AttributeTableModel();
 
-    void setModelInstance(const QSharedPointer<ModelInstance> &modelInstance);
+    void setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance);
 
     QVariant data(const QModelIndex &index, int role) const override;
 
@@ -48,7 +46,7 @@ public:
     }
 
 protected:
-    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<AbstractModelInstance> mModelInstance;
     int mView;
 };
 

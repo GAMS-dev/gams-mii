@@ -24,8 +24,9 @@ SUBDIRS +=              \
     testaggregation     \
     testcommon          \
     testdatahandler \
+    testemptymodelinstance \
     testfiltertreeitem  \
     testlabeltreeitem \
     testmodelinstance   \
     testsectiontreeitem \
-    testsymbolinfo
+    testsymbol

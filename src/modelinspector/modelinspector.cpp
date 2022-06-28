@@ -21,11 +21,7 @@
 #include "ui_modelinspector.h"
 #include "modelinstance.h"
 #include "sectiontreemodel.h"
-#include "searchresultmodel.h"
-#include "filtertreeitem.h"
 #include "sectiontreeitem.h"
-
-#include "gclgms.h"
 
 #include <QDir>
 
@@ -39,11 +35,11 @@ ModelInspector::ModelInspector(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::ModelInspector)
     , mSectionModel(new SectionTreeModel)
-    , mModelInstance(new ModelInstance)
 {
     ui->setupUi(this);
     mSectionModel->loadModelData();
     ui->sectionView->setModel(mSectionModel);
+    loadModelInstance(false);
     setupConnections();
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Predefined);
@@ -99,6 +95,12 @@ void ModelInspector::setShowOutput(bool showOutput)
     mModelInstance->setUseOutput(showOutput);
 }
 
+void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
+{
+    auto frame = currentView();
+    if (frame) frame->setShowAbsoluteValues(absoluteValues);
+}
+
 QList<SearchResult> ModelInspector::searchHeaders(const QString &term,
                                                   bool isRegEx)
 {
@@ -111,20 +113,19 @@ ViewActionStates ModelInspector::viewActionStates() const
     return ui->sectionView->viewActionStates();
 }
 
-void ModelInspector::loadModelInstance()
+void ModelInspector::loadModelInstance(bool loadModel)
 {
-    setupModelInstanceView();
+    setupModelInstanceView(loadModel);
     ui->statisticEdit->showStatistic(mModelInstance);
     emit newLogMessage(mModelInstance->logMessages());
 }
 
 void ModelInspector::reloadModelInstance()
 {
-    if (mModelInstance->isInitialized())
-        loadModelInstance();
+    loadModelInstance();
 }
 
-QSharedPointer<ModelInstance> ModelInspector::modelInstance() const
+QSharedPointer<AbstractModelInstance> ModelInspector::modelInstance() const
 {
     return mModelInstance;
 }
@@ -236,7 +237,6 @@ void ModelInspector::resetColumnRowFilter()
 
 void ModelInspector::saveModelView()
 {
-    if (!mModelInstance->isInitialized()) return;
     auto view = currentView();
     if (!view) return;
     auto text = ui->sectionView->currentIndex().data().toString();
@@ -249,9 +249,72 @@ void ModelInspector::saveModelView()
     setCurrentViewIndex(ViewType::Custom);
 }
 
+void ModelInspector::saveReducedModelView(gams::studio::modelinspector::PredefinedViewEnum type)
+{
+    auto view = currentView();
+    if (!view) return;
+    auto clone = ui->jaccFrame->clone(ui->stackedWidget->indexOf(ui->jaccPage));
+    clone->setParent(ui->stackedWidget, view->windowFlags());
+    clone->setIdentifierFilter(clone->defaultIdentifierFilter());
+    int page = ui->stackedWidget->addWidget(clone);
+    mCustomViews[page] = clone;
+    if (type == PredefinedViewEnum::SymbolEqnView) {
+        mSectionModel->appendCustomView(SymbolEqnView, view->type(), page);
+    } else if (type == PredefinedViewEnum::SymbolVarView) {
+        mSectionModel->appendCustomView(SymbolVarView, view->type(), page);
+    } else {
+        mSectionModel->appendCustomView(SymbolView, view->type(), page);
+    }
+    ui->sectionView->expandAll();
+    setCurrentViewIndex(ViewType::Custom);
+    auto minMaxView = dynamic_cast<MinMaxTableViewFrame*>(view);
+    if (minMaxView) {
+        auto newFilter = newIdentifierFilter(clone->identifierFilter(),
+                                             minMaxView->selectedEquations(),
+                                             minMaxView->selectedVariables());
+        clone->setIdentifierFilter(newFilter);
+    }
+    clone->resetColumnRowFilter();
+}
+
+IdentifierFilter ModelInspector::newIdentifierFilter(const IdentifierFilter &currentFilter,
+                                                     const QList<Symbol> &eqnFilter,
+                                                     const QList<Symbol> &varFilter)
+{// TODO performance
+    IdentifierFilter newFilter;
+    Q_FOREACH(auto state, currentFilter[Qt::Vertical]) {
+        if (state.SymbolIndex < PredefinedHeaderLength)
+            continue;
+        state.SymbolType = DataSource::EquationData;
+        Q_FOREACH(auto symbol, eqnFilter) {
+            if (state.Text == symbol.name()) {
+                state.Checked = Qt::Checked;
+                break;
+            } else {
+                state.Checked = Qt::Unchecked;
+            }
+        }
+        newFilter[Qt::Vertical][state.SymbolIndex] = state;
+    }
+    Q_FOREACH(auto state, currentFilter[Qt::Horizontal]) {
+        if (state.SymbolIndex < PredefinedHeaderLength)
+            continue;
+        state.SymbolType = DataSource::VariableData;
+        Q_FOREACH(auto symbol, varFilter) {
+            if (state.Text == symbol.name()) {
+                state.Checked = Qt::Checked;
+                break;
+            } else {
+                state.Checked = Qt::Unchecked;
+            }
+        }
+        newFilter[Qt::Horizontal][state.SymbolIndex] = state;
+    }
+    return newFilter;
+}
+
 void ModelInspector::removeModelView()
 {
-    if (!mModelInstance->isInitialized()) return;
     auto customViewIndex = ui->sectionView->model()->index((int)ViewType::Custom, 0);
     auto currentIndex = ui->sectionView->currentIndex();
     if (customViewIndex != currentIndex.parent()) return;
@@ -260,9 +323,11 @@ void ModelInspector::removeModelView()
     ui->sectionView->model()->removeRows(currentIndex.row(), 1, customViewIndex);
     if (mCustomViews.contains(item->page())) {
         auto page = mCustomViews.take(item->page());
-        ui->stackedWidget->removeWidget(page);
-        page->setParent(nullptr);
-        delete page;
+        if (page) {
+            ui->stackedWidget->removeWidget(page);
+            page->setParent(nullptr);
+            delete page;
+        }
     }
 
     if (!ui->sectionView->model()->rowCount(customViewIndex)) {
@@ -314,34 +379,45 @@ void ModelInspector::setupConnections()
             this, &ModelInspector::filtersChanged);
     connect(ui->varAttrFrame, &VarTableViewFrame::filtersChanged,
             this, &ModelInspector::filtersChanged);
-    connect(ui->fullViewFrame, &FullTableViewFrame::filtersChanged,
+    connect(ui->fullFrame, &FullTableViewFrame::filtersChanged,
+            this, &ModelInspector::filtersChanged);
+    connect(ui->minMaxFrame, &MinMaxTableViewFrame::filtersChanged,
             this, &ModelInspector::filtersChanged);
     connect(ui->sectionView, &SectionTreeView::saveViewTriggered,
             this, &ModelInspector::saveModelView);
+    connect(ui->minMaxFrame, &MinMaxTableViewFrame::newModelView,
+            this, &ModelInspector::saveReducedModelView);
     connect(ui->sectionView, &SectionTreeView::removeViewTriggered,
             this, &ModelInspector::removeModelView);
 }
 
-void ModelInspector::setupModelInstanceView()
+void ModelInspector::setupModelInstanceView(bool loadModel)
 {
     clearCustomViews();
-    mModelInstance = QSharedPointer<ModelInstance>(new ModelInstance(mWorkspace,
-                                                                     mSystemDir,
-                                                                     mScratchDir));
+    if (loadModel) {
+        mModelInstance = QSharedPointer<AbstractModelInstance>(new ModelInstance(mWorkspace,
+                                                                                 mSystemDir,
+                                                                                 mScratchDir));
+    } else {
+        mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
+    }
     mModelInstance->initialize();
-    mModelInstance->loadScratchData(mShowOutput);
     LabelFilter labelFilter;
-    mModelInstance->loadTableData(labelFilter);
+    mModelInstance->loadData(mShowOutput, labelFilter);
 
     ui->eqnAttrFrame->setupView(mModelInstance, (int)PredefinedViewEnum::EqnAttributes);
     ui->varAttrFrame->setupView(mModelInstance, (int)PredefinedViewEnum::VarAttributes);
     ui->jaccFrame->setupView(mModelInstance, (int)PredefinedViewEnum::Jaccobian);
-    ui->fullViewFrame->setupView(mModelInstance, (int)PredefinedViewEnum::Full);
+    ui->fullFrame->setupView(mModelInstance, (int)PredefinedViewEnum::Full);
+    ui->minMaxFrame->setupView(mModelInstance, (int)PredefinedViewEnum::MinMax);
 
-    ui->eqnAttrFrame->setupFiltersAggregation(ui->fullViewFrame->model(), labelFilter);
-    ui->varAttrFrame->setupFiltersAggregation(ui->fullViewFrame->model(), labelFilter);
-    ui->jaccFrame->setupFiltersAggregation(ui->fullViewFrame->model(), labelFilter);
-    ui->fullViewFrame->setupFiltersAggregation(ui->fullViewFrame->model(), labelFilter);
+    ui->eqnAttrFrame->setupFiltersAggregation(ui->fullFrame->model(), labelFilter);
+    ui->varAttrFrame->setupFiltersAggregation(ui->fullFrame->model(), labelFilter);
+    ui->jaccFrame->setupFiltersAggregation(ui->fullFrame->model(), labelFilter);
+    ui->fullFrame->setupFiltersAggregation(ui->fullFrame->model(), labelFilter);
+    ui->minMaxFrame->setupFiltersAggregation(ui->fullFrame->model(), labelFilter);
+    ui->minMaxFrame->setAggregation(ui->minMaxFrame->defaultAggregation(),
+                                        ui->stackedWidget->indexOf(ui->minMaxPage));
 
     setCurrentViewIndex(ViewType::Predefined);
 }
@@ -369,7 +445,9 @@ TableViewFrame* ModelInspector::currentView() const
     case (int)PredefinedViewEnum::Jaccobian:
         return ui->jaccFrame;
     case (int)PredefinedViewEnum::Full:
-        return ui->fullViewFrame;
+        return ui->fullFrame;
+    case (int)PredefinedViewEnum::MinMax:
+        return ui->minMaxFrame;
     default:
         if (mCustomViews.contains(ui->stackedWidget->currentIndex()))
             return mCustomViews[ui->stackedWidget->currentIndex()];

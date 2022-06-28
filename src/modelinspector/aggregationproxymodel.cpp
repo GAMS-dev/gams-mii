@@ -1,6 +1,6 @@
 #include "aggregationproxymodel.h"
-#include "modelinstance.h"
-#include "symbolinfo.h"
+#include "abstractmodelinstance.h"
+#include "symbol.h"
 
 #include <QSet>
 
@@ -8,8 +8,8 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-AggregationProxyModel::AggregationProxyModel(QSharedPointer<ModelInstance> modelInstance,
-                                                             QObject *parent)
+AggregationProxyModel::AggregationProxyModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                                             QObject *parent)
     : QSortFilterProxyModel(parent)
     , mModelInstance(modelInstance)
 {
@@ -55,6 +55,12 @@ QVariant AggregationProxyModel::headerData(int section,
         return realIndex < 0 ? QVariant() : realIndex;
     }
     return QSortFilterProxyModel::headerData(section, orientation, role);
+}
+
+int AggregationProxyModel::rowCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+    return mModelInstance->rowCount(mAppliedAggregation.viewType());
 }
 
 bool AggregationProxyModel::filterAcceptsColumn(int sourceColumn,

@@ -35,7 +35,7 @@ class ModelInspector;
 }
 
 class TableViewFrame;
-class ModelInstance;
+class AbstractModelInstance;
 class SectionTreeModel;
 class SearchResultModel;
 
@@ -59,13 +59,15 @@ public:
     bool showOutput() const;
     void setShowOutput(bool showOutpu);
 
+    void setShowAbsoluteValues(bool absoluteValues);
+
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx);
 
     ViewActionStates viewActionStates() const;
 
-    void loadModelInstance();
+    void loadModelInstance(bool loadModel = true);
     void reloadModelInstance();
-    QSharedPointer<ModelInstance> modelInstance() const;
+    QSharedPointer<AbstractModelInstance> modelInstance() const;
 
     IdentifierFilter identifierFilter() const;
     IdentifierFilter defaultIdentifierFilter() const;
@@ -99,6 +101,7 @@ signals:
 
 public slots:
     void saveModelView();
+    void saveReducedModelView(gams::studio::modelinspector::PredefinedViewEnum type);
 
     void removeModelView();
 
@@ -111,11 +114,15 @@ public slots:
 private:
     void setupConnections();
 
-    void setupModelInstanceView();
+    void setupModelInstanceView(bool loadModel);
 
     void clearCustomViews();
 
     TableViewFrame* currentView() const;
+
+    IdentifierFilter newIdentifierFilter(const IdentifierFilter &currentFilter,
+                                         const QList<Symbol> &eqnFilter,
+                                         const QList<Symbol> &varFilter);
 
 private:
     Ui::ModelInspector* ui;
@@ -125,7 +132,7 @@ private:
     bool mShowOutput = false;
 
     SectionTreeModel* mSectionModel = nullptr;
-    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<AbstractModelInstance> mModelInstance;
     QMap<int, TableViewFrame*> mCustomViews;
 };
 

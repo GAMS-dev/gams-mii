@@ -69,6 +69,10 @@ void FilterDialog::setValueFilter(const ValueFilter &filter)
     ui->maxEdit->setText(QString::number(mValueFilter.MaxValue));
     ui->excludeBox->setChecked(mValueFilter.ExcludeRange);
     ui->absoluteBox->setChecked(mValueFilter.UseAbsoluteValues);
+    if (mValueFilter.UseAbsoluteValuesGlobal)
+        ui->absoluteBox->setEnabled(false);
+    else
+        ui->absoluteBox->setEnabled(true);
     ui->epsBox->setChecked(mValueFilter.ShowEps);
     ui->nInfBox->setChecked(mValueFilter.ShowNInf);
     ui->pInfBox->setChecked(mValueFilter.ShowPInf);
@@ -217,7 +221,8 @@ void FilterDialog::on_labelBox_currentIndexChanged(int index)
 void FilterDialog::setupEquationFilter(const IdentifierStates &filter)
 {
     bool showAttributes = !(mViewType == PredefinedViewEnum::EqnAttributes ||
-                           mViewType == PredefinedViewEnum::Jaccobian);
+                            mViewType == PredefinedViewEnum::Jaccobian ||
+                            mViewType == PredefinedViewEnum::MinMax);
     bool showSymbols = mViewType != PredefinedViewEnum::VarAttributes;
     auto filterItem = setupSymTreeItems(FilterTreeItem::EquationText, filter,
                                         showAttributes, showSymbols);
@@ -242,7 +247,8 @@ void FilterDialog::setupEquationFilter(const IdentifierStates &filter)
 void FilterDialog::setupVariableFilter(const IdentifierStates &filter)
 {
     bool showAttributes = !(mViewType == PredefinedViewEnum::VarAttributes ||
-                            mViewType == PredefinedViewEnum::Jaccobian);
+                            mViewType == PredefinedViewEnum::Jaccobian ||
+                            mViewType == PredefinedViewEnum::MinMax);
     bool showSymbols = mViewType != PredefinedViewEnum::EqnAttributes;
     auto filterItem = setupSymTreeItems(FilterTreeItem::VariableText, filter,
                                         showAttributes, showSymbols);

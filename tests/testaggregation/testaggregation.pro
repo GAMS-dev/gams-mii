@@ -9,5 +9,5 @@ INCLUDEPATH += $$SRCPATH/modelinspector
 
 SOURCES +=  tst_testaggregation.cpp                     \
             $$SRCPATH/modelinspector/aggregation.cpp    \
-            $$SRCPATH/modelinspector/symbolinfo.cpp     \
+            $$SRCPATH/modelinspector/symbol.cpp     \
             $$SRCPATH/modelinspector/labeltreeitem.cpp

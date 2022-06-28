@@ -1,12 +1,12 @@
 #include "identifierfiltermodel.h"
-#include "modelinstance.h"
+#include "abstractmodelinstance.h"
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
-IdentifierFilterModel::IdentifierFilterModel(QSharedPointer<ModelInstance> modelInstance,
-                                     QObject *parent)
+IdentifierFilterModel::IdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                                             QObject *parent)
     : QSortFilterProxyModel(parent)
     , mModelInstance(modelInstance)
 {
@@ -76,15 +76,15 @@ bool IdentifierFilterModel::filterAcceptsRow(int sourceRow,
     return true;
 }
 
-SymbolInfo IdentifierFilterModel::symbol(DataSource dataSource, int sectionIndex) const
+Symbol IdentifierFilterModel::symbol(DataSource dataSource, int sectionIndex) const
 {
     if (dataSource == DataSource::EquationData)
         return mModelInstance->equation(sectionIndex);
     return mModelInstance->variable(sectionIndex);
 }
 
-IdentifierLabelFilterModel::IdentifierLabelFilterModel(QSharedPointer<ModelInstance> modelInstance,
-                                               QObject *parent)
+IdentifierLabelFilterModel::IdentifierLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                                                       QObject *parent)
     : QSortFilterProxyModel(parent)
     , mModelInstance(modelInstance)
 {

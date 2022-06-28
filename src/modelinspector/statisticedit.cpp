@@ -1,5 +1,6 @@
+
 #include "statisticedit.h"
-#include "modelinstance.h"
+#include "abstractmodelinstance.h"
 
 #include <QToolTip>
 #include <QEvent>
@@ -41,7 +42,7 @@ bool StatisticEdit::event(QEvent *event)
     return QTextEdit::event(event);
 }
 
-void StatisticEdit::showStatistic(const QSharedPointer<ModelInstance> &modelInstance)
+void StatisticEdit::showStatistic(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     auto matrixRange = modelInstance->matrixRange();
     auto objectiveRange = modelInstance->objectiveRange();
@@ -62,15 +63,15 @@ void StatisticEdit::showStatistic(const QSharedPointer<ModelInstance> &modelInst
                         "<th>=B=</th>"
                     "</tr>"
                     "<tr>"
-                        "<td align=\"right\">" + QString::number(modelInstance->equationBlocks()) + "</td>"
                         "<td align=\"right\">" + QString::number(modelInstance->equationCount()) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(gmoequ_E)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(gmoequ_G)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(gmoequ_L)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(gmoequ_N)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(gmoequ_X)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(gmoequ_C)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(gmoequ_B)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equationRowCount()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(EquationType::E)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(EquationType::G)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(EquationType::L)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(EquationType::N)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(EquationType::X)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(EquationType::C)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->equationCount(EquationType::B)) + "</td>"
                     "</tr>"
                  "</table></div>"
                  "<h2>Variable Counts</h2>"
@@ -87,15 +88,15 @@ void StatisticEdit::showStatistic(const QSharedPointer<ModelInstance> &modelInst
                         "<th>SInt</th>"
                     "</tr>"
                     "<tr>"
-                        "<td align=\"right\">" + QString::number(modelInstance->variableBlocks()) + "</td>"
                         "<td align=\"right\">" + QString::number(modelInstance->variableCount()) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(gmovar_X)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(gmovar_B)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(gmovar_I)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(gmovar_S1)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(gmovar_S2)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(gmovar_SC)) + "</td>"
-                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(gmovar_SI)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variableRowCount()) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(VariableType::X)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(VariableType::B)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(VariableType::I)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(VariableType::S1)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(VariableType::S2)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(VariableType::SC)) + "</td>"
+                        "<td align=\"right\">" + QString::number(modelInstance->variableCount(VariableType::SI)) + "</td>"
                     "</tr>"
                  "</table></div>"
                  "<h2>Coefficient Counts</h2>"

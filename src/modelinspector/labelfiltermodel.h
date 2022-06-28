@@ -5,20 +5,20 @@
 #include <QSortFilterProxyModel>
 
 #include "common.h"
-#include "symbolinfo.h"
+#include "symbol.h"
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
-class ModelInstance;
+class AbstractModelInstance;
 
 class LabelFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
 public:
-    LabelFilterModel(QSharedPointer<ModelInstance> modelInstance,
+    LabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
                      QObject *parent = nullptr);
 
     LabelFilter labelFilter() const;
@@ -42,10 +42,10 @@ private:
     bool matchesAnyRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
                              int sectionIndex) const;
 
-    SymbolInfo symbol(DataSource dataSource, int sectionIndex) const;
+    Symbol symbol(DataSource dataSource, int sectionIndex) const;
 
 private:
-    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<AbstractModelInstance> mModelInstance;
     LabelFilter mLabelFilter;
 };
 

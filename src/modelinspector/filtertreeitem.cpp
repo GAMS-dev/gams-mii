@@ -109,6 +109,9 @@ bool FilterTreeItem::isEnabled() const
 void FilterTreeItem::setEnabled(bool enabled)
 {
     mEnabled = enabled;
+    Q_FOREACH(auto child, mChilds) {
+        child->setEnabled(enabled);
+    }
 }
 
 Qt::CheckState FilterTreeItem::checked()

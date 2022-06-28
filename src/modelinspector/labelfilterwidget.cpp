@@ -98,9 +98,11 @@ IdentifierState LabelFilterWidget::identifierState()
         static_cast<FilterTreeModel*>(mFilterModel->sourceModel())->filterItem()
     };
     IdentifierState state;
+    state.Enabled = true;
     state.SymbolType = mSymbolType;
     state.SectionIndex = items.first()->sectionIndex();
     state.SymbolIndex = items.first()->symbolIndex();
+    state.Text = items.first()->text();
     while (!items.isEmpty()) {
         auto item = items.takeFirst();
         items.append(item->childs());
@@ -108,6 +110,7 @@ IdentifierState LabelFilterWidget::identifierState()
             continue;
         state.CheckStates[item->sectionIndex()] = item->checked();
     }
+    state.Checked = state.disabled() ? Qt::Unchecked : Qt::Checked;
     return state;
 }
 

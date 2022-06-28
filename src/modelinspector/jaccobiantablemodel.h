@@ -10,7 +10,7 @@ namespace gams {
 namespace studio{
 namespace modelinspector {
 
-class ModelInstance;
+class AbstractModelInstance;
 
 class JaccobianTableModel : public QAbstractTableModel
 {
@@ -21,7 +21,7 @@ public:
 
     ~JaccobianTableModel();
 
-    void setModelInstance(const QSharedPointer<ModelInstance> &modelInstance);
+    void setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance);
 
     QVariant data(const QModelIndex &index, int role) const override;
 
@@ -49,7 +49,7 @@ public:
 
 private:
     PredefinedViewEnum mViewType;
-    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<AbstractModelInstance> mModelInstance;
     int mView;
 };
 

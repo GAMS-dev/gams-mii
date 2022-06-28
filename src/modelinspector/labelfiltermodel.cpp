@@ -1,11 +1,11 @@
 #include "labelfiltermodel.h"
-#include "modelinstance.h"
+#include "abstractmodelinstance.h"
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
-LabelFilterModel::LabelFilterModel(QSharedPointer<ModelInstance> modelInstance,
+LabelFilterModel::LabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
                                    QObject *parent)
     : QSortFilterProxyModel(parent)
     , mModelInstance(modelInstance)
@@ -118,7 +118,7 @@ bool LabelFilterModel::matchesAnyRowLabels(const QMap<QString, Qt::CheckState> &
     return false;
 }
 
-SymbolInfo LabelFilterModel::symbol(DataSource dataSource, int sectionIndex) const
+Symbol LabelFilterModel::symbol(DataSource dataSource, int sectionIndex) const
 {
     if (dataSource == DataSource::EquationData)
         return mModelInstance->equation(sectionIndex);

@@ -19,11 +19,26 @@ LabelTreeItem::LabelTreeItem(const QString &text, LabelTreeItem *parent)
 
 }
 
+LabelTreeItem::~LabelTreeItem()
+{
+    qDeleteAll(mChilds);
+}
+
+void LabelTreeItem::append(LabelTreeItem *child)
+{
+    mChilds.append(child);
+}
+
 LabelTreeItem* LabelTreeItem::child(int index)
 {
     if (index < 0 || index >= mChilds.size())
         return nullptr;
     return mChilds.at(index);
+}
+
+const QList<LabelTreeItem*> &LabelTreeItem::childs() const
+{
+    return mChilds;
 }
 
 QList<LabelTreeItem*> LabelTreeItem::visibleChilds() const
@@ -34,6 +49,11 @@ QList<LabelTreeItem*> LabelTreeItem::visibleChilds() const
             visible.append(c);
     }
     return visible;
+}
+
+void LabelTreeItem::setChilds(const QList<LabelTreeItem *> childs)
+{
+    mChilds = childs;
 }
 
 LabelTreeItem* LabelTreeItem::clone(LabelTreeItem* newParent) const
@@ -49,19 +69,61 @@ LabelTreeItem* LabelTreeItem::clone(LabelTreeItem* newParent) const
     return root;
 }
 
+bool LabelTreeItem::hasChildren() const
+{
+    return mChilds.size();
+}
+
+bool LabelTreeItem::isRoot() const
+{
+    return mParent == nullptr;
+}
+
 void LabelTreeItem::remove(LabelTreeItem *child)
 {
+    if (!child) return;
     mChilds.removeAll(child);
     child->setParent(nullptr);
 }
 
 int LabelTreeItem::firstSectionIndex() const
 {
-    if (mSections.isEmpty())
+    if (sections().isEmpty()) {
         return -1;
-    auto sections = mSections.values();
-    std::sort(sections.begin(), sections.end());
-    return sections.first();
+    }
+    auto secs = sections().values();
+    std::sort(secs.begin(), secs.end());
+    return secs.first();
+}
+
+int LabelTreeItem::sectionIndex() const
+{
+    return mSectionIndex;
+}
+
+void LabelTreeItem::setSectionIndex(int index)
+{
+    mSectionIndex = index;
+}
+
+LabelTreeItem *LabelTreeItem::parent() const
+{
+    return mParent;
+}
+
+void LabelTreeItem::setParent(LabelTreeItem *parent)
+{
+    mParent = parent;
+}
+
+QList<LabelTreeItem *> LabelTreeItem::siblings() const
+{
+    return mParent ? mParent->childs() : QList<LabelTreeItem*>();
+}
+
+int LabelTreeItem::size() const
+{
+    return mChilds.size();
 }
 
 QSet<int> LabelTreeItem::sections() const
@@ -78,6 +140,8 @@ QSet<int> LabelTreeItem::sections() const
 UnitedSections LabelTreeItem::unitedSections() const
 {
     UnitedSections united;
+    if (!hasChildren() && !mSections.isEmpty())
+        united.append(mSections);
     QList<LabelTreeItem*> items { mChilds };
     while (!items.isEmpty()) {
         auto item = items.takeFirst();
@@ -88,6 +152,11 @@ UnitedSections LabelTreeItem::unitedSections() const
         }
     }
     return united;
+}
+
+void LabelTreeItem::setSections(const QSet<int> &sections)
+{
+    mSections = sections;
 }
 
 QList<int> LabelTreeItem::visibleSections() const
@@ -117,6 +186,7 @@ SectionLabels LabelTreeItem::sectionLabels(int startSection, int dimension) cons
     if (levelItems.isEmpty()) return sectionLabels;
     for (int d=1, s=startSection; d<=dimension; ++d, s=startSection) {
         QList<LabelTreeItem*> newItems;
+        if (levelItems.isEmpty()) continue;
         int duplicate = extent / levelItems.size();
         while (!levelItems.isEmpty()) {
             auto item = levelItems.takeFirst();
@@ -133,6 +203,16 @@ SectionLabels LabelTreeItem::sectionLabels(int startSection, int dimension) cons
         levelItems = newItems;
     }
     return sectionLabels;
+}
+
+QString LabelTreeItem::text() const
+{
+    return mText;
+}
+
+void LabelTreeItem::setText(const QString &text)
+{
+    mText = text;
 }
 
 bool LabelTreeItem::isVisible() const
@@ -158,6 +238,8 @@ void LabelTreeItem::setVisible(bool visible)
 int LabelTreeItem::sectionExtent() const
 {
     QList<LabelTreeItem*> leafs;
+    if (!hasChildren() && !mSections.isEmpty())
+        return 1;
     QList<LabelTreeItem*> items { mChilds };
     while (!items.isEmpty()) {
         auto item = items.takeFirst();
@@ -174,12 +256,30 @@ void LabelTreeItem::unite(LabelTreeItem *other)
 {
     if (!other)
         return;
-    if (hasChildren()) {
+    if (hasChildren() || other->hasChildren()) {
         unite(other->childs());
     } else {
         auto visible = other->visibleSections();
         mSections.unite(QSet<int>(visible.begin(), visible.end()));
     }
+}
+
+LabelTreeItem* LabelTreeItem::visibleBranch(QList<LabelTreeItem*> &currentLevel,
+                                            const QString &typeText, int dimension)
+{
+    LabelTreeItem* newItem = nullptr;
+    while (!currentLevel.isEmpty()) {
+        newItem = currentLevel.takeFirst();
+        if (newItem->isVisible()) {
+            newItem->setText(typeText + " - " + QString::number(dimension));
+            break;
+        } else {
+            newItem->parent()->remove(newItem);
+            delete newItem;
+            newItem = nullptr;
+        }
+    }
+    return newItem;
 }
 
 void LabelTreeItem::unite(QList<LabelTreeItem*> childs)
@@ -193,6 +293,9 @@ void LabelTreeItem::unite(QList<LabelTreeItem*> childs)
             child->setParent(nullptr);
             invisible.append(child);
         }
+    }
+    Q_FOREACH(auto oldChild, invisible) {
+        remove(oldChild);
     }
     qDeleteAll(invisible);
     Q_FOREACH(auto child, childs) {

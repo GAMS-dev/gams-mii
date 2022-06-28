@@ -5,20 +5,20 @@
 #include <QSortFilterProxyModel>
 
 #include "common.h"
-#include "symbolinfo.h"
+#include "symbol.h"
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
-class ModelInstance;
+class AbstractModelInstance;
 
 class IdentifierFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
 public:
-    IdentifierFilterModel(QSharedPointer<ModelInstance> modelInstance,
+    IdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
                           QObject *parent = nullptr);
 
     IdentifierFilter& identifierFilter();
@@ -32,10 +32,10 @@ protected:
                           const QModelIndex &sourceParent) const override;
 
 private:
-    SymbolInfo symbol(DataSource dataSource, int sectionIndex) const;
+    Symbol symbol(DataSource dataSource, int sectionIndex) const;
 
 private:
-    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<AbstractModelInstance> mModelInstance;
     IdentifierFilter mIdentifierFilter;
 };
 
@@ -44,7 +44,7 @@ class IdentifierLabelFilterModel : public QSortFilterProxyModel
     Q_OBJECT
 
 public:
-    IdentifierLabelFilterModel(QSharedPointer<ModelInstance> modelInstance,
+    IdentifierLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
                                QObject *parent = nullptr);
 
     void clearIdentifierFilter();
@@ -66,7 +66,7 @@ private:
     int startSection(DataSource dataSource, int sectionIndex) const;
 
 private:
-    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<AbstractModelInstance> mModelInstance;
     IdentifierFilter mIdentifierFilter;
 };
 

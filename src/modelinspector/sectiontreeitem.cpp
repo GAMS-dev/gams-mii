@@ -35,6 +35,8 @@ void SectionTreeItem::append(SectionTreeItem *child)
 
 void SectionTreeItem::remove(int index, int count)
 {
+    if (index+count > mChilds.size())
+        return;
     QVector<SectionTreeItem*> items;
     for (int i=index; i<index+count; ++i) {
         items.push_back(mChilds[i]);
@@ -55,11 +57,39 @@ int SectionTreeItem::childCount() const
     return mChilds.count();
 }
 
+int SectionTreeItem::columnCount() const {
+    return 1;
+}
+
+QString SectionTreeItem::name() const {
+    return mName;
+}
+
+void SectionTreeItem::setName(const QString &name) {
+    mName = name;
+}
+
+int SectionTreeItem::page() const {
+    return mPage;
+}
+
+void SectionTreeItem::setPage(int page) {
+    mPage = page;
+}
+
 int SectionTreeItem::row() const
 {
     if (mParent)
         return mParent->mChilds.indexOf(const_cast<SectionTreeItem*>(this));
     return 0;
+}
+
+PredefinedViewEnum SectionTreeItem::type() const {
+    return mType;
+}
+
+void SectionTreeItem::setType(PredefinedViewEnum type) {
+    mType = type;
 }
 
 void SectionTreeItem::setType(const QString &text)
@@ -74,6 +104,8 @@ void SectionTreeItem::setType(const QString &text)
         mType = PredefinedViewEnum::Jaccobian;
     else if (text == FullView)
         mType = PredefinedViewEnum::Full;
+    else if (text == MinMax)
+        mType = PredefinedViewEnum::MinMax;
     else
         mType = PredefinedViewEnum::Unknown;
 }

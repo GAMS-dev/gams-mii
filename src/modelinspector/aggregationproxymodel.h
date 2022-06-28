@@ -5,22 +5,21 @@
 #include <QSharedPointer>
 #include <QSortFilterProxyModel>
 
-#include "common.h"
 #include "aggregation.h"
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
-class ModelInstance;
-class SymbolInfo;
+class AbstractModelInstance;
+class Symbol;
 
 class AggregationProxyModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
 public:
-    AggregationProxyModel(QSharedPointer<ModelInstance> modelInstance,
+    AggregationProxyModel(QSharedPointer<AbstractModelInstance> modelInstance,
                           QObject *parent = nullptr);
 
     const Aggregation& aggregation() const;
@@ -32,6 +31,8 @@ public:
 
     QVariant headerData(int section, Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
+
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 
     int view() const
     {
@@ -51,7 +52,7 @@ protected:
                           const QModelIndex &sourceParent) const override;
 
 private:
-    QSharedPointer<ModelInstance> mModelInstance;
+    QSharedPointer<AbstractModelInstance> mModelInstance;
     Aggregation mAggregation;
     Aggregation mAppliedAggregation;
 

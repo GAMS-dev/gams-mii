@@ -16,84 +16,50 @@ public:
 
     LabelTreeItem(const QString &text = QString(), LabelTreeItem *parent = nullptr);
 
-    ~LabelTreeItem()
-    {
-        qDeleteAll(mChilds);
-    }
+    ~LabelTreeItem();
 
-    void append(LabelTreeItem *child)
-    {
-        mChilds.append(child);
-    }
+    void append(LabelTreeItem *child);
 
     LabelTreeItem* child(int index);
 
-    const QList<LabelTreeItem*>& childs() const
-    {
-        return mChilds;
-    }
+    const QList<LabelTreeItem*>& childs() const;
 
     QList<LabelTreeItem*> visibleChilds() const;
 
-    void setChilds(const QList<LabelTreeItem*> childs)
-    {
-        mChilds = childs;
-    }
+    void setChilds(const QList<LabelTreeItem*> childs);
 
     LabelTreeItem* clone(LabelTreeItem* newParent = nullptr) const;
 
-    bool hasChildren() const
-    {
-        return mChilds.size();
-    }
+    bool hasChildren() const;
 
-    bool isRoot() const
-    {
-        return mParent == nullptr;
-    }
+    bool isRoot() const;
 
     void remove(LabelTreeItem *child);
 
     int firstSectionIndex() const;
 
-    int sectionIndex() const
-    {
-        return mSectionIndex;
-    }
+    int sectionIndex() const;
 
-    void setSectionIndex(int index)
-    {
-        mSectionIndex = index;
-    }
+    void setSectionIndex(int index);
 
-    LabelTreeItem* parent() const
-    {
-        return mParent;
-    }
+    LabelTreeItem* parent() const;
 
-    void setParent(LabelTreeItem *parent)
-    {
-        mParent = parent;
-    }
+    void setParent(LabelTreeItem *parent);
 
-    QList<LabelTreeItem*> siblings() const
-    {
-        return mParent ? mParent->childs() : QList<LabelTreeItem*>();
-    }
+    ///
+    /// \brief All siblings of one level including the
+    ///        one this function was called on.
+    /// \return All siblings of one level
+    ///
+    QList<LabelTreeItem*> siblings() const;
 
-    int size() const
-    {
-        return mChilds.size();
-    }
+    int size() const;
 
     QSet<int> sections() const;
 
     UnitedSections unitedSections() const;
 
-    void setSections(const QSet<int> &sections)
-    {
-        mSections = sections;
-    }
+    void setSections(const QSet<int> &sections);
 
     ///
     /// \brief Visible sections from the view of the source model,
@@ -106,15 +72,9 @@ public:
 
     SectionLabels sectionLabels(int startSection, int dimension) const;
 
-    QString text() const
-    {
-        return mText;
-    }
+    QString text() const;
 
-    void setText(const QString &text)
-    {
-        mText = text;
-    }
+    void setText(const QString &text);
 
     bool isVisible() const;
 
@@ -123,6 +83,9 @@ public:
     int sectionExtent() const;
 
     void unite(LabelTreeItem *other);
+
+    static LabelTreeItem* visibleBranch(QList<LabelTreeItem*> &currentLevel,
+                                        const QString &typeText, int dimension);
 
 private:
     void unite(QList<LabelTreeItem*> childs);

@@ -71,6 +71,7 @@ SOURCES += \
     gamsprocess.cpp \
     commonpaths.cpp \
     gamslibprocess.cpp \
+    modelinspector/abstractmodelinstance.cpp \
     modelinspector/aggregation.cpp \
     modelinspector/aggregationdialog.cpp \
     modelinspector/aggregationproxymodel.cpp \
@@ -95,7 +96,7 @@ SOURCES += \
     modelinspector/sectiontreemodel.cpp \
     modelinspector/sectiontreeview.cpp \
     modelinspector/statisticedit.cpp \
-    modelinspector/symbolinfo.cpp \
+    modelinspector/symbol.cpp \
     modelinspector/tableviewframe.cpp \
     modelinspector/valueformatproxymodel.cpp
 
@@ -105,6 +106,7 @@ HEADERS += \
     gamsprocess.h \
     commonpaths.h \
     gamslibprocess.h    \
+    modelinspector/abstractmodelinstance.h \
     modelinspector/aggregation.h \
     modelinspector/aggregationdialog.h \
     modelinspector/aggregationproxymodel.h \
@@ -130,7 +132,7 @@ HEADERS += \
     modelinspector/sectiontreemodel.h \
     modelinspector/sectiontreeview.h \
     modelinspector/statisticedit.h \
-    modelinspector/symbolinfo.h \
+    modelinspector/symbol.h \
     modelinspector/tableviewframe.h \
     modelinspector/valueformatproxymodel.h
 
