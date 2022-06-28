@@ -120,11 +120,6 @@
           <string>Maximum</string>
          </property>
         </item>
-        <item>
-         <property name="text">
-          <string>MinMax (Full)</string>
-         </property>
-        </item>
        </widget>
       </item>
       <item>
