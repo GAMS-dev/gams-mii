@@ -1,0 +1,62 @@
+pack-deg:
+  stage: pack
+  tags: [macos]
+  variables:
+    qtpath: /Users/gitlab/Qt/5.15.2/clang_64/bin
+  needs: [build-deg]
+  dependencies: [build-deg]
+  script:
+    - WORKSPACE=$(pwd)
+    - PATH="${qtpath}:${PATH}"
+    - cd build/src/bin
+    - MACOS_KEYCHAIN_PASSWD=`cat ~/.gsv.keychainpasswd`
+    - security unlock-keychain -p ${MACOS_KEYCHAIN_PASSWD}
+    - macdeployqt "modelinspector.app" -always-overwrite
+    - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/modelinspector.entitlements.plist "modelinspector.app"
+    - hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"  
+    - codesign --verify --verbose modelinspector.app
+    - mv "modelinspector.dmg" "$WORKSPACE/model-inspector-deg-x86_64.dmg"
+  artifacts:
+    name: "model-inspector-deg-x86_64"
+    paths: ['model-inspector-deg-x86_64.dmg']
+    expose_as: 'model-inspector-deg-x86_64'
+    expire_in: 1 days
+
+pack-wei:
+  stage: pack
+  tags: [windows]
+  image:
+    name: $MACHINES_CONTAINER_REG/wei/builder-qt:latest
+  needs: [install-gamsdist-wei,build-wei]
+  dependencies: [install-gamsdist-wei,build-wei]
+  variables:
+    vcinsdir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC
+    cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
+  script:
+    - $env:VCINSTALLDIR = "$vcinsdir"
+    - $env:Path = "C:\Qt\5.15.2\msvc2019_64\bin;" + $env:Path
+    - '& $cmd_vcvars'
+    - mkdir model-inspector
+    - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/x64/Microsoft.VC142.CRT/*" "model-inspector"
+    - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/vc_redist.x64.exe" "model-inspector"
+    - cp build/src/bin/* model-inspector
+    - cd model-inspector
+    - 'windeployqt --release --compiler-runtime --force modelinspector.exe'
+    - echo $GAMS_COMODO_CERT | out-file -encoding ascii comodo_code.dat
+    - $data = (
+      'import base64;',
+      'import sys;',
+      'base64.decode(open(sys.argv[1], ''rb''), open(sys.argv[2], ''wb''))'
+      )
+    - $data | out-file -encoding ascii test.py
+    - python test.py comodo_code.dat comodo_cert.p12
+    - signtool sign /v /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com modelinspector.exe
+    - rm comodo_code.dat
+    - rm comodo_cert.p12
+    - cd ..
+    - Compress-Archive -Path model-inspector -DestinationPath model-inspector-wei-x86_64.zip
+  artifacts:
+    name: "model-inspector-wei-x86_64"
+    paths: ['model-inspector-wei-x86_64.zip']
+    expose_as: 'model-inspector-wei-x86_64'
+    expire_in: 1 days

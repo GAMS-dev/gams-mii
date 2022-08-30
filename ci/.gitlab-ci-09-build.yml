@@ -1,0 +1,43 @@
+build-deg:
+  stage: build
+  when: always
+  tags: [macos]
+  script:
+    - printf "GAMS_DISTRIB=$(pwd)/gamsdist\n" > gamsinclude.pri
+    - printf "GAMS_DISTRIB_C_API=\$\$GAMS_DISTRIB/apifiles/C/api\n" >> gamsinclude.pri
+    - printf "GAMS_DISTRIB_CPP_API=\$\$GAMS_DISTRIB/apifiles/C++/api\n" >> gamsinclude.pri
+    - mkdir build
+    - cd build
+    - GAMS_CORE_PATH="${GAMS_FOR_MACOS}"
+    - PATH="${QT_FOR_MACOS}:${GAMS_FOR_MACOS}:${PATH}"
+    - /Users/gitlab/Qt/5.15.2/clang_64/bin/qmake ../model-inspector.pro CONFIG+=release && make -j4
+  needs: [install-gamsdist-deg,test-gams-deg]
+  artifacts:
+    name: model-inspector-deg
+    expire_in: 2 hours
+    paths: [build]
+
+build-wei:
+  stage: build
+  when: always
+  tags: [windows]
+  variables:
+     cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
+  image:
+    name: $MACHINES_CONTAINER_REG/wei/builder-qt:latest
+  script:
+    - '& $cmd_vcvars'
+    - $data = 
+      ('GAMS_DISTRIB=', $(Get-Location).ToString().Replace('\','/'), '/gamsdist' -join ""),
+      'GAMS_DISTRIB_C_API=$$GAMS_DISTRIB/apifiles/C/api',
+      'GAMS_DISTRIB_CPP_API=$$GAMS_DISTRIB/apifiles/C++/api'
+    - $data | out-file -encoding ascii gamsinclude.pri
+    - mkdir build
+    - cd build
+    - C:\Qt\5.15.2\msvc2019_64\bin\qmake.exe ..\model-inspector.pro "CONFIG+=release"
+    - nmake.exe
+  needs: [install-gamsdist-wei,test-gams-wei]
+  artifacts:
+    name: model-inspector-wei
+    expire_in: 2 hours
+    paths: [build]

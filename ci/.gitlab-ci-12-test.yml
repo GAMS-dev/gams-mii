@@ -1,0 +1,67 @@
+test-deg:
+  stage: test
+  tags: [macos]
+  allow_failure: true
+  dependencies: [install-gamsdist-deg,build-deg]
+  script:
+    - GAMS_PATH=$(pwd)/gamsdist
+    - PATH="${QT_FOR_MACOS}:${GAMS_FOR_MACOS}:${PATH}"
+    - echo $PF_GAMS_LICENSE > $GAMS_PATH/gamslice.txt
+    - cd build
+    - mkdir reports
+    - REPORTS_DIR=$(pwd)/reports
+    - |+
+      cd tests/bin
+      for f in *
+      do
+        ./$f -xunitxml -o $REPORTS_DIR/$f.xml
+      done
+  artifacts:
+    name: unittest-results-deg
+    paths: 
+      - build/reports/*
+      - build/src/bin/*
+      - gamsdist/*
+    reports:
+      junit: build/reports/*
+
+test-wei:
+  stage: test
+  when: always
+  tags: [windows]
+  allow_failure: true
+  image:
+    name: $MACHINES_CONTAINER_REG/wei/builder-qt:latest
+  dependencies: [install-gamsdist-wei,build-wei]
+  script:
+    - $GAMS_PATH = ($(pwd), '\gamsdist') -join ""
+    - Out-File -FilePath $GAMS_PATH\gamslice.txt -InputObject $PF_GAMS_LICENSE -Encoding ASCII
+    - $env:Path = "C:\Qt\5.15.2\msvc2019_64\bin;$GAMS_PATH;$GAMS_PATH\gbin;" + $env:Path
+    - $env:GAMSDIR = "$GAMS_PATH;$GAMS_PATH\gbin"
+    - findthisgams -q
+    - cd build
+    - mkdir reports
+    - $data = 
+      ('cd tests/bin',
+      'set STATE=0',
+      'for %%f in (*) do (',
+      '%%f -xunitxml -o ..\\..\\reports\\%%f.xml',
+      'if not "%errorlevel%"=="0" set STATE=1',
+      'echo errorlevel %errorlevel%',
+      ')',
+      'cd ../../reports',
+      'for %%f in (*) do (',
+      '>nul find /c "testcase result=""fail""" %%f && exit 5', 
+      ')',
+      'exit 0'
+      )
+    - $data | out-file -encoding ascii test.bat
+    - ./test.bat
+  artifacts:
+    name: unittest-results-wei
+    paths:
+      - build/reports/*
+      - build/src/bin/*
+      - gamsdist/*
+    reports:
+      junit: build/reports/*

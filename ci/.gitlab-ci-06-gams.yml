@@ -1,0 +1,74 @@
+fetch-ci-scripts:
+  stage: fetch-scripts
+  when: always
+  tags: [linux]
+  needs: []
+  image:
+    name: $MACHINES_CONTAINER_REG/leg/builder-full:latest
+    entrypoint: [ "" ]
+  script:
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@$GITLAB_CISCRIPTS_URL scripts-repo
+    - cp -R scripts-repo/ci .
+  artifacts:
+    name: ci-scripts
+    expire_in: 2 hours
+    paths: [ci/*]
+
+fetch-gamsdist-for-wei:
+  stage: fetch
+  when: always
+  tags: [linux]
+  needs: [fetch-ci-scripts]
+  image:
+    name: $MACHINES_CONTAINER_REG/leg/builder-full:latest
+    entrypoint: [ "" ]
+  script:
+    - python3 ci/fetch_gams.py fetch_wei $PF_CUSTOM_BRANCH $SSH_KEY_PORTING
+  artifacts:
+    name: wei-installer
+    expire_in: 15 minutes
+    paths: [windows_x64_64.exe]
+
+install-gamsdist-deg:
+  stage: install-gams
+  when: on_success
+  tags: [macos]
+  needs: [fetch-ci-scripts]
+  script:
+    - python3 ci/fetch_gams.py fetch_deg $PF_CUSTOM_BRANCH $SSH_KEY_PORTING
+    - python3 ci/fetch_gams.py install
+  artifacts:
+    name: gamsdist-deg
+    expire_in: 1 hour
+    paths: [gamsdist/*]
+
+install-gamsdist-wei:
+  stage: install-gams
+  when: on_success
+  tags: [windows]
+  needs: [fetch-gamsdist-for-wei,fetch-ci-scripts]
+  image:
+    name: $MACHINES_CONTAINER_REG/wei/builder-full:latest
+  script:
+    - python ci/fetch_gams.py install
+  artifacts:
+    name: gamsdist-wei
+    expire_in: 1 hour
+    paths: [gamsdist/*]
+
+test-gams-deg:
+  stage: test-gams
+  tags: [macos]
+  needs: [install-gamsdist-deg]
+  script:
+    - ./gamsdist/gams
+
+test-gams-wei:
+  stage: test-gams
+  when: on_success
+  tags: [windows]
+  needs: [install-gamsdist-wei]
+  image:
+    name: $MACHINES_CONTAINER_REG/wei/builder-full:latest
+  script:
+    - ./gamsdist/gams.exe
