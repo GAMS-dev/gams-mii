@@ -2,15 +2,15 @@ test-deg:
   stage: test
   tags: [macos]
   allow_failure: true
-  dependencies: [install-gamsdist-deg,build-deg]
+  dependencies: [install-gams-deg,build-deg]
   script:
     - GAMS_PATH=$(pwd)/gamsdist
-    - PATH="${QT_FOR_MACOS}:${GAMS_FOR_MACOS}:${PATH}"
+    - PATH="${QT_FOR_MACOS}:${GAMS_PATH}:${PATH}"
     - echo $PF_GAMS_LICENSE > $GAMS_PATH/gamslice.txt
-    - cd build
-    - mkdir reports
+    - cd build && mkdir reports
     - REPORTS_DIR=$(pwd)/reports
     - |+
+      set +e
       cd tests/bin
       for f in *
       do
@@ -21,22 +21,52 @@ test-deg:
     paths: 
       - build/reports/*
       - build/src/bin/*
-      - gamsdist/*
+    reports:
+      junit: build/reports/*
+
+test-leg:
+  stage: test
+  tags: [linux]
+  allow_failure: true
+  image:
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt5:latest
+    entrypoint: [""]   # prevent startup.sh
+  dependencies: [install-gams-leg,build-leg]
+  variables:
+    qtpath: /opt/Qt/5.15.2/bin
+  script:
+    - GAMS_PATH=$(pwd)/gamsdist
+    - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
+    - cd build && mkdir reports
+    - REPORTS_DIR=$(pwd)/reports
+    - |+
+      set +e
+      cd tests/bin
+      for f in *
+      do
+        xvfb-run ./$f -xunitxml -o $REPORTS_DIR/$f.xml
+      done
+  artifacts:
+    name: unittest-results-deg
+    paths: 
+      - build/reports/*
+      - build/src/bin/*
     reports:
       junit: build/reports/*
 
 test-wei:
   stage: test
-  when: always
   tags: [windows]
   allow_failure: true
   image:
-    name: $MACHINES_CONTAINER_REG/wei/builder-qt:latest
-  dependencies: [install-gamsdist-wei,build-wei]
+    name: $GAMS_CONTAINER_REGISTRY/machines/wei/builder-qt:latest
+  dependencies: [install-gams-wei,build-wei]
+  variables:
+    qtpath: C:\Qt\5.15.2\msvc2019_64\bin
   script:
     - $GAMS_PATH = ($(pwd), '\gamsdist') -join ""
     - Out-File -FilePath $GAMS_PATH\gamslice.txt -InputObject $PF_GAMS_LICENSE -Encoding ASCII
-    - $env:Path = "C:\Qt\5.15.2\msvc2019_64\bin;$GAMS_PATH;$GAMS_PATH\gbin;" + $env:Path
+    - $env:Path = "$qtpath;$GAMS_PATH;$GAMS_PATH\gbin;" + $env:Path
     - $env:GAMSDIR = "$GAMS_PATH;$GAMS_PATH\gbin"
     - findthisgams -q
     - cd build
@@ -62,6 +92,5 @@ test-wei:
     paths:
       - build/reports/*
       - build/src/bin/*
-      - gamsdist/*
     reports:
       junit: build/reports/*

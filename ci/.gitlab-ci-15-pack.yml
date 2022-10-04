@@ -4,7 +4,6 @@ pack-deg:
   variables:
     qtpath: /Users/gitlab/Qt/5.15.2/clang_64/bin
   needs: [build-deg]
-  dependencies: [build-deg]
   script:
     - WORKSPACE=$(pwd)
     - PATH="${qtpath}:${PATH}"
@@ -22,13 +21,40 @@ pack-deg:
     expose_as: 'model-inspector-deg-x86_64'
     expire_in: 1 days
 
+pack-leg:
+  stage: pack
+  tags: [linux]
+  image:
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt5:latest
+    entrypoint: [""]   # prevent startup.sh
+  needs: [build-leg]
+  variables:
+    qtpath: /opt/Qt/5.15.2/bin
+  script:
+    - PATH="${qtpath}:${PATH}"
+    # create folder structure
+    - mkdir -p appdir/usr/bin
+    - mkdir -p appdir/usr/share/pixmaps
+    - mkdir -p appdir/usr/resources
+    # collect files
+    - cp build/src/bin/modelinspector appdir/usr/bin/
+    - cp -r icons/* appdir/usr/share/pixmaps
+    - cp platform/linux/modelinspector.desktop appdir/usr/share/modelinspector.desktop
+    # build the AppImage
+    - /opt/linuxdeployqt/linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/modelinspector.desktop -appimage -bundle-non-qt-libs -no-translations -extra-plugins=iconengines
+    - mv Model_Inspector-x86_64.AppImage model-inspector-leg-x86_64.AppImage
+  artifacts:
+    name: "model-inspector-leg-x86_64"
+    paths: ['model-inspector-leg-x86_64.AppImage']
+    expose_as: 'model-inspector-leg-x86_64'
+    expire_in: 1 days
+
 pack-wei:
   stage: pack
   tags: [windows]
   image:
-    name: $MACHINES_CONTAINER_REG/wei/builder-qt:latest
-  needs: [install-gamsdist-wei,build-wei]
-  dependencies: [install-gamsdist-wei,build-wei]
+    name: $GAMS_CONTAINER_REGISTRY/machines/wei/builder-qt:latest
+  needs: [build-wei]
   variables:
     vcinsdir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC
     cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
