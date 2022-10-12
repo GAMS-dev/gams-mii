@@ -478,7 +478,7 @@ private:
     {
         if (data.isEmpty() || label.isEmpty()) return;
         FilterTreeItem *labelItem;
-        bool enabled = visibleSections.contains(data.firstKey());
+        bool enabled = parent->parent() ? visibleSections.contains(data.firstKey()) : true;
         if (state.isValid() && state.CheckStates.contains(data.firstKey())) {
             labelItem = new FilterTreeItem(label,
                                            enabled ? state.CheckStates[data.firstKey()] : Qt::Unchecked,

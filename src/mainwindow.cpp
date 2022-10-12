@@ -69,6 +69,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::appendLogMessage(const QString &message)
 {
+    if (message.contains("ERROR:", Qt::CaseSensitive)) {
+        ui->logEdit->setTextColor(QColor("red"));
+        ui->logEdit->append(message);
+    }
     ui->logEdit->append(message);
 }
 

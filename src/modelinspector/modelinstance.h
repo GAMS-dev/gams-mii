@@ -141,8 +141,8 @@ private:
     void loadScratchData(bool useOutput);
     void loadTableData(LabelFilter &labelFilter);
 
-    Symbol loadSymbol(int index, int sectionIndex) const;
-    void loadDimensions(Symbol &symbol) const;
+    Symbol loadSymbol(int index, int sectionIndex);
+    void loadDimensions(Symbol &symbol);
     void loadInitialLabelFilter(Qt::Orientation orientation, LabelFilter &labelFilter);
 
     void loadLabelTree(Symbol &symbol) const;

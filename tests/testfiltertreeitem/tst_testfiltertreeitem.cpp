@@ -22,6 +22,7 @@ private slots:
     void test_getSet();
     void test_getSetChilds();
     void test_subTreeCheckState();
+    void test_isEnabled();
 };
 
 TestFilterTreeItem::TestFilterTreeItem()
@@ -136,6 +137,29 @@ void TestFilterTreeItem::test_subTreeCheckState()
 
     c2->setChecked(Qt::Unchecked);
     QCOMPARE(root.checked(), Qt::PartiallyChecked);
+}
+
+void TestFilterTreeItem::test_isEnabled()
+{
+    FilterTreeItem root;
+    auto c1 = new FilterTreeItem("c1", Qt::Checked, &root);
+    root.append(c1);
+    auto c2 = new FilterTreeItem("c2", Qt::Checked, &root);
+    root.append(c2);
+    QVERIFY(root.isEnabled());
+
+    c2->setEnabled(false);
+    QVERIFY(root.isEnabled());
+
+    c1->setEnabled(false);
+    QVERIFY(!root.isEnabled());
+
+    auto c3 = new FilterTreeItem("c3", Qt::Checked, &root);
+    c2->append(c3);
+    QVERIFY(root.isEnabled());
+
+    c3->setEnabled(false);
+    QVERIFY(!root.isEnabled());
 }
 
 QTEST_APPLESS_MAIN(TestFilterTreeItem)

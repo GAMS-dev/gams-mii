@@ -408,7 +408,7 @@ void ModelInstance::loadTableData(LabelFilter &labelFilter)
     mSymbolCache->loadVerticalHeaderData();
 }
 
-Symbol ModelInstance::loadSymbol(int index, int sectionIndex) const
+Symbol ModelInstance::loadSymbol(int index, int sectionIndex)
 {
     Symbol info;
     if (index > symbolCount())
@@ -426,36 +426,42 @@ Symbol ModelInstance::loadSymbol(int index, int sectionIndex) const
         info.setName(symbolName);
 
     auto type = dctSymType(mDCT, index);
-    if (type == dcteqnSymType)
+    if (type == dcteqnSymType) {
         info.setType(Symbol::Equation);
-    else if (type == dctvarSymType)
+    } else if (type == dctvarSymType) {
         info.setType(Symbol::Variable);
-    else // TODO (AF/LW) more dct types to consider
+    } else {
+        mLogMessages << QString("ERROR: loadSymbol() >> Unknown symbol type (%1) found in ModelInstance::loadSymbol()").arg(info.name());
         info.setType(Symbol::Unknown);
+        return info;
+    }
+
     loadDimensions(info);
     loadLabelTree(info);
 
     return info;
 }
 
-void ModelInstance::loadDimensions(Symbol &symbol) const
+void ModelInstance::loadDimensions(Symbol &symbol)
 {
-    int nDomains;
+    int nDomains = 0;
     int domains[GLOBAL_MAX_INDEX_DIM];
     for (int j=0; j<symbol.entries(); ++j) {
         if (symbol.isVariable() && gmoGetjSolverQuiet(mGMO, symbol.offset() + j) < 0) {
+            mLogMessages << "ERROR: calling gmoGetjSolverQuiet() in ModelInstance::loadDimensions()";
             continue;
-        } else if (gmoGetiSolverQuiet(mGMO, symbol.offset() + j) < 0) {
+        } else if (symbol.isEquation() && gmoGetiSolverQuiet(mGMO, symbol.offset() + j) < 0) {
+            mLogMessages << "ERROR: calling gmoGetiSolverQuiet() in ModelInstance::loadDimensions()";
             continue;
         }
 
         int symIndex;
-        if (symbol.isVariable()) {
-            if (dctColUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains))
-                continue;
-        } else {
-            if (dctRowUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains))
-                continue;
+        if (symbol.isVariable() && dctColUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains)) {
+            mLogMessages << "ERROR: calling dctColUels() in ModelInstance::loadDimensions()";
+            continue;
+        } else if (symbol.isEquation() && dctRowUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains)) {
+            mLogMessages << "ERROR: calling dctRowUels() in ModelInstance::loadDimensions()";
+            continue;
         }
 
         char quote;

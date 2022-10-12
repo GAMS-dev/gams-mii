@@ -103,7 +103,13 @@ void FilterTreeItem::setCheckable(bool checkable)
 
 bool FilterTreeItem::isEnabled() const
 {
-    return mEnabled;
+    if (mChilds.isEmpty())
+        return mEnabled;
+    Q_FOREACH(auto child, mChilds) {
+        if (child->isEnabled())
+            return true;
+    }
+    return false;
 }
 
 void FilterTreeItem::setEnabled(bool enabled)
