@@ -141,6 +141,12 @@ void TableViewFrame::setSearchSelection(const gams::studio::modelinspector::Sear
     }
 }
 
+void TableViewFrame::updateView()
+{
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
+}
+
 void TableViewFrame::setupFiltersAggregation(QAbstractItemModel *model,
                                              const LabelFilter &filter)
 {
@@ -162,7 +168,7 @@ void TableViewFrame::reset(PredefinedViewEnum view)
     setValueFilter(mDefaultValueFilter);
     setLabelFilter(mDefaultLabelFilter);
     setAggregation(mDefaultAggregation, (int)view);
-    resetColumnRowFilter();
+    updateView();
 }
 
 void TableViewFrame::zoomIn()
@@ -338,11 +344,13 @@ void EqnTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIns
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                                    mModelInstance,
                                                    ui->tableView);
+    mHorizontalHeader->setViewType(PredefinedViewEnum::EqnAttributes);
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &EqnTableViewFrame::setIdentifierLabelFilter);
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
+    mVerticalHeader->setViewType(PredefinedViewEnum::EqnAttributes);
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &EqnTableViewFrame::setIdentifierLabelFilter);
 
@@ -372,6 +380,9 @@ void EqnTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIns
     mVerticalHeader->setVisible(true);
 
     mBaseModel = QSharedPointer<EquationAttributeTableModel>(eqnModel);
+
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
 }
 
 QList<SearchResult> EqnTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
@@ -427,9 +438,10 @@ void EqnTableViewFrame::setValueFilter(const ValueFilter &filter)
     if (mValueFormatModel) mValueFormatModel->setValueFilter(filter);
 }
 
-void EqnTableViewFrame::resetColumnRowFilter()
+void EqnTableViewFrame::updateView()
 {
     mColumnRowFilterModel->invalidate();
+    TableViewFrame::updateView();
 }
 
 Aggregation EqnTableViewFrame::getDefaultAggregation() const
@@ -468,7 +480,7 @@ void EqnTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspec
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
         mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
     }
-    resetColumnRowFilter();
+    updateView();
     emit filtersChanged();
 }
 
@@ -498,12 +510,14 @@ void VarTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIns
                                                    mModelInstance,
                                                    ui->tableView);
     mHorizontalHeader->setDataSource(DataSource::VariableData);
+    mHorizontalHeader->setViewType(PredefinedViewEnum::VarAttributes);
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &VarTableViewFrame::setIdentifierLabelFilter);
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
     mVerticalHeader->setDataSource(DataSource::EquationData);
+    mVerticalHeader->setViewType(PredefinedViewEnum::VarAttributes);
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &VarTableViewFrame::setIdentifierLabelFilter);
 
@@ -533,6 +547,9 @@ void VarTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIns
     mVerticalHeader->setVisible(true);
 
     mBaseModel = QSharedPointer<VariableAttributeTableModel>(varModel);
+
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
 }
 
 QList<SearchResult> VarTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
@@ -572,9 +589,10 @@ void VarTableViewFrame::setValueFilter(const ValueFilter &filter)
     if (mValueFormatModel) mValueFormatModel->setValueFilter(filter);
 }
 
-void VarTableViewFrame::resetColumnRowFilter()
+void VarTableViewFrame::updateView()
 {
     mColumnRowFilterModel->invalidate();
+    TableViewFrame::updateView();
 }
 
 void VarTableViewFrame::setupFiltersAggregation(QAbstractItemModel *model,
@@ -628,7 +646,7 @@ void VarTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspec
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
         mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
     }
-    resetColumnRowFilter();
+    updateView();
     emit filtersChanged();
 }
 
@@ -674,12 +692,14 @@ void JaccTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                                    mModelInstance,
                                                    ui->tableView);
+    mHorizontalHeader->setViewType(PredefinedViewEnum::Jaccobian);
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &JaccTableViewFrame::setIdentifierLabelFilter);
 
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
+    mVerticalHeader->setViewType(PredefinedViewEnum::Jaccobian);
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &JaccTableViewFrame::setIdentifierLabelFilter);
 
@@ -709,6 +729,9 @@ void JaccTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     mVerticalHeader->setVisible(true);
 
     mBaseModel = QSharedPointer<JaccobianTableModel>(baseModel);
+
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
 }
 
 QList<SearchResult> JaccTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
@@ -742,9 +765,10 @@ void JaccTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
     if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
 }
 
-void JaccTableViewFrame::resetColumnRowFilter()
+void JaccTableViewFrame::updateView()
 {
     mColumnRowFilterModel->invalidate();
+    TableViewFrame::updateView();
 }
 
 void JaccTableViewFrame::setValueFilter(const ValueFilter &filter)
@@ -767,7 +791,7 @@ void JaccTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspe
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
         mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
     }
-    resetColumnRowFilter();
+    updateView();
     emit filtersChanged();
 }
 
@@ -813,12 +837,14 @@ void FullTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                                    mModelInstance,
                                                    ui->tableView);
+    mHorizontalHeader->setViewType(PredefinedViewEnum::Full);
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &FullTableViewFrame::setIdentifierLabelFilter);
 
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
+    mVerticalHeader->setViewType(PredefinedViewEnum::Full);
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &FullTableViewFrame::setIdentifierLabelFilter);
 
@@ -848,6 +874,9 @@ void FullTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     mVerticalHeader->setVisible(true);
 
     mModelInstanceModel = QSharedPointer<ModelInstanceTableModel>(modelInstanceModel);
+
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
 }
 
 QList<SearchResult> FullTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
@@ -881,9 +910,10 @@ void FullTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
     if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
 }
 
-void FullTableViewFrame::resetColumnRowFilter()
+void FullTableViewFrame::updateView()
 {
     mColumnRowFilterModel->invalidate();
+    TableViewFrame::updateView();
 }
 
 void FullTableViewFrame::setValueFilter(const ValueFilter &filter)
@@ -906,7 +936,7 @@ void FullTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspe
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
         mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
     }
-    resetColumnRowFilter();
+    updateView();
     emit filtersChanged();
 }
 
@@ -957,12 +987,14 @@ void MinMaxTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> model
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                                    mModelInstance,
                                                    ui->tableView);
+    mHorizontalHeader->setViewType(PredefinedViewEnum::MinMax);
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &MinMaxTableViewFrame::setIdentifierLabelFilter);
 
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
+    mVerticalHeader->setViewType(PredefinedViewEnum::MinMax);
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &MinMaxTableViewFrame::setIdentifierLabelFilter);
 
@@ -989,6 +1021,9 @@ void MinMaxTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> model
     mVerticalHeader->setVisible(true);
 
     mModelInstanceModel = QSharedPointer<MinMaxModelInstanceTableModel>(modelInstanceModel);
+
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
 }
 
 QList<SearchResult> MinMaxTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
@@ -1022,9 +1057,10 @@ void MinMaxTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
     if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
 }
 
-void MinMaxTableViewFrame::resetColumnRowFilter()
+void MinMaxTableViewFrame::updateView()
 {
     if (mColumnRowFilterModel) mColumnRowFilterModel->invalidate();
+    TableViewFrame::updateView();
 }
 
 QList<Symbol> MinMaxTableViewFrame::selectedEquations() const
@@ -1043,7 +1079,7 @@ void MinMaxTableViewFrame::reset(PredefinedViewEnum view)
     setIdentifierFilter(mDefaultIdentifierFilter);
     setValueFilter(mDefaultValueFilter);
     setLabelFilter(mDefaultLabelFilter);
-    resetColumnRowFilter();
+    updateView();
 }
 
 void MinMaxTableViewFrame::setValueFilter(const ValueFilter &filter)
@@ -1100,7 +1136,7 @@ void MinMaxTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelins
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
         mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
     }
-    resetColumnRowFilter();
+    updateView();
     emit filtersChanged();
 }
 

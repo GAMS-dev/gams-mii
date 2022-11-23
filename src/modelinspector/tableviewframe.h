@@ -81,7 +81,7 @@ public:
 
     virtual void setSearchSelection(const gams::studio::modelinspector::SearchResult &result);
 
-    virtual void resetColumnRowFilter() = 0;
+    virtual void updateView();
 
     virtual void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter);
 
@@ -104,7 +104,6 @@ signals:
 protected:
     IdentifierStates defaultSymbolFilter(QAbstractItemModel *model,
                                          Qt::Orientation orientation) const;
-
 
     void setIdentifierFilterCheckState(int symbolIndex, Qt::CheckState state,
                                        Qt::Orientation orientation,
@@ -168,7 +167,7 @@ public:
 
     void setValueFilter(const ValueFilter &filter) override;
 
-    void resetColumnRowFilter() override;
+    void updateView() override;
 
 protected:
     Aggregation getDefaultAggregation() const override;
@@ -223,7 +222,7 @@ public:
 
     void setValueFilter(const ValueFilter &filter) override;
 
-    void resetColumnRowFilter() override;
+    void updateView() override;
 
     void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter) override;
 
@@ -270,7 +269,7 @@ public:
 
     void setValueFilter(const ValueFilter &filter) override;
 
-    void resetColumnRowFilter() override;
+    void updateView() override;
 
 public slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
@@ -312,7 +311,7 @@ public:
 
     void setValueFilter(const ValueFilter &filter) override;
 
-    void resetColumnRowFilter() override;
+    void updateView() override;
 
 public slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
@@ -358,7 +357,7 @@ public:
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    void resetColumnRowFilter() override;
+    void updateView() override;
 
     QList<Symbol> selectedEquations() const;
     QList<Symbol> selectedVariables() const;

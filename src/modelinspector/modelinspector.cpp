@@ -232,25 +232,37 @@ PredefinedViewEnum ModelInspector::viewType() const
 void ModelInspector::resetColumnRowFilter()
 {
     auto frame = currentView();
-    if (frame) frame->resetColumnRowFilter();
+    if (frame) frame->updateView();
 }
 
 void ModelInspector::zoomIn()
 {
-    auto frame = currentView();
-    if (frame) frame->zoomIn();
+    if (qApp->focusWidget() == ui->statisticEdit) {
+        ui->statisticEdit->zoomIn();
+    } else {
+        auto frame = currentView();
+        if (frame) frame->zoomIn();
+    }
 }
 
 void ModelInspector::zoomOut()
 {
-    auto frame = currentView();
-    if (frame) frame->zoomOut();
+    if (qApp->focusWidget() == ui->statisticEdit) {
+        ui->statisticEdit->zoomOut();
+    } else {
+        auto frame = currentView();
+        if (frame) frame->zoomOut();
+    }
 }
 
 void ModelInspector::resetZoom()
 {
-    auto frame = currentView();
-    if (frame) frame->resetZoom();
+    if (qApp->focusWidget() == ui->statisticEdit) {
+        ui->statisticEdit->resetZoom();
+    } else {
+        auto frame = currentView();
+        if (frame) frame->resetZoom();
+    }
 }
 
 void ModelInspector::resetDefaultViews()
@@ -310,7 +322,7 @@ void ModelInspector::saveReducedModelView(gams::studio::modelinspector::Predefin
                                              minMaxView->selectedVariables());
         clone->setIdentifierFilter(newFilter);
     }
-    clone->resetColumnRowFilter();
+    clone->updateView();
 }
 
 IdentifierFilter ModelInspector::newIdentifierFilter(const IdentifierFilter &currentFilter,

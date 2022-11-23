@@ -34,6 +34,9 @@ public:
     DataSource dataSource() const;
     void setDataSource(DataSource dataSource);
 
+    PredefinedViewEnum viewType() const;
+    void setViewType(PredefinedViewEnum viewType);
+
 public slots:
     void customMenuRequested(const QPoint &position);
     void resetSymbolLabelFilters();
@@ -60,6 +63,7 @@ private:
     class HierarchicalHeaderView_private;
     HierarchicalHeaderView_private *mPrivate;
     QSharedPointer<AbstractModelInstance> mModelInstance;
+    PredefinedViewEnum mViewType = PredefinedViewEnum::Unknown;
 
     QMenu *mFilterMenu;
     LabelFilterWidget *mFilterWidget;

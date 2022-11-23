@@ -16,16 +16,17 @@ AbstractTableView::AbstractTableView(QWidget *parent)
 
 bool AbstractTableView::eventFilter(QObject *watched, QEvent *event)
 {
-    if (event->type() != QEvent::Wheel)
-        return QTableView::eventFilter(watched, event);
-    QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
-    if (wheel->modifiers() == Qt::ControlModifier) {
-        if (wheel->angleDelta().y() > 0)
-            zoomIn(ZoomFactor);
-        else
-            zoomOut(ZoomFactor);
+    if (event->type() == QEvent::Wheel) {
+        QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
+        if (wheel->modifiers() == Qt::ControlModifier) {
+            if (wheel->angleDelta().y() > 0)
+                zoomIn(ZoomFactor);
+            else
+                zoomOut(ZoomFactor);
+            return true;
+        }
     }
-    return true;
+    return QTableView::eventFilter(watched, event);
 }
 
 void AbstractTableView::zoomIn(int range)

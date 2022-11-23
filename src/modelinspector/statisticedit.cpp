@@ -1,6 +1,7 @@
 
 #include "statisticedit.h"
 #include "abstractmodelinstance.h"
+#include "common.h"
 
 #include <QToolTip>
 #include <QEvent>
@@ -45,16 +46,27 @@ bool StatisticEdit::event(QEvent *event)
 
 bool StatisticEdit::eventFilter(QObject *watched, QEvent *event)
 {
-    if (event->type() != QEvent::Wheel)
-        return QTextEdit::eventFilter(watched, event);
-    QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
-    if (wheel->modifiers() == Qt::ControlModifier) {
-        if (wheel->angleDelta().y() > 0)
-            zoomIn(2);
-        else
-            zoomOut(2);
+    if (event->type() == QEvent::Wheel) {
+        QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
+        if (wheel->modifiers() == Qt::ControlModifier) {
+            if (wheel->angleDelta().y() > 0)
+                QTextEdit::zoomIn(ZoomFactor);
+            else
+                QTextEdit::zoomOut(ZoomFactor);
+            return true;
+        }
     }
-    return true;
+    return QTextEdit::eventFilter(watched, event);
+}
+
+void StatisticEdit::zoomIn()
+{
+    QTextEdit::zoomIn(ZoomFactor);
+}
+
+void StatisticEdit::zoomOut()
+{
+    QTextEdit::zoomOut(ZoomFactor);
 }
 
 void StatisticEdit::resetZoom()
@@ -150,27 +162,6 @@ void StatisticEdit::showStatistic(const QSharedPointer<AbstractModelInstance> &m
                     "</tr>"
                  "</table>");
     setHtml(html);
-}
-
-void StatisticEdit::keyPressEvent(QKeyEvent *event)
-{
-    if (event->modifiers() == Qt::ControlModifier ||
-            event->modifiers() == (Qt::ControlModifier | Qt::KeypadModifier)) {
-        if (event->key() == Qt::Key_Plus) {
-            zoomIn(2);
-            event->accept();
-            return;
-        } else if (event->key() == Qt::Key_Minus) {
-            zoomOut(2);
-            event->accept();
-            return;
-        } else if (event->key() == Qt::Key_0) {
-            setFont(mBaseFont);
-            event->accept();
-            return;
-        }
-    }
-    QTextEdit::keyPressEvent(event);
 }
 
 }

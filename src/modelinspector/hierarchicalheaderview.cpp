@@ -115,9 +115,8 @@ public:
     {
         if (sectionIndex < PredefinedHeaderLength)
             return 0;
-        if (mAppliedAggregation.isActive() && mAppliedAggregation.type() == Aggregation::MinMax) {
+        if (mHeaderView->viewType() == PredefinedViewEnum::MinMax)
             return 1;
-        }
         return symbol(sectionIndex).dimension();
     }
 
@@ -318,16 +317,10 @@ public:
             if (dimension >= 0 && mAppliedAggregation.aggregationMap()[mHeaderView->orientation()].contains(symbol.firstSection())) {
                 return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][symbol.firstSection()].label(sectionIndex, dimension);
             }
-        } else {
-            if (mAppliedAggregation.indexToSymbol(DataSource::EquationData).contains(sectionIndex)) {
-                if (dimension < 0) {
-                    return mAppliedAggregation.indexToSymbol(DataSource::EquationData)[sectionIndex].name();
-                } else {
-                    auto index = mAppliedAggregation.indexToSymbol(DataSource::EquationData)[sectionIndex].firstSection();
-                    auto startIndex = mAppliedAggregation.startSectionMapping()[index];
-                    return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][startIndex].label(sectionIndex, dimension);
-                }
-            }
+        } else if (mAppliedAggregation.indexToSymbol(DataSource::EquationData).contains(sectionIndex)) {
+            auto index = mAppliedAggregation.indexToSymbol(DataSource::EquationData)[sectionIndex].firstSection();
+            auto startIndex = mAppliedAggregation.startSectionMapping()[index];
+            return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][startIndex].label(sectionIndex, dimension < 0 ? 0 : dimension+1);
         }
         if (isSymbol && logicalIndex > 0) {
             int prevSectionIdx = this->sectionIndex(logicalIndex-1);
@@ -394,28 +387,23 @@ public:
 
     int maxSymbolDimension(Qt::Orientation orientation)
     {
-        if (mAppliedAggregation.isActive() && mAppliedAggregation.type() == Aggregation::MinMax) {
+        if (mHeaderView->viewType() == PredefinedViewEnum::MinMax) {
             if (orientation == Qt::Vertical)
                 return 1; // MinMax view has always diminsion 1
             else
                 return 0; // Don't show any dimensions for variables
         }
-        if (orientation == Qt::Horizontal &&
-                mHeaderView->model()->columnCount() != mHeaderView->modelInstance()->columnCount(PredefinedViewEnum::Full)) {
-            int dimension = 0;
-            for (int c=0; c<mHeaderView->model()->columnCount(); ++c) {
-                int sectionIdx = sectionIndex(c);
-                dimension = qMax(dimension, symbol(sectionIdx).dimension());
-            }
-            return  dimension;
-        } else if (orientation == Qt::Vertical &&
-                   mHeaderView->model()->rowCount() != mHeaderView->modelInstance()->rowCount(PredefinedViewEnum::Full)) {
-            int dimension = 0;
-            for (int c=0; c<mHeaderView->model()->rowCount(); ++c) {
-                int sectionIdx = sectionIndex(c);
-                dimension = qMax(dimension, symbol(sectionIdx).dimension());
-            }
-            return dimension;
+        if (orientation == Qt::Horizontal) {
+            if (mHeaderView->viewType() == PredefinedViewEnum::EqnAttributes)
+                return 0;
+            if (mHeaderView->model()->columnCount() != mHeaderView->modelInstance()->columnCount(PredefinedViewEnum::Full))
+                return maximumSymbolDimension(); // TODO filter case
+        }
+        if (orientation == Qt::Vertical) {
+            if (mHeaderView->viewType() == PredefinedViewEnum::VarAttributes)
+                return 0;
+            if (mHeaderView->model()->rowCount() != mHeaderView->modelInstance()->rowCount(PredefinedViewEnum::Full))
+                return maximumSymbolDimension(); // TODO filter case
         }
         return symbolDimension();
     }
@@ -427,12 +415,17 @@ public:
         return mHeaderView->modelInstance()->variable(sectionIndex);
     }
 
+    int maximumSymbolDimension() const
+    {
+        if (mDataSource == DataSource::EquationData)
+            return mHeaderView->modelInstance()->maximumEquationDimension();
+        return mHeaderView->modelInstance()->maximumVariableDimension();
+    }
+
 private:
     int symbolDimension() const
     {
-        if (mAppliedAggregation.isActive() &&
-                mAppliedAggregation.type() == Aggregation::MinMax &&
-                mDataSource == DataSource::EquationData) {
+        if (mHeaderView->viewType() == PredefinedViewEnum::MinMax && mDataSource == DataSource::EquationData) {
             return 1; // MinMax view has always diminsion 1
         }
         return mDataSource == DataSource::VariableData ? mHeaderView->modelInstance()->maximumVariableDimension() :
@@ -590,6 +583,16 @@ DataSource HierarchicalHeaderView::dataSource() const
 void HierarchicalHeaderView::setDataSource(DataSource dataSource)
 {
     mPrivate->setDataSource(dataSource);
+}
+
+PredefinedViewEnum HierarchicalHeaderView::viewType() const
+{
+    return mViewType;
+}
+
+void HierarchicalHeaderView::setViewType(PredefinedViewEnum viewType)
+{
+    mViewType = viewType;
 }
 
 void HierarchicalHeaderView::customMenuRequested(const QPoint &position)

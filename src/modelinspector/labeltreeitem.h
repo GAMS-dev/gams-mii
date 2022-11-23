@@ -71,6 +71,7 @@ public:
     QList<int> visibleSectionsSorted() const;
 
     SectionLabels sectionLabels(int startSection, int dimension) const;
+    SectionLabels minMaxSectionLabels(const QString &symName, int startSection);
 
     QString text() const;
 

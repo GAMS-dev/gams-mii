@@ -21,12 +21,11 @@ public:
 
     bool eventFilter(QObject *watched, QEvent *event) override;
 
+    void zoomIn();
+    void zoomOut();
     void resetZoom();
 
     void showStatistic(const QSharedPointer<AbstractModelInstance> &modelInstance);
-
-protected:
-    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     QFont mBaseFont;

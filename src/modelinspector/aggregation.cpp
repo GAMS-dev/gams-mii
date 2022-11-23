@@ -323,8 +323,7 @@ void Aggregator::aggregate(AggregationItem &item, Aggregation::Type type,
             item.setMappedSections(mLabelTree->visibleSectionsSorted());
         aggregateLabels(item, type, typeText, lastSymEndIndex);
         item.setVisibleSections(mLabelTree->visibleSectionsSorted());
-        auto labels = mLabelTree->sectionLabels(mLabelTree->sectionIndex(),
-                                                mSymbol.isScalar() ? 1 : mSymbol.dimension());
+        auto labels = mLabelTree->minMaxSectionLabels(item.text(), mLabelTree->sectionIndex());
         item.setLabels(labels);
         item.setAggregatedLabelTree(mLabelTree);
         item.setVisibleSectionCount(mLabelTree->sectionExtent());
