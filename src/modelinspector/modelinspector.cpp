@@ -235,13 +235,40 @@ void ModelInspector::resetColumnRowFilter()
     if (frame) frame->resetColumnRowFilter();
 }
 
+void ModelInspector::zoomIn()
+{
+    auto frame = currentView();
+    if (frame) frame->zoomIn();
+}
+
+void ModelInspector::zoomOut()
+{
+    auto frame = currentView();
+    if (frame) frame->zoomOut();
+}
+
+void ModelInspector::resetZoom()
+{
+    auto frame = currentView();
+    if (frame) frame->resetZoom();
+}
+
 void ModelInspector::resetDefaultViews()
 {
+    ui->statisticEdit->resetZoom();
     ui->eqnAttrFrame->reset(PredefinedViewEnum::EqnAttributes);
+    ui->eqnAttrFrame->resetZoom();
     ui->varAttrFrame->reset(PredefinedViewEnum::VarAttributes);
+    ui->varAttrFrame->resetZoom();
     ui->jaccFrame->reset(PredefinedViewEnum::Jaccobian);
+    ui->jaccFrame->resetZoom();
     ui->fullFrame->reset(PredefinedViewEnum::Full);
+    ui->fullFrame->resetZoom();
     ui->minMaxFrame->reset(PredefinedViewEnum::MinMax);
+    ui->minMaxFrame->resetZoom();
+    Q_FOREACH(auto view, mCustomViews) {
+        view->resetZoom();
+    }
 }
 
 void ModelInspector::saveModelView()

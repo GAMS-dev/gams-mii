@@ -165,6 +165,21 @@ void TableViewFrame::reset(PredefinedViewEnum view)
     resetColumnRowFilter();
 }
 
+void TableViewFrame::zoomIn()
+{
+    ui->tableView->zoomIn(ZoomFactor);
+}
+
+void TableViewFrame::zoomOut()
+{
+    ui->tableView->zoomOut(ZoomFactor);
+}
+
+void TableViewFrame::resetZoom()
+{
+    ui->tableView->resetZoom();
+}
+
 IdentifierStates TableViewFrame::defaultSymbolFilter(QAbstractItemModel *model,
                                                      Qt::Orientation orientation) const
 {

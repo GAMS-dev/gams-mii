@@ -92,6 +92,10 @@ public:
 
     void resetColumnRowFilter();
 
+    void zoomIn();
+    void zoomOut();
+    void resetZoom();
+
 signals:
     void filtersChanged();
 

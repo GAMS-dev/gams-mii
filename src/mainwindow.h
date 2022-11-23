@@ -67,8 +67,12 @@ private slots:
     // View
     void on_actionFilters_triggered();
     void on_actionAggregation_triggered();
+    void on_actionReset_default_views_triggered();
     void on_actionShow_search_result_triggered();
     void on_actionShow_Output_triggered();
+    void on_actionZoom_In_triggered();
+    void on_actionZoom_Out_triggered();
+    void on_action_Actual_Size_triggered();
 
     // Help
     void on_actionAbout_Model_Inspector_triggered();

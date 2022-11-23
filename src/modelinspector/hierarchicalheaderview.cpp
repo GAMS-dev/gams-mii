@@ -69,6 +69,7 @@ public:
         mMinCellSize = fm.size(0, longestSymbolText());
         mEmptyTextSize = fm.size(0, "");
         mFilterIconSize = QSize(mEmptyTextSize.height(), mEmptyTextSize.height());
+        mIconWidth = QSize(mFilterIconSize.width(), 0.0);
 
         QIcon iconOn(FilterIconOn);
         mPixmapFilterOn = iconOn.pixmap(mFilterIconSize);
@@ -100,8 +101,7 @@ public:
         bool ok;
         auto index = mHeaderView->model()->headerData(logicalIndex,
                                                       mHeaderView->orientation()).toInt(&ok);
-        if (!ok) index = -1;
-        return index;
+        return !ok ? -1 : index;
     }
 
     int horizontalSectionDimension(int sectionIndex)
@@ -351,8 +351,7 @@ public:
                                                                      &styleOption,
                                                                      QSize(),
                                                                      mHeaderView));
-        QSize iconWidth(mFilterIconSize.width(), 0.0);
-        return mMinCellSize + decorationsSize + iconWidth - mEmptyTextSize;
+        return mMinCellSize + decorationsSize + mIconWidth - mEmptyTextSize;
     }
 
     FilterTreeItem* filterTree(int logicalIndex, int sectionIdx, const Symbol &symbol)
@@ -525,6 +524,7 @@ private:
     QSize mFilterIconSize;
     QSize mMinCellSize;
     QSize mEmptyTextSize;
+    QSize mIconWidth;
 
     QPixmap mPixmapFilterOn;
     QPixmap mPixmapFilterOff;
@@ -549,6 +549,7 @@ HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
     setHighlightSections(true);
     setSectionsClickable(true);
     setDefaultAlignment(Qt::AlignLeft | Qt::AlignTop);
+    setResizeContentsPrecision(50);
 
     auto filterAction = new QWidgetAction(mFilterMenu);
     filterAction->setDefaultWidget(mFilterWidget);

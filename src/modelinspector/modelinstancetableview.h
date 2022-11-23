@@ -1,13 +1,13 @@
 #ifndef MODELINSTANCETABLEVIEW_H
 #define MODELINSTANCETABLEVIEW_H
 
-#include <QTableView>
+#include "abstracttableview.h"
 
 namespace gams {
 namespace studio{
 namespace modelinspector {
 
-class ModelInstanceTableView : public QTableView
+class ModelInstanceTableView : public AbstractTableView
 {
     Q_OBJECT
 

@@ -60,6 +60,9 @@ MainWindow::MainWindow(QWidget *parent)
     setupConnections();
     setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
     createProjectDirectory();
+
+    ui->actionZoom_In->setShortcut(QKeySequence::ZoomIn);
+    ui->actionZoom_Out->setShortcut(QKeySequence::ZoomOut);
 }
 
 MainWindow::~MainWindow()
@@ -134,6 +137,8 @@ void MainWindow::searchHeaders()
     auto result = ui->modelInspector->searchHeaders(ui->searchEdit->text(),
                                                     ui->regexBox->isChecked());
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData(result);
+    ui->searchResultView->resizeColumnsToContents();
+    ui->searchResultView->resizeRowsToContents();
 }
 
 void MainWindow::editMenuAboutToShow()
@@ -156,6 +161,13 @@ void MainWindow::on_actionAggregation_triggered()
     showDialog(mAggregationDialog);
 }
 
+void MainWindow::on_actionReset_default_views_triggered()
+{
+    ui->modelInspector->resetDefaultViews();
+    ui->searchResultView->resetZoom();
+    ui->logEdit->resetZoom();
+}
+
 void MainWindow::on_actionShow_search_result_triggered()
 {
     ui->dockWidget->show();
@@ -167,6 +179,42 @@ void MainWindow::on_actionShow_Output_triggered()
     ui->modelInspector->reloadModelInstance();
     setGlobalFiltersData();
     setAggregationData();
+}
+
+void MainWindow::on_actionZoom_In_triggered()
+{
+    auto widget = qApp->focusWidget();
+    if (widget == ui->logEdit) {
+        ui->logEdit->zoomIn(2);
+    } else if (widget == ui->searchResultView) {
+        ui->searchResultView->zoomIn(2);
+    } else {
+        ui->modelInspector->zoomIn();
+    }
+}
+
+void MainWindow::on_actionZoom_Out_triggered()
+{
+    auto widget = qApp->focusWidget();
+    if (widget == ui->logEdit) {
+        ui->logEdit->zoomOut(2);
+    } else if (widget == ui->searchResultView) {
+        ui->searchResultView->zoomOut(2);
+    } else {
+        ui->modelInspector->zoomOut();
+    }
+}
+
+void MainWindow::on_action_Actual_Size_triggered()
+{
+    auto widget = qApp->focusWidget();
+    if (widget == ui->logEdit) {
+        ui->logEdit->resetZoom();
+    } else if (widget == ui->searchResultView) {
+        ui->searchResultView->resetZoom();
+    } else {
+        ui->modelInspector->resetZoom();
+    }
 }
 
 void MainWindow::on_actionAbout_Model_Inspector_triggered()
@@ -297,8 +345,6 @@ void MainWindow::setupConnections()
         setGlobalFiltersData();
         setAggregationData();
     });
-    connect(ui->actionReset_default_views, &QAction::triggered,
-            ui->modelInspector, &ModelInspector::resetDefaultViews);
 }
 
 void MainWindow::createProjectDirectory()

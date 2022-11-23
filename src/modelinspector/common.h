@@ -14,6 +14,8 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
+static const int ZoomFactor = 2;
+
 static const QString NA = "NA";
 static const QString EPS = "EPS";
 static const QString INF = "INF";

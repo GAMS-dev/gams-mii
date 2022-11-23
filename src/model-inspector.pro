@@ -66,12 +66,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     exception.cpp \
+    logview.cpp \
     main.cpp \
     mainwindow.cpp \
     gamsprocess.cpp \
     commonpaths.cpp \
     gamslibprocess.cpp \
     modelinspector/abstractmodelinstance.cpp \
+    modelinspector/abstracttableview.cpp \
     modelinspector/aggregation.cpp \
     modelinspector/aggregationdialog.cpp \
     modelinspector/aggregationproxymodel.cpp \
@@ -98,15 +100,18 @@ SOURCES += \
     modelinspector/statisticedit.cpp \
     modelinspector/symbol.cpp \
     modelinspector/tableviewframe.cpp \
-    modelinspector/valueformatproxymodel.cpp
+    modelinspector/valueformatproxymodel.cpp \
+    modelinspector/searchresultview.cpp
 
 HEADERS += \
     exception.h \
+    logview.h \
     mainwindow.h \
     gamsprocess.h \
     commonpaths.h \
     gamslibprocess.h    \
     modelinspector/abstractmodelinstance.h \
+    modelinspector/abstracttableview.h \
     modelinspector/aggregation.h \
     modelinspector/aggregationdialog.h \
     modelinspector/aggregationproxymodel.h \
@@ -134,7 +139,8 @@ HEADERS += \
     modelinspector/statisticedit.h \
     modelinspector/symbol.h \
     modelinspector/tableviewframe.h \
-    modelinspector/valueformatproxymodel.h
+    modelinspector/valueformatproxymodel.h \
+    modelinspector/searchresultview.h
 
 FORMS += \
     mainwindow.ui \

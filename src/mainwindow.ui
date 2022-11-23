@@ -142,7 +142,7 @@
      <widget class="gams::studio::modelinspector::ModelInspector" name="modelInspector" native="true"/>
     </item>
     <item>
-     <widget class="QTextEdit" name="logEdit">
+     <widget class="LogView" name="logEdit">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
         <horstretch>0</horstretch>
@@ -198,8 +198,18 @@
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>View</string>
+     <string>&amp;View</string>
     </property>
+    <widget class="QMenu" name="menuZoom">
+     <property name="title">
+      <string>Zoom</string>
+     </property>
+     <addaction name="separator"/>
+     <addaction name="actionZoom_In"/>
+     <addaction name="actionZoom_Out"/>
+     <addaction name="separator"/>
+     <addaction name="action_Actual_Size"/>
+    </widget>
     <addaction name="actionFilters"/>
     <addaction name="actionAggregation"/>
     <addaction name="separator"/>
@@ -210,6 +220,7 @@
     <addaction name="separator"/>
     <addaction name="actionShow_search_result"/>
     <addaction name="separator"/>
+    <addaction name="menuZoom"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -249,7 +260,7 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QTableView" name="searchResultView">
+      <widget class="gams::studio::modelinspector::SearchResultView" name="searchResultView">
        <property name="showDropIndicator" stdset="0">
         <bool>false</bool>
        </property>
@@ -262,6 +273,9 @@
        <property name="selectionBehavior">
         <enum>QAbstractItemView::SelectRows</enum>
        </property>
+       <attribute name="horizontalHeaderCascadingSectionResizes">
+        <bool>false</bool>
+       </attribute>
       </widget>
      </item>
     </layout>
@@ -396,6 +410,24 @@
     <string>Reset default views</string>
    </property>
   </action>
+  <action name="actionZoom_In">
+   <property name="text">
+    <string>Zoom &amp;In</string>
+   </property>
+  </action>
+  <action name="actionZoom_Out">
+   <property name="text">
+    <string>Zoom &amp;Out</string>
+   </property>
+  </action>
+  <action name="action_Actual_Size">
+   <property name="text">
+    <string>&amp;Actual Size</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+0</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -404,6 +436,16 @@
    <extends>QWidget</extends>
    <header>modelinspector/modelinspector.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LogView</class>
+   <extends>QTextEdit</extends>
+   <header>logview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>gams::studio::modelinspector::SearchResultView</class>
+   <extends>QTableView</extends>
+   <header>modelinspector/searchresultview.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

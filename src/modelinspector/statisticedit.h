@@ -19,9 +19,18 @@ public:
 
     bool event(QEvent *event) override;
 
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
+    void resetZoom();
+
     void showStatistic(const QSharedPointer<AbstractModelInstance> &modelInstance);
 
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+
 private:
+    QFont mBaseFont;
+
     const QMap<QString, QString> mToolTipMapping = {
         {"=e=", "Equality: right-hand side must equal left-hand side"},
         {"=g=", "Greater than: left-hand side must be greater than or equal to right-hand side"},

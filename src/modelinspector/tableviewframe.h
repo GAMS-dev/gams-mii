@@ -87,6 +87,10 @@ public:
 
     virtual void reset(PredefinedViewEnum view);
 
+    void zoomIn();
+    void zoomOut();
+    void resetZoom();
+
 signals:
     void newModelView(gams::studio::modelinspector::PredefinedViewEnum type);
 

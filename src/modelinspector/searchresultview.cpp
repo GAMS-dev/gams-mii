@@ -1,17 +1,16 @@
-#include "modelinstancetableview.h"
+#include "searchresultview.h"
 
 #include <QEvent>
 #include <QWheelEvent>
-
-#include <QDebug>
 
 namespace gams {
 namespace studio{
 namespace modelinspector {
 
-ModelInstanceTableView::ModelInstanceTableView(QWidget *parent)
+SearchResultView::SearchResultView(QWidget *parent)
     : AbstractTableView(parent)
 {
+
 }
 
 }
