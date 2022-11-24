@@ -85,6 +85,8 @@ public:
 
     virtual void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter);
 
+    virtual void reset(PredefinedViewEnum view);
+
 signals:
     void newModelView(gams::studio::modelinspector::PredefinedViewEnum type);
 
@@ -356,6 +358,8 @@ public:
 
     QList<Symbol> selectedEquations() const;
     QList<Symbol> selectedVariables() const;
+
+    void reset(PredefinedViewEnum view) override;
 
 public slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,

@@ -203,6 +203,8 @@
     <addaction name="actionFilters"/>
     <addaction name="actionAggregation"/>
     <addaction name="separator"/>
+    <addaction name="actionReset_default_views"/>
+    <addaction name="separator"/>
     <addaction name="actionShow_Absolute"/>
     <addaction name="actionShow_Output"/>
     <addaction name="separator"/>
@@ -387,6 +389,11 @@
    </property>
    <property name="text">
     <string>Show Absolute</string>
+   </property>
+  </action>
+  <action name="actionReset_default_views">
+   <property name="text">
+    <string>Reset default views</string>
    </property>
   </action>
  </widget>

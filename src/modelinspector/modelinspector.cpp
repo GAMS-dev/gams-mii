@@ -235,6 +235,15 @@ void ModelInspector::resetColumnRowFilter()
     if (frame) frame->resetColumnRowFilter();
 }
 
+void ModelInspector::resetDefaultViews()
+{
+    ui->eqnAttrFrame->reset(PredefinedViewEnum::EqnAttributes);
+    ui->varAttrFrame->reset(PredefinedViewEnum::VarAttributes);
+    ui->jaccFrame->reset(PredefinedViewEnum::Jaccobian);
+    ui->fullFrame->reset(PredefinedViewEnum::Full);
+    ui->minMaxFrame->reset(PredefinedViewEnum::MinMax);
+}
+
 void ModelInspector::saveModelView()
 {
     auto view = currentView();

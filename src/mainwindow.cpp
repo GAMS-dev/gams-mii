@@ -297,6 +297,8 @@ void MainWindow::setupConnections()
         setGlobalFiltersData();
         setAggregationData();
     });
+    connect(ui->actionReset_default_views, &QAction::triggered,
+            ui->modelInspector, &ModelInspector::resetDefaultViews);
 }
 
 void MainWindow::createProjectDirectory()

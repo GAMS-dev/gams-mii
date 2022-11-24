@@ -100,6 +100,8 @@ signals:
     void newLogMessage(const QString&); // TODO (AF) use message types when integrated into studio
 
 public slots:
+    void resetDefaultViews();
+
     void saveModelView();
     void saveReducedModelView(gams::studio::modelinspector::PredefinedViewEnum type);
 

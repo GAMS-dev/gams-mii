@@ -156,6 +156,15 @@ void TableViewFrame::setupFiltersAggregation(QAbstractItemModel *model,
     mCurrentAggregation = mDefaultAggregation;
 }
 
+void TableViewFrame::reset(PredefinedViewEnum view)
+{
+    setIdentifierFilter(mDefaultIdentifierFilter);
+    setValueFilter(mDefaultValueFilter);
+    setLabelFilter(mDefaultLabelFilter);
+    setAggregation(mDefaultAggregation, (int)view);
+    resetColumnRowFilter();
+}
+
 IdentifierStates TableViewFrame::defaultSymbolFilter(QAbstractItemModel *model,
                                                      Qt::Orientation orientation) const
 {
@@ -1008,6 +1017,15 @@ QList<Symbol> MinMaxTableViewFrame::selectedEquations() const
 QList<Symbol> MinMaxTableViewFrame::selectedVariables() const
 {
     return mSelectedVariables;
+}
+
+void MinMaxTableViewFrame::reset(PredefinedViewEnum view)
+{
+    Q_UNUSED(view);
+    setIdentifierFilter(mDefaultIdentifierFilter);
+    setValueFilter(mDefaultValueFilter);
+    setLabelFilter(mDefaultLabelFilter);
+    resetColumnRowFilter();
 }
 
 void MinMaxTableViewFrame::setValueFilter(const ValueFilter &filter)
