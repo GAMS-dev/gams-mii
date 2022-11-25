@@ -282,6 +282,7 @@ Aggregation TableViewFrame::getDefaultAggregation() const
             AggregationItem aggrItem;
             aggrItem.setText(sym.name());
             aggrItem.setSymbolIndex(sym.firstSection());
+            aggrItem.setDomainLabels(sym.domainLabels());
             for (int d=1; d<=sym.dimension(); ++d) {
                 aggrItem.setCheckState(d, Qt::Unchecked);
             }
@@ -439,6 +440,7 @@ Aggregation EqnTableViewFrame::getDefaultAggregation() const
             AggregationItem aggrItem;
             aggrItem.setText(sym.name());
             aggrItem.setSymbolIndex(sym.firstSection());
+            aggrItem.setDomainLabels(sym.domainLabels());
             for (int d=1; d<=sym.dimension(); ++d) {
                 aggrItem.setCheckState(d, Qt::Unchecked);
             }
@@ -598,6 +600,7 @@ Aggregation VarTableViewFrame::getDefaultAggregation() const
             AggregationItem aggrItem;
             aggrItem.setText(sym.name());
             aggrItem.setSymbolIndex(sym.firstSection());
+            aggrItem.setDomainLabels(sym.domainLabels());
             for (int d=1; d<=sym.dimension(); ++d) {
                 aggrItem.setCheckState(d, Qt::Unchecked);
             }
@@ -1114,6 +1117,7 @@ Aggregation MinMaxTableViewFrame::getDefaultAggregation() const
             AggregationItem aggrItem;
             aggrItem.setText(sym.name());
             aggrItem.setSymbolIndex(sym.firstSection());
+            aggrItem.setDomainLabels(sym.domainLabels());
             if (sym.isScalar() && type == Symbol::Equation) {
                 aggrItem.setCheckState(0, Qt::Checked);
             } else if (sym.isScalar() && type == Symbol::Variable) {

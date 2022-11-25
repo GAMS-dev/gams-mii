@@ -42,6 +42,12 @@ public:
 
     void setType(Type type);
 
+    const DomainLabels &domainLabels() const;
+
+    void setDomainLabels(const DomainLabels &labels);
+
+    void appendDomainLabel(const QString &label);
+
     const SectionLabels& sectionLabels() const;
 
     QString label(int sectionIndex, int dimension) const;
@@ -85,6 +91,8 @@ private:
     Type mType = Unknown;
 
     SectionLabels mSectionLabels;
+
+    DomainLabels mDomainLabels;
 
     QSharedPointer<LabelTreeItem> mLabelTree = nullptr;
 };

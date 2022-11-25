@@ -20,6 +20,7 @@ private slots:
     void test_default();
     void test_getSet();
     void test_comparison();
+    void test_appendDomainLabels();
 };
 
 TestSymbol::TestSymbol()
@@ -52,6 +53,7 @@ void TestSymbol::test_default()
     QCOMPARE(symbol.labelTree(),  nullptr);
     QCOMPARE(symbol.isEquation(), false);
     QCOMPARE(symbol.isVariable(), false);
+    QCOMPARE(symbol.domainLabels(), DomainLabels());
 }
 
 void TestSymbol::test_getSet()
@@ -103,6 +105,10 @@ void TestSymbol::test_getSet()
     QSharedPointer<LabelTreeItem> labelTree(new LabelTreeItem);
     symbol.setLabelTree(labelTree);
     QVERIFY(symbol.labelTree() == labelTree);
+
+    DomainLabels dLabels { "i", "j"};
+    symbol.setDomainLabels(dLabels);
+    QCOMPARE(symbol.domainLabels(), dLabels);
 }
 
 void TestSymbol::test_comparison()
@@ -116,6 +122,15 @@ void TestSymbol::test_comparison()
     symbol2.setDimension(42);
     QVERIFY(symbol1 != symbol2);
     QVERIFY(symbol2 != Symbol());
+}
+
+void TestSymbol::test_appendDomainLabels()
+{
+    Symbol symbol;
+    symbol.appendDomainLabel("j");
+    symbol.appendDomainLabel("k");
+    DomainLabels dLabels { "j", "k" };
+    QCOMPARE(symbol.domainLabels(), dLabels);
 }
 
 QTEST_APPLESS_MAIN(TestSymbol)

@@ -436,6 +436,18 @@ Symbol ModelInstance::loadSymbol(int index, int sectionIndex)
         return info;
     }
 
+    int count;
+    gdxStrIndex_t gdxIndex;
+    gdxStrIndexPtrs_t gdxIndexPtr;
+    GDXSTRINDEXPTRS_INIT(gdxIndex, gdxIndexPtr);
+    if (dctSymDomNames(mDCT, index, gdxIndexPtr, &count)) {
+        mLogMessages << QString("ERROR: Could not load symbol (%1) domains.").arg(info.name());
+    } else {
+        for (int i=0; i<count; ++i) {
+            info.appendDomainLabel(gdxIndexPtr[i]);
+        }
+    }
+
     loadDimensions(info);
     loadLabelTree(info);
 

@@ -103,6 +103,11 @@ struct ViewActionStates
 };
 
 ///
+/// \brief Symbol domain labels.
+///
+typedef QVector<QString> DomainLabels;
+
+///
 /// \brief Labels by section index.
 ///
 /// \remark List index is symbol dimension.

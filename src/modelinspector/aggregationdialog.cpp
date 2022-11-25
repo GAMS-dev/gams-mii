@@ -142,9 +142,11 @@ void AggregationDialog::setupTreeItems(Qt::Orientation orientation,
         for (auto iter=item.checkStates().keyValueBegin();
              iter!=item.checkStates().constKeyValueEnd(); ++iter)
         {
-            auto dItem = new FilterTreeItem(QString::number(iter->first),
-                                            iter->second,
-                                            sItem);
+            auto text = QString::number(iter->first);
+            if (iter->first) {
+                text += " - " + item.domainLabel(iter->first-1);
+            }
+            auto dItem = new FilterTreeItem(text, iter->second, sItem);
             sItem->setSymbolIndex(item.symbolIndex());
             sItem->append(dItem);
         }

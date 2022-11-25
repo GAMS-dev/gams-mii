@@ -4,6 +4,7 @@
 #include <QDialog>
 
 #include "common.h"
+
 #include "aggregation.h"
 
 class QSortFilterProxyModel;

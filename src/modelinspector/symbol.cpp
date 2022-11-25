@@ -55,6 +55,21 @@ void Symbol::setType(Type type)
     mType = type;
 }
 
+const DomainLabels &Symbol::domainLabels() const
+{
+    return mDomainLabels;
+}
+
+void Symbol::setDomainLabels(const DomainLabels &labels)
+{
+    mDomainLabels = labels;
+}
+
+void Symbol::appendDomainLabel(const QString &label)
+{
+    mDomainLabels.push_back(label);
+}
+
 const SectionLabels &Symbol::sectionLabels() const
 {
     return mSectionLabels;
@@ -140,6 +155,7 @@ bool Symbol::operator==(const Symbol &other) const
            mName == other.mName                     &&
            mDimension == other.mDimension           &&
            mType == other.mType                     &&
+           mDomainLabels == other.mDomainLabels     &&
            mSectionLabels == other.mSectionLabels   &&
            mLabelTree.get() == other.mLabelTree.get();
 }

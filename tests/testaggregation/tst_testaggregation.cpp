@@ -24,6 +24,7 @@ private slots:
 
     void test_default_aggregationItem();
     void test_getSet_aggregationItem();
+    void test_domainLabel_aggregationItem();
 
     void test_default_aggregation();
     void test_getSet_aggregation();
@@ -70,6 +71,17 @@ void TestAggregation::test_default_aggregationItem()
 void TestAggregation::test_getSet_aggregationItem()
 {
 
+}
+
+void TestAggregation::test_domainLabel_aggregationItem()
+{
+    AggregationItem item;
+    DomainLabels dLabels { "i", "j"};
+    item.setDomainLabels(dLabels);
+    QCOMPARE(item.domainLabel(-1), QString());
+    QCOMPARE(item.domainLabel(0), dLabels.at(0));
+    QCOMPARE(item.domainLabel(1), dLabels.at(1));
+    QCOMPARE(item.domainLabel(2), QString());
 }
 
 void TestAggregation::test_default_aggregation()

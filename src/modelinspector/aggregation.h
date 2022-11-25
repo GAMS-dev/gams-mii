@@ -54,6 +54,9 @@ public:
     const UnitedSections& unitedSections() const;
     void setUnitedSections(const UnitedSections& sections);
 
+    QString domainLabel(int dimension) const;
+    void setDomainLabels(const DomainLabels &labels);
+
     bool isScalar() const {
         return mScalar;
     }
@@ -86,6 +89,8 @@ private:
 
     QList<int> mMappedSections;
     QList<int> mVisibleSections;
+
+    DomainLabels mDomainLabels;
 };
 
 typedef QMap<int, AggregationItem> AggregationSymbols;

@@ -122,6 +122,17 @@ void AggregationItem::setUnitedSections(const UnitedSections& unitedSections)
     mUnitedSections = unitedSections;
 }
 
+QString AggregationItem::domainLabel(int dimension) const
+{
+    return dimension >= 0 && dimension < mDomainLabels.size() ?
+                mDomainLabels[dimension] : QString();
+}
+
+void AggregationItem::setDomainLabels(const DomainLabels &labels)
+{
+    mDomainLabels = labels;
+}
+
 const QString Aggregation::CountText = "Count";
 const QString Aggregation::MeanText = "Mean";
 const QString Aggregation::MedianText = "Median";
