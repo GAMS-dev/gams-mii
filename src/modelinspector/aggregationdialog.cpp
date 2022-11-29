@@ -136,6 +136,7 @@ void AggregationDialog::setupTreeItems(Qt::Orientation orientation,
         if (identifierStates[item.symbolIndex()].Checked == Qt::Unchecked)
             continue;
         auto sItem = new FilterTreeItem(item.text(), Qt::Unchecked, typeItem);
+        sItem->setVisible(!(item.checkStates().size() == 1 && item.checkStates().contains(0)));
         sItem->setSymbolIndex(item.symbolIndex());
         sItem->setCheckable(false);
         typeItem->append(sItem);
@@ -147,6 +148,7 @@ void AggregationDialog::setupTreeItems(Qt::Orientation orientation,
                 text += " - " + item.domainLabel(iter->first-1);
             }
             auto dItem = new FilterTreeItem(text, iter->second, sItem);
+            dItem->setVisible(sItem->isVisible());
             sItem->setSymbolIndex(item.symbolIndex());
             sItem->append(dItem);
         }

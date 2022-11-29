@@ -57,6 +57,7 @@ void TestFilterTreeItem::test_default()
     QCOMPARE(item.checked(), Qt::Checked);
     QCOMPARE(item.sectionIndex(), -1);
     QCOMPARE(item.symbolIndex(), -1);
+    QVERIFY(item.isVisible());
 }
 
 void TestFilterTreeItem::test_constructor()
@@ -94,6 +95,9 @@ void TestFilterTreeItem::test_getSet()
 
     item.setSymbolIndex(84);
     QCOMPARE(item.symbolIndex(), 84);
+
+    item.setVisible(false);
+    QVERIFY(!item.isVisible());
 }
 
 void TestFilterTreeItem::test_getSetChilds()

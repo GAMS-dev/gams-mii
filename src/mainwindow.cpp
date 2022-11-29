@@ -404,6 +404,7 @@ void MainWindow::setAggregationData()
     mAggregationDialog->setAggregation(ui->modelInspector->aggregation(),
                                        ui->modelInspector->identifierFilter());
     mAggregationDialog->setDefaultAggregation(ui->modelInspector->defaultAggregation());
+    mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
 }
 
 void MainWindow::showDialog(QDialog *dialog)

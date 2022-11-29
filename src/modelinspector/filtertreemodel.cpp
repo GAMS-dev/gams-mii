@@ -17,6 +17,8 @@ bool AggregationTreeItemFilterProxyModel::filterAcceptsRow(int sourceRow,
     auto sourceIndex = sourceModel()->index(sourceRow, 0, sourceParent);
     if (!sourceIndex.isValid()) return false;
     auto item = static_cast<FilterTreeItem*>(sourceIndex.internalPointer());
+    if (!item->isVisible())
+        return false;
     if (item->isCheckable() && QSortFilterProxyModel::filterAcceptsRow(sourceParent.row(), sourceParent.parent()))
         return true;
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);

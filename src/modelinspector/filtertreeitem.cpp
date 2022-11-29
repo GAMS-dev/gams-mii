@@ -183,6 +183,16 @@ void FilterTreeItem::setSymbolIndex(int index)
     mSymbolIndex = index;
 }
 
+bool FilterTreeItem::isVisible() const
+{
+    return mVisible;
+}
+
+void FilterTreeItem::setVisible(bool visible)
+{
+    mVisible = visible;
+}
+
 }
 }
 }

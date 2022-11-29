@@ -60,6 +60,9 @@ public:
     int symbolIndex() const;
     void setSymbolIndex(int index);
 
+    bool isVisible() const;
+    void setVisible(bool visible);
+
     static const QString AttributesText;
     static const QString EquationText;
     static const QString VariableText;
@@ -79,6 +82,7 @@ private:
 
     bool mCheckable = true;
     bool mEnabled = true;
+    bool mVisible = true;
 };
 
 }
