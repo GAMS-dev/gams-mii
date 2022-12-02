@@ -357,9 +357,8 @@ int ModelInstance::maximumVariableDimension() const
     return mSymbolCache->MaxVariableDimension;
 }
 
-void ModelInstance::loadScratchData(bool useOutput)
+void ModelInstance::loadScratchData()
 {
-    setUseOutput(useOutput);
     mLogMessages << "Model Workspace: " + mWorkspace;
     QString ctrlFile = mWorkspace + "/" + mScratchDir + "/gamscntr.dat";
     mLogMessages << "CTRL File: " + ctrlFile;
@@ -374,6 +373,7 @@ void ModelInstance::loadScratchData(bool useOutput)
         mLogMessages << "ERROR: Could not load model instance (input): " + QString(msg);
         return;
     }
+
     if (mUseOutput) {
         QString solFile = mWorkspace + "/" + mScratchDir + "/gamssolu.dat";
         mLogMessages << "Solution File: " + solFile;
@@ -559,9 +559,9 @@ const QVector<Symbol>& ModelInstance::symbols(Symbol::Type type) const
     return mSymbolCache->symbols(type);
 }
 
-void ModelInstance::loadData(bool useOutput, LabelFilter &labelFilter)
+void ModelInstance::loadData(LabelFilter &labelFilter)
 {
-    loadScratchData(useOutput);
+    loadScratchData();
     loadTableData(labelFilter);
 }
 
@@ -883,8 +883,8 @@ DataRow ModelInstance::jaccobianRow(int row)
     if (!gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz)) {
         for (int i=0; i<nz; ++i) {
             jacRow[colidx[i]] = jacval[i];
-            mModelMinimum = std::min(mModelMinimum, jacval[i]);
-            mModelMaximum = std::max(mModelMaximum, jacval[i]);
+            mModelJaccMinimum = ValueFilter::minValue(mModelJaccMinimum, jacval[i]);
+            mModelJaccMaximum = ValueFilter::maxValue(mModelJaccMaximum, jacval[i]);
         }
     }
 
@@ -909,7 +909,7 @@ QVariant ModelInstance::horizontalAttribute(const QString &header, int column)
     } else if (!header.compare(Upper, Qt::CaseInsensitive)) {
         value = gmoGetVarUpperOne(mGMO, column);
     }
-    return specialValueMinMax(value);
+    return specialValueMinMax(value, Qt::Horizontal);
 }
 
 QVariant ModelInstance::verticalAttribute(const QString &header, int row)
@@ -929,7 +929,7 @@ QVariant ModelInstance::verticalAttribute(const QString &header, int row)
         auto bounds = equationBounds(row);
         value = bounds.second;
     }
-    return specialValueMinMax(value);
+    return specialValueMinMax(value, Qt::Vertical);
 }
 
 QPair<double, double> ModelInstance::equationBounds(int row)
@@ -975,7 +975,7 @@ QVariant ModelInstance::specialValue(double value)
     return value;
 }
 
-QVariant ModelInstance::specialValueMinMax(double value)
+QVariant ModelInstance::specialValueMinMax(double value, Qt::Orientation orientation)
 {
     if (value == 0.0)
         return QVariant();
@@ -985,8 +985,13 @@ QVariant ModelInstance::specialValueMinMax(double value)
         return N_INF;
     else if (GMS_SV_EPS == value)
         return EPS;
-    mModelMinimum = std::min(mModelMinimum, value);
-    mModelMaximum = std::max(mModelMaximum, value);
+    if (orientation == Qt::Horizontal) {
+        mModelAttributeMinimumH = ValueFilter::minValue(mModelAttributeMinimumH, value);
+        mModelAttributeMaximumH = ValueFilter::maxValue(mModelAttributeMaximumH, value);
+    } else {
+        mModelAttributeMinimumV = ValueFilter::minValue(mModelAttributeMinimumV, value);
+        mModelAttributeMaximumV = ValueFilter::maxValue(mModelAttributeMaximumV, value);
+    }
     return value;
 }
 

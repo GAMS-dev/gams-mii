@@ -81,11 +81,11 @@ public:
 
     virtual void setSearchSelection(const gams::studio::modelinspector::SearchResult &result);
 
-    virtual void updateView();
-
     virtual void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter);
 
     virtual void reset(PredefinedViewEnum view);
+
+    void updateView();
 
     void zoomIn();
     void zoomOut();
@@ -114,6 +114,8 @@ protected:
     virtual Aggregation appliedAggregation(const Aggregation &aggregation, int view) const;
 
     void cloneFilterAndAggregation(TableViewFrame *clone, int newView);
+
+    virtual void updateValueFilter();
 
 protected:
     Ui::TableViewFrame* ui;
@@ -161,13 +163,9 @@ public:
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
-    void setIdentifierFilter(const IdentifierFilter &filter) override;
-
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
-
-    void updateView() override;
 
 protected:
     Aggregation getDefaultAggregation() const override;
@@ -216,13 +214,9 @@ public:
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
-    void setIdentifierFilter(const IdentifierFilter &filter) override;
-
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
-
-    void updateView() override;
 
     void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter) override;
 
@@ -263,13 +257,9 @@ public:
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
-    void setIdentifierFilter(const IdentifierFilter &filter) override;
-
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
-
-    void updateView() override;
 
 public slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
@@ -305,13 +295,9 @@ public:
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
-    void setIdentifierFilter(const IdentifierFilter &filter) override;
-
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
-
-    void updateView() override;
 
 public slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
@@ -347,8 +333,6 @@ public:
 
     QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
-    void setIdentifierFilter(const IdentifierFilter &filter) override;
-
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
@@ -357,7 +341,7 @@ public:
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    void updateView() override;
+    void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter) override;
 
     QList<Symbol> selectedEquations() const;
     QList<Symbol> selectedVariables() const;

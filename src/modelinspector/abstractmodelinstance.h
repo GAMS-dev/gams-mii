@@ -41,9 +41,11 @@ public:
 
     void setUseOutput(bool useOutput);
 
-    double modelMinimum() const;
+    double modelMinimum(PredefinedViewEnum type) const;
+    void setModelMinimum(double value, PredefinedViewEnum type);
 
-    double modelMaximum() const;
+    double modelMaximum(PredefinedViewEnum type) const;
+    void setModelMaximum(double value, PredefinedViewEnum type);
 
     QString logMessages();
 
@@ -136,7 +138,7 @@ public:
 
     virtual const QVector<Symbol>& symbols(Symbol::Type type) const = 0;
 
-    virtual void loadData(bool useOutput, LabelFilter &labelFilter) = 0;
+    virtual void loadData(LabelFilter &labelFilter) = 0;
 
     virtual int rowCount(PredefinedViewEnum viewType) const = 0;
 
@@ -168,8 +170,18 @@ protected:
     QString mSystemDir;
 
     bool mUseOutput = false;
-    double mModelMinimum = 0.0;
-    double mModelMaximum = 0.0;
+
+    double mModelAttributeMinimumH = 0.0;
+    double mModelAttributeMaximumH = 0.0;
+
+    double mModelAttributeMinimumV = 0.0;
+    double mModelAttributeMaximumV = 0.0;
+
+    double mModelJaccMinimum = 0.0;
+    double mModelJaccMaximum = 0.0;
+
+    double mModelMinMaxMinimum = 0.0;
+    double mModelMinMaxMaximum = 0.0;
 
     QStringList mLogMessages;
 };
@@ -213,7 +225,7 @@ public:
 
     const QVector<Symbol>& symbols(Symbol::Type type) const override;
 
-    void loadData(bool useOutput, LabelFilter &labelFilter) override;
+    void loadData(LabelFilter &labelFilter) override;
 
     int rowCount(PredefinedViewEnum viewType) const override;
 

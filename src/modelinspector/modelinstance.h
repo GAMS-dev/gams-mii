@@ -102,7 +102,7 @@ public:
 
     const QVector<Symbol>& symbols(Symbol::Type type) const override;
 
-    void loadData(bool useOutput, LabelFilter &labelFilter) override;
+    void loadData(LabelFilter &labelFilter) override;
 
     int rowCount(PredefinedViewEnum viewType) const override;
 
@@ -138,7 +138,7 @@ public:
 private:
     int symbolCount() const;
 
-    void loadScratchData(bool useOutput);
+    void loadScratchData();
     void loadTableData(LabelFilter &labelFilter);
 
     Symbol loadSymbol(int index, int sectionIndex);
@@ -151,7 +151,7 @@ private:
     QPair<double, double> equationBounds(int row);
 
     QVariant specialValue(double value);
-    QVariant specialValueMinMax(double value);
+    QVariant specialValueMinMax(double value, Qt::Orientation orientation);
     QVariant specialMarginalValue(double value);
     QVariant specialMarginalEquValueBasis(double value, int rIndex);
     QVariant specialMarginalVarValueBasis(double value, int cIndex);

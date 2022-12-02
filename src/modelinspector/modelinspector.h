@@ -135,7 +135,6 @@ private:
     QString mScratchDir;
     QString mWorkspace;
     QString mSystemDir;
-    bool mShowOutput = false;
 
     SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<AbstractModelInstance> mModelInstance;

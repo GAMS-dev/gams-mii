@@ -91,7 +91,6 @@ bool ModelInspector::showOutput() const
 
 void ModelInspector::setShowOutput(bool showOutput)
 {
-    mShowOutput = showOutput;
     mModelInstance->setUseOutput(showOutput);
 }
 
@@ -323,6 +322,7 @@ void ModelInspector::saveReducedModelView(gams::studio::modelinspector::Predefin
         clone->setIdentifierFilter(newFilter);
     }
     clone->updateView();
+    emit filtersChanged();
 }
 
 IdentifierFilter ModelInspector::newIdentifierFilter(const IdentifierFilter &currentFilter,
@@ -443,15 +443,17 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
 {
     clearCustomViews();
     if (loadModel) {
+        bool showOutput = mModelInstance->useOutput();
         mModelInstance = QSharedPointer<AbstractModelInstance>(new ModelInstance(mWorkspace,
                                                                                  mSystemDir,
                                                                                  mScratchDir));
+        mModelInstance->setUseOutput(showOutput);
     } else {
         mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
     }
     mModelInstance->initialize();
     LabelFilter labelFilter;
-    mModelInstance->loadData(mShowOutput, labelFilter);
+    mModelInstance->loadData(labelFilter);
 
     ui->eqnAttrFrame->setupView(mModelInstance, (int)PredefinedViewEnum::EqnAttributes);
     ui->varAttrFrame->setupView(mModelInstance, (int)PredefinedViewEnum::VarAttributes);
@@ -465,7 +467,7 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
     ui->fullFrame->setupFiltersAggregation(ui->fullFrame->model(), labelFilter);
     ui->minMaxFrame->setupFiltersAggregation(ui->fullFrame->model(), labelFilter);
     ui->minMaxFrame->setAggregation(ui->minMaxFrame->defaultAggregation(),
-                                        ui->stackedWidget->indexOf(ui->minMaxPage));
+                                    ui->stackedWidget->indexOf(ui->minMaxPage));
 
     setCurrentViewIndex(ViewType::Predefined);
 }

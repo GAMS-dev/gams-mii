@@ -65,7 +65,7 @@ public:
 protected:
     virtual QVariant aggregatedValue(QVariant &value1, QVariant &value2)
     {
-        if (isSpecialValue(value1))
+        if (ValueFilter::isSpecialValue(value1))
             return QVariant();
         value2 = QVariant();
         auto value = value1.toDouble();
@@ -77,7 +77,7 @@ protected:
 
     virtual QVariant aggregatedAbsValue(QVariant &value1, QVariant &value2)
     {
-        if (isSpecialValue(value1))
+        if (ValueFilter::isSpecialValue(value1))
             return QVariant();
         value2 = QVariant();
         auto value = value1.toDouble();
@@ -85,15 +85,6 @@ protected:
             return std::abs(value);
         }
         return QVariant();
-    }
-
-    bool isSpecialValue(const QVariant &value) const
-    {
-        auto str = value.toString();
-        return !str.compare(EPS, Qt::CaseInsensitive) ||
-                !str.compare(P_INF, Qt::CaseInsensitive) ||
-                !str.compare(N_INF, Qt::CaseInsensitive) ||
-                !str.compare(NA, Qt::CaseInsensitive);
     }
 
 protected:
@@ -584,6 +575,8 @@ public:
                         }
                     }
                     newRow[targetColumn++] = value;
+                    setModelMinimum(value.toDouble(), modelInstance);
+                    setModelMaximum(value.toDouble(), modelInstance);
                 }
                 setFilterForTargetIndexChecked(Qt::Vertical, var.firstSection(), iter->first);
                 aggregatedMatrix()[iter->first] = newRow;
@@ -617,10 +610,32 @@ public:
         aggregatedMatrix() = tmpAggrMatrix;
     }
 
+    void setModelMinimum(double value, ModelInstance *modelInstance) const
+    {
+        auto currentMin = modelInstance->modelMinimum(PredefinedViewEnum::MinMax);
+        if (currentMin == 0.0) {
+            currentMin = value;
+        } else if (value != 0.0) {
+            currentMin = std::min(currentMin, value);
+        }
+        modelInstance->setModelMinimum(currentMin, PredefinedViewEnum::MinMax);
+    }
+
+    void setModelMaximum(double value, ModelInstance *modelInstance) const
+    {
+        auto currentMax = modelInstance->modelMaximum(PredefinedViewEnum::MinMax);
+        if (currentMax == 0.0) {
+            currentMax = value;
+        } else if (value != 0.0) {
+            currentMax = std::max(currentMax, value);
+        }
+        modelInstance->setModelMaximum(currentMax, PredefinedViewEnum::MinMax);
+    }
+
 protected:
     virtual QVariant aggregatedValue(QVariant &value1, QVariant &value2) override
     {
-        if (isSpecialValue(value1))
+        if (ValueFilter::isSpecialValue(value1))
             return value2;
         auto value = value1.toDouble();
         if (value < 0 || value > 0) {
@@ -631,7 +646,7 @@ protected:
 
     virtual QVariant aggregatedAbsValue(QVariant &value1, QVariant &value2) override
     {
-        if (isSpecialValue(value1))
+        if (ValueFilter::isSpecialValue(value1))
             return value2;
         auto value = value1.toDouble();
         if (value < 0 || value > 0) {
@@ -652,7 +667,7 @@ private:
             for (int column=0; column<modelInstance->columnCount(PredefinedViewEnum::Full); ++column) {
                 auto value = std::invoke(getValue, this, aggregatedMatrix()[row][column], specialValue);
                 if (!value.isValid()) continue;
-                if (newMaxRow.contains(column) && isSpecialValue(newMaxRow[column])) {
+                if (newMaxRow.contains(column) && ValueFilter::isSpecialValue(newMaxRow[column])) {
                     newMaxRow[column] = NA;
                     newMinRow[column] = NA;
                 } else if (newMaxRow.contains(column) && newMinRow.contains(column)) {

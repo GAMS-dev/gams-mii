@@ -173,10 +173,25 @@ void MainWindow::on_actionShow_search_result_triggered()
     ui->dockWidget->show();
 }
 
+void MainWindow::showAbsoluteValues()
+{
+    ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
+    if (!ui->actionShow_Absolute->isChecked()) {
+        auto defaultFilter = ui->modelInspector->defaultValueFilter();
+        auto currentFilter = ui->modelInspector->valueFilter();
+        currentFilter.MinValue = defaultFilter.MinValue;
+        currentFilter.MaxValue = defaultFilter.MaxValue;
+        ui->modelInspector->setValueFilter(currentFilter);
+    }
+    setGlobalFiltersData();
+    setAggregationData();
+}
+
 void MainWindow::on_actionShow_Output_triggered()
 {
     ui->modelInspector->setShowOutput(ui->actionShow_Output->isChecked());
     ui->modelInspector->reloadModelInstance();
+    ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
     setGlobalFiltersData();
     setAggregationData();
 }
@@ -340,11 +355,7 @@ void MainWindow::setupConnections()
     connect(ui->menu_Edit, &QMenu::aboutToShow,
             this, &MainWindow::editMenuAboutToShow);
     connect(ui->actionShow_Absolute, &QAction::triggered,
-            this, [this]{
-        ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
-        setGlobalFiltersData();
-        setAggregationData();
-    });
+            this, &MainWindow::showAbsoluteValues);
 }
 
 void MainWindow::createProjectDirectory()

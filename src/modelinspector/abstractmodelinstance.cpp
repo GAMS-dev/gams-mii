@@ -61,14 +61,80 @@ void AbstractModelInstance::setUseOutput(bool useOutput)
     mUseOutput = useOutput;
 }
 
-double AbstractModelInstance::modelMinimum() const
+double AbstractModelInstance::modelMinimum(PredefinedViewEnum type) const
 {
-    return mModelMinimum;
+    switch (type) {
+    case PredefinedViewEnum::EqnAttributes:
+        return mModelAttributeMinimumV;
+    case PredefinedViewEnum::VarAttributes:
+        return mModelAttributeMinimumH;
+    case PredefinedViewEnum::Jaccobian:
+        return mModelJaccMinimum;
+    case PredefinedViewEnum::MinMax:
+        return mModelMinMaxMinimum;
+    case PredefinedViewEnum::Full:
+        return std::min(mModelAttributeMinimumH, std::min(mModelAttributeMinimumV, mModelJaccMinimum));
+    default:
+        return 0.0;
+    }
 }
 
-double AbstractModelInstance::modelMaximum() const
+void AbstractModelInstance::setModelMinimum(double value, PredefinedViewEnum type)
 {
-    return mModelMaximum;
+    switch (type) {
+    case PredefinedViewEnum::EqnAttributes:
+        mModelAttributeMinimumV = value;
+        break;
+    case PredefinedViewEnum::VarAttributes:
+        mModelAttributeMinimumH = value;
+        break;
+    case PredefinedViewEnum::Jaccobian:
+        mModelJaccMinimum = value;
+        break;
+    case PredefinedViewEnum::MinMax:
+        mModelMinMaxMinimum = value;
+        break;
+    default:
+        return;
+    }
+}
+
+double AbstractModelInstance::modelMaximum(PredefinedViewEnum type) const
+{
+    switch (type) {
+    case PredefinedViewEnum::EqnAttributes:
+        return mModelAttributeMaximumV;
+    case PredefinedViewEnum::VarAttributes:
+        return mModelAttributeMaximumH;
+    case PredefinedViewEnum::Jaccobian:
+        return mModelJaccMaximum;
+    case PredefinedViewEnum::MinMax:
+        return mModelMinMaxMaximum;
+    case PredefinedViewEnum::Full:
+        return std::max(mModelAttributeMaximumH, std::max(mModelAttributeMaximumV, mModelJaccMaximum));
+    default:
+        return 0.0;
+    }
+}
+
+void AbstractModelInstance::setModelMaximum(double value, PredefinedViewEnum type)
+{
+    switch (type) {
+    case PredefinedViewEnum::EqnAttributes:
+        mModelAttributeMaximumV = value;
+        break;
+    case PredefinedViewEnum::VarAttributes:
+        mModelAttributeMaximumH = value;
+        break;
+    case PredefinedViewEnum::Jaccobian:
+        mModelJaccMaximum = value;
+        break;
+    case PredefinedViewEnum::MinMax:
+        mModelMinMaxMaximum = value;
+        break;
+    default:
+        return;
+    }
 }
 
 QString AbstractModelInstance::logMessages() {
@@ -215,9 +281,8 @@ const QVector<Symbol> &EmptyModelInstance::symbols(Symbol::Type type) const
     return mSymbols;
 }
 
-void EmptyModelInstance::loadData(bool useOutput, LabelFilter &labelFilter)
+void EmptyModelInstance::loadData(LabelFilter &labelFilter)
 {
-    Q_UNUSED(useOutput);
     Q_UNUSED(labelFilter);
 }
 

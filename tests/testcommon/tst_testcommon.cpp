@@ -26,6 +26,9 @@ private slots:
 
     void test_default_valueFilter();
     void test_getSet_valueFilter();
+    void test_minValue_valueFilter();
+    void test_maxValue_valueFilter();
+    void test_isSpecialValue_valueFilter();
 };
 
 TestCommon::TestCommon()
@@ -191,6 +194,36 @@ void TestCommon::test_getSet_valueFilter()
     QVERIFY(!filter.accepts(P_INF));
     QVERIFY(filter.accepts(1001.2));
     QVERIFY(!filter.accepts(-42));
+}
+
+void TestCommon::test_minValue_valueFilter()
+{
+    QCOMPARE(ValueFilter::minValue(0.0, 1.0), 1.0);
+    QCOMPARE(ValueFilter::minValue(1.0, 0.0), 1.0);
+    QCOMPARE(ValueFilter::minValue(1.0, 0.1), 0.1);
+    QCOMPARE(ValueFilter::minValue(1.0, 1.0), 1.0);
+    QCOMPARE(ValueFilter::minValue(1.0, 2.0), 1.0);
+}
+
+void TestCommon::test_maxValue_valueFilter()
+{
+    QCOMPARE(ValueFilter::maxValue(0.0, 1.0), 1.0);
+    QCOMPARE(ValueFilter::maxValue(1.0, 0.0), 1.0);
+    QCOMPARE(ValueFilter::maxValue(1.0, 0.1), 1.0);
+    QCOMPARE(ValueFilter::maxValue(1.0, 1.0), 1.0);
+    QCOMPARE(ValueFilter::maxValue(1.0, 2.0), 2.0);
+}
+
+void TestCommon::test_isSpecialValue_valueFilter()
+{
+    QCOMPARE(ValueFilter::isSpecialValue(NA), true);
+    QCOMPARE(ValueFilter::isSpecialValue(EPS), true);
+    QCOMPARE(ValueFilter::isSpecialValue(INF), true);
+    QCOMPARE(ValueFilter::isSpecialValue(P_INF), true);
+    QCOMPARE(ValueFilter::isSpecialValue(N_INF), true);
+    QCOMPARE(ValueFilter::isSpecialValue(QString()), false);
+    QCOMPARE(ValueFilter::isSpecialValue("stuff"), false);
+    QCOMPARE(ValueFilter::isSpecialValue(QString::number(0.1)), false);
 }
 
 QTEST_APPLESS_MAIN(TestCommon)

@@ -40,6 +40,7 @@ const IdentifierFilter &TableViewFrame::defaultIdentifierFilter() const
 void TableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
 {
     mCurrentIdentifierFilter = filter;
+    if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
 }
 
 const ValueFilter &TableViewFrame::valueFilter() const
@@ -129,6 +130,7 @@ void TableViewFrame::setShowAbsoluteValues(bool absoluteValues)
     mCurrentValueFilter.UseAbsoluteValues = absoluteValues;
     mCurrentValueFilter.UseAbsoluteValuesGlobal = absoluteValues;
     mValueFormatModel->setValueFilter(mCurrentValueFilter);
+    updateValueFilter();
 }
 
 void TableViewFrame::setSearchSelection(const gams::studio::modelinspector::SearchResult &result)
@@ -143,8 +145,11 @@ void TableViewFrame::setSearchSelection(const gams::studio::modelinspector::Sear
 
 void TableViewFrame::updateView()
 {
+    if (mColumnRowFilterModel) mColumnRowFilterModel->invalidate();
     ui->tableView->resizeColumnsToContents();
     ui->tableView->resizeRowsToContents();
+    updateValueFilter();
+    emit filtersChanged();
 }
 
 void TableViewFrame::setupFiltersAggregation(QAbstractItemModel *model,
@@ -152,8 +157,8 @@ void TableViewFrame::setupFiltersAggregation(QAbstractItemModel *model,
 {
     mCurrentLabelFilter = filter;
     mDefaultLabelFilter = mCurrentLabelFilter;
-    mDefaultValueFilter.MinValue = mModelInstance->modelMinimum();
-    mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum();
+    mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(type());
+    mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(type());
     mCurrentValueFilter = mDefaultValueFilter;
     mDefaultIdentifierFilter[Qt::Horizontal] = defaultSymbolFilter(model, Qt::Horizontal);
     mDefaultIdentifierFilter[Qt::Vertical] = defaultSymbolFilter(model, Qt::Vertical);
@@ -278,6 +283,27 @@ void TableViewFrame::cloneFilterAndAggregation(TableViewFrame *clone, int newVie
     clone->setIdentifierFilter(mCurrentIdentifierFilter);
     clone->mDefaultAggregation = mDefaultAggregation;
     clone->setAggregation(mCurrentAggregation, newView);
+}
+
+void TableViewFrame::updateValueFilter()
+{
+    bool ok;
+    double min = 0.0;
+    double max = 0.0;
+    for (int r=0; r<ui->tableView->model()->rowCount(); ++r) {
+        for (int c=0; c<ui->tableView->model()->columnCount(); ++c) {
+            auto variant = ui->tableView->model()->index(r,c).data();
+            if (ValueFilter::isSpecialValue(variant.toString()))
+                continue;
+            auto value = variant.toDouble(&ok);
+            if (ok) {
+                min = ValueFilter::minValue(min, value);
+                max = ValueFilter::maxValue(max, value);
+            }
+        }
+    }
+    mCurrentValueFilter.MinValue = min;
+    mCurrentValueFilter.MaxValue = max;
 }
 
 Aggregation TableViewFrame::getDefaultAggregation() const
@@ -411,12 +437,6 @@ void EqnTableViewFrame::searchHeader(const QString &term, bool isRegEx,
     }
 }
 
-void EqnTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
-{
-    TableViewFrame::setIdentifierFilter(filter);
-    if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
-}
-
 void EqnTableViewFrame::setLabelFilter(const LabelFilter &filter)
 {
     TableViewFrame::setLabelFilter(filter);
@@ -436,12 +456,6 @@ void EqnTableViewFrame::setValueFilter(const ValueFilter &filter)
 {
     TableViewFrame::setValueFilter(filter);
     if (mValueFormatModel) mValueFormatModel->setValueFilter(filter);
-}
-
-void EqnTableViewFrame::updateView()
-{
-    mColumnRowFilterModel->invalidate();
-    TableViewFrame::updateView();
 }
 
 Aggregation EqnTableViewFrame::getDefaultAggregation() const
@@ -577,22 +591,10 @@ void VarTableViewFrame::setLabelFilter(const LabelFilter &filter)
     }
 }
 
-void VarTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
-{
-    TableViewFrame::setIdentifierFilter(filter);
-    if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
-}
-
 void VarTableViewFrame::setValueFilter(const ValueFilter &filter)
 {
     TableViewFrame::setValueFilter(filter);
     if (mValueFormatModel) mValueFormatModel->setValueFilter(filter);
-}
-
-void VarTableViewFrame::updateView()
-{
-    mColumnRowFilterModel->invalidate();
-    TableViewFrame::updateView();
 }
 
 void VarTableViewFrame::setupFiltersAggregation(QAbstractItemModel *model,
@@ -600,8 +602,8 @@ void VarTableViewFrame::setupFiltersAggregation(QAbstractItemModel *model,
 {
     mCurrentLabelFilter = filter;
     mDefaultLabelFilter = mCurrentLabelFilter;
-    mDefaultValueFilter.MinValue = mModelInstance->modelMinimum();
-    mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum();
+    mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(type());
+    mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(type());
     mCurrentValueFilter = mDefaultValueFilter;
     mDefaultIdentifierFilter[Qt::Horizontal] = defaultSymbolFilter(model, Qt::Horizontal);
     mDefaultIdentifierFilter[Qt::Vertical] = defaultSymbolFilter(model, Qt::Vertical);
@@ -759,18 +761,6 @@ void JaccTableViewFrame::setLabelFilter(const LabelFilter &filter)
     }
 }
 
-void JaccTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
-{
-    TableViewFrame::setIdentifierFilter(filter);
-    if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
-}
-
-void JaccTableViewFrame::updateView()
-{
-    mColumnRowFilterModel->invalidate();
-    TableViewFrame::updateView();
-}
-
 void JaccTableViewFrame::setValueFilter(const ValueFilter &filter)
 {
     TableViewFrame::setValueFilter(filter);
@@ -902,18 +892,6 @@ void FullTableViewFrame::setLabelFilter(const LabelFilter &filter)
         mIdentifierLabelFilterModel->clearIdentifierFilter();
         mIdentifierLabelFilterModel->invalidate();
     }
-}
-
-void FullTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
-{
-    TableViewFrame::setIdentifierFilter(filter);
-    if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
-}
-
-void FullTableViewFrame::updateView()
-{
-    mColumnRowFilterModel->invalidate();
-    TableViewFrame::updateView();
 }
 
 void FullTableViewFrame::setValueFilter(const ValueFilter &filter)
@@ -1051,18 +1029,6 @@ void MinMaxTableViewFrame::setLabelFilter(const LabelFilter &filter)
     }
 }
 
-void MinMaxTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
-{
-    TableViewFrame::setIdentifierFilter(filter);
-    if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
-}
-
-void MinMaxTableViewFrame::updateView()
-{
-    if (mColumnRowFilterModel) mColumnRowFilterModel->invalidate();
-    TableViewFrame::updateView();
-}
-
 QList<Symbol> MinMaxTableViewFrame::selectedEquations() const
 {
     return mSelectedEquations;
@@ -1097,6 +1063,10 @@ void MinMaxTableViewFrame::setAggregation(const Aggregation &aggregation, int vi
         mHorizontalHeader->setAppliedAggregation(applied);
         mVerticalHeader->setAppliedAggregation(applied);
         mModelInstanceModel->setAggregation(mCurrentAggregation, applied);
+        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(type());
+        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(type());
+        mCurrentValueFilter.MinValue = mModelInstance->modelMinimum(type());
+        mCurrentValueFilter.MaxValue = mModelInstance->modelMaximum(type());
     }
 }
 
@@ -1120,6 +1090,21 @@ void MinMaxTableViewFrame::setShowAbsoluteValues(bool absoluteValues)
     mCurrentValueFilter.UseAbsoluteValues = absoluteValues;
     mCurrentValueFilter.UseAbsoluteValuesGlobal = absoluteValues;
     mValueFormatModel->setValueFilter(mCurrentValueFilter);
+    updateValueFilter();
+}
+
+void MinMaxTableViewFrame::setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter)
+{
+    mCurrentLabelFilter = filter;
+    mDefaultLabelFilter = mCurrentLabelFilter;
+    mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(PredefinedViewEnum::Full);
+    mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(PredefinedViewEnum::Full);
+    mCurrentValueFilter = mDefaultValueFilter;
+    mDefaultIdentifierFilter[Qt::Horizontal] = defaultSymbolFilter(model, Qt::Horizontal);
+    mDefaultIdentifierFilter[Qt::Vertical] = defaultSymbolFilter(model, Qt::Vertical);
+    mCurrentIdentifierFilter = mDefaultIdentifierFilter;
+    mDefaultAggregation = getDefaultAggregation();
+    mCurrentAggregation = mDefaultAggregation;
 }
 
 void MinMaxTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,

@@ -16,6 +16,11 @@ private slots:
     void test_constructor_initialize();
     void test_default();
     void test_getSet();
+
+    void test_modelMinimum_default();
+    void test_setModelMinimum();
+    void test_modelMaximum_default();
+    void test_setModelMaximum();
 };
 
 TestEmptyModelInstance::TestEmptyModelInstance()
@@ -48,8 +53,8 @@ void TestEmptyModelInstance::test_default()
     QCOMPARE(instance.systemDirectory(), QString());
     QCOMPARE(instance.scratchDirectory(), QString());
     QCOMPARE(instance.useOutput(), false);
-    QCOMPARE(instance.modelMinimum(), 0.0);
-    QCOMPARE(instance.modelMaximum(), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::Unknown), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::Unknown), 0.0);
     QCOMPARE(instance.logMessages(), QString());
     QCOMPARE(instance.modelName(), QString());
     QCOMPARE(instance.equationCount(EquationType::E), 0);
@@ -125,6 +130,86 @@ void TestEmptyModelInstance::test_getSet()
     QCOMPARE(instance.scratchDirectory(), "my_scratch_dir");
     instance.setUseOutput(true);
     QCOMPARE(instance.useOutput(), true);
+}
+
+void TestEmptyModelInstance::test_modelMinimum_default()
+{
+    EmptyModelInstance instance;
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::EqnAttributes), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::VarAttributes), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::Jaccobian), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::Full), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::MinMax), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::Statistic), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::SymbolEqnView), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::SymbolVarView), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::SymbolView), 0.0);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::Unknown), 0.0);
+}
+
+void TestEmptyModelInstance::test_setModelMinimum()
+{
+    EmptyModelInstance instance;
+    instance.setModelMinimum(1, PredefinedViewEnum::EqnAttributes);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::EqnAttributes), 1);
+    instance.setModelMinimum(2, PredefinedViewEnum::VarAttributes);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::VarAttributes), 2);
+    instance.setModelMinimum(3, PredefinedViewEnum::Jaccobian);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::Jaccobian), 3);
+    instance.setModelMinimum(4, PredefinedViewEnum::Full);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::Full), 1);
+    instance.setModelMinimum(5, PredefinedViewEnum::MinMax);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::MinMax), 5);
+    instance.setModelMinimum(6, PredefinedViewEnum::Statistic);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::Statistic), 0);
+    instance.setModelMinimum(7, PredefinedViewEnum::SymbolEqnView);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::SymbolEqnView), 0.0);
+    instance.setModelMinimum(8, PredefinedViewEnum::SymbolVarView);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::SymbolVarView), 0.0);
+    instance.setModelMinimum(9, PredefinedViewEnum::SymbolView);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::SymbolView), 0.0);
+    instance.setModelMinimum(10, PredefinedViewEnum::Unknown);
+    QCOMPARE(instance.modelMinimum(PredefinedViewEnum::Unknown), 0.0);
+}
+
+void TestEmptyModelInstance::test_modelMaximum_default()
+{
+    EmptyModelInstance instance;
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::EqnAttributes), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::VarAttributes), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::Jaccobian), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::Full), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::MinMax), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::Statistic), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::SymbolEqnView), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::SymbolVarView), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::SymbolView), 0.0);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::Unknown), 0.0);
+}
+
+void TestEmptyModelInstance::test_setModelMaximum()
+{
+    EmptyModelInstance instance;
+    instance.setModelMaximum(1, PredefinedViewEnum::EqnAttributes);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::EqnAttributes), 1);
+    instance.setModelMaximum(2, PredefinedViewEnum::VarAttributes);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::VarAttributes), 2);
+    instance.setModelMaximum(3, PredefinedViewEnum::Jaccobian);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::Jaccobian), 3);
+    instance.setModelMaximum(4, PredefinedViewEnum::Full);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::Full), 3);
+    instance.setModelMaximum(5, PredefinedViewEnum::MinMax);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::MinMax), 5);
+    instance.setModelMaximum(6, PredefinedViewEnum::Statistic);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::Statistic), 0.0);
+    instance.setModelMaximum(7, PredefinedViewEnum::SymbolEqnView);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::SymbolEqnView), 0.0);
+    instance.setModelMaximum(8, PredefinedViewEnum::SymbolVarView);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::SymbolVarView), 0.0);
+    instance.setModelMaximum(9, PredefinedViewEnum::SymbolView);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::SymbolView), 0.0);
+    instance.setModelMaximum(10, PredefinedViewEnum::Unknown);
+    QCOMPARE(instance.modelMaximum(PredefinedViewEnum::Unknown), 0.0);
 }
 
 QTEST_APPLESS_MAIN(TestEmptyModelInstance)

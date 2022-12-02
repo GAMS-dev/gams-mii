@@ -229,6 +229,36 @@ struct ValueFilter
         }
         return false;
     }
+
+    static double minValue(double value, double newValue)
+    {
+        if (value == 0.0) {
+            return newValue;
+        } else if (newValue != 0.0) {
+            return std::min(value, newValue);
+        }
+        return value;
+    }
+
+    static double maxValue(double value, double newValue)
+    {
+        if (value == 0.0) {
+            return newValue;
+        } else if (newValue != 0.0) {
+            return std::max(value, newValue);
+        }
+        return value;
+    }
+
+    static bool isSpecialValue(const QVariant &value)
+    {
+        auto str = value.toString();
+        return !str.compare(EPS, Qt::CaseInsensitive) ||
+                !str.compare(INF, Qt::CaseInsensitive) ||
+                !str.compare(P_INF, Qt::CaseInsensitive) ||
+                !str.compare(N_INF, Qt::CaseInsensitive) ||
+                !str.compare(NA, Qt::CaseInsensitive);
+    }
 };
 
 }
