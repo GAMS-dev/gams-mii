@@ -41,7 +41,7 @@ bool IdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
                 item.SymbolIndex == sectionIndex) {
             return false;
         }
-        auto sym = symbol(item.SymbolType, sectionIndex);
+        auto sym = mModelInstance->variable(sectionIndex);
         if (item.Text == sym.name() && sectionIndex >= sym.firstSection() &&
                 sectionIndex <= sym.lastSection()) {
             return false;
@@ -67,20 +67,13 @@ bool IdentifierFilterModel::filterAcceptsRow(int sourceRow,
                 item.SymbolIndex == sectionIndex) {
             return false;
         }
-        auto sym = symbol(item.SymbolType, sectionIndex);
+        auto sym = mModelInstance->equation(sectionIndex);
         if (item.Text == sym.name() && sectionIndex >= sym.firstSection() &&
                 sectionIndex <= sym.lastSection()) {
             return false;
         }
     }
     return true;
-}
-
-Symbol IdentifierFilterModel::symbol(DataSource dataSource, int sectionIndex) const
-{
-    if (dataSource == DataSource::EquationData)
-        return mModelInstance->equation(sectionIndex);
-    return mModelInstance->variable(sectionIndex);
 }
 
 IdentifierLabelFilterModel::IdentifierLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
@@ -125,7 +118,7 @@ bool IdentifierLabelFilterModel::filterAcceptsColumn(int sourceColumn,
 
     if (mIdentifierFilter[Qt::Horizontal].isEmpty())
         return true;
-    int firstSection = startSection(mIdentifierFilter[Qt::Horizontal].first().SymbolType, sectionIndex);
+    int firstSection = mModelInstance->variable(sectionIndex).firstSection();
     if (firstSection < 0) return true;
     auto item = mIdentifierFilter[Qt::Horizontal][firstSection];
     for (auto iter=item.CheckStates.keyValueBegin(); iter!=item.CheckStates.keyValueEnd(); ++iter) {
@@ -147,7 +140,7 @@ bool IdentifierLabelFilterModel::filterAcceptsRow(int sourceRow,
 
     if (mIdentifierFilter[Qt::Vertical].isEmpty())
         return true;
-    int firstSection = startSection(mIdentifierFilter[Qt::Vertical].first().SymbolType, sectionIndex);
+    int firstSection = mModelInstance->equation(sectionIndex).firstSection();
     if (firstSection < 0) return true;
     auto item = mIdentifierFilter[Qt::Vertical][firstSection];
     for (auto iter=item.CheckStates.keyValueBegin(); iter!=item.CheckStates.keyValueEnd(); ++iter) {
@@ -156,13 +149,6 @@ bool IdentifierLabelFilterModel::filterAcceptsRow(int sourceRow,
         }
     }
     return true;
-}
-
-int IdentifierLabelFilterModel::startSection(DataSource dataSource, int sectionIndex) const
-{
-    if (dataSource == DataSource::EquationData)
-        return mModelInstance->equation(sectionIndex).firstSection();
-    return mModelInstance->variable(sectionIndex).firstSection();
 }
 
 }

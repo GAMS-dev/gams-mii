@@ -120,16 +120,6 @@ public:
                    Qt::Orientation orientation,
                    int view) const override;
 
-
-    void searchHeaderData(int logicalIndex,
-                          int sectionIndex,
-                          const QString &term,
-                          bool isRegEx,
-                          DataSource symbolType,
-                          Qt::Orientation orientation,
-                          QList<SearchResult> &result) override;
-
-
     // TODO review,move,scope: used by DataHandler only
     DataRow jaccobianRow(int row);
     QVariant horizontalAttribute(const QString &header, int column);

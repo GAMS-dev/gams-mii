@@ -400,8 +400,6 @@ void MainWindow::loadGAMSModel(const QString &path)
 void MainWindow::setGlobalFiltersData()
 {
     mFilterDialog->setViewType(ui->modelInspector->viewType());
-    mFilterDialog->setHorizontalDataSource(ui->modelInspector->horizontalDataSource());
-    mFilterDialog->setVerticalDataSource(ui->modelInspector->verticalDataSource());
     mFilterDialog->setValueFilter(ui->modelInspector->valueFilter());
     mFilterDialog->setDefaultValueFilter(ui->modelInspector->defaultValueFilter());
     mFilterDialog->setIdentifierFilter(ui->modelInspector->identifierFilter());

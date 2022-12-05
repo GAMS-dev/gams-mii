@@ -104,7 +104,7 @@ QList<SearchResult> ModelInspector::searchHeaders(const QString &term,
                                                   bool isRegEx)
 {
     auto frame = currentView();
-    return frame ? frame->searchHeaders(term, isRegEx) : QList<SearchResult>();
+    return frame ? frame->search(term, isRegEx) : QList<SearchResult>();
 }
 
 ViewActionStates ModelInspector::viewActionStates() const
@@ -207,18 +207,6 @@ void ModelInspector::setAggregation(const Aggregation &aggregation)
 {
     auto frame = currentView();
     if (frame) frame->setAggregation(aggregation, ui->stackedWidget->currentIndex());
-}
-
-DataSource ModelInspector::horizontalDataSource() const
-{
-    auto view = currentView();
-    return view ? view->horizontalDataSource() : DataSource::VariableData;
-}
-
-DataSource ModelInspector::verticalDataSource() const
-{
-    auto view = currentView();
-    return view ? view->verticalDataSource() : DataSource::EquationData;
 }
 
 PredefinedViewEnum ModelInspector::viewType() const
@@ -333,7 +321,6 @@ IdentifierFilter ModelInspector::newIdentifierFilter(const IdentifierFilter &cur
     Q_FOREACH(auto state, currentFilter[Qt::Vertical]) {
         if (state.SymbolIndex < PredefinedHeaderLength)
             continue;
-        state.SymbolType = DataSource::EquationData;
         Q_FOREACH(auto symbol, eqnFilter) {
             if (state.Text == symbol.name()) {
                 state.Checked = Qt::Checked;
@@ -347,7 +334,6 @@ IdentifierFilter ModelInspector::newIdentifierFilter(const IdentifierFilter &cur
     Q_FOREACH(auto state, currentFilter[Qt::Horizontal]) {
         if (state.SymbolIndex < PredefinedHeaderLength)
             continue;
-        state.SymbolType = DataSource::VariableData;
         Q_FOREACH(auto symbol, varFilter) {
             if (state.Text == symbol.name()) {
                 state.Checked = Qt::Checked;

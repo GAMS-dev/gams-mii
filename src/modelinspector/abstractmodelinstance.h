@@ -156,14 +156,6 @@ public:
                            Qt::Orientation orientation,
                            int view) const = 0;
 
-    virtual void searchHeaderData(int logicalIndex,
-                                  int sectionIndex,
-                                  const QString &term,
-                                  bool isRegEx,
-                                  DataSource symbolType,
-                                  Qt::Orientation orientation,
-                                  QList<SearchResult> &result) = 0;
-
 protected:
     QString mScratchDir;
     QString mWorkspace;
@@ -242,15 +234,6 @@ public:
     int headerData(int logicalIndex,
                    Qt::Orientation orientation,
                    int view) const override;
-
-    void searchHeaderData(int logicalIndex,
-                          int sectionIndex,
-                          const QString &term,
-                          bool isRegEx,
-                          DataSource symbolType,
-                          Qt::Orientation orientation,
-                          QList<SearchResult> &result) override;
-
 
 private:
     QVector<Symbol> mSymbols;

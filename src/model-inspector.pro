@@ -93,6 +93,7 @@ SOURCES += \
     modelinspector/modelinspector.cpp \
     modelinspector/modelinstancetablemodel.cpp \
     modelinspector/modelinstancetableview.cpp \
+    modelinspector/search.cpp \
     modelinspector/searchresultmodel.cpp \
     modelinspector/sectiontreeitem.cpp \
     modelinspector/sectiontreemodel.cpp \
@@ -132,6 +133,7 @@ HEADERS += \
     modelinspector/modelinspector.h \
     modelinspector/modelinstancetablemodel.h \
     modelinspector/modelinstancetableview.h \
+    modelinspector/search.h \
     modelinspector/searchresultmodel.h \
     modelinspector/sectiontreeitem.h \
     modelinspector/sectiontreemodel.h \

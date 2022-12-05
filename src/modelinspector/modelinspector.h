@@ -85,9 +85,6 @@ public:
     Aggregation defaultAggregation() const;
     void setAggregation(const Aggregation &aggregation);
 
-    DataSource horizontalDataSource() const;
-    DataSource verticalDataSource() const;
-
     PredefinedViewEnum viewType() const;
 
     void resetColumnRowFilter();

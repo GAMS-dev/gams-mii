@@ -5,7 +5,6 @@
 #include <QSortFilterProxyModel>
 
 #include "common.h"
-#include "symbol.h"
 
 namespace gams {
 namespace studio {
@@ -41,8 +40,6 @@ private:
                              int sectionIndex) const;
     bool matchesAnyRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
                              int sectionIndex) const;
-
-    Symbol symbol(DataSource dataSource, int sectionIndex) const;
 
 private:
     QSharedPointer<AbstractModelInstance> mModelInstance;

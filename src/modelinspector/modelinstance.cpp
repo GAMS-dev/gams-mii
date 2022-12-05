@@ -772,47 +772,6 @@ QString ModelInstance::headerData(int sectionIndex, int dimension, Qt::Orientati
     return eqn.label(sectionIndex, dimension);
 }
 
-void ModelInstance::searchHeaderData(int logicalIndex,
-                                     int sectionIndex,
-                                     const QString &term,
-                                     bool isRegEx,
-                                     DataSource dataSource,
-                                     Qt::Orientation orientation,
-                                     QList<SearchResult> &result)
-{
-    std::function<bool(const QString&)> compare;
-    if (isRegEx) {
-        QRegExp regex(term);
-        compare = [regex](const QString &text) {
-            return regex.exactMatch(text);
-        };
-    } else {
-        compare = [&term](const QString &text) {
-            return text.contains(term, Qt::CaseInsensitive);
-        };
-    }
-
-    if (sectionIndex < PredefinedHeaderLength && compare(PredefinedHeader.at(sectionIndex))) {
-        result.append(SearchResult{logicalIndex, orientation});
-        return;
-    }
-
-    auto sourceOrientation = dataSource == DataSource::VariableData ? Qt::Horizontal
-                                                                    : Qt::Vertical;
-    auto sym = mSymbolCache->sectionSymbol(sectionIndex, sourceOrientation);
-    if (compare(sym.name())) {
-        result.append(SearchResult{logicalIndex, orientation});
-    } else {
-        auto labels = sym.sectionLabels()[sectionIndex];
-        Q_FOREACH(const auto label, labels) {
-            if (compare(label)) {
-                result.append(SearchResult{logicalIndex, orientation});
-                break;
-            }
-        }
-    }
-}
-
 void ModelInstance::initialize()
 {
     gevSetExitIndicator(0); // switch of lib exit() call

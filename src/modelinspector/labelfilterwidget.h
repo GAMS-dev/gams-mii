@@ -28,8 +28,6 @@ public:
 
     void setData(FilterTreeItem *rootItem);
 
-    void setSymbolType(DataSource type);
-
 protected:
     void showEvent(QShowEvent *event);
 
@@ -53,7 +51,6 @@ private:
     Ui::LabelFilterWidget *ui;
     Qt::Orientation mOrientation;
     QSortFilterProxyModel *mFilterModel;
-    DataSource mSymbolType;
 };
 
 

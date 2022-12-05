@@ -39,11 +39,6 @@ void LabelFilterWidget::setData(FilterTreeItem *rootItem)
             this, &LabelFilterWidget::applyFilter);
 }
 
-void LabelFilterWidget::setSymbolType(DataSource type)
-{
-    mSymbolType = type;
-}
-
 void LabelFilterWidget::showEvent(QShowEvent *event)
 {
     applyFilter(ui->labelEdit->text());
@@ -99,7 +94,6 @@ IdentifierState LabelFilterWidget::identifierState()
     };
     IdentifierState state;
     state.Enabled = true;
-    state.SymbolType = mSymbolType;
     state.SectionIndex = items.first()->sectionIndex();
     state.SymbolIndex = items.first()->symbolIndex();
     state.Text = items.first()->text();

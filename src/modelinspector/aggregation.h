@@ -38,6 +38,7 @@ public:
     void setAggregatedLabelTree(QSharedPointer<LabelTreeItem> labelTree);
 
     QString label(int sectionIndex, int dimension) const;
+    const SectionLabels& labels() const;
     void setLabels(const SectionLabels &labels);
 
     const QList<int>& mappedSections() const;
@@ -150,10 +151,8 @@ public:
      * @brief Index to equation mapping for MinMax view.
      * @todo Probably extended to variables.
      */
-    QMap<int, Symbol>& indexToSymbol(DataSource dataSource) {
-        if (DataSource::EquationData == dataSource)
-            return mIndexToEquations;
-        return mIndexToVariables;
+    QMap<int, Symbol>& indexToSymbol(Qt::Orientation orientation) {
+        return orientation == Qt::Vertical ? mIndexToEquations : mIndexToVariables;
     }
 
     const QMap<int, Symbol>& indexToEquation() const {

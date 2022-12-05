@@ -69,6 +69,11 @@ QString AggregationItem::label(int sectionIndex, int dimension) const
     return QString();
 }
 
+const SectionLabels &AggregationItem::labels() const
+{
+    return mLabels;
+}
+
 void AggregationItem::setLabels(const SectionLabels &labels)
 {
     mLabels = labels;

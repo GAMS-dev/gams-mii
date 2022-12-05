@@ -31,9 +31,6 @@ public:
 
     void setModel(QAbstractItemModel *model) override;
 
-    DataSource dataSource() const;
-    void setDataSource(DataSource dataSource);
-
     PredefinedViewEnum viewType() const;
     void setViewType(PredefinedViewEnum viewType);
 

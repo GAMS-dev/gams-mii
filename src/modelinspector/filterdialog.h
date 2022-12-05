@@ -39,12 +39,6 @@ public:
     void setLabelFilter(const LabelFilter &filter);
     void setDefaultLabelFilter(const LabelFilter &filter);
 
-    DataSource horizontalDataSource() const;
-    void setHorizontalDataSource(DataSource dataSource);
-
-    DataSource verticalDataSource() const;
-    void setVerticalDataSource(DataSource dataSource);
-
     PredefinedViewEnum viewType() const;
     void setViewType(PredefinedViewEnum viewType);
 
@@ -85,8 +79,7 @@ private:
     void applyCheckState(QTreeView* view,
                          QSortFilterProxyModel *model,
                          Qt::CheckState state);
-    IdentifierStates applyHeaderFilter(QSortFilterProxyModel *model,
-                                       DataSource dataSource);
+    IdentifierStates applyHeaderFilter(QSortFilterProxyModel *model);
     void applyValueFilter();
     LabelCheckStates applyLabelFilter(Qt::Orientation orientation,
                                       QSortFilterProxyModel *model);
@@ -96,11 +89,11 @@ private:
     void disableAttributes(QSortFilterProxyModel *model);
 
     Qt::Orientation equationOrientation() const {
-        return mVerticalDataSource == DataSource::EquationData ? Qt::Vertical : Qt::Horizontal;
+        return Qt::Vertical;
     }
 
     Qt::Orientation variableOrientation() const {
-        return mHorizontalDataSource == DataSource::VariableData ? Qt::Horizontal : Qt::Vertical;
+        return Qt::Horizontal;
     }
 
 private:
@@ -118,9 +111,6 @@ private:
     QSortFilterProxyModel *mEqnFilterModel;
     QSortFilterProxyModel *mVarFilterModel;
     QSortFilterProxyModel *mLabelFilterModel;
-
-    DataSource mHorizontalDataSource;
-    DataSource mVerticalDataSource;
 };
 
 }

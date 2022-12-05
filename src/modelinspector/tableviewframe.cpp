@@ -10,6 +10,7 @@
 #include "jaccobiantablemodel.h"
 #include "modelinstancetablemodel.h"
 #include "abstractmodelinstance.h"
+#include "search.h"
 
 #include <QAction>
 #include <QMenu>
@@ -78,6 +79,12 @@ const Aggregation &TableViewFrame::aggregation() const
     return mCurrentAggregation;
 }
 
+const Aggregation &TableViewFrame::appliedAggregation() const
+{
+    return mAggregationModel ? mAggregationModel->appliedAggregation()
+                             : mCurrentAggregation;
+}
+
 const Aggregation &TableViewFrame::defaultAggregation() const
 {
     return mDefaultAggregation;
@@ -98,16 +105,6 @@ void TableViewFrame::setAggregation(const Aggregation &aggregation, int view)
 PredefinedViewEnum TableViewFrame::type() const
 {
     return PredefinedViewEnum::Unknown;
-}
-
-DataSource TableViewFrame::horizontalDataSource() const
-{
-    return DataSource::VariableData;
-}
-
-DataSource TableViewFrame::verticalDataSource() const
-{
-    return DataSource::EquationData;
 }
 
 void TableViewFrame::setShowAbsoluteValues(bool absoluteValues)
@@ -176,6 +173,17 @@ void TableViewFrame::reset(PredefinedViewEnum view)
     updateView();
 }
 
+QList<SearchResult> TableViewFrame::search(const QString &term, bool isRegEx)
+{
+    QList<SearchResult> result;
+    if (!term.isEmpty()) {
+        Search search(mModelInstance, ui->tableView->model(),
+                      appliedAggregation(), term, isRegEx);
+        search.run(result);
+    }
+    return result;
+}
+
 void TableViewFrame::zoomIn()
 {
     ui->tableView->zoomIn(ZoomFactor);
@@ -239,6 +247,7 @@ Aggregation TableViewFrame::appliedAggregation(const Aggregation &aggregation, i
                                                      labelFilter().LabelCheckStates.value(mapIter->first),
                                                      labelFilter().Any);
                         aggregator.aggregate(item, aggregation.type(), aggregation.typeText(), lastSymEndIndex);
+                        appliedAggregation.indexToSymbol(Qt::Horizontal)[item.symbolIndex()] = symbol;
                         map[mapIter->first][item.symbolIndex()] = item;
                         break;
                     }
@@ -255,6 +264,7 @@ Aggregation TableViewFrame::appliedAggregation(const Aggregation &aggregation, i
                                                      labelFilter().LabelCheckStates.value(mapIter->first),
                                                      labelFilter().Any);
                         aggregator.aggregate(item, aggregation.type(), aggregation.typeText(), lastSymEndIndex);
+                        appliedAggregation.indexToSymbol(Qt::Vertical)[item.symbolIndex()] = symbol;
                         map[mapIter->first][item.symbolIndex()] = item;
                         break;
                     }
@@ -331,12 +341,10 @@ Aggregation TableViewFrame::getDefaultAggregation() const
 
 void TableViewFrame::setIdentifierFilterCheckState(int symbolIndex,
                                                    Qt::CheckState state,
-                                                   Qt::Orientation orientation,
-                                                   DataSource dataSource)
+                                                   Qt::Orientation orientation)
 {
     auto symbols = mCurrentIdentifierFilter[orientation];
     for (auto iter=symbols.begin(); iter!=symbols.end(); ++iter) {
-        iter->SymbolType = dataSource;
         if (iter->SymbolIndex == symbolIndex) {
             iter->Checked = state;
             break;
@@ -411,32 +419,6 @@ void EqnTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIns
     ui->tableView->resizeRowsToContents();
 }
 
-QList<SearchResult> EqnTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
-{
-    if (term.isEmpty())
-        return QList<SearchResult>();
-    QList<SearchResult> result;
-    searchHeader(term, isRegEx, mHorizontalHeader->dataSource(), Qt::Horizontal, result);
-    searchHeader(term, isRegEx, mVerticalHeader->dataSource(), Qt::Vertical, result);
-    return result;
-}
-
-void EqnTableViewFrame::searchHeader(const QString &term, bool isRegEx,
-                                     DataSource dataSource,
-                                     Qt::Orientation orientation,
-                                     QList<SearchResult> &result)
-{
-    if (!mModelInstance) return;
-    bool ok;
-    int sections = orientation == Qt::Horizontal ? ui->tableView->model()->columnCount() :
-                                                   ui->tableView->model()->rowCount();
-    for (int s=0; s<sections; ++s) {
-        int realSection = ui->tableView->model()->headerData(s, orientation).toInt(&ok);
-        if (!ok) continue;
-        mModelInstance->searchHeaderData(s, realSection, term, isRegEx, dataSource, orientation, result);
-    }
-}
-
 void EqnTableViewFrame::setLabelFilter(const LabelFilter &filter)
 {
     TableViewFrame::setLabelFilter(filter);
@@ -487,8 +469,7 @@ void EqnTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspec
         return;
     }
     if (state.disabled() && mIdentifierFilterModel) {
-        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked,
-                                      orientation, state.SymbolType);
+        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
         mIdentifierFilterModel->setIdentifierFilter(mCurrentIdentifierFilter);
     } else {
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
@@ -523,14 +504,12 @@ void VarTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIns
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                                    mModelInstance,
                                                    ui->tableView);
-    mHorizontalHeader->setDataSource(DataSource::VariableData);
     mHorizontalHeader->setViewType(PredefinedViewEnum::VarAttributes);
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &VarTableViewFrame::setIdentifierLabelFilter);
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
-    mVerticalHeader->setDataSource(DataSource::EquationData);
     mVerticalHeader->setViewType(PredefinedViewEnum::VarAttributes);
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &VarTableViewFrame::setIdentifierLabelFilter);
@@ -564,16 +543,6 @@ void VarTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIns
 
     ui->tableView->resizeColumnsToContents();
     ui->tableView->resizeRowsToContents();
-}
-
-QList<SearchResult> VarTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
-{
-    if (term.isEmpty())
-        return QList<SearchResult>();
-    QList<SearchResult> result;
-    searchHeader(term, isRegEx, mHorizontalHeader->dataSource(), Qt::Horizontal, result);
-    searchHeader(term, isRegEx, mVerticalHeader->dataSource(), Qt::Vertical, result);
-    return result;
 }
 
 void VarTableViewFrame::setLabelFilter(const LabelFilter &filter)
@@ -641,8 +610,7 @@ void VarTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspec
         return;
     }
     if (state.disabled() && mIdentifierFilterModel) {
-        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked,
-                                      orientation, state.SymbolType);
+        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
         mIdentifierFilterModel->setIdentifierFilter(mCurrentIdentifierFilter);
     } else {
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
@@ -650,22 +618,6 @@ void VarTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspec
     }
     updateView();
     emit filtersChanged();
-}
-
-void VarTableViewFrame::searchHeader(const QString &term, bool isRegEx,
-                                     DataSource dataSource,
-                                     Qt::Orientation orientation,
-                                     QList<SearchResult> &result)
-{
-    if (!mModelInstance) return;
-    bool ok;
-    int sections = orientation == Qt::Horizontal ? ui->tableView->model()->columnCount() :
-                                                   ui->tableView->model()->rowCount();
-    for (int s=0; s<sections; ++s) {
-        int realSection = ui->tableView->model()->headerData(s, orientation).toInt(&ok);
-        if (!ok) continue;
-        mModelInstance->searchHeaderData(s, realSection, term, isRegEx, dataSource, orientation, result);
-    }
 }
 
 JaccTableViewFrame::JaccTableViewFrame(QWidget *parent, Qt::WindowFlags f)
@@ -736,16 +688,6 @@ void JaccTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     ui->tableView->resizeRowsToContents();
 }
 
-QList<SearchResult> JaccTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
-{
-    if (term.isEmpty())
-        return QList<SearchResult>();
-    QList<SearchResult> result;
-    searchHeader(term, isRegEx, mHorizontalHeader->dataSource(), Qt::Horizontal, result);
-    searchHeader(term, isRegEx, mVerticalHeader->dataSource(), Qt::Vertical, result);
-    return result;
-}
-
 void JaccTableViewFrame::setLabelFilter(const LabelFilter &filter)
 {
     TableViewFrame::setLabelFilter(filter);
@@ -774,8 +716,7 @@ void JaccTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspe
         return;
     }
     if (state.disabled() && mIdentifierFilterModel) {
-        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked,
-                                      orientation, state.SymbolType);
+        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
         mIdentifierFilterModel->setIdentifierFilter(mCurrentIdentifierFilter);
     } else {
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
@@ -783,22 +724,6 @@ void JaccTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspe
     }
     updateView();
     emit filtersChanged();
-}
-
-void JaccTableViewFrame::searchHeader(const QString &term, bool isRegEx,
-                                      DataSource dataSource,
-                                      Qt::Orientation orientation,
-                                      QList<SearchResult> &result)
-{
-    if (!mModelInstance) return;
-    bool ok;
-    int sections = orientation == Qt::Horizontal ? ui->tableView->model()->columnCount() :
-                                                   ui->tableView->model()->rowCount();
-    for (int s=0; s<sections; ++s) {
-        int realSection = ui->tableView->model()->headerData(s, orientation).toInt(&ok);
-        if (!ok) continue;
-        mModelInstance->searchHeaderData(s, realSection, term, isRegEx, dataSource, orientation, result);
-    }
 }
 
 FullTableViewFrame::FullTableViewFrame(QWidget *parent, Qt::WindowFlags f)
@@ -869,16 +794,6 @@ void FullTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     ui->tableView->resizeRowsToContents();
 }
 
-QList<SearchResult> FullTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
-{
-    if (term.isEmpty())
-        return QList<SearchResult>();
-    QList<SearchResult> result;
-    searchHeader(term, isRegEx, mHorizontalHeader->dataSource(), Qt::Horizontal, result);
-    searchHeader(term, isRegEx, mVerticalHeader->dataSource(), Qt::Vertical, result);
-    return result;
-}
-
 void FullTableViewFrame::setLabelFilter(const LabelFilter &filter)
 {
     TableViewFrame::setLabelFilter(filter);
@@ -907,8 +822,7 @@ void FullTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspe
         return;
     }
     if (state.disabled() && mIdentifierFilterModel) {
-        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked,
-                                      orientation, state.SymbolType);
+        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
         mIdentifierFilterModel->setIdentifierFilter(mCurrentIdentifierFilter);
     } else {
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
@@ -916,22 +830,6 @@ void FullTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspe
     }
     updateView();
     emit filtersChanged();
-}
-
-void FullTableViewFrame::searchHeader(const QString &term, bool isRegEx,
-                                      DataSource dataSource,
-                                      Qt::Orientation orientation,
-                                      QList<SearchResult> &result)
-{
-    if (!mModelInstance) return;
-    bool ok;
-    int sections = orientation == Qt::Horizontal ? ui->tableView->model()->columnCount() :
-                                                   ui->tableView->model()->rowCount();
-    for (int s=0; s<sections; ++s) {
-        int realSection = ui->tableView->model()->headerData(s, orientation).toInt(&ok);
-        if (!ok) continue;
-        mModelInstance->searchHeaderData(s, realSection, term, isRegEx, dataSource, orientation, result);
-    }
 }
 
 MinMaxTableViewFrame::MinMaxTableViewFrame(QWidget *parent, Qt::WindowFlags f)
@@ -957,6 +855,11 @@ TableViewFrame* MinMaxTableViewFrame::clone(int view)
 QAbstractItemModel* MinMaxTableViewFrame::model() const
 {
     return ui->tableView->model();
+}
+
+const Aggregation &MinMaxTableViewFrame::appliedAggregation() const
+{
+    return mModelInstanceModel->appliedAggregation();
 }
 
 void MinMaxTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view)
@@ -1002,16 +905,6 @@ void MinMaxTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> model
 
     ui->tableView->resizeColumnsToContents();
     ui->tableView->resizeRowsToContents();
-}
-
-QList<SearchResult> MinMaxTableViewFrame::searchHeaders(const QString &term, bool isRegEx)
-{
-    if (term.isEmpty())
-        return QList<SearchResult>();
-    QList<SearchResult> result;
-    searchHeader(term, isRegEx, mHorizontalHeader->dataSource(), Qt::Horizontal, result);
-    searchHeader(term, isRegEx, mVerticalHeader->dataSource(), Qt::Vertical, result);
-    return result;
 }
 
 void MinMaxTableViewFrame::setLabelFilter(const LabelFilter &filter)
@@ -1114,8 +1007,7 @@ void MinMaxTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelins
         return;
     }
     if (state.disabled() && mIdentifierFilterModel) {
-        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked,
-                                      orientation, state.SymbolType);
+        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
         mIdentifierFilterModel->setIdentifierFilter(mCurrentIdentifierFilter);
     } else {
         mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
@@ -1184,18 +1076,18 @@ Aggregation MinMaxTableViewFrame::appliedAggregation(const Aggregation &aggregat
 
                         if (lastSymEndIndex < 0) lastSymEndIndex = item.symbolIndex();
                         for (int i=lastSymEndIndex; i<lastSymEndIndex+item.visibleSectionCount(); ++i) {
-                            appliedAggregation.indexToSymbol(DataSource::VariableData)[i] = symbol;
+                            appliedAggregation.indexToSymbol(Qt::Horizontal)[i] = symbol;
                         }
                         lastSymEndIndex += item.visibleSectionCount();
                         map[mapIter->first][item.symbolIndex()] = item;
                         break;
                     } else {
-                        if (appliedAggregation.indexToSymbol(DataSource::VariableData).contains(symbol.firstSection()))
+                        if (appliedAggregation.indexToSymbol(Qt::Horizontal).contains(symbol.firstSection()))
                             continue;
                         if (lastSymEndIndex < 0) lastSymEndIndex = item.symbolIndex();
                         int sectionCount = symbol.entries();
                         for (int i=lastSymEndIndex; i<lastSymEndIndex+sectionCount; ++i) {
-                            appliedAggregation.indexToSymbol(DataSource::VariableData)[i] = symbol;
+                            appliedAggregation.indexToSymbol(Qt::Horizontal)[i] = symbol;
                         }
                         lastSymEndIndex += sectionCount;
                     }
@@ -1214,8 +1106,8 @@ Aggregation MinMaxTableViewFrame::appliedAggregation(const Aggregation &aggregat
                         aggregator.aggregate(item, aggregation.type(), aggregation.typeText(), lastSymEndIndex);
                         map[mapIter->first][item.newSymbolIndex()] = item;
                         appliedAggregation.startSectionMapping()[item.symbolIndex()] = item.newSymbolIndex();
-                        appliedAggregation.indexToSymbol(DataSource::EquationData)[item.newSymbolIndex()] = symbol;
-                        appliedAggregation.indexToSymbol(DataSource::EquationData)[item.newSymbolIndex()+1] = symbol;
+                        appliedAggregation.indexToSymbol(Qt::Vertical)[item.newSymbolIndex()] = symbol;
+                        appliedAggregation.indexToSymbol(Qt::Vertical)[item.newSymbolIndex()+1] = symbol;
                         break;
                     }
                 }
@@ -1300,21 +1192,6 @@ void MinMaxTableViewFrame::handleRowColumnSelection(PredefinedViewEnum type)
     emit newModelView(type);
 }
 
-void MinMaxTableViewFrame::searchHeader(const QString &term, bool isRegEx,
-                                        DataSource dataSource,
-                                        Qt::Orientation orientation,
-                                        QList<SearchResult> &result)
-{
-    if (!mModelInstance) return;
-    bool ok;
-    int sections = orientation == Qt::Horizontal ? ui->tableView->model()->columnCount() :
-                                                   ui->tableView->model()->rowCount();
-    for (int s=0; s<sections; ++s) {
-        int realSection = ui->tableView->model()->headerData(s, orientation).toInt(&ok);
-        if (!ok) continue;
-        mModelInstance->searchHeaderData(s, realSection, term, isRegEx, dataSource, orientation, result);
-    }
-}
 }
 }
 }

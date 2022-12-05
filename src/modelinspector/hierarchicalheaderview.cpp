@@ -23,18 +23,7 @@ public:
     HierarchicalHeaderView_private(const HierarchicalHeaderView *headerView)
         : mHeaderView(headerView)
     {
-        setDataSource(mHeaderView->orientation() == Qt::Horizontal ? DataSource::VariableData
-                                                                   : DataSource::EquationData);
-    }
 
-    DataSource dataSource() const
-    {
-        return mDataSource;
-    }
-
-    void setDataSource(DataSource dataSource)
-    {
-        mDataSource = dataSource;
     }
 
     IdentifierState& identifierState(int symbolIndex, Qt::Orientation orientation)
@@ -137,12 +126,14 @@ public:
         }
 
         paintHorizontalCell(painter, rect, styleOption, currentTop,
-                            mHeaderView->mModelInstance->headerData(sectionIndex, -1, symbolOrientation()),
+                            mHeaderView->mModelInstance->headerData(sectionIndex, -1,
+                                                                    mHeaderView->orientation()),
                             logicalIndex, sectionIndex, -1, true);
         if (mAppliedAggregation.type() != Aggregation::MinMax) {
             for (int d=0; d<horizontalSectionDimension(sectionIndex); ++d) {
                 paintHorizontalCell(painter, rect, styleOption, currentTop,
-                                    mHeaderView->mModelInstance->headerData(sectionIndex, d, symbolOrientation()),
+                                    mHeaderView->mModelInstance->headerData(sectionIndex, d,
+                                                                            mHeaderView->orientation()),
                                     logicalIndex, sectionIndex, d, false);
             }
             paintHorizontalCellSpacing(painter, rect, styleOption, currentTop, sectionIndex);
@@ -221,11 +212,11 @@ public:
         }
 
         paintVerticalCell(painter, rect, styleOption, currentLeft,
-                          mHeaderView->mModelInstance->headerData(sectionIndex, -1, symbolOrientation()),
+                          mHeaderView->mModelInstance->headerData(sectionIndex, -1, mHeaderView->orientation()),
                           logicalIndex, sectionIndex, -1, true);
         for (int d=0; d<verticalSectionDimension(sectionIndex); ++d) {
             paintVerticalCell(painter, rect, styleOption, currentLeft,
-                              mHeaderView->mModelInstance->headerData(sectionIndex, d, symbolOrientation()),
+                              mHeaderView->mModelInstance->headerData(sectionIndex, d, mHeaderView->orientation()),
                               logicalIndex, sectionIndex, d, false);
         }
         paintVerticalCellSpacing(painter, rect, styleOption, currentLeft, sectionIndex);
@@ -317,8 +308,8 @@ public:
             if (dimension >= 0 && mAppliedAggregation.aggregationMap()[mHeaderView->orientation()].contains(symbol.firstSection())) {
                 return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][symbol.firstSection()].label(sectionIndex, dimension);
             }
-        } else if (mAppliedAggregation.indexToSymbol(DataSource::EquationData).contains(sectionIndex)) {
-            auto index = mAppliedAggregation.indexToSymbol(DataSource::EquationData)[sectionIndex].firstSection();
+        } else if (mAppliedAggregation.indexToSymbol(Qt::Vertical).contains(sectionIndex)) {
+            auto index = mAppliedAggregation.indexToSymbol(Qt::Vertical)[sectionIndex].firstSection();
             auto startIndex = mAppliedAggregation.startSectionMapping()[index];
             return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][startIndex].label(sectionIndex, dimension < 0 ? 0 : dimension+1);
         }
@@ -410,14 +401,14 @@ public:
 
     Symbol symbol(int sectionIndex) const
     {
-        if (mDataSource == DataSource::EquationData)
+        if (mHeaderView->orientation() == Qt::Vertical)
             return mHeaderView->modelInstance()->equation(sectionIndex);
         return mHeaderView->modelInstance()->variable(sectionIndex);
     }
 
     int maximumSymbolDimension() const
     {
-        if (mDataSource == DataSource::EquationData)
+        if (mHeaderView->orientation() == Qt::Vertical)
             return mHeaderView->modelInstance()->maximumEquationDimension();
         return mHeaderView->modelInstance()->maximumVariableDimension();
     }
@@ -425,23 +416,18 @@ public:
 private:
     int symbolDimension() const
     {
-        if (mHeaderView->viewType() == PredefinedViewEnum::MinMax && mDataSource == DataSource::EquationData) {
+        if (mHeaderView->viewType() == PredefinedViewEnum::MinMax && mHeaderView->orientation() == Qt::Vertical) {
             return 1; // MinMax view has always diminsion 1
         }
-        return mDataSource == DataSource::VariableData ? mHeaderView->modelInstance()->maximumVariableDimension() :
-                                                         mHeaderView->modelInstance()->maximumEquationDimension();
+        return mHeaderView->orientation() == Qt::Horizontal ? mHeaderView->modelInstance()->maximumVariableDimension() :
+                                                              mHeaderView->modelInstance()->maximumEquationDimension();
     }
 
     QString longestSymbolText() const
     {
-        if (mDataSource == DataSource::VariableData)
+        if (mHeaderView->orientation() == Qt::Horizontal)
             return mHeaderView->mModelInstance->longestVariableText();
         return mHeaderView->mModelInstance->longestEquationText();
-    }
-
-    Qt::Orientation symbolOrientation() const
-    {
-        return mDataSource == DataSource::EquationData ? Qt::Vertical : Qt::Horizontal;
     }
 
     QVector<int> visibleLabelSections(int logicalIndex, int sectionIdx, const Symbol &symbol)
@@ -526,8 +512,6 @@ private:
     IdentifierLabelSections mVisibleLabelSections;
 
     Aggregation mAppliedAggregation;
-
-    DataSource mDataSource;
 };
 
 HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
@@ -575,16 +559,6 @@ void HierarchicalHeaderView::setModel(QAbstractItemModel *model)
     QHeaderView::setModel(model);
 }
 
-DataSource HierarchicalHeaderView::dataSource() const
-{
-    return mPrivate->dataSource();
-}
-
-void HierarchicalHeaderView::setDataSource(DataSource dataSource)
-{
-    mPrivate->setDataSource(dataSource);
-}
-
 PredefinedViewEnum HierarchicalHeaderView::viewType() const
 {
     return mViewType;
@@ -610,7 +584,6 @@ void HierarchicalHeaderView::customMenuRequested(const QPoint &position)
         return;
 
     auto filterTree = mPrivate->filterTree(logicalIndex, sectionIndex, symbol);
-    mFilterWidget->setSymbolType(mPrivate->dataSource());
     mFilterWidget->setData(filterTree);
     mFilterMenu->popup(viewport()->mapToGlobal(position));
 }

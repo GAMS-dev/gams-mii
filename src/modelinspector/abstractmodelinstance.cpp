@@ -331,23 +331,6 @@ int EmptyModelInstance::headerData(int logicalIndex,
     return 0;
 }
 
-void EmptyModelInstance::searchHeaderData(int logicalIndex,
-                                          int sectionIndex,
-                                          const QString &term,
-                                          bool isRegEx,
-                                          DataSource symbolType,
-                                          Qt::Orientation orientation,
-                                          QList<SearchResult> &result)
-{
-    Q_UNUSED(logicalIndex);
-    Q_UNUSED(sectionIndex);
-    Q_UNUSED(term);
-    Q_UNUSED(isRegEx);
-    Q_UNUSED(symbolType);
-    Q_UNUSED(orientation);
-    Q_UNUSED(result);
-}
-
 }
 }
 }

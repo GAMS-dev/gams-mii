@@ -61,15 +61,13 @@ public:
 
     const Aggregation& aggregation() const;
 
+    virtual const Aggregation& appliedAggregation() const;
+
     const Aggregation& defaultAggregation() const;
 
     virtual void setAggregation(const Aggregation &aggregation, int view);
 
     virtual PredefinedViewEnum type() const;
-
-    virtual DataSource horizontalDataSource() const;
-
-    virtual DataSource verticalDataSource() const;
 
     virtual void setShowAbsoluteValues(bool absoluteValues);
 
@@ -77,19 +75,19 @@ public:
 
     virtual void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) = 0;
 
-    virtual QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) = 0;
-
     virtual void setSearchSelection(const gams::studio::modelinspector::SearchResult &result);
 
     virtual void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter);
 
     virtual void reset(PredefinedViewEnum view);
 
-    void updateView();
+    QList<SearchResult> search(const QString &term, bool isRegEx);
 
     void zoomIn();
     void zoomOut();
     void resetZoom();
+
+    void updateView();
 
 signals:
     void newModelView(gams::studio::modelinspector::PredefinedViewEnum type);
@@ -106,8 +104,7 @@ protected:
                                          Qt::Orientation orientation) const;
 
     void setIdentifierFilterCheckState(int symbolIndex, Qt::CheckState state,
-                                       Qt::Orientation orientation,
-                                       DataSource dataSource);
+                                       Qt::Orientation orientation);
 
     virtual Aggregation getDefaultAggregation() const;
 
@@ -161,8 +158,6 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
 
-    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
-
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
@@ -173,12 +168,6 @@ protected:
 private slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
-
-private:
-    void searchHeader(const QString &term, bool isRegEx,
-                      DataSource dataSource,
-                      Qt::Orientation orientation,
-                      QList<SearchResult> &result);
 
 private:
     QSharedPointer<EquationAttributeTableModel> mBaseModel;
@@ -200,19 +189,7 @@ public:
         return PredefinedViewEnum::VarAttributes;
     }
 
-    DataSource horizontalDataSource() const override
-    {
-        return DataSource::VariableData;
-    }
-
-    DataSource verticalDataSource() const override
-    {
-        return DataSource::EquationData;
-    }
-
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
-
-    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
 
     void setLabelFilter(const LabelFilter &filter) override;
 
@@ -226,12 +203,6 @@ protected:
 private slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
-
-private:
-    void searchHeader(const QString &term, bool isRegEx,
-                      DataSource dataSource,
-                      Qt::Orientation orientation,
-                      QList<SearchResult> &result);
 
 private:
     QSharedPointer<VariableAttributeTableModel> mBaseModel;
@@ -255,8 +226,6 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
 
-    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
-
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
@@ -264,12 +233,6 @@ public:
 public slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
-
-private:
-    void searchHeader(const QString &term, bool isRegEx,
-                      DataSource dataSource,
-                      Qt::Orientation orientation,
-                      QList<SearchResult> &result);
 
 private:
     QSharedPointer<JaccobianTableModel> mBaseModel;
@@ -293,8 +256,6 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
 
-    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
-
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
@@ -302,12 +263,6 @@ public:
 public slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
-
-private:
-    void searchHeader(const QString &term, bool isRegEx,
-                      DataSource dataSource,
-                      Qt::Orientation orientation,
-                      QList<SearchResult> &result);
 
 private:
     QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;
@@ -329,9 +284,9 @@ public:
         return PredefinedViewEnum::MinMax;
     }
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
+    const Aggregation& appliedAggregation() const override;
 
-    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx) override;
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
 
     void setLabelFilter(const LabelFilter &filter) override;
 
@@ -363,12 +318,6 @@ protected:
 private:
     void setupSelectionMenu();
     void handleRowColumnSelection(PredefinedViewEnum type);
-
-    void searchHeader(const QString &term, bool isRegEx,
-                      DataSource dataSource,
-                      Qt::Orientation orientation,
-                      QList<SearchResult> &result);
-
 
 private:
     QSharedPointer<MinMaxModelInstanceTableModel> mModelInstanceModel;

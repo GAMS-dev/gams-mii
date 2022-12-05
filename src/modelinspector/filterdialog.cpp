@@ -99,26 +99,6 @@ void FilterDialog::setDefaultLabelFilter(const LabelFilter &filter)
     mDefaultLabelFilter = filter;
 }
 
-DataSource FilterDialog::horizontalDataSource() const
-{
-    return mHorizontalDataSource;
-}
-
-void FilterDialog::setHorizontalDataSource(DataSource dataSource)
-{
-    mHorizontalDataSource = dataSource;
-}
-
-DataSource FilterDialog::verticalDataSource() const
-{
-    return mVerticalDataSource;
-}
-
-void FilterDialog::setVerticalDataSource(DataSource dataSource)
-{
-    mVerticalDataSource = dataSource;
-}
-
 PredefinedViewEnum FilterDialog::viewType() const
 {
     return mViewType;
@@ -131,13 +111,11 @@ void FilterDialog::setViewType(PredefinedViewEnum viewType)
 
 void FilterDialog::on_applyButton_clicked()
 {
-    mIdentifierFilter[variableOrientation()] = applyHeaderFilter(mVarFilterModel, DataSource::VariableData);
-    mIdentifierFilter[equationOrientation()] = applyHeaderFilter(mEqnFilterModel, DataSource::EquationData);
+    mIdentifierFilter[variableOrientation()] = applyHeaderFilter(mVarFilterModel);
+    mIdentifierFilter[equationOrientation()] = applyHeaderFilter(mEqnFilterModel);
     applyValueFilter();
     mLabelFilter.LabelCheckStates[variableOrientation()] = applyLabelFilter(variableOrientation(), mLabelFilterModel);
     mLabelFilter.LabelCheckStates[equationOrientation()] = applyLabelFilter(equationOrientation(), mLabelFilterModel);
-    mLabelFilter.ColumnDataSource = mHorizontalDataSource;
-    mLabelFilter.RowDataSource = mVerticalDataSource;
     mLabelFilter.Any = ui->labelBox->currentIndex();
     emit filterUpdated();
 }
@@ -373,8 +351,7 @@ void FilterDialog::applyCheckState(QTreeView *view,
     }
 }
 
-IdentifierStates FilterDialog::applyHeaderFilter(QSortFilterProxyModel *model,
-                                                 DataSource dataSource)
+IdentifierStates FilterDialog::applyHeaderFilter(QSortFilterProxyModel *model)
 {
     QList<FilterTreeItem*> items {
         static_cast<FilterTreeModel*>(model->sourceModel())->filterItem()
@@ -388,7 +365,6 @@ IdentifierStates FilterDialog::applyHeaderFilter(QSortFilterProxyModel *model,
         IdentifierState identifierState;
         identifierState.Enabled = item->isEnabled();
         identifierState.SymbolIndex = item->symbolIndex();
-        identifierState.SymbolType = dataSource;
         identifierState.Text =  item->text();
         identifierState.Checked = item->checked();
         filter[item->symbolIndex()] = identifierState;

@@ -138,13 +138,9 @@ void TestCommon::test_labelFilter()
     LabelCheckStates states = { { "l1", Qt::Checked},
                                 { "l2", Qt::Unchecked } };
     LabelFilter labelFilter { true,
-                              { { Qt::Horizontal, states } },
-                              DataSource::VariableData,
-                              DataSource::EquationData };
+                              { { Qt::Horizontal, states } } };
     QCOMPARE(labelFilter.Any, true);
     QCOMPARE(labelFilter.LabelCheckStates[Qt::Horizontal], states);
-    QVERIFY(labelFilter.ColumnDataSource == DataSource::VariableData);
-    QVERIFY(labelFilter.RowDataSource == DataSource::EquationData);
 }
 
 void TestCommon::test_default_valueFilter()

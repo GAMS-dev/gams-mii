@@ -8,8 +8,6 @@
 #include <QVariant>
 #include <QVector>
 
-// TODO Do not use Qt::Orientation as filter/aggregation key!
-
 namespace gams {
 namespace studio {
 namespace modelinspector {
@@ -65,12 +63,6 @@ enum class PredefinedViewEnum
     SymbolEqnView   = 7,
     SymbolVarView   = 8,
     Unknown         = 127
-};
-
-enum class DataSource
-{
-    EquationData,
-    VariableData
 };
 
 enum class EquationType
@@ -150,8 +142,6 @@ struct IdentifierState
     Qt::CheckState Checked = Qt::Unchecked;
     IndexCheckStates CheckStates;
 
-    DataSource  SymbolType;
-
     bool isValid() const
     {
         return SectionIndex != -1 &&
@@ -186,9 +176,6 @@ struct LabelFilter
 {
     bool Any = false;
     LabelStates LabelCheckStates;
-
-    DataSource ColumnDataSource;
-    DataSource RowDataSource;
 };
 
 struct ValueFilter

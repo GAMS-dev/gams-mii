@@ -110,13 +110,6 @@ void TestEmptyModelInstance::test_default()
     QCOMPARE(instance.headerData(2, 1, Qt::Vertical), QString());
     QCOMPARE(instance.headerData(0, Qt::Horizontal, 2), 0);
     QCOMPARE(instance.headerData(1, Qt::Vertical, 2), 0);
-    QList<SearchResult> result;
-    instance.searchHeaderData(0, 0 , "e", false,
-                              DataSource::EquationData, Qt::Horizontal, result);
-    QVERIFY(result.isEmpty());
-    instance.searchHeaderData(0, 0 , "e", false,
-                              DataSource::VariableData, Qt::Vertical, result);
-    QVERIFY(result.isEmpty());
 }
 
 void TestEmptyModelInstance::test_getSet()

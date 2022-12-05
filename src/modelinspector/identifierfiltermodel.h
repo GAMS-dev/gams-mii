@@ -32,9 +32,6 @@ protected:
                           const QModelIndex &sourceParent) const override;
 
 private:
-    Symbol symbol(DataSource dataSource, int sectionIndex) const;
-
-private:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     IdentifierFilter mIdentifierFilter;
 };
@@ -61,9 +58,6 @@ protected:
 
     bool filterAcceptsRow(int sourceRow,
                           const QModelIndex &sourceParent) const override;
-
-private:
-    int startSection(DataSource dataSource, int sectionIndex) const;
 
 private:
     QSharedPointer<AbstractModelInstance> mModelInstance;

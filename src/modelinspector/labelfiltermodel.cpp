@@ -57,7 +57,7 @@ bool LabelFilterModel::filterAcceptsRow(int sourceRow,
 bool LabelFilterModel::matchesAllColumnLabels(const QMap<QString, Qt::CheckState> &checkStates,
                                               int sectionIndex) const
 {
-    auto sym = symbol(mLabelFilter.ColumnDataSource ,sectionIndex);
+    auto sym = mModelInstance->variable(sectionIndex);
     auto labels = sym.sectionLabels()[sectionIndex];
     for (auto iter=checkStates.constKeyValueBegin();
          iter!=checkStates.constKeyValueEnd(); ++iter) {
@@ -74,7 +74,7 @@ bool LabelFilterModel::matchesAllColumnLabels(const QMap<QString, Qt::CheckState
 bool LabelFilterModel::matchesAnyColumnLabels(const QMap<QString, Qt::CheckState> &checkStates,
                                               int sectionIndex) const
 {
-    auto sym = symbol(mLabelFilter.ColumnDataSource ,sectionIndex);
+    auto sym = mModelInstance->variable(sectionIndex);
     if (sym.isScalar()) return true;
     auto labels = sym.sectionLabels()[sectionIndex];
     for (auto iter=checkStates.constKeyValueBegin();
@@ -89,7 +89,7 @@ bool LabelFilterModel::matchesAnyColumnLabels(const QMap<QString, Qt::CheckState
 bool LabelFilterModel::matchesAllRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
                                            int sectionIndex) const
 {
-    auto sym = symbol(mLabelFilter.RowDataSource ,sectionIndex);
+    auto sym = mModelInstance->equation(sectionIndex);
     auto labels = sym.sectionLabels()[sectionIndex];
     for (auto iter=checkStates.constKeyValueBegin();
          iter!=checkStates.constKeyValueEnd(); ++iter) {
@@ -106,7 +106,7 @@ bool LabelFilterModel::matchesAllRowLabels(const QMap<QString, Qt::CheckState> &
 bool LabelFilterModel::matchesAnyRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
                                            int sectionIndex) const
 {
-    auto sym = symbol(mLabelFilter.RowDataSource ,sectionIndex);
+    auto sym = mModelInstance->equation(sectionIndex);
     if (sym.isScalar()) return true;
     auto labels = sym.sectionLabels()[sectionIndex];
     for (auto iter=checkStates.constKeyValueBegin();
@@ -116,13 +116,6 @@ bool LabelFilterModel::matchesAnyRowLabels(const QMap<QString, Qt::CheckState> &
         }
     }
     return false;
-}
-
-Symbol LabelFilterModel::symbol(DataSource dataSource, int sectionIndex) const
-{
-    if (dataSource == DataSource::EquationData)
-        return mModelInstance->equation(sectionIndex);
-    return mModelInstance->variable(sectionIndex);
 }
 
 }
