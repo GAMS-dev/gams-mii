@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>gams::studio::modelinspector::TableViewFrame</class>
- <widget class="QFrame" name="gams::studio::modelinspector::TableViewFrame">
+ <class>gams::studio::modelinspector::StandardTableViewFrame</class>
+ <widget class="QFrame" name="gams::studio::modelinspector::StandardTableViewFrame">
   <property name="geometry">
    <rect>
     <x>0</x>

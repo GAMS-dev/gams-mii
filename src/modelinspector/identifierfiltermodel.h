@@ -5,7 +5,6 @@
 #include <QSortFilterProxyModel>
 
 #include "common.h"
-#include "symbol.h"
 
 namespace gams {
 namespace studio {

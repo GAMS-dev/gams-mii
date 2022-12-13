@@ -471,7 +471,7 @@ void ModelInspector::clearCustomViews()
     mCustomViews.clear();
 }
 
-TableViewFrame* ModelInspector::currentView() const
+AbstractTableViewFrame* ModelInspector::currentView() const
 {
     switch (ui->stackedWidget->currentIndex()) {
     case (int)PredefinedViewEnum::EqnAttributes:

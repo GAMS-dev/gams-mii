@@ -88,6 +88,8 @@ private:
 
     void disableAttributes(QSortFilterProxyModel *model);
 
+    void resetValueFilter();
+
     Qt::Orientation equationOrientation() const {
         return Qt::Vertical;
     }

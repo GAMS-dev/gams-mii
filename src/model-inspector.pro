@@ -74,6 +74,7 @@ SOURCES += \
     gamslibprocess.cpp \
     modelinspector/abstractmodelinstance.cpp \
     modelinspector/abstracttableview.cpp \
+    modelinspector/abstracttableviewframe.cpp \
     modelinspector/aggregation.cpp \
     modelinspector/aggregationdialog.cpp \
     modelinspector/aggregationproxymodel.cpp \
@@ -89,6 +90,8 @@ SOURCES += \
     modelinspector/labelfiltermodel.cpp \
     modelinspector/labelfilterwidget.cpp \
     modelinspector/labeltreeitem.cpp \
+    modelinspector/minmaxmodelinstancetablemodel.cpp \
+    modelinspector/minmaxtableviewframe.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
     modelinspector/modelinstancetablemodel.cpp \
@@ -98,9 +101,9 @@ SOURCES += \
     modelinspector/sectiontreeitem.cpp \
     modelinspector/sectiontreemodel.cpp \
     modelinspector/sectiontreeview.cpp \
+    modelinspector/standardtableviewframe.cpp \
     modelinspector/statisticedit.cpp \
     modelinspector/symbol.cpp \
-    modelinspector/tableviewframe.cpp \
     modelinspector/valueformatproxymodel.cpp \
     modelinspector/searchresultview.cpp
 
@@ -113,6 +116,7 @@ HEADERS += \
     gamslibprocess.h    \
     modelinspector/abstractmodelinstance.h \
     modelinspector/abstracttableview.h \
+    modelinspector/abstracttableviewframe.h \
     modelinspector/aggregation.h \
     modelinspector/aggregationdialog.h \
     modelinspector/aggregationproxymodel.h \
@@ -129,6 +133,8 @@ HEADERS += \
     modelinspector/labelfiltermodel.h \
     modelinspector/labelfilterwidget.h \
     modelinspector/labeltreeitem.h \
+    modelinspector/minmaxmodelinstancetablemodel.h \
+    modelinspector/minmaxtableviewframe.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
     modelinspector/modelinstancetablemodel.h \
@@ -138,9 +144,9 @@ HEADERS += \
     modelinspector/sectiontreeitem.h \
     modelinspector/sectiontreemodel.h \
     modelinspector/sectiontreeview.h \
+    modelinspector/standardtableviewframe.h \
     modelinspector/statisticedit.h \
     modelinspector/symbol.h \
-    modelinspector/tableviewframe.h \
     modelinspector/valueformatproxymodel.h \
     modelinspector/searchresultview.h
 
@@ -150,7 +156,7 @@ FORMS += \
     modelinspector/filterdialog.ui \
     modelinspector/labelfilterwidget.ui \
     modelinspector/modelinspector.ui \
-    modelinspector/tableviewframe.ui
+    modelinspector/standardtableviewframe.ui
 
 RESOURCES += \
     ../icons/icons.qrc

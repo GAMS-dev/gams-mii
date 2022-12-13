@@ -190,6 +190,16 @@ struct ValueFilter
     bool ShowNInf = true;
     bool ShowEps = true;
 
+    bool isUserInput() const
+    {
+        return mIsUserInput;
+    }
+
+    void setIsUserInput(bool userInput)
+    {
+        mIsUserInput = userInput;
+    }
+
     bool accepts(const QVariant &value) const
     {
         if (!value.isValid())
@@ -246,6 +256,9 @@ struct ValueFilter
                 !str.compare(N_INF, Qt::CaseInsensitive) ||
                 !str.compare(NA, Qt::CaseInsensitive);
     }
+
+private:
+    bool mIsUserInput = false;
 };
 
 }

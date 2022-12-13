@@ -34,7 +34,7 @@ namespace Ui {
 class ModelInspector;
 }
 
-class TableViewFrame;
+class AbstractTableViewFrame;
 class AbstractModelInstance;
 class SectionTreeModel;
 class SearchResultModel;
@@ -121,7 +121,7 @@ private:
 
     void clearCustomViews();
 
-    TableViewFrame* currentView() const;
+    AbstractTableViewFrame* currentView() const;
 
     IdentifierFilter newIdentifierFilter(const IdentifierFilter &currentFilter,
                                          const QList<Symbol> &eqnFilter,
@@ -135,7 +135,7 @@ private:
 
     SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<AbstractModelInstance> mModelInstance;
-    QMap<int, TableViewFrame*> mCustomViews;
+    QMap<int, AbstractTableViewFrame*> mCustomViews;
 };
 
 }

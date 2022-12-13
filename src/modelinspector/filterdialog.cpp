@@ -5,8 +5,6 @@
 
 #include <QSortFilterProxyModel>
 
-#include <QDebug>
-
 namespace gams {
 namespace studio {
 namespace modelinspector {
@@ -29,10 +27,16 @@ FilterDialog::FilterDialog(QWidget *parent)
         updateRangeEdit(ui->minEdit, ui->minEdit->text());
         updateRangeEdit(ui->maxEdit, ui->maxEdit->text());
     });
-    connect(ui->minEdit, &QLineEdit::textChanged,
-            this, [this](const QString &text) { updateRangeEdit(ui->minEdit, text); });
-    connect(ui->maxEdit, &QLineEdit::textChanged,
-            this, [this](const QString &text) { updateRangeEdit(ui->maxEdit, text); });
+    connect(ui->minEdit, &QLineEdit::textEdited,
+            this, [this](const QString &text) {
+        mValueFilter.setIsUserInput(true);
+        updateRangeEdit(ui->minEdit, text);
+    });
+    connect(ui->maxEdit, &QLineEdit::textEdited,
+            this, [this](const QString &text) {
+        mValueFilter.setIsUserInput(true);
+        updateRangeEdit(ui->maxEdit, text);
+    });
 }
 
 FilterDialog::~FilterDialog()
@@ -66,7 +70,9 @@ void FilterDialog::setValueFilter(const ValueFilter &filter)
 {
     mValueFilter = filter;
     ui->minEdit->setText(QString::number(mValueFilter.MinValue));
+    updateRangeEdit(ui->minEdit, QString::number(mValueFilter.MinValue));
     ui->maxEdit->setText(QString::number(mValueFilter.MaxValue));
+    updateRangeEdit(ui->maxEdit, QString::number(mValueFilter.MinValue));
     ui->excludeBox->setChecked(mValueFilter.ExcludeRange);
     ui->absoluteBox->setChecked(mValueFilter.UseAbsoluteValues);
     if (mValueFilter.UseAbsoluteValuesGlobal)
@@ -123,7 +129,7 @@ void FilterDialog::on_applyButton_clicked()
 void FilterDialog::on_resetButton_clicked()
 {
     setIdentifierFilter(mDefaultIdentifierFilter);
-    setValueFilter(mDefaultValueFilter);
+    resetValueFilter();
     setLabelFilter(mDefaultLabelFilter);
 
     ui->rowEdit->setText("");
@@ -374,8 +380,13 @@ IdentifierStates FilterDialog::applyHeaderFilter(QSortFilterProxyModel *model)
 
 void FilterDialog::applyValueFilter()
 {
-    mValueFilter.MinValue = ui->minEdit->text().toDouble();
-    mValueFilter.MaxValue = ui->maxEdit->text().toDouble();
+    if (mValueFilter.isUserInput()) {
+        mValueFilter.MinValue = ui->minEdit->text().toDouble();
+        mValueFilter.MaxValue = ui->maxEdit->text().toDouble();
+    } else {
+        mValueFilter.MinValue = mDefaultValueFilter.MinValue;
+        mValueFilter.MaxValue = mDefaultValueFilter.MaxValue;
+    }
     mValueFilter.ExcludeRange = ui->excludeBox->isChecked();
     mValueFilter.UseAbsoluteValues = ui->absoluteBox->isChecked();
     mValueFilter.ShowPInf = ui->pInfBox->isChecked();
@@ -429,6 +440,16 @@ void FilterDialog::disableAttributes(QSortFilterProxyModel *model)
     Q_FOREACH(auto child, attrItem->childs()) {
         child->setChecked(Qt::Unchecked);
     }
+}
+
+void FilterDialog::resetValueFilter()
+{
+    auto filter = mDefaultValueFilter;
+    if (mValueFilter.UseAbsoluteValuesGlobal) {
+        filter.UseAbsoluteValues = mValueFilter.UseAbsoluteValues;
+        filter.UseAbsoluteValuesGlobal = mValueFilter.UseAbsoluteValuesGlobal;
+    }
+    setValueFilter(filter);
 }
 
 }

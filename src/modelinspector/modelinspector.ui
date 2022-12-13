@@ -347,31 +347,31 @@
   <customwidget>
    <class>gams::studio::modelinspector::EqnTableViewFrame</class>
    <extends>QFrame</extends>
-   <header>modelinspector/tableviewframe.h</header>
+   <header>modelinspector/standardtableviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>gams::studio::modelinspector::VarTableViewFrame</class>
    <extends>QFrame</extends>
-   <header>modelinspector/tableviewframe.h</header>
+   <header>modelinspector/standardtableviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>gams::studio::modelinspector::FullTableViewFrame</class>
    <extends>QFrame</extends>
-   <header>modelinspector/tableviewframe.h</header>
+   <header>modelinspector/standardtableviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>gams::studio::modelinspector::JaccTableViewFrame</class>
    <extends>QFrame</extends>
-   <header>modelinspector/tableviewframe.h</header>
+   <header>modelinspector/standardtableviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>gams::studio::modelinspector::MinMaxTableViewFrame</class>
    <extends>QFrame</extends>
-   <header>modelinspector/tableviewframe.h</header>
+   <header>modelinspector/minmaxtableviewframe.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
