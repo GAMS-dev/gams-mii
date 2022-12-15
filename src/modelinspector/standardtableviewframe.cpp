@@ -85,7 +85,7 @@ void AbstractStandardTableViewFrame::setupFiltersAggregation(QAbstractItemModel 
     mCurrentAggregation = mDefaultAggregation;
 }
 
-void AbstractStandardTableViewFrame::reset(PredefinedViewEnum view)
+void AbstractStandardTableViewFrame::reset(int view)
 {
     setIdentifierFilter(mDefaultIdentifierFilter);
     setValueFilter(mDefaultValueFilter);

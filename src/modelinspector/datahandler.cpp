@@ -906,6 +906,9 @@ bool DataHandler::keepRow(int row)
             mDataAggregator->aggregation().viewType() == PredefinedViewEnum::MinMax) {
         return row < PredefinedHeaderLength ? false : true;
     }
+    if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::VarAttributes) {
+        return row < PredefinedHeaderLength ? true : false;
+    }
     return true;
 }
 

@@ -97,7 +97,7 @@ QList<Symbol> MinMaxTableViewFrame::selectedVariables() const
     return mSelectedVariables;
 }
 
-void MinMaxTableViewFrame::reset(PredefinedViewEnum view)
+void MinMaxTableViewFrame::reset(int view)
 {
     Q_UNUSED(view);
     setIdentifierFilter(mDefaultIdentifierFilter);

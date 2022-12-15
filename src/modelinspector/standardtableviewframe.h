@@ -38,7 +38,7 @@ public:
 
     void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter) override;
 
-    void reset(PredefinedViewEnum view) override;
+    void reset(int view) override;
 
     void updateView() override;
 

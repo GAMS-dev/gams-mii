@@ -46,7 +46,7 @@ public:
     QList<Symbol> selectedEquations() const;
     QList<Symbol> selectedVariables() const;
 
-    void reset(PredefinedViewEnum view) override;
+    void reset(int view) override;
 
     void updateView() override;
 

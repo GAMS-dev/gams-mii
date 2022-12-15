@@ -1,6 +1,7 @@
 #include <QtTest>
 
 #include "aggregation.h"
+#include "labeltreeitem.h"
 
 using namespace gams::studio::modelinspector;
 
@@ -70,7 +71,40 @@ void TestAggregation::test_default_aggregationItem()
 
 void TestAggregation::test_getSet_aggregationItem()
 {
-
+    AggregationItem item;
+    item.setText("Root");
+    QCOMPARE(item.text(), "Root");
+    item.setSymbolIndex(42);
+    QCOMPARE(item.symbolIndex(), 42);
+    item.setCheckState(1, Qt::Checked);
+    item.setCheckState(2, Qt::Unchecked);
+    QVERIFY(item.isChecked(1));
+    QVERIFY(!item.isChecked(2));
+    QSharedPointer<LabelTreeItem> treeItem = QSharedPointer<LabelTreeItem>(new LabelTreeItem("TreeRoot"));
+    item.setAggregatedLabelTree(treeItem);
+    QCOMPARE(item.aggregatedLabelTree(), treeItem);
+    SectionLabels labels { {0, {"a", "b"} },
+                           {1, {"c", "d"} } };
+    item.setLabels(labels);
+    QCOMPARE(item.labels(), labels);
+    QList<int> sections {1, 2, 3};
+    item.setMappedSections(sections);
+    QCOMPARE(item.mappedSections(), sections);
+    item.setVisibleSectionCount(22);
+    QCOMPARE(item.visibleSectionCount(), 22);
+    QList<int> visibleSections {4, 5, 6};
+    item.setVisibleSections(visibleSections);
+    QCOMPARE(item.visibleSections(), visibleSections);
+    UnitedSections unitedSections { {1, 2, 3}, {4, 5, 6} };
+    item.setUnitedSections(unitedSections);
+    QCOMPARE(item.unitedSections(), unitedSections);
+    DomainLabels domainLabels { "d1", "d2", "d3" };
+    item.setDomainLabels(domainLabels);
+    QCOMPARE(item.domainLabel(0), domainLabels.at(0));
+    QCOMPARE(item.domainLabel(1), domainLabels.at(1));
+    QCOMPARE(item.domainLabel(2), domainLabels.at(2));
+    item.setScalar(true);
+    QVERIFY(item.isScalar());
 }
 
 void TestAggregation::test_domainLabel_aggregationItem()

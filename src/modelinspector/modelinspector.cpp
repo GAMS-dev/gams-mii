@@ -255,15 +255,15 @@ void ModelInspector::resetZoom()
 void ModelInspector::resetDefaultViews()
 {
     ui->statisticEdit->resetZoom();
-    ui->eqnAttrFrame->reset(PredefinedViewEnum::EqnAttributes);
+    ui->eqnAttrFrame->reset((int)PredefinedViewEnum::EqnAttributes);
     ui->eqnAttrFrame->resetZoom();
-    ui->varAttrFrame->reset(PredefinedViewEnum::VarAttributes);
+    ui->varAttrFrame->reset((int)PredefinedViewEnum::VarAttributes);
     ui->varAttrFrame->resetZoom();
-    ui->jaccFrame->reset(PredefinedViewEnum::Jaccobian);
+    ui->jaccFrame->reset((int)PredefinedViewEnum::Jaccobian);
     ui->jaccFrame->resetZoom();
-    ui->fullFrame->reset(PredefinedViewEnum::Full);
+    ui->fullFrame->reset((int)PredefinedViewEnum::Full);
     ui->fullFrame->resetZoom();
-    ui->minMaxFrame->reset(PredefinedViewEnum::MinMax);
+    ui->minMaxFrame->reset((int)PredefinedViewEnum::MinMax);
     ui->minMaxFrame->resetZoom();
     Q_FOREACH(auto view, mCustomViews) {
         view->resetZoom();
@@ -286,29 +286,25 @@ void ModelInspector::saveModelView()
 
 void ModelInspector::saveReducedModelView(gams::studio::modelinspector::PredefinedViewEnum type)
 {
-    auto view = currentView();
-    if (!view) return;
-    auto clone = ui->jaccFrame->clone(ui->stackedWidget->indexOf(ui->jaccPage));
-    clone->setParent(ui->stackedWidget, view->windowFlags());
-    clone->setIdentifierFilter(clone->defaultIdentifierFilter());
+    auto wgtCount = ui->stackedWidget->count();
+    auto clone = ui->jaccFrame->clone(wgtCount);
+    clone->setParent(ui->stackedWidget, ui->jaccFrame->windowFlags());
     int page = ui->stackedWidget->addWidget(clone);
+    clone->reset(page);
     mCustomViews[page] = clone;
     if (type == PredefinedViewEnum::SymbolEqnView) {
-        mSectionModel->appendCustomView(SymbolEqnView, view->type(), page);
+        mSectionModel->appendCustomView(SymbolEqnView, PredefinedViewEnum::Jaccobian, page);
     } else if (type == PredefinedViewEnum::SymbolVarView) {
-        mSectionModel->appendCustomView(SymbolVarView, view->type(), page);
+        mSectionModel->appendCustomView(SymbolVarView, PredefinedViewEnum::Jaccobian, page);
     } else {
-        mSectionModel->appendCustomView(SymbolView, view->type(), page);
+        mSectionModel->appendCustomView(SymbolView, PredefinedViewEnum::Jaccobian, page);
     }
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Custom);
-    auto minMaxView = dynamic_cast<MinMaxTableViewFrame*>(view);
-    if (minMaxView) {
-        auto newFilter = newIdentifierFilter(clone->identifierFilter(),
-                                             minMaxView->selectedEquations(),
-                                             minMaxView->selectedVariables());
-        clone->setIdentifierFilter(newFilter);
-    }
+    auto newFilter = newIdentifierFilter(clone->identifierFilter(),
+                                         ui->minMaxFrame->selectedEquations(),
+                                         ui->minMaxFrame->selectedVariables());
+    clone->setIdentifierFilter(newFilter);
     clone->updateView();
     emit filtersChanged();
 }

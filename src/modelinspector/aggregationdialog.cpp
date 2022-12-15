@@ -83,6 +83,9 @@ void AggregationDialog::on_applyButton_clicked()
 {
     if (ui->aggregationBox->currentIndex() == 0)
         return;
+    auto item = static_cast<FilterTreeModel*>(mAggregationModel->sourceModel())->filterItem();
+    if (item->checked() == Qt::Unchecked)
+        return;
     applyAggregation();
     mAggregationMethod = ui->aggregationBox->currentIndex();
     emit aggregationUpdated();
@@ -213,11 +216,14 @@ AggregationSymbols AggregationDialog::checkStates(FilterTreeItem *item)
         AggregationItem aggrItem;
         aggrItem.setText(item->text());
         aggrItem.setSymbolIndex(item->symbolIndex());
+        DomainLabels domainLabels;
         for (int d=0; d<item->childs().size(); ++d) {
             auto child = item->child(d);
             if (!child) continue;
             aggrItem.setCheckState(d+1, item->child(d)->checked());
+            domainLabels.push_back(child->text().split("-").last().trimmed());
         }
+        aggrItem.setDomainLabels(domainLabels);
         states[aggrItem.symbolIndex()] = aggrItem;
     }
     return states;

@@ -68,7 +68,7 @@ public:
 
     virtual void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter) = 0;
 
-    virtual void reset(PredefinedViewEnum view) = 0;
+    virtual void reset(int view) = 0;
 
     virtual void updateView() = 0;
 
