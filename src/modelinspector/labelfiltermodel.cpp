@@ -31,7 +31,7 @@ bool LabelFilterModel::filterAcceptsColumn(int sourceColumn,
 
     bool ok;
     auto sectionIndex = sourceModel()->headerData(sourceColumn, Qt::Horizontal).toInt(&ok);
-    if (!ok || sectionIndex < PredefinedHeaderLength) return true;
+    if (!ok || sectionIndex < constant->PredefinedHeaderLength) return true;
 
     auto filter = mLabelFilter.LabelCheckStates[Qt::Horizontal];
     if (mLabelFilter.Any)
@@ -46,7 +46,7 @@ bool LabelFilterModel::filterAcceptsRow(int sourceRow,
 
     bool ok;
     auto sectionIndex = sourceModel()->headerData(sourceRow, Qt::Vertical).toInt(&ok);
-    if (!ok || sectionIndex < PredefinedHeaderLength) return true;
+    if (!ok || sectionIndex < constant->PredefinedHeaderLength) return true;
 
     auto filter = mLabelFilter.LabelCheckStates[Qt::Vertical];
     if (mLabelFilter.Any)

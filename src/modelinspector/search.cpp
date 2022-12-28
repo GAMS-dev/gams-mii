@@ -68,7 +68,7 @@ void Search::search(Qt::Orientation orientation, QList<SearchResult> &result)
 void Search::searchHeader(int logicalIndex, int sectionIndex,
                           Qt::Orientation orientation, QList<SearchResult> &result)
 {
-    if (sectionIndex < PredefinedHeaderLength && compare(PredefinedHeader.at(sectionIndex))) {
+    if (sectionIndex < constant->PredefinedHeaderLength && compare(constant->PredefinedHeader.at(sectionIndex))) {
         result.append(SearchResult{logicalIndex, orientation});
         return;
     }
@@ -144,7 +144,7 @@ void Search::searchAggregated(Qt::Orientation orientation, QList<SearchResult> &
 void Search::searchAggregatedHeader(int logicalIndex, int sectionIndex,
                                     Qt::Orientation orientation, QList<SearchResult> &result)
 {
-    if (sectionIndex < PredefinedHeaderLength && compare(PredefinedHeader.at(sectionIndex))) {
+    if (sectionIndex < constant->PredefinedHeaderLength && compare(constant->PredefinedHeader.at(sectionIndex))) {
         result.append(SearchResult{logicalIndex, orientation});
         return;
     }

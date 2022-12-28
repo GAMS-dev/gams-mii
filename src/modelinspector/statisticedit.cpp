@@ -50,9 +50,9 @@ bool StatisticEdit::eventFilter(QObject *watched, QEvent *event)
         QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
         if (wheel->modifiers() == Qt::ControlModifier) {
             if (wheel->angleDelta().y() > 0)
-                QTextEdit::zoomIn(ZoomFactor);
+                QTextEdit::zoomIn(constant->ZoomFactor);
             else
-                QTextEdit::zoomOut(ZoomFactor);
+                QTextEdit::zoomOut(constant->ZoomFactor);
             return true;
         }
     }
@@ -61,12 +61,12 @@ bool StatisticEdit::eventFilter(QObject *watched, QEvent *event)
 
 void StatisticEdit::zoomIn()
 {
-    QTextEdit::zoomIn(ZoomFactor);
+    QTextEdit::zoomIn(constant->ZoomFactor);
 }
 
 void StatisticEdit::zoomOut()
 {
-    QTextEdit::zoomOut(ZoomFactor);
+    QTextEdit::zoomOut(constant->ZoomFactor);
 }
 
 void StatisticEdit::resetZoom()

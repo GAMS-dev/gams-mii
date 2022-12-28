@@ -88,17 +88,17 @@ void TestSectionTreeItem::test_getSet()
 void TestSectionTreeItem::test_setTypeText()
 {
     SectionTreeItem item("default");
-    item.setType(EquationAttributes);
+    item.setType(constant->EquationAttributes);
     QCOMPARE(item.type(), PredefinedViewEnum::EqnAttributes);
-    item.setType(VariableAttributes);
+    item.setType(constant->VariableAttributes);
     QCOMPARE(item.type(), PredefinedViewEnum::VarAttributes);
-    item.setType(Jaccobian);
+    item.setType(constant->Jaccobian);
     QCOMPARE(item.type(), PredefinedViewEnum::Jaccobian);
-    item.setType(FullView);
+    item.setType(constant->FullView);
     QCOMPARE(item.type(), PredefinedViewEnum::Full);
-    item.setType(Statistic);
+    item.setType(constant->Statistic);
     QCOMPARE(item.type(), PredefinedViewEnum::Statistic);
-    item.setType(MinMax);
+    item.setType(constant->MinMax);
     QCOMPARE(item.type(), PredefinedViewEnum::MinMax);
     item.setType("lala");
     QCOMPARE(item.type(), PredefinedViewEnum::Unknown);

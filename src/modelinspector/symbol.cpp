@@ -119,12 +119,12 @@ int Symbol::lastSection() const
 
 int Symbol::firstJaccSection() const
 {
-    return mFirstSection-PredefinedHeaderLength;
+    return mFirstSection-constant->PredefinedHeaderLength;
 }
 
 int Symbol::lastJaccSection() const
 {
-    return lastSection()-PredefinedHeaderLength;
+    return lastSection()-constant->PredefinedHeaderLength;
 }
 
 QSharedPointer<LabelTreeItem> Symbol::labelTree() const

@@ -12,38 +12,43 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-static const int ZoomFactor = 2;
+struct Constant
+{
+    const int ZoomFactor = 2;
 
-static const QString NA = "NA";
-static const QString EPS = "EPS";
-static const QString INF = "INF";
-static const QString P_INF = "+INF";
-static const QString N_INF = "-INF";
+    const QString NA = "NA";
+    const QString EPS = "EPS";
+    const QString INF = "INF";
+    const QString P_INF = "+INF";
+    const QString N_INF = "-INF";
 
-static const QString Level = "level";
-static const QString Lower = "lower";
-static const QString Marginal = "marginal";
-static const QString Scale = "scale";
-static const QString Upper = "upper";
+    const QString Level = "level";
+    const QString Lower = "lower";
+    const QString Marginal = "marginal";
+    const QString Scale = "scale";
+    const QString Upper = "upper";
 
-static const QStringList PredefinedHeader { Level, Lower, Marginal, Scale, Upper };
-static const int PredefinedHeaderLength = PredefinedHeader.size();
+    const QStringList PredefinedHeader { Level, Lower, Marginal, Scale, Upper };
+    const int PredefinedHeaderLength = PredefinedHeader.size();
 
-static const QString Statistic = "Statistic";
-static const QString EquationAttributes = "Equation Attributes";
-static const QString VariableAttributes = "Variable Attributes";
-static const QString Jaccobian = "Jaccobian";
-static const QString FullView = "Full View";
-static const QString MinMax = "Min Max";
-static const QString SymbolView = "Symbol View";
-static const QString SymbolEqnView = "Symbol Equation View";
-static const QString SymbolVarView = "Symbol Variable View";
-static const QStringList PredefinedViewTexts = { Statistic,
-                                                 EquationAttributes,
-                                                 VariableAttributes,
-                                                 Jaccobian,
-                                                 FullView,
-                                                 MinMax };
+    const QString Statistic = "Statistic";
+    const QString EquationAttributes = "Equation Attributes";
+    const QString VariableAttributes = "Variable Attributes";
+    const QString Jaccobian = "Jaccobian";
+    const QString FullView = "Full View";
+    const QString MinMax = "Min Max";
+    const QString SymbolView = "Symbol View";
+    const QString SymbolEqnView = "Symbol Equation View";
+    const QString SymbolVarView = "Symbol Variable View";
+    const QStringList PredefinedViewTexts = { Statistic,
+                                              EquationAttributes,
+                                              VariableAttributes,
+                                              Jaccobian,
+                                              FullView,
+                                              MinMax };
+};
+
+Q_GLOBAL_STATIC(Constant, constant);
 
 enum class ViewType
 {
@@ -205,13 +210,13 @@ struct ValueFilter
         if (!value.isValid())
             return false;
         auto str = value.toString();
-        if (!str.compare(P_INF, Qt::CaseInsensitive)) {
+        if (!str.compare(constant->P_INF, Qt::CaseInsensitive)) {
             return ShowPInf ? true : false;
         }
-        if (!str.compare(N_INF, Qt::CaseInsensitive)) {
+        if (!str.compare(constant->N_INF, Qt::CaseInsensitive)) {
             return ShowNInf ? true : false;
         }
-        if (!str.compare(EPS, Qt::CaseInsensitive)) {
+        if (!str.compare(constant->EPS, Qt::CaseInsensitive)) {
             return ShowEps ? true : false;
         }
         bool ok;
@@ -250,11 +255,11 @@ struct ValueFilter
     static bool isSpecialValue(const QVariant &value)
     {
         auto str = value.toString();
-        return !str.compare(EPS, Qt::CaseInsensitive) ||
-                !str.compare(INF, Qt::CaseInsensitive) ||
-                !str.compare(P_INF, Qt::CaseInsensitive) ||
-                !str.compare(N_INF, Qt::CaseInsensitive) ||
-                !str.compare(NA, Qt::CaseInsensitive);
+        return !str.compare(constant->EPS, Qt::CaseInsensitive) ||
+                !str.compare(constant->INF, Qt::CaseInsensitive) ||
+                !str.compare(constant->P_INF, Qt::CaseInsensitive) ||
+                !str.compare(constant->N_INF, Qt::CaseInsensitive) ||
+                !str.compare(constant->NA, Qt::CaseInsensitive);
     }
 
 private:

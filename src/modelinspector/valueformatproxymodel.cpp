@@ -45,17 +45,17 @@ QVariant ValueFormatProxyModel::data(const QModelIndex &index, int role) const
 
 QVariant ValueFormatProxyModel::applyFilter(const QVariant &data) const
 {
-    if (!data.toString().compare(EPS, Qt::CaseInsensitive)) {
+    if (!data.toString().compare(constant->EPS, Qt::CaseInsensitive)) {
         if  (mValueFilter.ShowEps)
             return data;
         return QVariant();
     }
-    if (!data.toString().compare(P_INF, Qt::CaseInsensitive)) {
+    if (!data.toString().compare(constant->P_INF, Qt::CaseInsensitive)) {
         if (mValueFilter.ShowPInf)
             return data;
         return QVariant();
     }
-    if (!data.toString().compare(N_INF, Qt::CaseInsensitive)) {
+    if (!data.toString().compare(constant->N_INF, Qt::CaseInsensitive)) {
         if (mValueFilter.ShowNInf)
             return data;
         return QVariant();

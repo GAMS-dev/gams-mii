@@ -64,7 +64,7 @@ QModelIndex AttributeTableModel::index(int row, int column,
 int AttributeTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return PredefinedHeaderLength;
+    return constant->PredefinedHeaderLength;
 }
 
 EquationAttributeTableModel::EquationAttributeTableModel(QObject *parent)

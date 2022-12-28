@@ -293,11 +293,11 @@ void ModelInspector::saveReducedModelView(gams::studio::modelinspector::Predefin
     clone->reset(page);
     mCustomViews[page] = clone;
     if (type == PredefinedViewEnum::SymbolEqnView) {
-        mSectionModel->appendCustomView(SymbolEqnView, PredefinedViewEnum::Jaccobian, page);
+        mSectionModel->appendCustomView(constant->SymbolEqnView, PredefinedViewEnum::Jaccobian, page);
     } else if (type == PredefinedViewEnum::SymbolVarView) {
-        mSectionModel->appendCustomView(SymbolVarView, PredefinedViewEnum::Jaccobian, page);
+        mSectionModel->appendCustomView(constant->SymbolVarView, PredefinedViewEnum::Jaccobian, page);
     } else {
-        mSectionModel->appendCustomView(SymbolView, PredefinedViewEnum::Jaccobian, page);
+        mSectionModel->appendCustomView(constant->SymbolView, PredefinedViewEnum::Jaccobian, page);
     }
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Custom);
@@ -315,7 +315,7 @@ IdentifierFilter ModelInspector::newIdentifierFilter(const IdentifierFilter &cur
 {// TODO performance
     IdentifierFilter newFilter;
     Q_FOREACH(auto state, currentFilter[Qt::Vertical]) {
-        if (state.SymbolIndex < PredefinedHeaderLength)
+        if (state.SymbolIndex < constant->PredefinedHeaderLength)
             continue;
         Q_FOREACH(auto symbol, eqnFilter) {
             if (state.Text == symbol.name()) {
@@ -328,7 +328,7 @@ IdentifierFilter ModelInspector::newIdentifierFilter(const IdentifierFilter &cur
         newFilter[Qt::Vertical][state.SymbolIndex] = state;
     }
     Q_FOREACH(auto state, currentFilter[Qt::Horizontal]) {
-        if (state.SymbolIndex < PredefinedHeaderLength)
+        if (state.SymbolIndex < constant->PredefinedHeaderLength)
             continue;
         Q_FOREACH(auto symbol, varFilter) {
             if (state.Text == symbol.name()) {

@@ -94,17 +94,17 @@ void SectionTreeItem::setType(PredefinedViewEnum type) {
 
 void SectionTreeItem::setType(const QString &text)
 {
-    if (text == Statistic)
+    if (text == constant->Statistic)
         mType = PredefinedViewEnum::Statistic;
-    else if (text == EquationAttributes)
+    else if (text == constant->EquationAttributes)
         mType = PredefinedViewEnum::EqnAttributes;
-    else if (text == VariableAttributes)
+    else if (text == constant->VariableAttributes)
         mType = PredefinedViewEnum::VarAttributes;
-    else if (text == Jaccobian)
+    else if (text == constant->Jaccobian)
         mType = PredefinedViewEnum::Jaccobian;
-    else if (text == FullView)
+    else if (text == constant->FullView)
         mType = PredefinedViewEnum::Full;
-    else if (text == MinMax)
+    else if (text == constant->MinMax)
         mType = PredefinedViewEnum::MinMax;
     else
         mType = PredefinedViewEnum::Unknown;

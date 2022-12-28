@@ -150,37 +150,37 @@ void SectionTreeModel::loadModelData()
     mRoot->append(viewItem);
 
     SectionTreeItem *mainItem;
-    for (int i=0; i<PredefinedViewTexts.size(); ++i) {
-        if (PredefinedViewTexts.at(i) == Statistic) {
-            mainItem = new SectionTreeItem(PredefinedViewTexts.at(i),
+    for (int i=0; i<constant->PredefinedViewTexts.size(); ++i) {
+        if (constant->PredefinedViewTexts.at(i) == constant->Statistic) {
+            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
                                            (int)PredefinedViewEnum::Statistic,
                                            viewItem);
             mainItem->setType(PredefinedViewEnum::Statistic);
-        } else if (PredefinedViewTexts.at(i) == EquationAttributes) {
-            mainItem = new SectionTreeItem(PredefinedViewTexts.at(i),
+        } else if (constant->PredefinedViewTexts.at(i) == constant->EquationAttributes) {
+            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
                                            (int)PredefinedViewEnum::EqnAttributes,
                                            viewItem);
-            mainItem->setType(PredefinedViewTexts.at(i));
-        } else if (PredefinedViewTexts.at(i) == VariableAttributes) {
-            mainItem = new SectionTreeItem(PredefinedViewTexts.at(i),
+            mainItem->setType(constant->PredefinedViewTexts.at(i));
+        } else if (constant->PredefinedViewTexts.at(i) == constant->VariableAttributes) {
+            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
                                            (int)PredefinedViewEnum::VarAttributes,
                                            viewItem);
-            mainItem->setType(PredefinedViewTexts.at(i));
-        } else if (PredefinedViewTexts.at(i) == Jaccobian)  {
-            mainItem = new SectionTreeItem(PredefinedViewTexts.at(i),
+            mainItem->setType(constant->PredefinedViewTexts.at(i));
+        } else if (constant->PredefinedViewTexts.at(i) == constant->Jaccobian)  {
+            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
                                            (int)PredefinedViewEnum::Jaccobian,
                                            viewItem);
-            mainItem->setType(PredefinedViewTexts.at(i));
-        } else if (PredefinedViewTexts.at(i) == MinMax) {
-            mainItem = new SectionTreeItem(PredefinedViewTexts.at(i),
+            mainItem->setType(constant->PredefinedViewTexts.at(i));
+        } else if (constant->PredefinedViewTexts.at(i) == constant->MinMax) {
+            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
                                            (int)PredefinedViewEnum::MinMax,
                                            viewItem);
-            mainItem->setType(PredefinedViewTexts.at(i));
+            mainItem->setType(constant->PredefinedViewTexts.at(i));
         } else {
-            mainItem = new SectionTreeItem(PredefinedViewTexts.at(i),
+            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
                                            (int)PredefinedViewEnum::Full,
                                            viewItem);
-            mainItem->setType(PredefinedViewTexts.at(i));
+            mainItem->setType(constant->PredefinedViewTexts.at(i));
         }
         viewItem->append(mainItem);
     }

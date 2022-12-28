@@ -74,7 +74,7 @@ public:
             return false;
         int sectionIndex = mHeaderView->model()->headerData(logicalIndex,
                                                             mHeaderView->orientation()).toInt(&ok);
-        if (sectionIndex < PredefinedHeaderLength)
+        if (sectionIndex < constant->PredefinedHeaderLength)
             return false;
         QPoint pos;
         if (mHeaderView->orientation() == Qt::Horizontal) {
@@ -95,14 +95,14 @@ public:
 
     int horizontalSectionDimension(int sectionIndex)
     {
-        if (sectionIndex < PredefinedHeaderLength)
+        if (sectionIndex < constant->PredefinedHeaderLength)
             return 0;
         return symbol(sectionIndex).dimension();
     }
 
     int verticalSectionDimension(int sectionIndex)
     {
-        if (sectionIndex < PredefinedHeaderLength)
+        if (sectionIndex < constant->PredefinedHeaderLength)
             return 0;
         if (mHeaderView->viewType() == PredefinedViewEnum::MinMax)
             return 1;
@@ -159,7 +159,7 @@ public:
         styleOption.text = horizontalCellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
 
         painter->save();
-        if (isSymbol && sectionIndex >= PredefinedHeaderLength) {
+        if (isSymbol && sectionIndex >= constant->PredefinedHeaderLength) {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
             styleOption.rect = QRect(rect.x()+mFilterIconSize.width(), currentTop, rect.width(), size.height());
             mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
@@ -241,7 +241,7 @@ public:
         styleOption.text = verticalCellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
 
         painter->save();
-        if (isSymbol && sectionIndex >= PredefinedHeaderLength) {
+        if (isSymbol && sectionIndex >= constant->PredefinedHeaderLength) {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
             styleOption.rect = QRect(currentLeft+mFilterIconSize.width(), rect.y(), size.width(), rect.height());
             mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);

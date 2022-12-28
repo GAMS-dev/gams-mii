@@ -20,9 +20,9 @@ bool AbstractTableView::eventFilter(QObject *watched, QEvent *event)
         QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
         if (wheel->modifiers() == Qt::ControlModifier) {
             if (wheel->angleDelta().y() > 0)
-                zoomIn(ZoomFactor);
+                zoomIn(constant->ZoomFactor);
             else
-                zoomOut(ZoomFactor);
+                zoomOut(constant->ZoomFactor);
             return true;
         }
     }

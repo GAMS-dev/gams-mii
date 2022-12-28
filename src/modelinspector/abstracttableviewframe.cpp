@@ -97,12 +97,12 @@ QList<SearchResult> AbstractTableViewFrame::search(const QString &term, bool isR
 
 void AbstractTableViewFrame::zoomIn()
 {
-    ui->tableView->zoomIn(ZoomFactor);
+    ui->tableView->zoomIn(constant->ZoomFactor);
 }
 
 void AbstractTableViewFrame::zoomOut()
 {
-    ui->tableView->zoomOut(ZoomFactor);
+    ui->tableView->zoomOut(constant->ZoomFactor);
 }
 
 void AbstractTableViewFrame::resetZoom()
@@ -122,7 +122,7 @@ IdentifierStates AbstractTableViewFrame::defaultSymbolFilter(QAbstractItemModel 
         int realSection = model->headerData(s, orientation).toInt(&ok);
         if (!ok) continue;
         auto data = mModelInstance->headerData(realSection, -1, orientation);
-        if (realSection < PredefinedHeaderLength) {
+        if (realSection < constant->PredefinedHeaderLength) {
             IdentifierState identifierState;
             identifierState.Enabled = true;
             identifierState.SymbolIndex = realSection;

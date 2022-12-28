@@ -201,7 +201,7 @@ public:
                 Q_FOREACH(auto sections, item.unitedSections()) {
                     int count = 0;
                     double value = 0.0;
-                    QVariant specialValue = NA;
+                    QVariant specialValue = constant->NA;
                     Q_FOREACH(auto column, sections) {
                         auto ret = std::invoke(getValue, this, iter->second[column], specialValue);
                         if (ret.isValid()) {
@@ -229,7 +229,7 @@ public:
                 DataRow newRow;
                 for (int column=0, count = 0; column<modelInstance->columnCount(PredefinedViewEnum::Full); ++column, count = 0) {
                     double value = 0.0;
-                    QVariant specialValue = NA;
+                    QVariant specialValue = constant->NA;
                     Q_FOREACH(auto row, sections) {
                         auto ret = std::invoke(getValue, this, aggregatedMatrix()[row][column], specialValue);
                         if (ret.isValid()) {
@@ -269,7 +269,7 @@ public:
                  iter!=aggregatedMatrix().keyValueEnd(); ++iter) {
                 int targetColumn = var.firstSection();
                 Q_FOREACH(auto sections, item.unitedSections()) {
-                    QVariant value = NA;
+                    QVariant value = constant->NA;
                     vector<double> values;
                     Q_FOREACH(auto column, sections) {
                         auto ret = std::invoke(getValue, this, iter->second[column], value);
@@ -295,7 +295,7 @@ public:
             Q_FOREACH(auto sections, item.unitedSections()) {
                 DataRow newRow;
                 for (int column=0; column<modelInstance->columnCount(PredefinedViewEnum::Full); ++column) {
-                    QVariant value = NA;
+                    QVariant value = constant->NA;
                     vector<double> values;
                     Q_FOREACH(auto row, sections) {
                         auto ret = std::invoke(getValue, this, aggregatedMatrix()[row][column], value);
@@ -349,7 +349,7 @@ public:
                 DataRow newRow = iter->second;
                 Q_FOREACH(auto sections, item.unitedSections()) {
                     double value = 0.0;
-                    QVariant specialValue = NA;
+                    QVariant specialValue = constant->NA;
                     Q_FOREACH(auto column, sections) {
                         auto ret = std::invoke(getValue, this, newRow[column], specialValue);
                         if (ret.isValid()) {
@@ -378,7 +378,7 @@ public:
                 DataRow newRow;
                 for (int column=0; column<modelInstance->columnCount(PredefinedViewEnum::Full); ++column) {
                     double value = 0.0;
-                    QVariant specialValue = NA;
+                    QVariant specialValue = constant->NA;
                     Q_FOREACH(auto row, sections) {
                         auto ret = std::invoke(getValue, this, aggregatedMatrix()[row][column], specialValue);
                         if (ret.isValid()) {
@@ -420,7 +420,7 @@ public:
                 DataRow newRow = iter->second;
                 Q_FOREACH(auto sections, item.unitedSections()) {
                     double value = 0.0;
-                    QVariant specialValue = NA;
+                    QVariant specialValue = constant->NA;
                     Q_FOREACH(auto column, sections) {
                         auto ret = std::invoke(getValue, this, newRow[column], specialValue);
                         if (ret.isValid()) {
@@ -449,7 +449,7 @@ public:
                 DataRow newRow;
                 for (int column=0; column<modelInstance->columnCount(PredefinedViewEnum::Full); ++column) {
                     double value = 0.0;
-                    QVariant specialValue = NA;
+                    QVariant specialValue = constant->NA;
                     Q_FOREACH(auto row, sections) {
                         auto ret = std::invoke(getValue, this, aggregatedMatrix()[row][column], specialValue);
                         if (ret.isValid()) {
@@ -491,7 +491,7 @@ public:
                 DataRow newRow = iter->second;
                 Q_FOREACH(auto sections, item.unitedSections()) {
                     double value = 0.0;
-                    QVariant specialValue = NA;
+                    QVariant specialValue = constant->NA;
                     Q_FOREACH(auto column, sections) {
                         auto ret = std::invoke(getValue, this, newRow[column], specialValue);
                         if (ret.isValid()) value += ret.toDouble();
@@ -517,7 +517,7 @@ public:
                 DataRow newRow;
                 for (int column=0; column<modelInstance->columnCount(PredefinedViewEnum::Full); ++column) {
                     double value = 0.0;
-                    QVariant specialValue = NA;
+                    QVariant specialValue = constant->NA;
                     Q_FOREACH(auto row, sections) {
                         auto ret = std::invoke(getValue, this, aggregatedMatrix()[row][column], specialValue);
                         if (ret.isValid()) value += ret.toDouble();
@@ -587,7 +587,7 @@ public:
     virtual void aggregateRows(ModelInstance *modelInstance) override
     {
         DataMatrix tmpAggrMatrix;
-        for (int r=0; r<PredefinedHeaderLength; ++r) {
+        for (int r=0; r<constant->PredefinedHeaderLength; ++r) {
             tmpAggrMatrix[r] = aggregatedMatrix()[r];
         }
         int targetRow = -1;
@@ -660,7 +660,7 @@ private:
                        const QList<int>& visibleSections,
                        ModelInstance *modelInstance)
     {
-        QVariant specialValue = NA;
+        QVariant specialValue = constant->NA;
         auto getValue = useAbsoluteValues() ? &MinMaxDataAggregator::aggregatedAbsValue
                                             : &MinMaxDataAggregator::aggregatedValue;
         Q_FOREACH(auto row, visibleSections) {
@@ -668,8 +668,8 @@ private:
                 auto value = std::invoke(getValue, this, aggregatedMatrix()[row][column], specialValue);
                 if (!value.isValid()) continue;
                 if (newMaxRow.contains(column) && ValueFilter::isSpecialValue(newMaxRow[column])) {
-                    newMaxRow[column] = NA;
-                    newMinRow[column] = NA;
+                    newMaxRow[column] = constant->NA;
+                    newMinRow[column] = constant->NA;
                 } else if (newMaxRow.contains(column) && newMinRow.contains(column)) {
                     newMaxRow[column] = std::max(newMaxRow[column], value);
                     newMinRow[column] = std::min(newMinRow[column], value);
@@ -723,19 +723,19 @@ void DataHandler::loadDataMatrix(ModelInstance *modelInstance)
     for (int row=0; row<modelInstance->equationRowCount(); ++row) {
         auto data = modelInstance->jaccobianRow(row);
         for (auto iter=data.keyValueBegin(); iter!=data.keyValueEnd(); ++iter) {
-            mDataMatrix[row+PredefinedHeaderLength][iter->first+PredefinedHeaderLength] = iter->second;
+            mDataMatrix[row+constant->PredefinedHeaderLength][iter->first+constant->PredefinedHeaderLength] = iter->second;
         }
     }
-    for (int r=0; r<PredefinedHeaderLength; ++r) {
-        auto header = PredefinedHeader.at(r).toLower();
+    for (int r=0; r<constant->PredefinedHeaderLength; ++r) {
+        auto header = constant->PredefinedHeader.at(r).toLower();
         for (int c=0; c<modelInstance->variableRowCount(); ++c) {
-            mDataMatrix[r][c+PredefinedHeaderLength] = modelInstance->horizontalAttribute(header, c);
+            mDataMatrix[r][c+constant->PredefinedHeaderLength] = modelInstance->horizontalAttribute(header, c);
         }
     }
-    for (int c=0; c<PredefinedHeaderLength; ++c) {
-        auto header = PredefinedHeader.at(c).toLower();
+    for (int c=0; c<constant->PredefinedHeaderLength; ++c) {
+        auto header = constant->PredefinedHeader.at(c).toLower();
         for (int r=0; r<modelInstance->equationRowCount(); ++r) {
-            mDataMatrix[r+PredefinedHeaderLength][c] = modelInstance->verticalAttribute(header, r);
+            mDataMatrix[r+constant->PredefinedHeaderLength][c] = modelInstance->verticalAttribute(header, r);
         }
     }
 }
@@ -868,7 +868,7 @@ IndexCheckStates DataHandler::checkStates(Qt::Orientation orientation,
 {
     IndexCheckStates states;
     Q_FOREACH(auto index, mDataAggregator->aggregation().identifierFilter()[orientation].keys()) {
-        if (index < PredefinedHeaderLength) {
+        if (index < constant->PredefinedHeaderLength) {
             states[index] = mDataAggregator->aggregation().identifierFilter()[orientation][index].Checked;
             continue;
         }
@@ -888,14 +888,14 @@ IndexCheckStates DataHandler::checkStates(Qt::Orientation orientation,
 bool DataHandler::keepColumn(int column)
 {
     if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::EqnAttributes) {
-        return column < PredefinedHeaderLength ? true : false;
+        return column < constant->PredefinedHeaderLength ? true : false;
     }
     if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::VarAttributes) {
-        return column < PredefinedHeaderLength ? false : true;
+        return column < constant->PredefinedHeaderLength ? false : true;
     }
     if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::Jaccobian ||
             mDataAggregator->aggregation().viewType() == PredefinedViewEnum::MinMax) {
-        return column < PredefinedHeaderLength ? false : true;
+        return column < constant->PredefinedHeaderLength ? false : true;
     }
     return true;
 }
@@ -904,10 +904,10 @@ bool DataHandler::keepRow(int row)
 {
     if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::Jaccobian ||
             mDataAggregator->aggregation().viewType() == PredefinedViewEnum::MinMax) {
-        return row < PredefinedHeaderLength ? false : true;
+        return row < constant->PredefinedHeaderLength ? false : true;
     }
     if (mDataAggregator->aggregation().viewType() == PredefinedViewEnum::VarAttributes) {
-        return row < PredefinedHeaderLength ? true : false;
+        return row < constant->PredefinedHeaderLength ? true : false;
     }
     return true;
 }

@@ -29,7 +29,7 @@ QVariant JaccobianTableModel::data(const QModelIndex &index, int role) const
         return Qt::AlignRight;
     }
     if (index.isValid() && role == Qt::DisplayRole) {
-        if (index.row() < PredefinedHeaderLength || index.column() < PredefinedHeaderLength)
+        if (index.row() < constant->PredefinedHeaderLength || index.column() < constant->PredefinedHeaderLength)
             return QVariant();
         auto value = mModelInstance->data(index.row(), index.column(), mView);
         return value == 0.0 ? QVariant() : value;

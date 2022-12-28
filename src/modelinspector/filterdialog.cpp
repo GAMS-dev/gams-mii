@@ -295,7 +295,7 @@ FilterTreeItem* FilterDialog::setupSymTreeItems(const QString &text,
     auto symbols = new FilterTreeItem(text, Qt::Unchecked, root);
     symbols->setCheckable(false);
     Q_FOREACH(auto item, filter) {
-        if (item.SymbolIndex < PredefinedHeaderLength) {
+        if (item.SymbolIndex < constant->PredefinedHeaderLength) {
             if (!showAttributes) continue;
             auto fItem = new FilterTreeItem(item.Text,
                                             item.Checked,

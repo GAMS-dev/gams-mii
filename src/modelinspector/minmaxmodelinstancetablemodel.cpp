@@ -39,7 +39,7 @@ bool MinMaxIdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
         if (item.Checked == Qt::Checked) {
             continue;
         }
-        if (sectionIndex < PredefinedHeaderLength &&
+        if (sectionIndex < constant->PredefinedHeaderLength &&
                 item.SymbolIndex == sectionIndex) {
             return false;
         }
@@ -65,7 +65,7 @@ bool MinMaxIdentifierFilterModel::filterAcceptsRow(int sourceRow,
         if (item.Checked == Qt::Checked) {
             continue;
         }
-        if (sectionIndex < PredefinedHeaderLength &&
+        if (sectionIndex < constant->PredefinedHeaderLength &&
                 item.SymbolIndex == sectionIndex) {
             return false;
         }

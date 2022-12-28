@@ -43,7 +43,7 @@ public:
 
     void loadSymbols(Symbol::Type type)
     {
-        int sectionIndex = PredefinedHeaderLength;
+        int sectionIndex = constant->PredefinedHeaderLength;
         QVector<Symbol> &syms = (type == Symbol::Equation) ? mEquations : mVariables;
         for (int i=1; i<=mModelInstance->symbolCount(); ++i) {
             auto sym = mModelInstance->loadSymbol(i, sectionIndex);
@@ -56,7 +56,7 @@ public:
 
     void loadHorizontalHeaderData()
     {
-        int itemIndex = PredefinedHeaderLength;
+        int itemIndex = constant->PredefinedHeaderLength;
         Q_FOREACH(const auto &var, symbols(Symbol::Variable)) {
             MaxVariableDimension = qMax(MaxVariableDimension, var.dimension());
             for (int i=itemIndex; i<itemIndex+var.entries(); ++i) {
@@ -68,7 +68,7 @@ public:
 
     void loadVerticalHeaderData()
     {
-        int itemIndex = PredefinedHeaderLength;
+        int itemIndex = constant->PredefinedHeaderLength;
         Q_FOREACH(const auto &eqn, symbols(Symbol::Equation)) {
             MaxEquationDimension = qMax(MaxEquationDimension, eqn.dimension());
             for (int i=itemIndex; i<itemIndex+eqn.entries(); ++i) {
@@ -688,11 +688,11 @@ int ModelInstance::rowCount(PredefinedViewEnum viewType) const
 {
     switch (viewType) {
     case PredefinedViewEnum::VarAttributes:
-        return PredefinedHeaderLength;
+        return constant->PredefinedHeaderLength;
     case PredefinedViewEnum::MinMax: // one row for max and min
-        return PredefinedHeaderLength + (equationCount() * 2);
+        return constant->PredefinedHeaderLength + (equationCount() * 2);
     default:
-        return PredefinedHeaderLength + equationRowCount();
+        return constant->PredefinedHeaderLength + equationRowCount();
     }
 }
 
@@ -700,11 +700,11 @@ int ModelInstance::columnCount(PredefinedViewEnum viewType) const
 {
     switch (viewType) {
     case PredefinedViewEnum::EqnAttributes:
-        return PredefinedHeaderLength;
+        return constant->PredefinedHeaderLength;
     case PredefinedViewEnum::MinMax:
-        return PredefinedHeaderLength + variableCount();
+        return constant->PredefinedHeaderLength + variableCount();
     default:
-        return PredefinedHeaderLength + variableRowCount();
+        return constant->PredefinedHeaderLength + variableRowCount();
     }
 }
 
@@ -758,8 +758,8 @@ int ModelInstance::headerData(int logicalIndex,
 
 QString ModelInstance::headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const
 {
-    if (sectionIndex < PredefinedHeaderLength)
-        return PredefinedHeader.at(sectionIndex);
+    if (sectionIndex < constant->PredefinedHeaderLength)
+        return constant->PredefinedHeader.at(sectionIndex);
     if (orientation == Qt::Horizontal) {
         auto var = variable(sectionIndex);
         if (dimension < 0)
@@ -856,16 +856,16 @@ DataRow ModelInstance::jaccobianRow(int row)
 QVariant ModelInstance::horizontalAttribute(const QString &header, int column)
 {
     double value = 0.0;
-    if (!header.compare(Level, Qt::CaseInsensitive)) {
+    if (!header.compare(constant->Level, Qt::CaseInsensitive)) {
         value = gmoGetVarLOne(mGMO, column);
-    } else if (!header.compare(Lower, Qt::CaseInsensitive)) {
+    } else if (!header.compare(constant->Lower, Qt::CaseInsensitive)) {
         value = gmoGetVarLowerOne(mGMO, column);
-    } else if (!header.compare(Marginal, Qt::CaseInsensitive)) {
+    } else if (!header.compare(constant->Marginal, Qt::CaseInsensitive)) {
         value = gmoGetVarMOne(mGMO, column);
         return specialMarginalVarValuePtr(value, column);
-    } else if (!header.compare(Scale, Qt::CaseInsensitive)) {
+    } else if (!header.compare(constant->Scale, Qt::CaseInsensitive)) {
         value = gmoGetVarScaleOne(mGMO, column);
-    } else if (!header.compare(Upper, Qt::CaseInsensitive)) {
+    } else if (!header.compare(constant->Upper, Qt::CaseInsensitive)) {
         value = gmoGetVarUpperOne(mGMO, column);
     }
     return specialValueMinMax(value, Qt::Horizontal);
@@ -874,17 +874,17 @@ QVariant ModelInstance::horizontalAttribute(const QString &header, int column)
 QVariant ModelInstance::verticalAttribute(const QString &header, int row)
 {
     double value = 0.0;
-    if (!header.compare(Level, Qt::CaseInsensitive)) {
+    if (!header.compare(constant->Level, Qt::CaseInsensitive)) {
         value = gmoGetEquLOne(mGMO, row);
-    } else if (!header.compare(Lower, Qt::CaseInsensitive)) {
+    } else if (!header.compare(constant->Lower, Qt::CaseInsensitive)) {
         auto bounds = equationBounds(row);
         value = bounds.first;
-    } else if (!header.compare(Marginal, Qt::CaseInsensitive)) {
+    } else if (!header.compare(constant->Marginal, Qt::CaseInsensitive)) {
         value = gmoGetEquMOne(mGMO, row);
         return specialMarginalEquValuePtr(value, row);
-    } else if (!header.compare(Scale, Qt::CaseInsensitive)) {
+    } else if (!header.compare(constant->Scale, Qt::CaseInsensitive)) {
         value = gmoGetEquScaleOne(mGMO, row);
-    } else if (!header.compare(Upper, Qt::CaseInsensitive)) {
+    } else if (!header.compare(constant->Upper, Qt::CaseInsensitive)) {
         auto bounds = equationBounds(row);
         value = bounds.second;
     }
@@ -926,11 +926,11 @@ QVariant ModelInstance::specialValue(double value)
     if (value == 0.0)
         return QVariant();
     else if (gmoPinf(mGMO) == value)
-        return P_INF;
+        return constant->P_INF;
     else if (gmoMinf(mGMO) == value)
-        return N_INF;
+        return constant->N_INF;
     else if (GMS_SV_EPS == value)
-        return EPS;
+        return constant->EPS;
     return value;
 }
 
@@ -939,11 +939,11 @@ QVariant ModelInstance::specialValueMinMax(double value, Qt::Orientation orienta
     if (value == 0.0)
         return QVariant();
     else if (gmoPinf(mGMO) == value)
-        return P_INF;
+        return constant->P_INF;
     else if (gmoMinf(mGMO) == value)
-        return N_INF;
+        return constant->N_INF;
     else if (GMS_SV_EPS == value)
-        return EPS;
+        return constant->EPS;
     if (orientation == Qt::Horizontal) {
         mModelAttributeMinimumH = ValueFilter::minValue(mModelAttributeMinimumH, value);
         mModelAttributeMaximumH = ValueFilter::maxValue(mModelAttributeMaximumH, value);
@@ -962,14 +962,14 @@ QVariant ModelInstance::specialMarginalValue(double value)
 QVariant ModelInstance::specialMarginalEquValueBasis(double value, int rIndex)
 {
     if (gmoGetEquStatOne(mGMO, rIndex) != gmoBstat_Basic && value == 0.0)
-        return EPS;
+        return constant->EPS;
     return specialValue(value);
 }
 
 QVariant ModelInstance::specialMarginalVarValueBasis(double value, int cIndex)
 {
     if (gmoGetVarStatOne(mGMO, cIndex) != gmoBstat_Basic && value == 0.0)
-        return EPS;
+        return constant->EPS;
     return specialValue(value);
 }
 

@@ -88,8 +88,8 @@ void TestSymbol::test_getSet()
     symbol.setFirstSection(value+i);
     QCOMPARE(symbol.firstSection(), value+i);
     QCOMPARE(symbol.lastSection(), value+i+symbol.entries()-1);
-    QCOMPARE(symbol.firstJaccSection(), value+i-PredefinedHeaderLength);
-    QCOMPARE(symbol.lastJaccSection(), symbol.lastSection()-PredefinedHeaderLength);
+    QCOMPARE(symbol.firstJaccSection(), value+i-constant->PredefinedHeaderLength);
+    QCOMPARE(symbol.lastJaccSection(), symbol.lastSection()-constant->PredefinedHeaderLength);
     QVERIFY(symbol.contains(value+i));
     QVERIFY(symbol.contains(symbol.lastSection()));
 

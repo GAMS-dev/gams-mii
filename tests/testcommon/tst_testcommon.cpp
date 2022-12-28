@@ -43,22 +43,22 @@ TestCommon::~TestCommon()
 
 void TestCommon::test_specialValues()
 {
-    QCOMPARE(NA, "NA");
-    QCOMPARE(EPS, "EPS");
-    QCOMPARE(INF, "INF");
-    QCOMPARE(P_INF, "+INF");
-    QCOMPARE(N_INF, "-INF");
+    QCOMPARE(constant->NA, "NA");
+    QCOMPARE(constant->EPS, "EPS");
+    QCOMPARE(constant->INF, "INF");
+    QCOMPARE(constant->P_INF, "+INF");
+    QCOMPARE(constant->N_INF, "-INF");
 }
 
 void TestCommon::test_predefinedHeader()
 {
-    QCOMPARE(PredefinedHeader.size(), PredefinedHeaderLength);
-    QCOMPARE(PredefinedHeaderLength, 5);
-    QCOMPARE(PredefinedHeader.at(0), "level");
-    QCOMPARE(PredefinedHeader.at(1), "lower");
-    QCOMPARE(PredefinedHeader.at(2), "marginal");
-    QCOMPARE(PredefinedHeader.at(3), "scale");
-    QCOMPARE(PredefinedHeader.at(4), "upper");
+    QCOMPARE(constant->PredefinedHeader.size(), constant->PredefinedHeaderLength);
+    QCOMPARE(constant->PredefinedHeaderLength, 5);
+    QCOMPARE(constant->PredefinedHeader.at(0), "level");
+    QCOMPARE(constant->PredefinedHeader.at(1), "lower");
+    QCOMPARE(constant->PredefinedHeader.at(2), "marginal");
+    QCOMPARE(constant->PredefinedHeader.at(3), "scale");
+    QCOMPARE(constant->PredefinedHeader.at(4), "upper");
 }
 
 void TestCommon::test_searchResult()
@@ -153,9 +153,9 @@ void TestCommon::test_default_valueFilter()
     QCOMPARE(filter.ShowPInf, true);
     QCOMPARE(filter.ShowNInf, true);
     QCOMPARE(filter.ShowEps, true);
-    QVERIFY(filter.accepts(EPS));
-    QVERIFY(filter.accepts(N_INF));
-    QVERIFY(filter.accepts(P_INF));
+    QVERIFY(filter.accepts(constant->EPS));
+    QVERIFY(filter.accepts(constant->N_INF));
+    QVERIFY(filter.accepts(constant->P_INF));
     QVERIFY(filter.accepts(std::numeric_limits<double>::min()));
     QVERIFY(filter.accepts(std::numeric_limits<double>::max()));
 }
@@ -185,9 +185,9 @@ void TestCommon::test_getSet_valueFilter()
     filter.ShowEps = false;
     QCOMPARE(filter.ShowEps, false);
 
-    QVERIFY(!filter.accepts(EPS));
-    QVERIFY(!filter.accepts(N_INF));
-    QVERIFY(!filter.accepts(P_INF));
+    QVERIFY(!filter.accepts(constant->EPS));
+    QVERIFY(!filter.accepts(constant->N_INF));
+    QVERIFY(!filter.accepts(constant->P_INF));
     QVERIFY(filter.accepts(1001.2));
     QVERIFY(!filter.accepts(-42));
 }
@@ -212,11 +212,11 @@ void TestCommon::test_maxValue_valueFilter()
 
 void TestCommon::test_isSpecialValue_valueFilter()
 {
-    QCOMPARE(ValueFilter::isSpecialValue(NA), true);
-    QCOMPARE(ValueFilter::isSpecialValue(EPS), true);
-    QCOMPARE(ValueFilter::isSpecialValue(INF), true);
-    QCOMPARE(ValueFilter::isSpecialValue(P_INF), true);
-    QCOMPARE(ValueFilter::isSpecialValue(N_INF), true);
+    QCOMPARE(ValueFilter::isSpecialValue(constant->NA), true);
+    QCOMPARE(ValueFilter::isSpecialValue(constant->EPS), true);
+    QCOMPARE(ValueFilter::isSpecialValue(constant->INF), true);
+    QCOMPARE(ValueFilter::isSpecialValue(constant->P_INF), true);
+    QCOMPARE(ValueFilter::isSpecialValue(constant->N_INF), true);
     QCOMPARE(ValueFilter::isSpecialValue(QString()), false);
     QCOMPARE(ValueFilter::isSpecialValue("stuff"), false);
     QCOMPARE(ValueFilter::isSpecialValue(QString::number(0.1)), false);
