@@ -8,8 +8,8 @@
 #include "aggregationproxymodel.h"
 #include "valueformatproxymodel.h"
 #include "jaccobiantablemodel.h"
-#include "modelinstancetablemodel.h"
 #include "abstractmodelinstance.h"
+#include "viewconfigurationprovider.h"
 
 #include <QDebug>
 
@@ -25,26 +25,19 @@ AbstractStandardTableViewFrame::AbstractStandardTableViewFrame(QWidget *parent, 
 
 void AbstractStandardTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
 {
-    mCurrentIdentifierFilter = filter;
+    mViewConfig->setCurrentIdentifierFilter(filter);
     if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
 }
 
-const Aggregation &AbstractStandardTableViewFrame::appliedAggregation() const
+void AbstractStandardTableViewFrame::setAggregation(const Aggregation &aggregation)
 {
-    return mAggregationModel ? mAggregationModel->appliedAggregation()
-                             : mCurrentAggregation;
-}
-
-void AbstractStandardTableViewFrame::setAggregation(const Aggregation &aggregation, int view)
-{
-    mCurrentAggregation = aggregation;
-    mCurrentAggregation.setView(view);
-    if (mAggregationModel && mHorizontalHeader && mVerticalHeader) {
-        auto applied = AbstractTableViewFrame::appliedAggregation(aggregation, view);
-        mHorizontalHeader->setAppliedAggregation(applied);
-        mVerticalHeader->setAppliedAggregation(applied);
-        mAggregationModel->setAggregation(mCurrentAggregation, applied);
-    }
+    //mViewConfig->setCurrentAggregation(aggregation);
+    //if (mAggregationModel && mHorizontalHeader && mVerticalHeader) {
+    //    const auto& applied = mViewConfig->currentAggregation();
+    //    mHorizontalHeader->setAppliedAggregation(applied);
+    //    mVerticalHeader->setAppliedAggregation(applied);
+    //    mAggregationModel->setAggregation(mViewConfig->currentAggregation(), applied);
+    //}
 }
 
 void AbstractStandardTableViewFrame::setShowAbsoluteValues(bool absoluteValues)
@@ -53,53 +46,34 @@ void AbstractStandardTableViewFrame::setShowAbsoluteValues(bool absoluteValues)
             mAggregationModel->appliedAggregation().useAbsoluteValues() != absoluteValues) {
         auto aggregation = mAggregationModel->aggregation();
         aggregation.setUseAbsoluteValues(absoluteValues);
-        aggregation.setUseAbsoluteValuesGlobal(absoluteValues);
         auto appliedAggregation = mAggregationModel->appliedAggregation();
         appliedAggregation.setUseAbsoluteValues(absoluteValues);
-        appliedAggregation.setUseAbsoluteValuesGlobal(absoluteValues);
-        mCurrentAggregation.setUseAbsoluteValues(absoluteValues);
-        mCurrentAggregation.setUseAbsoluteValuesGlobal(absoluteValues);
+        mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
         mAggregationModel->setAggregation(aggregation, appliedAggregation);
     } else {
-        mCurrentAggregation.setUseAbsoluteValues(absoluteValues);
-        mCurrentAggregation.setUseAbsoluteValuesGlobal(absoluteValues);
+        mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
     }
-    mCurrentValueFilter.UseAbsoluteValues = absoluteValues;
-    mCurrentValueFilter.UseAbsoluteValuesGlobal = absoluteValues;
-    mValueFormatModel->setValueFilter(mCurrentValueFilter);
-    updateValueFilter();
+    mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
+    mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal = absoluteValues;
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+    //updateValueFilter(); TODO VF
 }
 
-void AbstractStandardTableViewFrame::setupFiltersAggregation(QAbstractItemModel *model,
-                                                             const LabelFilter &filter)
+void AbstractStandardTableViewFrame::reset()
 {
-    mCurrentLabelFilter = filter;
-    mDefaultLabelFilter = mCurrentLabelFilter;
-    mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(type());
-    mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(type());
-    mCurrentValueFilter = mDefaultValueFilter;
-    mDefaultIdentifierFilter[Qt::Horizontal] = defaultSymbolFilter(model, Qt::Horizontal);
-    mDefaultIdentifierFilter[Qt::Vertical] = defaultSymbolFilter(model, Qt::Vertical);
-    mCurrentIdentifierFilter = mDefaultIdentifierFilter;
-    mDefaultAggregation = getDefaultAggregation();
-    mCurrentAggregation = mDefaultAggregation;
-}
-
-void AbstractStandardTableViewFrame::reset(int view)
-{
-    setIdentifierFilter(mDefaultIdentifierFilter);
-    setValueFilter(mDefaultValueFilter);
-    setLabelFilter(mDefaultLabelFilter);
-    setAggregation(mDefaultAggregation, (int)view);
+    setIdentifierFilter(mViewConfig->defaultIdentifierFilter());
+    setValueFilter(mViewConfig->defaultValueFilter());
+    setLabelFilter(mViewConfig->defaultLabelFilter());
+    setAggregation(mViewConfig->defaultAggregation());
     updateView();
 }
 
 void AbstractStandardTableViewFrame::updateView()
 {
     if (mColumnRowFilterModel) mColumnRowFilterModel->invalidate();
-    ui->tableView->resizeColumnsToContents();
-    ui->tableView->resizeRowsToContents();
-    updateValueFilter();
+    //ui->tableView->resizeColumnsToContents();
+    //ui->tableView->resizeRowsToContents();
+    //updateValueFilter(); // TODO VF
     emit filtersChanged();
 }
 
@@ -107,110 +81,84 @@ void AbstractStandardTableViewFrame::setIdentifierFilterCheckState(int symbolInd
                                                                    Qt::CheckState state,
                                                                    Qt::Orientation orientation)
 {
-    auto symbols = mCurrentIdentifierFilter[orientation];
+    auto symbols = mViewConfig->currentIdentifierFilter()[orientation];
     for (auto iter=symbols.begin(); iter!=symbols.end(); ++iter) {
         if (iter->SymbolIndex == symbolIndex) {
             iter->Checked = state;
             break;
         }
     }
-    mCurrentIdentifierFilter[orientation] = symbols;
+    mViewConfig->currentIdentifierFilter()[orientation] = symbols;
 }
 
 void AbstractStandardTableViewFrame::cloneFilterAndAggregation(AbstractStandardTableViewFrame *clone, int newView)
-{
-    clone->mDefaultValueFilter = mDefaultValueFilter;
-    clone->setValueFilter(mCurrentValueFilter);
-    clone->mDefaultLabelFilter = mDefaultLabelFilter;
-    clone->setLabelFilter(mCurrentLabelFilter);
-    clone->mDefaultIdentifierFilter = mDefaultIdentifierFilter;
-    clone->setIdentifierFilter(mCurrentIdentifierFilter);
-    clone->mDefaultAggregation = mDefaultAggregation;
-    clone->setAggregation(mCurrentAggregation, newView);
-}
-
-void AbstractStandardTableViewFrame::updateValueFilter()
-{
-    if (mCurrentValueFilter.isUserInput()) return;
-
-    bool ok;
-    double min = 0.0;
-    double max = 0.0;
-    for (int r=0; r<ui->tableView->model()->rowCount(); ++r) {
-        for (int c=0; c<ui->tableView->model()->columnCount(); ++c) {
-            auto variant = ui->tableView->model()->index(r,c).data();
-            if (ValueFilter::isSpecialValue(variant.toString()))
-                continue;
-            auto value = variant.toDouble(&ok);
-            if (ok) {
-                min = ValueFilter::minValue(min, value);
-                max = ValueFilter::maxValue(max, value);
-            }
-        }
-    }
-    mCurrentValueFilter.MinValue = min;
-    mCurrentValueFilter.MaxValue = max;
+{// TODO !!! remove, like MinMax/Symbol view?
+    if (!clone) return;
+    clone->mViewConfig->setView(newView);
+    clone->setValueFilter(mViewConfig->currentValueFilter());
+    clone->setDefaultValueFilter(mViewConfig->defaultValueFilter());
+    clone->setLabelFilter(mViewConfig->currentLabelFiler());
+    clone->setDefaultLabelFilter(mViewConfig->defaultLabelFilter());
+    clone->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
+    clone->setDefaultIdentifierFilter(mViewConfig->defaultIdentifierFilter());
+    clone->setAggregation(mViewConfig->currentAggregation());
+    clone->setDefaultAggregation(mViewConfig->defaultAggregation());
 }
 
 EqnTableViewFrame::EqnTableViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractStandardTableViewFrame(parent, f)
 {
-
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::EqnAttributes));
 }
 
 AbstractTableViewFrame* EqnTableViewFrame::clone(int view)
 {
     auto frame = new EqnTableViewFrame;
-    frame->setupView(mModelInstance, view);
+    frame->setView(view);
+    frame->setupView(mModelInstance);
     cloneFilterAndAggregation(frame, view);
     return frame;
 }
 
-void EqnTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view)
+void EqnTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
-    mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
-                                                   mModelInstance,
-                                                   ui->tableView);
-    mHorizontalHeader->setViewType(PredefinedViewEnum::EqnAttributes);
-    connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &EqnTableViewFrame::setIdentifierLabelFilter);
+    mViewConfig->setModelInstance(mModelInstance);
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
-    mVerticalHeader->setViewType(PredefinedViewEnum::EqnAttributes);
+    mVerticalHeader->setViewType(type());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &EqnTableViewFrame::setIdentifierLabelFilter);
 
     auto eqnModel = new EquationAttributeTableModel(ui->tableView);
     eqnModel->setModelInstance(mModelInstance);
-    eqnModel->setView(view);
-    mValueFormatModel = new ValueFormatProxyModel(ui->tableView);
+    eqnModel->setView(mViewConfig->view());
+    mValueFormatModel = new GeneralValueFormatProxyModel(ui->tableView);
     mValueFormatModel->setSourceModel(eqnModel);
-    mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);
+    mLabelFilterModel = new EqnLabelFilterModel(mModelInstance, ui->tableView);
     mLabelFilterModel->setSourceModel(mValueFormatModel);
-    mIdentifierFilterModel = new IdentifierFilterModel(mModelInstance, ui->tableView);
+    mIdentifierFilterModel = new EqnIdentifierFilterModel(mModelInstance, ui->tableView);
     mIdentifierFilterModel->setSourceModel(mLabelFilterModel);
     mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->tableView);
     mIdentifierLabelFilterModel->setSourceModel(mIdentifierFilterModel);
-    mAggregationModel = new AggregationProxyModel(mModelInstance, ui->tableView);
-    mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
-    mAggregationModel->setView(view);
-    mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
-    mColumnRowFilterModel->setSourceModel(mAggregationModel);
+    //mAggregationModel = new AggregationProxyModel(mModelInstance, ui->tableView);
+    //mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
+    //mAggregationModel->setView(mViewConfig->view());
+    //mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
+    //mColumnRowFilterModel->setSourceModel(mAggregationModel);
 
-    ui->tableView->setHorizontalHeader(mHorizontalHeader);
     ui->tableView->setVerticalHeader(mVerticalHeader);
     auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(mColumnRowFilterModel);
+    ui->tableView->setModel(mIdentifierLabelFilterModel);
     delete oldSelectionModel;
-    mHorizontalHeader->setVisible(true);
     mVerticalHeader->setVisible(true);
 
     mBaseModel = QSharedPointer<EquationAttributeTableModel>(eqnModel);
 
-    ui->tableView->resizeColumnsToContents();
-    ui->tableView->resizeRowsToContents();
+    //ui->tableView->resizeColumnsToContents();
+    //ui->tableView->resizeRowsToContents();
+    mViewConfig->initialize(ui->tableView->model());
 }
 
 void EqnTableViewFrame::setLabelFilter(const LabelFilter &filter)
@@ -218,8 +166,6 @@ void EqnTableViewFrame::setLabelFilter(const LabelFilter &filter)
     AbstractStandardTableViewFrame::setLabelFilter(filter);
     if (mLabelFilterModel)
         mLabelFilterModel->setLabelFilter(filter);
-    if (mHorizontalHeader)
-        mHorizontalHeader->resetSymbolLabelFilters();
     if (mVerticalHeader)
         mVerticalHeader->resetSymbolLabelFilters();
     if (mIdentifierLabelFilterModel) {
@@ -234,28 +180,6 @@ void EqnTableViewFrame::setValueFilter(const ValueFilter &filter)
     if (mValueFormatModel) mValueFormatModel->setValueFilter(filter);
 }
 
-Aggregation EqnTableViewFrame::getDefaultAggregation() const
-{
-    auto initAggregation = [this](Symbol::Type type) {
-        AggregationSymbols items;
-        Q_FOREACH(const auto& sym, mModelInstance->symbols(type)) {
-            AggregationItem aggrItem;
-            aggrItem.setText(sym.name());
-            aggrItem.setSymbolIndex(sym.firstSection());
-            aggrItem.setDomainLabels(sym.domainLabels());
-            for (int d=1; d<=sym.dimension(); ++d) {
-                aggrItem.setCheckState(d, Qt::Unchecked);
-            }
-            items[aggrItem.symbolIndex()] = aggrItem;
-        }
-        return items;
-    };
-    Aggregation aggregation;
-    aggregation.setAggregationSymbols(Qt::Vertical, initAggregation(Symbol::Equation));
-    aggregation.setViewType(PredefinedViewEnum::EqnAttributes);
-    return aggregation;
-}
-
 void EqnTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                                  Qt::Orientation orientation)
 {
@@ -264,9 +188,9 @@ void EqnTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspec
     }
     if (state.disabled() && mIdentifierFilterModel) {
         setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-        mIdentifierFilterModel->setIdentifierFilter(mCurrentIdentifierFilter);
+        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
     } else {
-        mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
+        mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
         mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
     }
     updateView();
@@ -276,62 +200,57 @@ void EqnTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspec
 VarTableViewFrame::VarTableViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractStandardTableViewFrame(parent, f)
 {
-
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::VarAttributes));
 }
 
 AbstractTableViewFrame* VarTableViewFrame::clone(int view)
 {
     auto frame = new VarTableViewFrame;
-    frame->setupView(mModelInstance, view);
+    frame->setView(view);
+    frame->setupView(mModelInstance);
     cloneFilterAndAggregation(frame, view);
     return frame;
 }
 
-void VarTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view)
+void VarTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
+    mViewConfig->setModelInstance(mModelInstance);
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                                    mModelInstance,
                                                    ui->tableView);
-    mHorizontalHeader->setViewType(PredefinedViewEnum::VarAttributes);
+    mHorizontalHeader->setViewType(type());
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &VarTableViewFrame::setIdentifierLabelFilter);
-    mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
-                                                 mModelInstance,
-                                                 ui->tableView);
-    mVerticalHeader->setViewType(PredefinedViewEnum::VarAttributes);
-    connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &VarTableViewFrame::setIdentifierLabelFilter);
 
     auto varModel = new VariableAttributeTableModel(ui->tableView);
     varModel->setModelInstance(mModelInstance);
-    varModel->setView(view);
-    mValueFormatModel = new ValueFormatProxyModel(ui->tableView);
+    varModel->setView(mViewConfig->view());
+    mValueFormatModel = new GeneralValueFormatProxyModel(ui->tableView);
     mValueFormatModel->setSourceModel(varModel);
-    mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);
+    mLabelFilterModel = new VarLabelFilterModel(mModelInstance, ui->tableView);
     mLabelFilterModel->setSourceModel(mValueFormatModel);
-    mIdentifierFilterModel = new IdentifierFilterModel(mModelInstance, ui->tableView);
+    mIdentifierFilterModel = new VarIdentifierFilterModel(mModelInstance, ui->tableView);
     mIdentifierFilterModel->setSourceModel(mLabelFilterModel);
     mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->tableView);
     mIdentifierLabelFilterModel->setSourceModel(mIdentifierFilterModel);
-    mAggregationModel = new AggregationProxyModel(mModelInstance, ui->tableView);
-    mAggregationModel->setView(view);
-    mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
-    mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
-    mColumnRowFilterModel->setSourceModel(mAggregationModel);
+    //mAggregationModel = new AggregationProxyModel(mModelInstance, ui->tableView);
+    //mAggregationModel->setView(mViewConfig->view());
+    //mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
+    //mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
+    //mColumnRowFilterModel->setSourceModel(mAggregationModel);
 
     ui->tableView->setHorizontalHeader(mHorizontalHeader);
-    ui->tableView->setVerticalHeader(mVerticalHeader);
     auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(mColumnRowFilterModel);
+    ui->tableView->setModel(mIdentifierLabelFilterModel);
     delete oldSelectionModel;
     mHorizontalHeader->setVisible(true);
-    mVerticalHeader->setVisible(true);
 
     mBaseModel = QSharedPointer<VariableAttributeTableModel>(varModel);
 
-    ui->tableView->resizeColumnsToContents();
-    ui->tableView->resizeRowsToContents();
+    //ui->tableView->resizeColumnsToContents();
+    //ui->tableView->resizeRowsToContents();
+    mViewConfig->initialize(ui->tableView->model());
 }
 
 void VarTableViewFrame::setLabelFilter(const LabelFilter &filter)
@@ -341,8 +260,6 @@ void VarTableViewFrame::setLabelFilter(const LabelFilter &filter)
         mLabelFilterModel->setLabelFilter(filter);
     if (mHorizontalHeader)
         mHorizontalHeader->resetSymbolLabelFilters();
-    if (mVerticalHeader)
-        mVerticalHeader->resetSymbolLabelFilters();
     if (mIdentifierLabelFilterModel) {
         mIdentifierLabelFilterModel->clearIdentifierFilter();
         mIdentifierLabelFilterModel->invalidate();
@@ -355,43 +272,6 @@ void VarTableViewFrame::setValueFilter(const ValueFilter &filter)
     if (mValueFormatModel) mValueFormatModel->setValueFilter(filter);
 }
 
-void VarTableViewFrame::setupFiltersAggregation(QAbstractItemModel *model,
-                                                const LabelFilter &filter)
-{
-    mCurrentLabelFilter = filter;
-    mDefaultLabelFilter = mCurrentLabelFilter;
-    mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(type());
-    mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(type());
-    mCurrentValueFilter = mDefaultValueFilter;
-    mDefaultIdentifierFilter[Qt::Horizontal] = defaultSymbolFilter(model, Qt::Horizontal);
-    mDefaultIdentifierFilter[Qt::Vertical] = defaultSymbolFilter(model, Qt::Vertical);
-    mCurrentIdentifierFilter = mDefaultIdentifierFilter;
-    mDefaultAggregation = getDefaultAggregation();
-    mCurrentAggregation = mDefaultAggregation;
-}
-
-Aggregation VarTableViewFrame::getDefaultAggregation() const
-{
-    auto initAggregation = [this](Symbol::Type type) {
-        AggregationSymbols items;
-        Q_FOREACH(const auto& sym, mModelInstance->symbols(type)) {
-            AggregationItem aggrItem;
-            aggrItem.setText(sym.name());
-            aggrItem.setSymbolIndex(sym.firstSection());
-            aggrItem.setDomainLabels(sym.domainLabels());
-            for (int d=1; d<=sym.dimension(); ++d) {
-                aggrItem.setCheckState(d, Qt::Unchecked);
-            }
-            items[aggrItem.symbolIndex()] = aggrItem;
-        }
-        return items;
-    };
-    Aggregation aggregation;
-    aggregation.setAggregationSymbols(Qt::Horizontal, initAggregation(Symbol::Variable));
-    aggregation.setViewType(PredefinedViewEnum::VarAttributes);
-    return aggregation;
-}
-
 void VarTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                                  Qt::Orientation orientation)
 {
@@ -400,9 +280,9 @@ void VarTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspec
     }
     if (state.disabled() && mIdentifierFilterModel) {
         setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-        mIdentifierFilterModel->setIdentifierFilter(mCurrentIdentifierFilter);
+        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
     } else {
-        mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
+        mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
         mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
     }
     updateView();
@@ -413,38 +293,44 @@ JaccTableViewFrame::JaccTableViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractStandardTableViewFrame(parent, f)
     , mBaseModel(new JaccobianTableModel)
 {
-
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::Jaccobian));
 }
 
 AbstractTableViewFrame* JaccTableViewFrame::clone(int view)
 {
     auto frame = new JaccTableViewFrame;
-    frame->setupView(mModelInstance, view);
+    frame->setView(view);
+    frame->setupView(mModelInstance);
     cloneFilterAndAggregation(frame, view);
     return frame;
 }
 
-void JaccTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view)
+ViewDataType JaccTableViewFrame::type() const
+{
+    return ViewDataType::Jaccobian;
+}
+
+void JaccTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
+    mViewConfig->setModelInstance(mModelInstance);
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                                    mModelInstance,
                                                    ui->tableView);
-    mHorizontalHeader->setViewType(PredefinedViewEnum::Jaccobian);
+    mHorizontalHeader->setViewType(ViewDataType::Jaccobian);
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &JaccTableViewFrame::setIdentifierLabelFilter);
 
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
-    mVerticalHeader->setViewType(PredefinedViewEnum::Jaccobian);
+    mVerticalHeader->setViewType(ViewDataType::Jaccobian);
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &JaccTableViewFrame::setIdentifierLabelFilter);
 
     auto baseModel = new JaccobianTableModel(ui->tableView);
     baseModel->setModelInstance(mModelInstance);
-    baseModel->setView(view);
-    mValueFormatModel = new ValueFormatProxyModel(ui->tableView);
+    mValueFormatModel = new JaccobianValueFormatProxyModel(ui->tableView);
     mValueFormatModel->setSourceModel(baseModel);
     mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);
     mLabelFilterModel->setSourceModel(mValueFormatModel);
@@ -452,24 +338,25 @@ void JaccTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     mIdentifierFilterModel->setSourceModel(mLabelFilterModel);
     mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->tableView);
     mIdentifierLabelFilterModel->setSourceModel(mIdentifierFilterModel);
-    mAggregationModel = new AggregationProxyModel(mModelInstance, ui->tableView);
-    mAggregationModel->setView(view);
-    mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
-    mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
-    mColumnRowFilterModel->setSourceModel(mAggregationModel);
+    //mAggregationModel = new AggregationProxyModel(mModelInstance, ui->tableView);
+    //mAggregationModel->setView(mViewConfig->view());
+    //mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
+    //mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
+    //mColumnRowFilterModel->setSourceModel(mAggregationModel);
 
     ui->tableView->setHorizontalHeader(mHorizontalHeader);
     ui->tableView->setVerticalHeader(mVerticalHeader);
     auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(mColumnRowFilterModel);
+    ui->tableView->setModel(mIdentifierLabelFilterModel);
     delete oldSelectionModel;
     mHorizontalHeader->setVisible(true);
     mVerticalHeader->setVisible(true);
 
     mBaseModel = QSharedPointer<JaccobianTableModel>(baseModel);
 
-    ui->tableView->resizeColumnsToContents();
-    ui->tableView->resizeRowsToContents();
+    //ui->tableView->resizeColumnsToContents();
+    //ui->tableView->resizeRowsToContents();
+    mViewConfig->initialize(ui->tableView->model());
 }
 
 void JaccTableViewFrame::setLabelFilter(const LabelFilter &filter)
@@ -493,6 +380,16 @@ void JaccTableViewFrame::setValueFilter(const ValueFilter &filter)
     if (mValueFormatModel) mValueFormatModel->setValueFilter(filter);
 }
 
+void JaccTableViewFrame::updateView()
+{
+    if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
+    if (mColumnRowFilterModel) mColumnRowFilterModel->invalidate();
+    //ui->tableView->resizeColumnsToContents();
+    //ui->tableView->resizeRowsToContents();
+    //updateValueFilter(); // TODO VF
+    emit filtersChanged();
+}
+
 void JaccTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                                   Qt::Orientation orientation)
 {
@@ -501,110 +398,9 @@ void JaccTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspe
     }
     if (state.disabled() && mIdentifierFilterModel) {
         setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-        mIdentifierFilterModel->setIdentifierFilter(mCurrentIdentifierFilter);
+        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
     } else {
-        mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
-        mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
-    }
-    updateView();
-    emit filtersChanged();
-}
-
-FullTableViewFrame::FullTableViewFrame(QWidget *parent, Qt::WindowFlags f)
-    : AbstractStandardTableViewFrame(parent, f)
-    , mModelInstanceModel(new ModelInstanceTableModel)
-{
-
-}
-
-AbstractTableViewFrame* FullTableViewFrame::clone(int view)
-{
-    auto frame = new FullTableViewFrame;
-    frame->setupView(mModelInstance, view);
-    cloneFilterAndAggregation(frame, view);
-    return frame;
-}
-
-void FullTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view)
-{
-    mModelInstance = modelInstance;
-    mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
-                                                   mModelInstance,
-                                                   ui->tableView);
-    mHorizontalHeader->setViewType(PredefinedViewEnum::Full);
-    connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &FullTableViewFrame::setIdentifierLabelFilter);
-
-    mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
-                                                 mModelInstance,
-                                                 ui->tableView);
-    mVerticalHeader->setViewType(PredefinedViewEnum::Full);
-    connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &FullTableViewFrame::setIdentifierLabelFilter);
-
-    auto modelInstanceModel = new ModelInstanceTableModel(ui->tableView);
-    modelInstanceModel->setModelInstance(mModelInstance);
-    modelInstanceModel->setView(view);
-    mValueFormatModel = new ValueFormatProxyModel(ui->tableView);
-    mValueFormatModel->setSourceModel(modelInstanceModel);
-    mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);
-    mLabelFilterModel->setSourceModel(mValueFormatModel);
-    mIdentifierFilterModel = new IdentifierFilterModel(mModelInstance, ui->tableView);
-    mIdentifierFilterModel->setSourceModel(mLabelFilterModel);
-    mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->tableView);
-    mIdentifierLabelFilterModel->setSourceModel(mIdentifierFilterModel);
-    mAggregationModel = new AggregationProxyModel(mModelInstance, ui->tableView);
-    mAggregationModel->setView(view);
-    mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
-    mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
-    mColumnRowFilterModel->setSourceModel(mAggregationModel);
-
-    ui->tableView->setHorizontalHeader(mHorizontalHeader);
-    ui->tableView->setVerticalHeader(mVerticalHeader);
-    auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(mColumnRowFilterModel);
-    delete oldSelectionModel;
-    mHorizontalHeader->setVisible(true);
-    mVerticalHeader->setVisible(true);
-
-    mModelInstanceModel = QSharedPointer<ModelInstanceTableModel>(modelInstanceModel);
-
-    ui->tableView->resizeColumnsToContents();
-    ui->tableView->resizeRowsToContents();
-}
-
-void FullTableViewFrame::setLabelFilter(const LabelFilter &filter)
-{
-    AbstractStandardTableViewFrame::setLabelFilter(filter);
-    if (mLabelFilterModel)
-        mLabelFilterModel->setLabelFilter(filter);
-    if (mHorizontalHeader)
-        mHorizontalHeader->resetSymbolLabelFilters();
-    if (mVerticalHeader)
-        mVerticalHeader->resetSymbolLabelFilters();
-    if (mIdentifierLabelFilterModel) {
-        mIdentifierLabelFilterModel->clearIdentifierFilter();
-        mIdentifierLabelFilterModel->invalidate();
-    }
-}
-
-void FullTableViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    AbstractStandardTableViewFrame::setValueFilter(filter);
-    if (mValueFormatModel) mValueFormatModel->setValueFilter(filter);
-}
-
-void FullTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
-                                                  Qt::Orientation orientation)
-{
-    if (!mIdentifierLabelFilterModel) {
-        return;
-    }
-    if (state.disabled() && mIdentifierFilterModel) {
-        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-        mIdentifierFilterModel->setIdentifierFilter(mCurrentIdentifierFilter);
-    } else {
-        mCurrentIdentifierFilter[orientation][state.SymbolIndex] = state;
+        mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
         mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
     }
     updateView();

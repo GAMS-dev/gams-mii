@@ -30,20 +30,45 @@ protected:
     bool filterAcceptsRow(int sourceRow,
                           const QModelIndex &sourceParent) const override;
 
-private:
-    bool matchesAllColumnLabels(const QMap<QString, Qt::CheckState> &checkStates,
+    bool matchesAllColumnLabels(const LabelCheckStates &checkStates,
                                 int sectionIndex) const;
-    bool matchesAnyColumnLabels(const QMap<QString, Qt::CheckState> &checkStates,
+    bool matchesAnyColumnLabels(const LabelCheckStates &checkStates,
                                 int sectionIndex) const;
 
-    bool matchesAllRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
+    bool matchesAllRowLabels(const LabelCheckStates &checkStates,
                              int sectionIndex) const;
-    bool matchesAnyRowLabels(const QMap<QString, Qt::CheckState> &checkStates,
+    bool matchesAnyRowLabels(const LabelCheckStates &checkStates,
                              int sectionIndex) const;
 
-private:
+protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     LabelFilter mLabelFilter;
+};
+
+class EqnLabelFilterModel : public LabelFilterModel
+{
+    Q_OBJECT
+
+public:
+    EqnLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                        QObject *parent = nullptr);
+
+protected:
+    bool filterAcceptsColumn(int sourceColumn,
+                             const QModelIndex &sourceParent) const override;
+};
+
+class VarLabelFilterModel : public LabelFilterModel
+{
+    Q_OBJECT
+
+public:
+    VarLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                        QObject *parent = nullptr);
+
+protected:
+    bool filterAcceptsRow(int sourceRow,
+                          const QModelIndex &sourceParent) const override;
 };
 
 }

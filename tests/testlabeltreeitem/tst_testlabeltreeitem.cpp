@@ -321,7 +321,6 @@ void TestLabelTreeItem::test_sections()
     subChild->setSections({6, 7});
     child3->append(subChild);
     auto sections3 = root3->sections();
-    qDebug() << sections3;
     QSet<int> expected3 {0, 3, 4, 5, 6, 7};
     QCOMPARE(sections3, expected3);
     delete root3;

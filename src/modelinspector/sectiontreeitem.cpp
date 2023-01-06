@@ -84,30 +84,28 @@ int SectionTreeItem::row() const
     return 0;
 }
 
-PredefinedViewEnum SectionTreeItem::type() const {
+ViewDataType SectionTreeItem::type() const {
     return mType;
 }
 
-void SectionTreeItem::setType(PredefinedViewEnum type) {
+void SectionTreeItem::setType(ViewDataType type) {
     mType = type;
 }
 
 void SectionTreeItem::setType(const QString &text)
 {
     if (text == constant->Statistic)
-        mType = PredefinedViewEnum::Statistic;
+        mType = ViewDataType::Statistic;
     else if (text == constant->EquationAttributes)
-        mType = PredefinedViewEnum::EqnAttributes;
+        mType = ViewDataType::EqnAttributes;
     else if (text == constant->VariableAttributes)
-        mType = PredefinedViewEnum::VarAttributes;
+        mType = ViewDataType::VarAttributes;
     else if (text == constant->Jaccobian)
-        mType = PredefinedViewEnum::Jaccobian;
-    else if (text == constant->FullView)
-        mType = PredefinedViewEnum::Full;
+        mType = ViewDataType::Jaccobian;
     else if (text == constant->MinMax)
-        mType = PredefinedViewEnum::MinMax;
+        mType = ViewDataType::MinMax;
     else
-        mType = PredefinedViewEnum::Unknown;
+        mType = ViewDataType::Unknown;
 }
 
 SectionTreeItem *SectionTreeItem::parent()

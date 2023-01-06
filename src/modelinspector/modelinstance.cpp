@@ -26,146 +26,17 @@
 
 #include <QDebug>
 
-using namespace std;
-
 namespace gams {
 namespace studio {
 namespace modelinspector {
-
-class ModelInstance::SymbolCache
-{
-public:
-    SymbolCache(ModelInstance* const modelInstance)
-        : mModelInstance(modelInstance)
-    {
-
-    }
-
-    void loadSymbols(Symbol::Type type)
-    {
-        int sectionIndex = constant->PredefinedHeaderLength;
-        QVector<Symbol> &syms = (type == Symbol::Equation) ? mEquations : mVariables;
-        for (int i=1; i<=mModelInstance->symbolCount(); ++i) {
-            auto sym = mModelInstance->loadSymbol(i, sectionIndex);
-            if (type != sym.type())
-                continue;
-            sectionIndex += sym.entries();
-            syms.append(sym);
-        }
-    }
-
-    void loadHorizontalHeaderData()
-    {
-        int itemIndex = constant->PredefinedHeaderLength;
-        Q_FOREACH(const auto &var, symbols(Symbol::Variable)) {
-            MaxVariableDimension = qMax(MaxVariableDimension, var.dimension());
-            for (int i=itemIndex; i<itemIndex+var.entries(); ++i) {
-                hSectionIndexToSymbol[i] = var;
-            }
-            itemIndex += var.entries();
-        }
-    }
-
-    void loadVerticalHeaderData()
-    {
-        int itemIndex = constant->PredefinedHeaderLength;
-        Q_FOREACH(const auto &eqn, symbols(Symbol::Equation)) {
-            MaxEquationDimension = qMax(MaxEquationDimension, eqn.dimension());
-            for (int i=itemIndex; i<itemIndex+eqn.entries(); ++i) {
-                vSectionIndexToSymbol[i] = eqn;
-            }
-            itemIndex += eqn.entries();
-        }
-    }
-
-    const QVector<Symbol>& symbols(Symbol::Type type) const
-    {
-        return type == Symbol::Equation ? mEquations : mVariables;
-    }
-
-    QString longestEqnText()
-    {
-        if (mLongestEqnText.isEmpty()) {
-            Q_FOREACH(auto symbol, mModelInstance->equations()) {
-                if (symbol.name().size() > mLongestEqnText.size())
-                    mLongestEqnText = symbol.name();
-            }
-        }
-        return mLongestEqnText;
-    }
-
-    QString longestEqnLabelText() const
-    {
-        return mLongestEqnLabelText;
-    }
-
-    QString longestVarText() {
-        if (mLongestVarText.isEmpty()) {
-            Q_FOREACH(auto symbol, mModelInstance->variables()) {
-                if (symbol.name().size() > mLongestVarText.size())
-                    mLongestVarText = symbol.name();
-            }
-        }
-        return mLongestVarText;
-    }
-
-    QString longestVarLabelText() const
-    {
-        return mLongestVarLabelText;
-    }
-
-    void setLongestLabelText(Qt::Orientation orientation, const LabelFilter &labelFilter)
-    {
-        for (auto iter=labelFilter.LabelCheckStates[orientation].constKeyValueBegin();
-             iter!=labelFilter.LabelCheckStates[orientation].constKeyValueEnd(); ++iter) {
-            switch (orientation) {
-            case Qt::Horizontal:
-                if (iter->first.size() > mLongestVarLabelText.size()) {
-                    mLongestVarLabelText = iter->first;
-                }
-                break;
-            default:
-                if (iter->first.size() > mLongestEqnLabelText.size()) {
-                    mLongestEqnLabelText = iter->first;
-                }
-                break;
-            }
-        }
-    }
-
-    const Symbol& sectionSymbol(int sectionIndex, Qt::Orientation orientation)
-    {
-        if (orientation == Qt::Horizontal)
-            return hSectionIndexToSymbol[sectionIndex];
-        return vSectionIndexToSymbol[sectionIndex];
-    }
-
-public:
-    int MaxEquationDimension = 0;
-    int MaxVariableDimension = 0;
-
-private:
-    ModelInstance* const mModelInstance;
-
-    QVector<Symbol> mEquations;
-    QVector<Symbol> mVariables;
-    QMap<int, Symbol> hSectionIndexToSymbol;
-    QMap<int, Symbol> vSectionIndexToSymbol;
-
-    QString mLongestEqnText;
-    QString mLongestEqnLabelText;
-
-    QString mLongestVarText;
-    QString mLongestVarLabelText;
-};
 
 ModelInstance::ModelInstance(const QString &workspace,
                              const QString &systemDir,
                              const QString &scratchDir)
     : AbstractModelInstance(workspace, systemDir, scratchDir)
-    , mSymbolCache(new SymbolCache(this))
-    , mDataHandler(new DataHandler)
+    , mDataHandler(new DataHandler(*this))
 {
+    initialize();
 }
 
 ModelInstance::~ModelInstance()
@@ -173,8 +44,9 @@ ModelInstance::~ModelInstance()
     if (mGMO) gmoFree(&mGMO);
     if (mGEV) gevFree(&mGEV);
     // don't delete mDCT... it is handled in GMO
-    delete mSymbolCache;
     delete mDataHandler;
+    qDeleteAll(mEquations);
+    qDeleteAll(mVariables);
 }
 
 QString ModelInstance::modelName() const
@@ -241,19 +113,19 @@ int ModelInstance::nonLinearCoefficents() const
     return gmoNLNZ(mGMO);
 }
 
-Symbol ModelInstance::equation(int sectionIndex) const
+Symbol* ModelInstance::equation(int sectionIndex) const
 {
-    return mSymbolCache->sectionSymbol(sectionIndex, Qt::Vertical);
+    return vSectionIndexToSymbol[sectionIndex];
 }
 
-const QVector<Symbol>& ModelInstance::equations() const
+const QVector<Symbol*>& ModelInstance::equations() const
 {
-    return mSymbolCache->symbols(Symbol::Equation);
+    return mEquations;
 }
 
 int ModelInstance::equationCount() const
 {
-    return symbols(Symbol::Equation).count();
+    return mEquations.count();
 }
 
 int ModelInstance::equationCount(EquationType type) const
@@ -285,7 +157,7 @@ int ModelInstance::equationRowCount() const
 
 int ModelInstance::variableCount() const
 {
-    return symbols(Symbol::Variable).count();
+    return mVariables.count();
 }
 
 int ModelInstance::variableCount(VariableType type) const
@@ -317,30 +189,24 @@ int ModelInstance::variableRowCount() const
 
 QString ModelInstance::longestEquationText() const
 {
-    auto eqn = mSymbolCache->longestEqnText();
-    auto label = mSymbolCache->longestEqnLabelText();
-    if (eqn.size() > label.size())
-        return eqn;
-    return label;
+    return mLongestEqnText;
+    //return mLongestEqnText.size() > mLongestLabel.size() ? mLongestEqnText : mLongestLabel;
 }
 
 QString ModelInstance::longestVariableText() const
 {
-    auto var = mSymbolCache->longestVarText();
-    auto label = mSymbolCache->longestVarLabelText();
-    if (var.size() > label.size())
-        return var;
-    return label;
+    return mLongestVarText;
+    //return mLongestVarText.size() > mLongestLabel.size() ? mLongestVarText : mLongestLabel;
 }
 
-Symbol ModelInstance::variable(int sectionIndex) const
+Symbol* ModelInstance::variable(int sectionIndex) const
 {
-    return mSymbolCache->sectionSymbol(sectionIndex, Qt::Horizontal);
+    return hSectionIndexToSymbol[sectionIndex];
 }
 
-const QVector<Symbol>& ModelInstance::variables() const
+const QVector<Symbol*>& ModelInstance::variables() const
 {
-    return mSymbolCache->symbols(Symbol::Variable);
+    return mVariables;
 }
 
 int ModelInstance::symbolCount() const {
@@ -349,12 +215,12 @@ int ModelInstance::symbolCount() const {
 
 int ModelInstance::maximumEquationDimension() const
 {
-    return mSymbolCache->MaxEquationDimension;
+    return mMaxEquationDimension;
 }
 
 int ModelInstance::maximumVariableDimension() const
 {
-    return mSymbolCache->MaxVariableDimension;
+    return mMaxVariableDimension;
 }
 
 void ModelInstance::loadScratchData()
@@ -396,173 +262,220 @@ void ModelInstance::loadScratchData()
     mLogMessages << "Absolute Scrach Path: " + mScratchDir;
 }
 
-void ModelInstance::loadTableData(LabelFilter &labelFilter)
+void ModelInstance::loadSymbols()
 {
-    mSymbolCache->loadSymbols(Symbol::Equation);
-    mSymbolCache->loadSymbols(Symbol::Variable);
-    loadInitialLabelFilter(Qt::Horizontal, labelFilter);
-    loadInitialLabelFilter(Qt::Vertical, labelFilter);
-
-    mDataHandler->loadDataMatrix(this);
-    mSymbolCache->loadHorizontalHeaderData();
-    mSymbolCache->loadVerticalHeaderData();
+    int eqnIndex = 0, varIndex = 0;
+    int sectionIndexEqn = 0, sectionIndexVar = 0;
+    for (int i=1; i<=symbolCount(); ++i) {
+        auto sym = loadSymbol(i);
+        if (Symbol::Equation == sym->type()) {
+            mMaxEquationDimension = std::max(mMaxEquationDimension, sym->dimension());
+            sym->setFirstSection(sectionIndexEqn);
+            sym->setLogicalIndex(eqnIndex++);
+            sectionIndexEqn += sym->entries();
+            loadEquationDimensions(sym); // TODO !!! perf: optimize or load/lazy load
+            sym->setLabelTree(QSharedPointer<LabelTreeItem>(new LabelTreeItem));
+            mEquations.append(sym);
+            for (int i=sym->firstSection(); i<=sym->lastSection(); ++i) {
+                vSectionIndexToSymbol.append(sym);
+            }
+            if (sym->name().size() > mLongestEqnText.size()) {
+                mLongestEqnText = sym->name().left(10); // TODO !!! fix header space issue
+            }
+        } else if (Symbol::Variable == sym->type()) {
+            mMaxVariableDimension = std::max(mMaxVariableDimension, sym->dimension());
+            sym->setFirstSection(sectionIndexVar);
+            sym->setLogicalIndex(varIndex++);
+            sectionIndexVar += sym->entries();
+            loadVariableDimensions(sym); // TODO !!! perf: optimize or load/lazy load
+            sym->setLabelTree(QSharedPointer<LabelTreeItem>(new LabelTreeItem));
+            mVariables.append(sym);
+            for (int i=sym->firstSection(); i<=sym->lastSection(); ++i) {
+                hSectionIndexToSymbol.append(sym);
+            }
+            if (sym->name().size() > mLongestVarText.size()) {
+                mLongestVarText = sym->name().left(10); // TODO !!! fix header space issue
+            }
+        } else {
+            delete sym;
+        }
+    }
 }
 
-Symbol ModelInstance::loadSymbol(int index, int sectionIndex)
+Symbol* ModelInstance::loadSymbol(int index)
 {
-    Symbol info;
+    auto sym = new Symbol;
     if (index > symbolCount())
-        return info;
+        return sym;
 
-    info.setFirstSection(sectionIndex);
-    info.setOffset(dctSymOffset(mDCT, index));
-    info.setDimension(dctSymDim(mDCT, index));
-    info.setEntries(dctSymEntries(mDCT, index));
+    sym->setOffset(dctSymOffset(mDCT, index));
+    sym->setDimension(dctSymDim(mDCT, index));
+    sym->setEntries(dctSymEntries(mDCT, index));
 
     char symbolName[GMS_SSSIZE];
     if (dctSymName(mDCT, index, symbolName, GMS_SSSIZE))
-        info.setName("##ERROR##");
+        sym->setName("##ERROR##");
     else
-        info.setName(symbolName);
+        sym->setName(symbolName);
 
     auto type = dctSymType(mDCT, index);
     if (type == dcteqnSymType) {
-        info.setType(Symbol::Equation);
+        sym->setType(Symbol::Equation);
     } else if (type == dctvarSymType) {
-        info.setType(Symbol::Variable);
+        sym->setType(Symbol::Variable);
     } else {
-        mLogMessages << QString("ERROR: loadSymbol() >> Unknown symbol type (%1) found in ModelInstance::loadSymbol()").arg(info.name());
-        info.setType(Symbol::Unknown);
-        return info;
+        mLogMessages << QString("ERROR: loadSymbol() >> Unknown symbol type (%1) found in ModelInstance::loadSymbol()").arg(sym->name());
+        sym->setType(Symbol::Unknown);
+        return sym;
     }
 
-    int count;
+    int count = 0;
     gdxStrIndex_t gdxIndex;
     gdxStrIndexPtrs_t gdxIndexPtr;
     GDXSTRINDEXPTRS_INIT(gdxIndex, gdxIndexPtr);
     if (dctSymDomNames(mDCT, index, gdxIndexPtr, &count)) {
-        mLogMessages << QString("ERROR: Could not load symbol (%1) domains.").arg(info.name());
+        mLogMessages << QString("ERROR: Could not load symbol (%1) domains.").arg(sym->name());
     } else {
         for (int i=0; i<count; ++i) {
-            info.appendDomainLabel(gdxIndexPtr[i]);
+            sym->appendDomainLabel(gdxIndexPtr[i]);
         }
     }
 
-    loadDimensions(info);
-    loadLabelTree(info);
-
-    return info;
+    return sym;
 }
 
-void ModelInstance::loadDimensions(Symbol &symbol)
+void ModelInstance::loadEquationDimensions(Symbol *symbol)
 {
+    char quote;
     int nDomains = 0;
+    char labelName[GMS_SSSIZE];
     int domains[GLOBAL_MAX_INDEX_DIM];
-    for (int j=0; j<symbol.entries(); ++j) {
-        if (symbol.isVariable() && gmoGetjSolverQuiet(mGMO, symbol.offset() + j) < 0) {
-            mLogMessages << "ERROR: calling gmoGetjSolverQuiet() in ModelInstance::loadDimensions()";
-            continue;
-        } else if (symbol.isEquation() && gmoGetiSolverQuiet(mGMO, symbol.offset() + j) < 0) {
+    for (int j=0; j<symbol->entries(); ++j) {
+        if (gmoGetiSolverQuiet(mGMO, symbol->offset() + j) < 0) {
             mLogMessages << "ERROR: calling gmoGetiSolverQuiet() in ModelInstance::loadDimensions()";
             continue;
         }
 
         int symIndex;
-        if (symbol.isVariable() && dctColUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains)) {
-            mLogMessages << "ERROR: calling dctColUels() in ModelInstance::loadDimensions()";
-            continue;
-        } else if (symbol.isEquation() && dctRowUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains)) {
+        if (dctRowUels(mDCT, symbol->offset()+j, &symIndex, domains, &nDomains)) {
             mLogMessages << "ERROR: calling dctRowUels() in ModelInstance::loadDimensions()";
             continue;
         }
 
-        char quote;
-        char labelName[GMS_SSSIZE];
         QStringList labels;
         for (int k=0; k<nDomains; ++k) {
             dctUelLabel(mDCT, domains[k], &quote, labelName, GMS_SSSIZE);
             labels << labelName;
         }
-        symbol.setLabels(symbol.firstSection()+j, labels);
+        symbol->setLabels(symbol->firstSection()+j, labels);
     }
 }
 
-void ModelInstance::loadLabelTree(Symbol &symbol) const
+void ModelInstance::loadVariableDimensions(Symbol *symbol)
 {
-    int nDomains;
+    char quote;
+    int nDomains = 0;
+    char labelName[GMS_SSSIZE];
     int domains[GLOBAL_MAX_INDEX_DIM];
-    LabelTreeItem *root = new LabelTreeItem;
-    for (int j=0; j<symbol.entries(); ++j) {
-        if (gmoGetjSolverQuiet(mGMO, symbol.offset() + j) < 0)
+    for (int j=0; j<symbol->entries(); ++j) {
+        if (gmoGetjSolverQuiet(mGMO, symbol->offset() + j) < 0) {
+            mLogMessages << "ERROR: calling gmoGetjSolverQuiet() in ModelInstance::loadDimensions()";
             continue;
+        }
 
         int symIndex;
-        if (symbol.isVariable()) {
-            if (dctColUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains))
-                continue;
-        } else {
-            if (dctRowUels(mDCT, symbol.offset()+j, &symIndex, domains, &nDomains))
-                continue;
+        if (dctColUels(mDCT, symbol->offset()+j, &symIndex, domains, &nDomains)) {
+            mLogMessages << "ERROR: calling dctColUels() in ModelInstance::loadDimensions()";
+            continue;
         }
 
-        char quote;
-        char labelName[GMS_SSSIZE];
         QStringList labels;
         for (int k=0; k<nDomains; ++k) {
             dctUelLabel(mDCT, domains[k], &quote, labelName, GMS_SSSIZE);
             labels << labelName;
         }
-
-        appendSubItems(root, labels);
+        symbol->setLabels(symbol->firstSection()+j, labels);
     }
-
-    QList<LabelTreeItem*> items { root->childs() };
-    while (!items.isEmpty()) {
-        QList<LabelTreeItem*> nextLevel;
-        for (int nodes=items.size(), gap=symbol.entries()/nodes, currentSection=symbol.firstSection();
-             nodes>0; --nodes, currentSection+=gap) {
-            auto item = items.takeFirst();
-            item->setSectionIndex(currentSection);
-            if (!item->hasChildren())
-                item->setSections({currentSection});
-            nextLevel.append(item->childs());
-        }
-        items = nextLevel;
-    }
-
-    symbol.setLabelTree(QSharedPointer<LabelTreeItem>(root));
 }
 
-void ModelInstance::appendSubItems(LabelTreeItem *parent, QStringList &labels) const
+//void ModelInstance::loadLabelTree(Symbol *symbol) const
+//{// TODO !!! this causes a major performance issue
+    //char quote;
+    //int nDomains;
+    //int symIndex;
+    //char labelName[GMS_SSSIZE];
+    //int domains[GLOBAL_MAX_INDEX_DIM];
+    //LabelTreeItem *root = new LabelTreeItem;
+    //for (int j=0; j<symbol->entries(); ++j) {
+    //    if (gmoGetjSolverQuiet(mGMO, symbol->offset() + j) < 0) {
+    //        continue;
+    //    }
+    //    if (symbol->isVariable()) {
+    //        if (dctColUels(mDCT, symbol->offset()+j, &symIndex, domains, &nDomains))
+    //            continue;
+    //    } else {
+    //        if (dctRowUels(mDCT, symbol->offset()+j, &symIndex, domains, &nDomains))
+    //            continue;
+    //    }
+
+    //    LabelTreeItem* newParent = root;
+    //    QList<LabelTreeItem*> nextLevel = root->childs();
+    //    for (int k=0; k<nDomains; ++k) {
+    //        dctUelLabel(mDCT, domains[k], &quote, labelName, GMS_SSSIZE);
+    //        if (nextLevel.isEmpty()) {
+    //            auto child = new LabelTreeItem(labelName, newParent);
+    //            nextLevel = child->childs();
+    //            newParent->append(child);
+    //            newParent = child;
+    //            continue;
+    //        }
+    //        LabelTreeItem* currentItem = nullptr;
+    //        for (const auto& item : qAsConst(nextLevel)) {
+    //            if (!item->text().compare(labelName)) {
+    //                currentItem = item;
+    //                break;
+    //            }
+    //        }
+    //        if (currentItem) {
+    //            newParent = currentItem;
+    //            nextLevel = currentItem->childs();
+    //        } else {
+    //            auto child = new LabelTreeItem(labelName, newParent);
+    //            nextLevel = child->childs();
+    //            newParent->append(child);
+    //            newParent = child;
+    //        }
+    //    }
+    //}
+
+    //QList<LabelTreeItem*> items { root->childs() };
+    //while (!items.isEmpty()) {
+    //    QList<LabelTreeItem*> nextLevel;
+    //    for (int nodes=items.size(), gap=symbol->entries()/nodes, currentSection=symbol->firstSection();
+    //         nodes>0; --nodes, currentSection+=gap) {
+    //        auto item = items.takeFirst();
+    //        item->setSectionIndex(currentSection);
+    //        if (!item->hasChildren())
+    //            item->setSections({currentSection});
+    //        nextLevel.append(item->childs());
+    //    }
+    //    items = nextLevel;
+    //}
+
+    //symbol->setLabelTree(QSharedPointer<LabelTreeItem>(root));
+//}
+
+const QVector<Symbol*>& ModelInstance::symbols(Symbol::Type type) const
 {
-    if (labels.isEmpty())
-        return;
-    auto label = labels.takeFirst();
-    bool found = false;
-    for (int i=0; i<parent->size(); ++i) {
-        auto child = parent->child(i);
-        if (child->text() == label) {
-            found = true;
-            appendSubItems(child, labels);
-            break;
-        }
-    }
-    if (!found) {
-        auto child = new LabelTreeItem(label, parent);
-        parent->append(child);
-        appendSubItems(child, labels);
-    }
+    return type == Symbol::Equation ? mEquations : mVariables;
 }
 
-const QVector<Symbol>& ModelInstance::symbols(Symbol::Type type) const
-{
-    return mSymbolCache->symbols(type);
-}
-
-void ModelInstance::loadData(LabelFilter &labelFilter)
+void ModelInstance::loadData()
 {
     loadScratchData();
-    loadTableData(labelFilter);
+    loadSymbols();
+    loadLabels();
+    mDataHandler->loadJaccobian();
 }
 
 Range ModelInstance::matrixRange() const
@@ -684,59 +597,83 @@ Range ModelInstance::rhsRange() const
     return range;
 }
 
-int ModelInstance::rowCount(PredefinedViewEnum viewType) const
+int ModelInstance::rowCount(int view) const
+{
+    return mDataHandler->rowCount(view);
+}
+
+int ModelInstance::rowCount(ViewDataType viewType) const
 {
     switch (viewType) {
-    case PredefinedViewEnum::VarAttributes:
+    case ViewDataType::EqnAttributes:
+        return equationRowCount();
+    case ViewDataType::VarAttributes:
         return constant->PredefinedHeaderLength;
-    case PredefinedViewEnum::MinMax: // one row for max and min
-        return constant->PredefinedHeaderLength + (equationCount() * 2);
+    case ViewDataType::Jaccobian:
+        return equationRowCount();
+    case ViewDataType::MinMax: // one row for max and min
+        return equationCount() * 2;
     default:
-        return constant->PredefinedHeaderLength + equationRowCount();
+        return equationRowCount();
     }
 }
 
-int ModelInstance::columnCount(PredefinedViewEnum viewType) const
+int ModelInstance::rowEntries(int row, int view) const
+{
+    return mDataHandler->rowEntries(row, view);
+}
+
+int ModelInstance::columnCount(int view) const
+{
+    return mDataHandler->columnCount(view);
+}
+
+int ModelInstance::columnCount(ViewDataType viewType) const
 {
     switch (viewType) {
-    case PredefinedViewEnum::EqnAttributes:
+    case ViewDataType::EqnAttributes:
         return constant->PredefinedHeaderLength;
-    case PredefinedViewEnum::MinMax:
-        return constant->PredefinedHeaderLength + variableCount();
+    case ViewDataType::VarAttributes:
+        return variableRowCount();
+    case ViewDataType::Jaccobian:
+        return variableRowCount();
+    case ViewDataType::MinMax:
+        return variableCount();
     default:
-        return constant->PredefinedHeaderLength + variableRowCount();
+        return variableRowCount();
     }
 }
 
-void ModelInstance::loadInitialLabelFilter(Qt::Orientation orientation, LabelFilter &labelFilter)
+int ModelInstance::columnEntries(int column, int view) const
 {
-    LabelCheckStates filter;
-    Q_FOREACH(const auto &symbolInfo, symbols(orientation == Qt::Horizontal ? Symbol::Variable : Symbol::Equation)) {
-        int nDomains;
-        int domains[GLOBAL_MAX_INDEX_DIM];
-        for (int j=0; j<symbolInfo.entries(); ++j) {
-            if (gmoGetjSolverQuiet(mGMO, symbolInfo.offset() + j) < 0)
-                continue;
+    return mDataHandler->columnEntries(column, view);
+}
 
-            int symIndex;
-            if (orientation == Qt::Horizontal) {
-                if (dctColUels(mDCT, symbolInfo.offset()+j, &symIndex, domains, &nDomains))
-                    continue;
-            } else {
-                if (dctRowUels(mDCT, symbolInfo.offset()+j, &symIndex, domains, &nDomains))
-                    continue;
-            }
+QSharedPointer<AbstractViewConfiguration> ModelInstance::clone(int view, int newView)
+{
+    return mDataHandler->clone(view, newView);
+}
 
-            char quote;
-            char name[GMS_SSSIZE];
-            for (int k=0; k<nDomains; ++k) {
-                dctUelLabel(mDCT, domains[k], &quote, name, GMS_SSSIZE);
-                filter[name] = Qt::Checked;
-            }
-        }
+void ModelInstance::loadLabels()
+{// TODO (LW/AF) A dct call only giving real labels would be nice... to improve the efficency
+    char q;
+    char label[GMS_SSSIZE];
+    for (int i=1; i<=dctNUels(mDCT); ++i) {
+        dctUelLabel(mDCT, i, &q, label, GMS_SSSIZE);
+        mLabels << label;
     }
-    labelFilter.LabelCheckStates[orientation] = filter;
-    mSymbolCache->setLongestLabelText(orientation, labelFilter);
+    const QString ttlblk = "ttlblk";
+    const QString mincolcnt = "mincolcnt";
+    const QString minrowcnt = "minrowcnt";
+    for (int i=0; i<3 && !mLabels.isEmpty(); ++i) {
+        auto label = mLabels.last();
+        if (label == ttlblk || label == mincolcnt || label == minrowcnt)
+            mLabels.removeLast();
+    }
+    for (const auto& label : qAsConst(mLabels)) {
+        if (label.size() > mLongestLabel.size())
+            mLongestLabel = label.left(10); // TODO !!! fix header space issue
+    }
 }
 
 QVariant ModelInstance::data(int row, int column, int view) const
@@ -744,9 +681,14 @@ QVariant ModelInstance::data(int row, int column, int view) const
     return mDataHandler->data(row, column, view);
 }
 
-void ModelInstance::aggregate(const Aggregation &aggregation)
+QVariant ModelInstance::data(int row, int column) const
 {
-    mDataHandler->aggregate(aggregation, this);
+    return mDataHandler->data(row, column);
+}
+
+void ModelInstance::aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig)
+{
+    mDataHandler->aggregate(viewConfig);
 }
 
 int ModelInstance::headerData(int logicalIndex,
@@ -758,18 +700,16 @@ int ModelInstance::headerData(int logicalIndex,
 
 QString ModelInstance::headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const
 {
-    if (sectionIndex < constant->PredefinedHeaderLength)
-        return constant->PredefinedHeader.at(sectionIndex);
     if (orientation == Qt::Horizontal) {
         auto var = variable(sectionIndex);
         if (dimension < 0)
-            return var.name();
-        return var.label(sectionIndex, dimension);
+            return var->name();
+        return var->label(sectionIndex, dimension);
     }
     auto eqn = equation(sectionIndex);
     if (dimension < 0)
-        return eqn.name();
-    return eqn.label(sectionIndex, dimension);
+        return eqn->name();
+    return eqn->label(sectionIndex, dimension);
 }
 
 void ModelInstance::initialize()
@@ -829,67 +769,66 @@ void ModelInstance::initialize()
     }
 }
 
-DataRow ModelInstance::jaccobianRow(int row)
+void ModelInstance::jaccobianData(DataMatrix& dataMatrix)
 {
-    const int columns = variableRowCount();
-    int *colidx = new int[columns];
-    double *jacval = new double[columns];
-    int *nlflag = new int[columns];
-    int nz;
-    int nlnz;
-
-    DataRow jacRow;
-    if (!gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz)) {
-        for (int i=0; i<nz; ++i) {
-            jacRow[colidx[i]] = jacval[i];
-            mModelJaccMinimum = ValueFilter::minValue(mModelJaccMinimum, jacval[i]);
-            mModelJaccMaximum = ValueFilter::maxValue(mModelJaccMaximum, jacval[i]);
-        }
+    int nz, unused1, unused2;
+    int *nlflag = new int[variableRowCount()];
+    for (int row=0; row<equationRowCount(); ++row) {
+        if (gmoGetRowStat(mGMO, row, &nz, &unused1, &unused2))
+            continue;
+        auto* dataRow = dataMatrix.row(row);
+        dataRow->setEntries(nz);
+        dataRow->setColIdx(new int[nz]);
+        dataRow->setData(new double[nz]);
+        if (gmoGetRowSparse(mGMO, row, dataRow->colIdx(), dataRow->data(), nlflag, &unused1, &unused2))
+            continue;
     }
-
-    delete [] colidx;
-    delete [] jacval;
     delete [] nlflag;
-    return jacRow;
 }
 
-QVariant ModelInstance::horizontalAttribute(const QString &header, int column)
-{
-    double value = 0.0;
-    if (!header.compare(constant->Level, Qt::CaseInsensitive)) {
-        value = gmoGetVarLOne(mGMO, column);
-    } else if (!header.compare(constant->Lower, Qt::CaseInsensitive)) {
-        value = gmoGetVarLowerOne(mGMO, column);
-    } else if (!header.compare(constant->Marginal, Qt::CaseInsensitive)) {
-        value = gmoGetVarMOne(mGMO, column);
-        return specialMarginalVarValuePtr(value, column);
-    } else if (!header.compare(constant->Scale, Qt::CaseInsensitive)) {
-        value = gmoGetVarScaleOne(mGMO, column);
-    } else if (!header.compare(constant->Upper, Qt::CaseInsensitive)) {
-        value = gmoGetVarUpperOne(mGMO, column);
-    }
-    return specialValueMinMax(value, Qt::Horizontal);
-}
-
-QVariant ModelInstance::verticalAttribute(const QString &header, int row)
-{
-    double value = 0.0;
-    if (!header.compare(constant->Level, Qt::CaseInsensitive)) {
-        value = gmoGetEquLOne(mGMO, row);
-    } else if (!header.compare(constant->Lower, Qt::CaseInsensitive)) {
-        auto bounds = equationBounds(row);
-        value = bounds.first;
-    } else if (!header.compare(constant->Marginal, Qt::CaseInsensitive)) {
-        value = gmoGetEquMOne(mGMO, row);
-        return specialMarginalEquValuePtr(value, row);
-    } else if (!header.compare(constant->Scale, Qt::CaseInsensitive)) {
-        value = gmoGetEquScaleOne(mGMO, row);
-    } else if (!header.compare(constant->Upper, Qt::CaseInsensitive)) {
-        auto bounds = equationBounds(row);
-        value = bounds.second;
-    }
-    return specialValueMinMax(value, Qt::Vertical);
-}
+//double ModelInstance::horizontalAttribute(const QString &header, int column)
+//{// TODO !!!
+//    double value = 0.0;
+//    if (!header.compare(constant->Level, Qt::CaseInsensitive)) {
+//        value = gmoGetVarLOne(mGMO, column);
+//    } else if (!header.compare(constant->Lower, Qt::CaseInsensitive)) {
+//        value = gmoGetVarLowerOne(mGMO, column);
+//    } else if (!header.compare(constant->Marginal, Qt::CaseInsensitive)) {
+//        value = gmoGetVarMOne(mGMO, column);
+//        //return specialMarginalVarValuePtr(value, column);
+//    } else if (!header.compare(constant->Scale, Qt::CaseInsensitive)) {
+//        value = gmoGetVarScaleOne(mGMO, column);
+//    } else if (!header.compare(constant->Upper, Qt::CaseInsensitive)) {
+//        value = gmoGetVarUpperOne(mGMO, column);
+//    }
+//    mModelAttributeMinimumH = ValueFilter::minValue(mModelAttributeMinimumH, value);
+//    mModelAttributeMaximumH = ValueFilter::maxValue(mModelAttributeMaximumH, value);
+//    return value;
+//    //return specialValueMinMax(value, Qt::Horizontal);
+//}
+//
+//double ModelInstance::verticalAttribute(const QString &header, int row)
+//{// TODO !!!
+//    double value = 0.0;
+//    if (!header.compare(constant->Level, Qt::CaseInsensitive)) {
+//        value = gmoGetEquLOne(mGMO, row);
+//    } else if (!header.compare(constant->Lower, Qt::CaseInsensitive)) {
+//        auto bounds = equationBounds(row);
+//        value = bounds.first;
+//    } else if (!header.compare(constant->Marginal, Qt::CaseInsensitive)) {
+//        value = gmoGetEquMOne(mGMO, row);
+//        //return specialMarginalEquValuePtr(value, row);
+//    } else if (!header.compare(constant->Scale, Qt::CaseInsensitive)) {
+//        value = gmoGetEquScaleOne(mGMO, row);
+//    } else if (!header.compare(constant->Upper, Qt::CaseInsensitive)) {
+//        auto bounds = equationBounds(row);
+//        value = bounds.second;
+//    }
+//    mModelAttributeMinimumV = ValueFilter::minValue(mModelAttributeMinimumV, value);
+//    mModelAttributeMaximumV = ValueFilter::maxValue(mModelAttributeMaximumV, value);
+//    return value;
+//    //return specialValueMinMax(value, Qt::Vertical);
+//}
 
 QPair<double, double> ModelInstance::equationBounds(int row)
 {

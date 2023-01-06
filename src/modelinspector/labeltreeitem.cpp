@@ -19,6 +19,13 @@ LabelTreeItem::LabelTreeItem(const QString &text, LabelTreeItem *parent)
 
 }
 
+LabelTreeItem::LabelTreeItem(const char *text, LabelTreeItem *parent)
+    : mParent(parent)
+    , mText(text)
+{
+
+}
+
 LabelTreeItem::~LabelTreeItem()
 {
     qDeleteAll(mChilds);

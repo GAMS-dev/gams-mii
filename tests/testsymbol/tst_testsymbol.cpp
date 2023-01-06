@@ -48,8 +48,6 @@ void TestSymbol::test_default()
     QVERIFY(symbol.lastOffset()<0);
     QCOMPARE(symbol.firstSection(), -1);
     QVERIFY(symbol.lastSection()<0);
-    QVERIFY(symbol.firstJaccSection()<0);
-    QVERIFY(symbol.lastJaccSection()<0);
     QCOMPARE(symbol.labelTree(),  nullptr);
     QCOMPARE(symbol.isEquation(), false);
     QCOMPARE(symbol.isVariable(), false);
@@ -88,8 +86,6 @@ void TestSymbol::test_getSet()
     symbol.setFirstSection(value+i);
     QCOMPARE(symbol.firstSection(), value+i);
     QCOMPARE(symbol.lastSection(), value+i+symbol.entries()-1);
-    QCOMPARE(symbol.firstJaccSection(), value+i-constant->PredefinedHeaderLength);
-    QCOMPARE(symbol.lastJaccSection(), symbol.lastSection()-constant->PredefinedHeaderLength);
     QVERIFY(symbol.contains(value+i));
     QVERIFY(symbol.contains(symbol.lastSection()));
 

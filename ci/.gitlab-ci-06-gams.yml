@@ -53,7 +53,7 @@ install-gams-wei:
   tags: [windows]
   needs: [fetch-prerequisites]
   image:
-    name: $GAMS_CONTAINER_REGISTRY/machines/wei/builder-full:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6:latest
   script:
     - python ci/fetch_gams.py install
   artifacts:

@@ -38,7 +38,6 @@ void TestModelInstance::test_constructor_initialize()
     QCOMPARE(instance.workspace(), realWorkspace);
     QCOMPARE(instance.systemDirectory(), systemDir);
     QCOMPARE(instance.scratchDirectory(), scratchDir);
-    instance.initialize();
 }
 
 void TestModelInstance::test_default()

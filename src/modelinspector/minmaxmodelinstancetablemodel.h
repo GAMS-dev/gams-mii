@@ -22,7 +22,6 @@ public:
     MinMaxIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
                                 QObject *parent = nullptr);
 
-    IdentifierFilter& identifierFilter();
     void setIdentifierFilter(const IdentifierFilter &filter, const Aggregation &appliedAggregation);
 
 protected:
@@ -45,13 +44,7 @@ class MinMaxModelInstanceTableModel : public QAbstractTableModel
 public:
     explicit MinMaxModelInstanceTableModel(QObject *parent = nullptr);
 
-    ~MinMaxModelInstanceTableModel();
-
-    const Aggregation& aggregation() const;
-    const Aggregation& appliedAggregation() const;
-
-    void setAggregation(const Aggregation &aggregation,
-                        const Aggregation &appliedAggregation);
+    virtual ~MinMaxModelInstanceTableModel();
 
     void setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance);
 
@@ -73,11 +66,8 @@ public:
 
     void setView(int view);
 
-private:
-    PredefinedViewEnum mViewType;
+protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
-    Aggregation mAggregation;
-    Aggregation mAppliedAggregation;
     int mView;
 };
 

@@ -84,7 +84,7 @@
          <string>lo=3 keep=1 curdir=. scrdir=scratch</string>
         </property>
         <property name="readOnly">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
        </widget>
       </item>

@@ -58,10 +58,10 @@ ViewActionStates SectionTreeView::viewActionStates(const QModelIndex &index) con
         if (index.parent() == model()->index((int)ViewType::Custom, 0)) {
             states.SaveEnabled = true;
             states.RemoveEnabled = true;
-        } else if (item->type() == PredefinedViewEnum::Statistic || item->type() == PredefinedViewEnum::Unknown) {
+        } else if (item->type() == ViewDataType::Statistic || item->type() == ViewDataType::Unknown) {
             states.SaveEnabled = false;
             states.RemoveEnabled = false;
-        } else if (item->type() < PredefinedViewEnum::Unknown) {
+        } else if (item->type() < ViewDataType::Unknown) {
             states.SaveEnabled = true;
             states.RemoveEnabled =false;
         }

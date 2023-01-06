@@ -17,7 +17,6 @@ class LabelFilterModel;
 class AggregationProxyModel;
 class HierarchicalHeaderView;
 class JaccobianTableModel;
-class ModelInstanceTableModel;
 
 class AbstractStandardTableViewFrame : public AbstractTableViewFrame
 {
@@ -30,15 +29,11 @@ public:
 
     void setIdentifierFilter(const IdentifierFilter &filter) override;
 
-    const Aggregation& appliedAggregation() const override;
-
-    void setAggregation(const Aggregation &aggregation, int view) override;
+    void setAggregation(const Aggregation &aggregation) override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter) override;
-
-    void reset(int view) override;
+    void reset() override;
 
     void updateView() override;
 
@@ -48,11 +43,7 @@ protected:
 
     void cloneFilterAndAggregation(AbstractStandardTableViewFrame *clone, int newView);
 
-    void updateValueFilter() override;
-
 protected:
-    HierarchicalHeaderView* mHorizontalHeader = nullptr;
-    HierarchicalHeaderView* mVerticalHeader = nullptr;
     ValueFormatProxyModel* mValueFormatModel = nullptr;
     IdentifierFilterModel* mIdentifierFilterModel = nullptr;
     IdentifierLabelFilterModel* mIdentifierLabelFilterModel = nullptr;
@@ -61,7 +52,7 @@ protected:
     ColumnRowFilterModel* mColumnRowFilterModel = nullptr;
 };
 
-class EqnTableViewFrame : public AbstractStandardTableViewFrame
+class EqnTableViewFrame final : public AbstractStandardTableViewFrame
 {
     Q_OBJECT
 
@@ -70,29 +61,27 @@ public:
 
     AbstractTableViewFrame* clone(int view) override;
 
-    PredefinedViewEnum type() const override
+    ViewDataType type() const override
     {
-        return PredefinedViewEnum::EqnAttributes;
+        return ViewDataType::EqnAttributes;
     }
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
 
-protected:
-    Aggregation getDefaultAggregation() const override;
-
-private slots:
+protected slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
 
 private:
     QSharedPointer<EquationAttributeTableModel> mBaseModel;
+    HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
 
-class VarTableViewFrame : public AbstractStandardTableViewFrame
+class VarTableViewFrame final : public AbstractStandardTableViewFrame
 {
     Q_OBJECT
 
@@ -101,31 +90,27 @@ public:
 
     AbstractTableViewFrame* clone(int view) override;
 
-    PredefinedViewEnum type() const override
+    ViewDataType type() const override
     {
-        return PredefinedViewEnum::VarAttributes;
+        return ViewDataType::VarAttributes;
     }
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
 
-    void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter) override;
-
-protected:
-    Aggregation getDefaultAggregation() const override;
-
-private slots:
+protected slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
 
 private:
     QSharedPointer<VariableAttributeTableModel> mBaseModel;
+    HierarchicalHeaderView* mHorizontalHeader = nullptr;
 };
 
-class JaccTableViewFrame : public AbstractStandardTableViewFrame
+class JaccTableViewFrame final : public AbstractStandardTableViewFrame
 {
     Q_OBJECT
 
@@ -134,51 +119,24 @@ public:
 
     AbstractTableViewFrame* clone(int view) override;
 
-    PredefinedViewEnum type() const override
-    {
-        return PredefinedViewEnum::Jaccobian;
-    }
+    ViewDataType type() const override;
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
     void setLabelFilter(const LabelFilter &filter) override;
 
     void setValueFilter(const ValueFilter &filter) override;
 
-public slots:
+    void updateView() override;
+
+protected slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
 
 private:
     QSharedPointer<JaccobianTableModel> mBaseModel;
-};
-
-class FullTableViewFrame : public AbstractStandardTableViewFrame
-{
-    Q_OBJECT
-
-public:
-    FullTableViewFrame(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
-
-    AbstractTableViewFrame* clone(int view) override;
-
-    PredefinedViewEnum type() const override
-    {
-        return PredefinedViewEnum::Full;
-    }
-
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
-
-    void setLabelFilter(const LabelFilter &filter) override;
-
-    void setValueFilter(const ValueFilter &filter) override;
-
-public slots:
-    void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
-                                  Qt::Orientation orientation) override;
-
-private:
-    QSharedPointer<ModelInstanceTableModel> mModelInstanceModel;
+    HierarchicalHeaderView* mHorizontalHeader = nullptr;
+    HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
 
 }

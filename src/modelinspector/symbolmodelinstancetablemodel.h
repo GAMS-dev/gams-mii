@@ -1,10 +1,8 @@
-#ifndef MODELINSTANCETABLEMODEL_H
-#define MODELINSTANCETABLEMODEL_H
+#ifndef SYMBOLMODELINSTANCETABLEMODEL_H
+#define SYMBOLMODELINSTANCETABLEMODEL_H
 
 #include <QAbstractTableModel>
 #include <QSharedPointer>
-
-#include "common.h"
 
 namespace gams {
 namespace studio{
@@ -12,14 +10,18 @@ namespace modelinspector {
 
 class AbstractModelInstance;
 
-class ModelInstanceTableModel : public QAbstractTableModel
+class SymbolModelInstanceTableModel final : public QAbstractTableModel
 {
     Q_OBJECT
 
 public:
-    explicit ModelInstanceTableModel(QObject *parent = nullptr);
+    enum Roles {
+        RowEntryRole = Qt::UserRole,
+        ColumnEntryRole
+    };
 
-    ~ModelInstanceTableModel();
+    SymbolModelInstanceTableModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                                   QObject *parent = nullptr);
 
     void setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance);
 
@@ -37,12 +39,13 @@ public:
 
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
+    QHash<int, QByteArray> roleNames() const override;
+
     int view() const;
 
     void setView(int view);
 
-private:
-    PredefinedViewEnum mViewType;
+protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     int mView;
 };
@@ -51,4 +54,4 @@ private:
 }
 }
 
-#endif // MODELINSTANCETABLEMODEL_H
+#endif // SYMBOLMODELINSTANCETABLEMODEL_H

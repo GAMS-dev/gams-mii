@@ -33,15 +33,7 @@ namespace studio {
 namespace modelinspector {
 
 class DataHandler;
-
-struct ValueFilterSettings;
-
-struct MaxMin
-{
-    bool Valid = false;
-    double Max;
-    double Min;
-};
+class DataMatrix;
 
 class ModelInstance : public AbstractModelInstance
 {
@@ -52,8 +44,6 @@ public:
 
     ~ModelInstance();
 
-    void initialize() override;
-
     QString modelName() const override;
 
     int equationCount() const override;
@@ -62,9 +52,9 @@ public:
 
     int equationRowCount() const override;
 
-    Symbol equation(int sectionIndex) const override;
+    Symbol* equation(int sectionIndex) const override;
 
-    const QVector<Symbol>& equations() const override;
+    const QVector<Symbol*>& equations() const override;
 
     int variableCount() const override;
 
@@ -72,9 +62,9 @@ public:
 
     int variableRowCount() const override;
 
-    Symbol variable(int sectionIndex) const override;
+    Symbol* variable(int sectionIndex) const override;
 
-    const QVector<Symbol>& variables() const override;
+    const QVector<Symbol*>& variables() const override;
 
     int coefficents() const override;
 
@@ -100,44 +90,56 @@ public:
 
     int maximumVariableDimension() const override;
 
-    const QVector<Symbol>& symbols(Symbol::Type type) const override;
+    const QVector<Symbol*>& symbols(Symbol::Type type) const override;
 
-    void loadData(LabelFilter &labelFilter) override;
+    void loadData() override;
 
-    int rowCount(PredefinedViewEnum viewType) const override;
+    int rowCount(int view) const override;
 
-    int columnCount(PredefinedViewEnum viewType) const override;
+    int rowCount(ViewDataType viewType) const override;
+
+    int rowEntries(int row, int view) const override;
+
+    int columnCount(int view) const override;
+
+    int columnCount(ViewDataType viewType) const override;
+
+    int columnEntries(int column, int view) const override;
+
+    QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) override;
 
     QVariant data(int row, int column, int view) const override;
+
+    QVariant data(int row, int column) const override;
 
     QString headerData(int sectionIndex,
                        int dimension,
                        Qt::Orientation orientation) const override;
 
-    void aggregate(const Aggregation &aggregation) override;
+    void aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
 
     int headerData(int logicalIndex,
                    Qt::Orientation orientation,
                    int view) const override;
 
-    // TODO review,move,scope: used by DataHandler only
-    DataRow jaccobianRow(int row);
-    QVariant horizontalAttribute(const QString &header, int column);
-    QVariant verticalAttribute(const QString &header, int row);
+    void jaccobianData(DataMatrix& dataMatrix) override;
+    //double horizontalAttribute(const QString &header, int column);
+    //double verticalAttribute(const QString &header, int row);
 
 private:
+    void initialize();
+
     int symbolCount() const;
 
     void loadScratchData();
-    void loadTableData(LabelFilter &labelFilter);
 
-    Symbol loadSymbol(int index, int sectionIndex);
-    void loadDimensions(Symbol &symbol);
-    void loadInitialLabelFilter(Qt::Orientation orientation, LabelFilter &labelFilter);
+    void loadSymbols();
+    Symbol* loadSymbol(int index);
+    void loadEquationDimensions(Symbol *symbol);
+    void loadVariableDimensions(Symbol *symbol);
+    void loadLabels();
 
-    void loadLabelTree(Symbol &symbol) const;
-    void appendSubItems(LabelTreeItem *parent, QStringList &labels) const;
-
+    //void loadLabelTree(Symbol *symbol) const;
     QPair<double, double> equationBounds(int row);
 
     QVariant specialValue(double value);
@@ -149,9 +151,6 @@ private:
     static int errorCallback(int count, const char *message);
 
 private:
-    class SymbolCache;
-    SymbolCache *mSymbolCache;
-
     DataHandler *mDataHandler;
 
     gevHandle_t mGEV = nullptr;
@@ -159,6 +158,19 @@ private:
     dctHandle_t mDCT = nullptr;
     std::function<QVariant(double, int)> specialMarginalEquValuePtr;
     std::function<QVariant(double, int)> specialMarginalVarValuePtr;
+
+    int mMaxEquationDimension = 0;
+    int mMaxVariableDimension = 0;
+
+    QList<Symbol*> hSectionIndexToSymbol;
+    QList<Symbol*> vSectionIndexToSymbol;
+
+    QVector<Symbol*> mEquations;
+    QVector<Symbol*> mVariables;
+
+    QString mLongestLabel;
+    QString mLongestEqnText;
+    QString mLongestVarText;
 };
 
 }

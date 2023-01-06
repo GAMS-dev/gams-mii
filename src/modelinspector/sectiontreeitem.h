@@ -40,9 +40,9 @@ public:
 
     int row() const;
 
-    PredefinedViewEnum type() const;
+    ViewDataType type() const;
 
-    void setType(PredefinedViewEnum type);
+    void setType(ViewDataType type);
 
     void setType(const QString &text);
 
@@ -52,7 +52,7 @@ private:
     QString mName;
     SectionTreeItem *mParent;
     int mPage = -1;
-    PredefinedViewEnum mType = PredefinedViewEnum::Unknown;
+    ViewDataType mType = ViewDataType::Unknown;
     QVector<SectionTreeItem*> mChilds;
 };
 

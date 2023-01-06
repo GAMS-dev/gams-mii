@@ -2,6 +2,7 @@
 #include "ui_standardtableviewframe.h"
 #include "abstractmodelinstance.h"
 #include "search.h"
+#include "viewconfigurationprovider.h"
 
 namespace gams {
 namespace studio{
@@ -14,59 +15,84 @@ AbstractTableViewFrame::AbstractTableViewFrame(QWidget *parent, Qt::WindowFlags 
     ui->setupUi(this);
 }
 
+AbstractTableViewFrame::~AbstractTableViewFrame()
+{
+    delete ui;
+}
+
 const IdentifierFilter &AbstractTableViewFrame::identifierFilter() const
 {
-    return mCurrentIdentifierFilter;
+    return mViewConfig->currentIdentifierFilter();
 }
 
 const IdentifierFilter &AbstractTableViewFrame::defaultIdentifierFilter() const
 {
-    return mDefaultIdentifierFilter;
+    return mViewConfig->defaultIdentifierFilter();
+}
+
+void AbstractTableViewFrame::setDefaultIdentifierFilter(const IdentifierFilter &filter)
+{
+    mViewConfig->setDefaultIdentifierFilter(filter);
 }
 
 const ValueFilter &AbstractTableViewFrame::valueFilter() const
 {
-    return mCurrentValueFilter;
+    return mViewConfig->currentValueFilter();
 }
 
 const ValueFilter &AbstractTableViewFrame::defaultValueFilter() const
 {
-    return mDefaultValueFilter;
+    return mViewConfig->defaultValueFilter();
 }
 
 void AbstractTableViewFrame::setValueFilter(const ValueFilter &filter)
 {
-    mCurrentValueFilter = filter;
+    mViewConfig->setCurrentValueFilter(filter);
+}
+
+void AbstractTableViewFrame::setDefaultValueFilter(const ValueFilter &filter)
+{
+    return mViewConfig->setDefaultValueFilter(filter);
 }
 
 const LabelFilter &AbstractTableViewFrame::labelFilter() const
 {
-    return mCurrentLabelFilter;
+    return mViewConfig->currentLabelFiler();
 }
 
 const LabelFilter &AbstractTableViewFrame::defaultLabelFilter() const
 {
-    return mDefaultLabelFilter;
+    return mViewConfig->defaultLabelFilter();
 }
 
 void AbstractTableViewFrame::setLabelFilter(const LabelFilter &filter)
 {
-    mCurrentLabelFilter = filter;
+    mViewConfig->setCurrentLabelFilter(filter);
 }
 
-const Aggregation &AbstractTableViewFrame::aggregation() const
+void AbstractTableViewFrame::setDefaultLabelFilter(const LabelFilter &filter)
 {
-    return mCurrentAggregation;
+    mViewConfig->setDefaultLabelFilter(filter);
+}
+
+const Aggregation &AbstractTableViewFrame::currentAggregation() const
+{
+    return mViewConfig->currentAggregation();
 }
 
 const Aggregation &AbstractTableViewFrame::defaultAggregation() const
 {
-    return mDefaultAggregation;
+    return mViewConfig->defaultAggregation();
 }
 
-PredefinedViewEnum AbstractTableViewFrame::type() const
+void AbstractTableViewFrame::setDefaultAggregation(const Aggregation &aggregation)
 {
-    return PredefinedViewEnum::Unknown;
+    mViewConfig->setDefaultAggregation(aggregation);
+}
+
+ViewDataType AbstractTableViewFrame::type() const
+{
+    return ViewDataType::Unknown;
 }
 
 QAbstractItemModel *AbstractTableViewFrame::model() const
@@ -84,12 +110,32 @@ void AbstractTableViewFrame::setSearchSelection(const gams::studio::modelinspect
     }
 }
 
-QList<SearchResult> AbstractTableViewFrame::search(const QString &term, bool isRegEx)
+int AbstractTableViewFrame::view() const
+{
+    return mViewConfig->view();
+}
+
+void AbstractTableViewFrame::setView(int view)
+{
+    mViewConfig->setView(view);
+}
+
+QSharedPointer<AbstractViewConfiguration> AbstractTableViewFrame::viewConfig() const
+{
+    return mViewConfig;
+}
+
+void AbstractTableViewFrame::setViewConfig(QSharedPointer<AbstractViewConfiguration> viewConfig)
+{
+    mViewConfig = viewConfig;
+}
+
+QList<SearchResult> AbstractTableViewFrame::search(const QString &term, bool isRegEx, ViewDataType type)
 {
     QList<SearchResult> result;
     if (!term.isEmpty()) {
         Search search(mModelInstance, ui->tableView->model(),
-                      appliedAggregation(), term, isRegEx);
+                      currentAggregation(), term, isRegEx, type);
         search.run(result);
     }
     return result;
@@ -108,113 +154,6 @@ void AbstractTableViewFrame::zoomOut()
 void AbstractTableViewFrame::resetZoom()
 {
     ui->tableView->resetZoom();
-}
-
-IdentifierStates AbstractTableViewFrame::defaultSymbolFilter(QAbstractItemModel *model,
-                                                             Qt::Orientation orientation) const
-{
-    int sections = orientation == Qt::Horizontal ? model->columnCount() :
-                                                   model->rowCount();
-    bool ok;
-    IdentifierStates states;
-    QSet<QString> symNames;
-    for (int s=0; s<sections; ++s) {
-        int realSection = model->headerData(s, orientation).toInt(&ok);
-        if (!ok) continue;
-        auto data = mModelInstance->headerData(realSection, -1, orientation);
-        if (realSection < constant->PredefinedHeaderLength) {
-            IdentifierState identifierState;
-            identifierState.Enabled = true;
-            identifierState.SymbolIndex = realSection;
-            identifierState.Text = data;
-            identifierState.Checked = Qt::Checked;
-            states[realSection] = identifierState;
-        } else if (!symNames.contains(data)) {
-            symNames.insert(data);
-            IdentifierState identifierState;
-            identifierState.Enabled = true;
-            identifierState.SymbolIndex = realSection;
-            identifierState.Text = data;
-            identifierState.Checked = Qt::Checked;
-            states[realSection] = identifierState;
-        }
-    }
-    return states;
-}
-
-Aggregation AbstractTableViewFrame::appliedAggregation(const Aggregation &aggregation, int view) const
-{
-    AggregationMap map;
-    Aggregation appliedAggregation;
-    for (auto mapIter=aggregation.aggregationMap().keyValueBegin(); mapIter!=aggregation.aggregationMap().keyValueEnd(); ++mapIter) {
-        if (mapIter->first == Qt::Horizontal) {
-            int lastSymEndIndex = -1;
-            Q_FOREACH(auto item, mapIter->second) {
-                for (auto iter=item.checkStates().keyValueBegin(); iter!=item.checkStates().keyValueEnd(); ++iter) {
-                    if (iter->second != Qt::Unchecked) {
-                        auto symbol = mModelInstance->variable(item.symbolIndex());
-                        Aggregator aggregator(symbol);
-                        aggregator.applyFilterStates(identifierFilter().value(mapIter->first)[symbol.firstSection()],
-                                                     labelFilter().LabelCheckStates.value(mapIter->first),
-                                                     labelFilter().Any);
-                        aggregator.aggregate(item, aggregation.type(), aggregation.typeText(), lastSymEndIndex);
-                        appliedAggregation.indexToSymbol(Qt::Horizontal)[item.symbolIndex()] = symbol;
-                        map[mapIter->first][item.symbolIndex()] = item;
-                        break;
-                    }
-                }
-            }
-        } else {
-            int lastSymEndIndex = -1;
-            Q_FOREACH(auto item, mapIter->second) {
-                for (auto iter=item.checkStates().keyValueBegin(); iter!=item.checkStates().keyValueEnd(); ++iter) {
-                    if (iter->second != Qt::Unchecked) {
-                        auto symbol = mModelInstance->equation(item.symbolIndex());
-                        Aggregator aggregator(symbol);
-                        aggregator.applyFilterStates(identifierFilter().value(mapIter->first)[symbol.firstSection()],
-                                                     labelFilter().LabelCheckStates.value(mapIter->first),
-                                                     labelFilter().Any);
-                        aggregator.aggregate(item, aggregation.type(), aggregation.typeText(), lastSymEndIndex);
-                        appliedAggregation.indexToSymbol(Qt::Vertical)[item.symbolIndex()] = symbol;
-                        map[mapIter->first][item.symbolIndex()] = item;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    appliedAggregation.setUseAbsoluteValues(aggregation.useAbsoluteValues());
-    appliedAggregation.setType(aggregation.type());
-    appliedAggregation.setAggregationMap(map);
-    appliedAggregation.setIdentifierFilter(identifierFilter());
-    appliedAggregation.setValueFilter(valueFilter());
-    appliedAggregation.setViewType(type());
-    appliedAggregation.setView(view);
-    return appliedAggregation;
-}
-
-Aggregation AbstractTableViewFrame::getDefaultAggregation() const
-{
-    auto initAggregation = [this](Symbol::Type type) {
-        AggregationSymbols items;
-        Q_FOREACH(const auto& sym, mModelInstance->symbols(type)) {
-            AggregationItem aggrItem;
-            aggrItem.setText(sym.name());
-            aggrItem.setSymbolIndex(sym.firstSection());
-            aggrItem.setDomainLabels(sym.domainLabels());
-            for (int d=1; d<=sym.dimension(); ++d) {
-                aggrItem.setCheckState(d, Qt::Unchecked);
-            }
-            items[aggrItem.symbolIndex()] = aggrItem;
-        }
-        return items;
-    };
-    Aggregation aggregation;
-    aggregation.setViewType(type());
-    aggregation.setAggregationSymbols(Qt::Horizontal, initAggregation(Symbol::Variable));
-    aggregation.setAggregationSymbols(Qt::Vertical, initAggregation(Symbol::Equation));
-    return aggregation;
 }
 
 }

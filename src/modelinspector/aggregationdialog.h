@@ -28,7 +28,7 @@ public:
     ~AggregationDialog();
 
     const Aggregation& aggregation() const;
-    void setAggregation(const Aggregation &aggregation, const IdentifierFilter &filter);
+    void setAggregation(const Aggregation &aggregation, const IdentifierFilter &filter, bool absValuesGlobal);
     void setDefaultAggregation(const Aggregation &aggregation);
 
 signals:
@@ -60,12 +60,15 @@ private:
 private:
     Ui::AggregationDialog *ui;
     int mAggregationMethod = 0;
+    bool mAbsValuesGlobal = false;
 
     Aggregation mAggregation;
     Aggregation mDefaultAggregation;
     IdentifierFilter mIdentifierFilter;
 
     QSortFilterProxyModel *mAggregationModel = nullptr;
+
+    static QRegularExpression RegExp;
 };
 
 }

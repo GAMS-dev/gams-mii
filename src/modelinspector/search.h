@@ -22,11 +22,11 @@ public:
     Search(QSharedPointer<AbstractModelInstance> modelInstance,
            QAbstractItemModel *dataModel,
            const Aggregation &appliedAggregation,
-           const QString &term, bool isRegEx);
+           const QString &term, bool isRegEx, ViewDataType type);
 
     Search(QSharedPointer<AbstractModelInstance> modelInstance,
            QAbstractItemModel *dataModel,
-           const QString &term, bool isRegEx);
+           const QString &term, bool isRegEx, ViewDataType type);
 
     void run(QList<SearchResult> &result);
 
@@ -34,6 +34,8 @@ private:
     void search(Qt::Orientation orientation, QList<SearchResult> &result);
     void searchHeader(int logicalIndex, int sectionIndex,
                       Qt::Orientation orientation, QList<SearchResult> &result);
+
+    void searchAttributeHeader(Qt::Orientation orientation, QList<SearchResult> &result);
 
     void searchMinMax(Qt::Orientation orientation, QList<SearchResult> &result);
     void searchMinMaxHeader(int logicalIndex, int sectionIndex,
@@ -48,6 +50,7 @@ private:
     QAbstractItemModel *mDataModel;
     Aggregation mAppliedAggregation;
     std::function<bool(const QString&)> compare;
+    ViewDataType mViewDataType;
 };
 
 }

@@ -27,12 +27,14 @@ public:
 
     QSharedPointer<AbstractModelInstance> modelInstance() const;
 
+    void setIdentifierState(const IdentifierState &state);
+
     void setAppliedAggregation(const Aggregation &appliedAggregation);
 
     void setModel(QAbstractItemModel *model) override;
 
-    PredefinedViewEnum viewType() const;
-    void setViewType(PredefinedViewEnum viewType);
+    ViewDataType viewType() const;
+    void setViewType(ViewDataType viewType);
 
 public slots:
     void customMenuRequested(const QPoint &position);
@@ -60,7 +62,7 @@ private:
     class HierarchicalHeaderView_private;
     HierarchicalHeaderView_private *mPrivate;
     QSharedPointer<AbstractModelInstance> mModelInstance;
-    PredefinedViewEnum mViewType = PredefinedViewEnum::Unknown;
+    ViewDataType mViewType = ViewDataType::Unknown;
 
     QMenu *mFilterMenu;
     LabelFilterWidget *mFilterWidget;

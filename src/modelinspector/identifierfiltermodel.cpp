@@ -13,11 +13,6 @@ IdentifierFilterModel::IdentifierFilterModel(QSharedPointer<AbstractModelInstanc
 
 }
 
-IdentifierFilter& IdentifierFilterModel::identifierFilter()
-{
-    return mIdentifierFilter;
-}
-
 void IdentifierFilterModel::setIdentifierFilter(const IdentifierFilter &filter)
 {
     mIdentifierFilter = filter;
@@ -33,17 +28,14 @@ bool IdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
     auto sectionIndex = sourceModel()->headerData(sourceColumn, Qt::Horizontal).toInt(&ok);
     if (!ok) return true;
 
-    Q_FOREACH(const auto& item, mIdentifierFilter[Qt::Horizontal]) {
-        if (item.Checked == Qt::Checked) {
+    for (auto iter=mIdentifierFilter[Qt::Horizontal].constBegin();
+            iter!=mIdentifierFilter[Qt::Horizontal].constEnd(); ++iter) {
+        if (iter->Checked == Qt::Checked) {
             continue;
         }
-        if (sectionIndex < constant->PredefinedHeaderLength &&
-                item.SymbolIndex == sectionIndex) {
-            return false;
-        }
         auto sym = mModelInstance->variable(sectionIndex);
-        if (item.Text == sym.name() && sectionIndex >= sym.firstSection() &&
-                sectionIndex <= sym.lastSection()) {
+        if (iter->Text == sym->name() && sectionIndex >= sym->firstSection() &&
+                sectionIndex <= sym->lastSection()) {
             return false;
         }
     }
@@ -59,21 +51,56 @@ bool IdentifierFilterModel::filterAcceptsRow(int sourceRow,
     auto sectionIndex = sourceModel()->headerData(sourceRow, Qt::Vertical).toInt(&ok);
     if (!ok) return true;
 
-    Q_FOREACH(const auto& item, mIdentifierFilter[Qt::Vertical]) {
-        if (item.Checked == Qt::Checked) {
+    for (auto iter=mIdentifierFilter[Qt::Vertical].constBegin();
+            iter!=mIdentifierFilter[Qt::Vertical].constEnd(); ++iter) {
+        if (iter->Checked == Qt::Checked) {
             continue;
         }
-        if (sectionIndex < constant->PredefinedHeaderLength &&
-                item.SymbolIndex == sectionIndex) {
-            return false;
-        }
         auto sym = mModelInstance->equation(sectionIndex);
-        if (item.Text == sym.name() && sectionIndex >= sym.firstSection() &&
-                sectionIndex <= sym.lastSection()) {
+        if (iter->Text == sym->name() && sectionIndex >= sym->firstSection() &&
+                sectionIndex <= sym->lastSection()) {
             return false;
         }
     }
     return true;
+}
+
+VarIdentifierFilterModel::VarIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                                                   QObject *parent)
+    : IdentifierFilterModel(modelInstance, parent)
+{
+
+}
+
+bool VarIdentifierFilterModel::filterAcceptsRow(int sourceRow,
+                                                     const QModelIndex &sourceParent) const
+{
+    Q_UNUSED(sourceParent);
+    if (mIdentifierFilter[Qt::Vertical].isEmpty())
+        return true;
+    auto text = sourceModel()->headerData(sourceRow, Qt::Vertical).toString();
+    auto sectionIndex = constant->PredefinedHeader.indexOf(text);
+    auto item = mIdentifierFilter[Qt::Vertical].value(sectionIndex);
+    return item.Checked == Qt::Unchecked ? false : true;
+}
+
+EqnIdentifierFilterModel::EqnIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                                                   QObject *parent)
+    : IdentifierFilterModel(modelInstance, parent)
+{
+
+}
+
+bool EqnIdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
+                                                   const QModelIndex &sourceParent) const
+{
+    Q_UNUSED(sourceParent);
+    if (mIdentifierFilter[Qt::Horizontal].isEmpty())
+        return true;
+    auto text = sourceModel()->headerData(sourceColumn, Qt::Horizontal).toString();
+    auto sectionIndex = constant->PredefinedHeader.indexOf(text);
+    auto item = mIdentifierFilter[Qt::Horizontal].value(sectionIndex);
+    return item.Checked == Qt::Unchecked ? false : true;
 }
 
 IdentifierLabelFilterModel::IdentifierLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
@@ -89,15 +116,10 @@ void IdentifierLabelFilterModel::clearIdentifierFilter()
     mIdentifierFilter.clear();
 }
 
-IdentifierFilter& IdentifierLabelFilterModel::identifierFilter()
-{
-    return mIdentifierFilter;
-}
-
 IdentifierState IdentifierLabelFilterModel::identifierState(int symbolIndex,
                                                             Qt::Orientation orientation) const
 {
-    return mIdentifierFilter[orientation][symbolIndex];
+    return mIdentifierFilter[orientation].value(symbolIndex);
 }
 
 void IdentifierLabelFilterModel::setIdentifierState(const IdentifierState &state,
@@ -118,9 +140,9 @@ bool IdentifierLabelFilterModel::filterAcceptsColumn(int sourceColumn,
 
     if (mIdentifierFilter[Qt::Horizontal].isEmpty())
         return true;
-    int firstSection = mModelInstance->variable(sectionIndex).firstSection();
+    int firstSection = mModelInstance->variable(sectionIndex)->firstSection();
     if (firstSection < 0) return true;
-    auto item = mIdentifierFilter[Qt::Horizontal][firstSection];
+    auto item = mIdentifierFilter[Qt::Horizontal].value(firstSection);
     for (auto iter=item.CheckStates.keyValueBegin(); iter!=item.CheckStates.keyValueEnd(); ++iter) {
         if (sectionIndex == iter->first && iter->second == Qt::Unchecked) {
             return false;
@@ -140,9 +162,9 @@ bool IdentifierLabelFilterModel::filterAcceptsRow(int sourceRow,
 
     if (mIdentifierFilter[Qt::Vertical].isEmpty())
         return true;
-    int firstSection = mModelInstance->equation(sectionIndex).firstSection();
+    int firstSection = mModelInstance->equation(sectionIndex)->firstSection();
     if (firstSection < 0) return true;
-    auto item = mIdentifierFilter[Qt::Vertical][firstSection];
+    auto item = mIdentifierFilter[Qt::Vertical].value(firstSection);
     for (auto iter=item.CheckStates.keyValueBegin(); iter!=item.CheckStates.keyValueEnd(); ++iter) {
         if (sectionIndex == iter->first && iter->second == Qt::Unchecked) {
             return false;

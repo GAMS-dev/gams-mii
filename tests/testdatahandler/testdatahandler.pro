@@ -7,4 +7,11 @@ TEMPLATE = app
 
 INCLUDEPATH += $$SRCPATH/modelinspector
 
-SOURCES +=  tst_testdatahandler.cpp
+SOURCES +=  tst_testdatahandler.cpp                                 \
+            $$SRCPATH/modelinspector/datahandler.cpp                \
+            $$SRCPATH/modelinspector/modelinstance.cpp              \
+            $$SRCPATH/modelinspector/abstractmodelinstance.cpp      \
+            $$SRCPATH/modelinspector/aggregation.cpp                \
+            $$SRCPATH/modelinspector/symbol.cpp                     \
+            $$SRCPATH/modelinspector/labeltreeitem.cpp              \
+            $$SRCPATH/modelinspector/viewconfigurationprovider.cpp

@@ -12,9 +12,11 @@ namespace modelinspector {
 class LabelTreeItem
 {
 public:
-    LabelTreeItem(LabelTreeItem *parent);
+    explicit LabelTreeItem(LabelTreeItem *parent);
 
-    LabelTreeItem(const QString &text = QString(), LabelTreeItem *parent = nullptr);
+    explicit LabelTreeItem(const QString &text = QString(), LabelTreeItem *parent = nullptr);
+
+    explicit LabelTreeItem(const char *text, LabelTreeItem *parent = nullptr);
 
     ~LabelTreeItem();
 

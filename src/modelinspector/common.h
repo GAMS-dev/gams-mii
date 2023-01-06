@@ -35,16 +35,12 @@ struct Constant
     const QString EquationAttributes = "Equation Attributes";
     const QString VariableAttributes = "Variable Attributes";
     const QString Jaccobian = "Jaccobian";
-    const QString FullView = "Full View";
     const QString MinMax = "Min Max";
     const QString SymbolView = "Symbol View";
-    const QString SymbolEqnView = "Symbol Equation View";
-    const QString SymbolVarView = "Symbol Variable View";
     const QStringList PredefinedViewTexts = { Statistic,
                                               EquationAttributes,
                                               VariableAttributes,
                                               Jaccobian,
-                                              FullView,
                                               MinMax };
 };
 
@@ -56,17 +52,14 @@ enum class ViewType
     Custom      = 1
 };
 
-enum class PredefinedViewEnum
+enum class ViewDataType
 {
     Statistic       = 0,
     EqnAttributes   = 1,
     VarAttributes   = 2,
     Jaccobian       = 3,
-    Full            = 4,
-    MinMax          = 5,
-    SymbolView      = 6,
-    SymbolEqnView   = 7,
-    SymbolVarView   = 8,
+    MinMax          = 4,
+    SymbolView      = 5,
     Unknown         = 127
 };
 
@@ -109,7 +102,7 @@ typedef QVector<QString> DomainLabels;
 ///
 /// \remark List index is symbol dimension.
 ///
-typedef QMap<int, QStringList> SectionLabels;
+typedef QHash<int, QStringList> SectionLabels;
 
 ///
 /// \brief A set of section which will be united during aggregation.
@@ -124,7 +117,7 @@ typedef QMap<int, Qt::CheckState> IndexCheckStates;
 ///
 /// \brief Check states by label.
 ///
-typedef QMap<QString, Qt::CheckState> LabelCheckStates;
+typedef QHash<QString, Qt::CheckState> LabelCheckStates;
 
 struct SearchResult
 {
@@ -200,56 +193,61 @@ struct ValueFilter
         return mIsUserInput;
     }
 
+    bool isAbsolute() const
+    {
+        return UseAbsoluteValues || UseAbsoluteValuesGlobal;
+    }
+
     void setIsUserInput(bool userInput)
     {
         mIsUserInput = userInput;
     }
 
-    bool accepts(const QVariant &value) const
-    {
-        if (!value.isValid())
-            return false;
-        auto str = value.toString();
-        if (!str.compare(constant->P_INF, Qt::CaseInsensitive)) {
-            return ShowPInf ? true : false;
-        }
-        if (!str.compare(constant->N_INF, Qt::CaseInsensitive)) {
-            return ShowNInf ? true : false;
-        }
-        if (!str.compare(constant->EPS, Qt::CaseInsensitive)) {
-            return ShowEps ? true : false;
-        }
-        bool ok;
-        double val = UseAbsoluteValues ? abs(value.toDouble(&ok))
-                                       : value.toDouble(&ok);
-        if (!ok)
-            return false;
-        if (ExcludeRange) {
-            return val < MinValue || val > MaxValue;
-        } else {
-            return val >= MinValue && val <= MaxValue;
-        }
-        return false;
-    }
+    //bool accepts(const QVariant &value) const
+    //{// only needed for attributes?
+    //    if (!value.isValid())
+    //        return false;
+    //    auto str = value.toString();
+    //    if (!str.compare(constant->P_INF, Qt::CaseInsensitive)) {
+    //        return ShowPInf ? true : false;
+    //    }
+    //    if (!str.compare(constant->N_INF, Qt::CaseInsensitive)) {
+    //        return ShowNInf ? true : false;
+    //    }
+    //    if (!str.compare(constant->EPS, Qt::CaseInsensitive)) {
+    //        return ShowEps ? true : false;
+    //    }
+    //    bool ok;
+    //    double val = UseAbsoluteValues ? abs(value.toDouble(&ok))
+    //                                   : value.toDouble(&ok);
+    //    if (!ok)
+    //        return false;
+    //    if (ExcludeRange) {
+    //        return val < MinValue || val > MaxValue;
+    //    } else {
+    //        return val >= MinValue && val <= MaxValue;
+    //    }
+    //    return false;
+    //}
 
     static double minValue(double value, double newValue)
-    {
+    {// TODO !!! remove or improve for attributes
         if (value == 0.0) {
             return newValue;
-        } else if (newValue != 0.0) {
-            return std::min(value, newValue);
+        } else if (newValue == 0.0) {
+            return value;
         }
-        return value;
+        return std::min(value, newValue);
     }
 
     static double maxValue(double value, double newValue)
-    {
+    {// TODO !!! remove or improve for attributes
         if (value == 0.0) {
             return newValue;
-        } else if (newValue != 0.0) {
-            return std::max(value, newValue);
+        } else if (newValue == 0.0) {
+            return value;
         }
-        return value;
+        return std::max(value, newValue);
     }
 
     static bool isSpecialValue(const QVariant &value)

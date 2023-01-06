@@ -16,8 +16,22 @@ class ValueFormatProxyModel : public QIdentityProxyModel
 public:
     ValueFormatProxyModel(QObject *parent = nullptr);
 
-    ValueFilter valueFilter() const;
-    void setValueFilter(const ValueFilter &valueFilter);
+    virtual void setValueFilter(const ValueFilter &valueFilter);
+
+    virtual QVariant data(const QModelIndex &index, int role) const = 0;
+
+protected:
+    ValueFilter mValueFilter;
+};
+
+class GeneralValueFormatProxyModel final : public ValueFormatProxyModel
+{
+    Q_OBJECT
+
+public:
+    GeneralValueFormatProxyModel(QObject *parent = nullptr);
+
+    void setValueFilter(const ValueFilter &valueFilter) override;
 
     QVariant data(const QModelIndex &index, int role) const override;
 
@@ -25,8 +39,32 @@ private:
     QVariant applyFilter(const QVariant &data) const;
 
 private:
-    ValueFilter mValueFilter;
     std::function<double(const QVariant &variant, bool *ok)> getValue;
+};
+
+class JaccobianValueFormatProxyModel final : public ValueFormatProxyModel
+{
+    Q_OBJECT
+
+public:
+    JaccobianValueFormatProxyModel(QObject *parent = nullptr);
+
+    void setValueFilter(const ValueFilter &valueFilter) override;
+
+    QVariant data(const QModelIndex &index, int role) const override;
+
+private:
+    std::function<double(const QVariant &variant, bool *ok)> getValue;
+};
+
+class MinMaxValueFormatProxyModel final : public ValueFormatProxyModel
+{
+    Q_OBJECT
+
+public:
+    MinMaxValueFormatProxyModel(QObject *parent = nullptr);
+
+    QVariant data(const QModelIndex &index, int role) const override;
 };
 
 }

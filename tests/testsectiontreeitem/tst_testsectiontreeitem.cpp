@@ -44,7 +44,7 @@ void TestSectionTreeItem::test_default()
     QCOMPARE(item.name(), "default");
     QCOMPARE(item.page(), -1);
     QCOMPARE(item.row(), 0);
-    QCOMPARE(item.type(), PredefinedViewEnum::Unknown);
+    QCOMPARE(item.type(), ViewDataType::Unknown);
     QCOMPARE(item.parent(), nullptr);
 }
 
@@ -81,27 +81,25 @@ void TestSectionTreeItem::test_getSet()
     item.setPage(42);
     QCOMPARE(item.page(), 42);
 
-    item.setType(PredefinedViewEnum::Jaccobian);
-    QCOMPARE(item.type(), PredefinedViewEnum::Jaccobian);
+    item.setType(ViewDataType::Jaccobian);
+    QCOMPARE(item.type(), ViewDataType::Jaccobian);
 }
 
 void TestSectionTreeItem::test_setTypeText()
 {
     SectionTreeItem item("default");
     item.setType(constant->EquationAttributes);
-    QCOMPARE(item.type(), PredefinedViewEnum::EqnAttributes);
+    QCOMPARE(item.type(), ViewDataType::EqnAttributes);
     item.setType(constant->VariableAttributes);
-    QCOMPARE(item.type(), PredefinedViewEnum::VarAttributes);
+    QCOMPARE(item.type(), ViewDataType::VarAttributes);
     item.setType(constant->Jaccobian);
-    QCOMPARE(item.type(), PredefinedViewEnum::Jaccobian);
-    item.setType(constant->FullView);
-    QCOMPARE(item.type(), PredefinedViewEnum::Full);
+    QCOMPARE(item.type(), ViewDataType::Jaccobian);
     item.setType(constant->Statistic);
-    QCOMPARE(item.type(), PredefinedViewEnum::Statistic);
+    QCOMPARE(item.type(), ViewDataType::Statistic);
     item.setType(constant->MinMax);
-    QCOMPARE(item.type(), PredefinedViewEnum::MinMax);
+    QCOMPARE(item.type(), ViewDataType::MinMax);
     item.setType("lala");
-    QCOMPARE(item.type(), PredefinedViewEnum::Unknown);
+    QCOMPARE(item.type(), ViewDataType::Unknown);
 }
 
 QTEST_APPLESS_MAIN(TestSectionTreeItem)

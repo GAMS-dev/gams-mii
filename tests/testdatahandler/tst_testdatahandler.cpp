@@ -1,9 +1,12 @@
 #include <QtTest>
 
-// add necessary includes here
+#include "datahandler.h"
+#include "abstractmodelinstance.h"
+
+using namespace gams::studio::modelinspector;
 
 class TestDataHandler : public QObject
-{// TODO tests
+{
     Q_OBJECT
 
 public:
@@ -11,8 +14,10 @@ public:
     ~TestDataHandler();
 
 private slots:
-    void test_case1();
-
+    void test_DataRow();
+    void test_DataMatrix();
+    void test_DataHandler_empty();
+    void test_DataHandler_transport();
 };
 
 TestDataHandler::TestDataHandler()
@@ -25,9 +30,102 @@ TestDataHandler::~TestDataHandler()
 
 }
 
-void TestDataHandler::test_case1()
+void TestDataHandler::test_DataRow()
 {
+    DataRow dataRow0;
+    QCOMPARE(dataRow0.entries(), 0);
+    QCOMPARE(dataRow0.colIdx(), nullptr);
+    QCOMPARE(dataRow0.data(), nullptr);
+    DataRow dataRow1(8);
+    QCOMPARE(dataRow1.entries(), 8);
+    QVERIFY(dataRow1.colIdx() != nullptr);
+    QVERIFY(dataRow1.data() != nullptr);
+    std::fill(dataRow1.colIdx(), dataRow1.colIdx()+dataRow1.entries(), 1);
+    std::fill(dataRow1.data(), dataRow1.data()+dataRow1.entries(), 0);
+    DataRow dataRow2(dataRow1);
+    QCOMPARE(dataRow2.entries(), dataRow1.entries());
+    QVERIFY(std::equal(dataRow1.colIdx(), dataRow1.colIdx()+dataRow1.entries(), dataRow2.colIdx()));
+    QVERIFY(std::equal(dataRow1.data(), dataRow1.data()+dataRow1.entries(), dataRow2.data()));
+    DataRow dataRow3;
+    dataRow3 = dataRow2;
+    QCOMPARE(dataRow3.entries(), dataRow2.entries());
+    QVERIFY(std::equal(dataRow2.colIdx(), dataRow2.colIdx()+dataRow2.entries(), dataRow3.colIdx()));
+    QVERIFY(std::equal(dataRow2.data(), dataRow2.data()+dataRow2.entries(), dataRow3.data()));
+    DataRow dataRow4 = std::move(dataRow3);
+    QCOMPARE(dataRow3.entries(), 0);
+    QCOMPARE(dataRow3.colIdx(), nullptr);
+    QCOMPARE(dataRow3.data(), nullptr);
+    QCOMPARE(dataRow4.entries(), dataRow2.entries());
+    QVERIFY(std::equal(dataRow2.colIdx(), dataRow2.colIdx()+dataRow2.entries(), dataRow4.colIdx()));
+    QVERIFY(std::equal(dataRow2.data(), dataRow2.data()+dataRow2.entries(), dataRow4.data()));
+    DataRow dataRow5(DataRow(12));
+    QCOMPARE(dataRow5.entries(), 12);
+    QVERIFY(dataRow5.colIdx() != nullptr);
+    QVERIFY(dataRow5.data() != nullptr);
+}
 
+void TestDataHandler::test_DataMatrix()
+{
+    DataMatrix dataMatrix0;
+    QCOMPARE(dataMatrix0.rowCount(), 0);
+    QCOMPARE(dataMatrix0.row(-1), nullptr);
+    QCOMPARE(dataMatrix0.row(0), nullptr);
+    QCOMPARE(dataMatrix0.row(1), nullptr);
+    DataMatrix dataMatrix1(8);
+    QCOMPARE(dataMatrix1.rowCount(), 8);
+    QCOMPARE(dataMatrix1.row(-1), nullptr);
+    QVERIFY(dataMatrix1.row(0) != nullptr);
+    QVERIFY(dataMatrix1.row(8) != nullptr);
+    QCOMPARE(dataMatrix1.row(9), nullptr);
+    DataMatrix dataMatrix2(dataMatrix1);
+    QCOMPARE(dataMatrix2.rowCount(), 8);
+    QCOMPARE(dataMatrix2.row(-1), nullptr);
+    QVERIFY(dataMatrix2.row(0) != nullptr);
+    QVERIFY(dataMatrix2.row(8) != nullptr);
+    QCOMPARE(dataMatrix2.row(9), nullptr);
+    DataMatrix dataMatrix3 = dataMatrix2;
+    QCOMPARE(dataMatrix3.rowCount(), dataMatrix2.rowCount());
+    DataMatrix dataMatrix4 = std::move(dataMatrix3);
+    QCOMPARE(dataMatrix3.rowCount(), 0);
+    QCOMPARE(dataMatrix3.row(0), nullptr);
+    QCOMPARE(dataMatrix4.rowCount(), 8);
+    QVERIFY(dataMatrix4.row(8) != nullptr);
+    DataMatrix dataMatrix5(DataMatrix(12));
+    QCOMPARE(dataMatrix5.rowCount(), 12);
+    QVERIFY(dataMatrix5.row(0) != nullptr);
+    QVERIFY(dataMatrix5.row(12) != nullptr);
+    QVERIFY(dataMatrix5.row(13) == nullptr);
+}
+
+void TestDataHandler::test_DataHandler_empty()
+{
+    EmptyModelInstance modelInstance;
+    DataHandler dataHandler(modelInstance);
+    dataHandler.aggregate(nullptr);
+    QCOMPARE(dataHandler.data(-4, -2, -1), QVariant());
+    QCOMPARE(dataHandler.data(4, 2, -1), QVariant());
+    QCOMPARE(dataHandler.data(4, 2, 0), QVariant());
+    QCOMPARE(dataHandler.data(4, 2, 84), QVariant());
+    QCOMPARE(dataHandler.data(-4, -2), QVariant());
+    QCOMPARE(dataHandler.data(4, 2), QVariant());
+    QCOMPARE(dataHandler.headerData(-1, Qt::Horizontal, -1), -1);
+    QCOMPARE(dataHandler.headerData(-1, Qt::Vertical, -1), -1);
+    QCOMPARE(dataHandler.headerData(1, Qt::Horizontal, 1), -1);
+    QCOMPARE(dataHandler.headerData(1, Qt::Vertical, 1), -1);
+    QCOMPARE(dataHandler.rowCount(-1), 0);
+    QCOMPARE(dataHandler.rowCount(0), 0);
+    QCOMPARE(dataHandler.rowEntries(-1, -1), 0);
+    QCOMPARE(dataHandler.rowEntries(0, 0), 0);
+    QCOMPARE(dataHandler.columnCount(-1), 0);
+    QCOMPARE(dataHandler.columnCount(0), 0);
+    QCOMPARE(dataHandler.columnEntries(-1, -1), 0);
+    QCOMPARE(dataHandler.columnEntries(0, 0), 0);
+    dataHandler.loadJaccobian();
+}
+
+void TestDataHandler::test_DataHandler_transport()
+{
+    // TODO implement test
 }
 
 QTEST_APPLESS_MAIN(TestDataHandler)

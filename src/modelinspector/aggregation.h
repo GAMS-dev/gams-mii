@@ -4,6 +4,7 @@
 #include "common.h"
 #include "symbol.h"
 
+#include <QDebug>
 #include <QSet>
 #include <QSharedPointer>
 
@@ -11,13 +12,11 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-typedef QMap<int, QVariant> DataRow;
-typedef QMap<int, DataRow> DataMatrix;
-
 typedef QVector<QSet<int>> UnitedSections;
 
 class Symbol;
 class LabelTreeItem;
+class AbstractModelInstance;
 
 class AggregationItem
 {
@@ -109,13 +108,12 @@ public:
         Minimum,
         MinMax,
         Sum,
+        Symols,
         None
     };
 
     bool useAbsoluteValues() const;
     void setUseAbsoluteValues(bool absoluteValues);
-    bool useAbsoluteValuesGlobal() const;
-    void setUseAbsoluteValuesGlobal(bool absoluteValues);
 
     Type type() const;
     void setType(Type type);
@@ -129,21 +127,13 @@ public:
     void setAggregationSymbols(Qt::Orientation orientation,
                                const AggregationSymbols &aggrSymbols);
 
-    const IdentifierFilter& identifierFilter() const;
-    void setIdentifierFilter(const IdentifierFilter& filter);
-    void setLabelState(Qt::Orientation orientation,
-                       int symIndex, int stateIndex, Qt::CheckState state);
-
-    const ValueFilter& valueFilter() const;
-    void setValueFilter(const ValueFilter &filter);
-
-    PredefinedViewEnum viewType() const;
-    void setViewType(PredefinedViewEnum viewType);
+    ViewDataType viewType() const;
+    void setViewType(ViewDataType viewType);
 
     /**
      * @brief Start section mapping equation mapping for MinMax view.
      */
-    QMap<int, int>& startSectionMapping() {
+    QHash<int, int>& startSectionMapping() {
         return mStartSectionMapping;
     }
 
@@ -151,39 +141,32 @@ public:
      * @brief Index to equation mapping for MinMax view.
      * @todo Probably extended to variables.
      */
-    QMap<int, Symbol>& indexToSymbol(Qt::Orientation orientation) {
+    QHash<int, Symbol*>& indexToSymbol(Qt::Orientation orientation) {
         return orientation == Qt::Vertical ? mIndexToEquations : mIndexToVariables;
     }
 
-    const QMap<int, Symbol>& indexToEquation() const {
+    const QHash<int, Symbol*>& indexToEquation() const {
         return mIndexToEquations;
     }
 
-    const QMap<int, Symbol>& indexToVariable() const {
+    const QHash<int, Symbol*>& indexToVariable() const {
         return mIndexToVariables;
     }
-
-    int view() const;
-    void setView(int view);
 
     bool isActive() const;
 
 private:
     bool mUseAbsoluteValues = false;
-    bool mUseAbsoluteValuesGlobal = false;
     Type mType = None;
     AggregationMap mAggregationMap;
-    IdentifierFilter mIdentifierFilter;
-    ValueFilter mValueFilter;
-    PredefinedViewEnum mViewType = PredefinedViewEnum::Unknown;
-    int mView = -1;
+    ViewDataType mViewType = ViewDataType::Unknown;
 
     ///
     /// \brief Map origial start section to new start section.
     ///
-    QMap<int, int> mStartSectionMapping;
-    QMap<int, Symbol> mIndexToEquations;
-    QMap<int, Symbol> mIndexToVariables;
+    QHash<int, int> mStartSectionMapping;
+    QHash<int, Symbol*> mIndexToEquations;
+    QHash<int, Symbol*> mIndexToVariables;
 
     static const QString CountText;
     static const QString MeanText;
@@ -198,31 +181,23 @@ private:
 class Aggregator
 {
 public:
-    Aggregator(const Symbol &symbol);
+    Aggregator(const Symbol *symbol);
 
     void applyFilterStates(const IdentifierState &identifierStates,
                            const LabelCheckStates &globalLabelStates,
                            bool labelFilterAny);
 
-    void aggregate(AggregationItem &item,
-                   Aggregation::Type type,
-                   const QString &typeText,
-                   int &lastSymEndIndex);
+    void aggregate(AggregationItem &item, const QString &typeText);
 
 private:
     void applyLabelFilter(const IdentifierState &symbolLabelStates,
                           const LabelCheckStates &globalLabelStates,
                           bool labelFilterAny);
 
-    void aggregateLabels(const AggregationItem &item,
-                         Aggregation::Type type,
-                         const QString &typeText,
-                         int &lastSymEndIndex);
-
     void aggregateLabels(const AggregationItem &item, const QString &typeText);
 
 private:
-    const Symbol &mSymbol;
+    const Symbol *mSymbol;
     QSharedPointer<LabelTreeItem> mLabelTree;
 };
 

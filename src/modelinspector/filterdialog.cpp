@@ -52,8 +52,8 @@ IdentifierFilter FilterDialog::idendifierFilter() const
 void FilterDialog::setIdentifierFilter(const IdentifierFilter &filter)
 {
     mIdentifierFilter = filter;
-    setupEquationFilter(mIdentifierFilter[equationOrientation()]);
-    setupVariableFilter(mIdentifierFilter[variableOrientation()]);
+    setupEquationFilter(mIdentifierFilter[equationOrientation()], mDefaultIdentifierFilter[equationOrientation()]);
+    setupVariableFilter(mIdentifierFilter[variableOrientation()], mDefaultIdentifierFilter[variableOrientation()]);
 }
 
 void FilterDialog::setDefaultIdentifierFilter(const IdentifierFilter &filter)
@@ -105,12 +105,12 @@ void FilterDialog::setDefaultLabelFilter(const LabelFilter &filter)
     mDefaultLabelFilter = filter;
 }
 
-PredefinedViewEnum FilterDialog::viewType() const
+ViewDataType FilterDialog::viewType() const
 {
     return mViewType;
 }
 
-void FilterDialog::setViewType(PredefinedViewEnum viewType)
+void FilterDialog::setViewType(ViewDataType viewType)
 {
     mViewType = viewType;
 }
@@ -202,13 +202,14 @@ void FilterDialog::on_labelBox_currentIndexChanged(int index)
     }
 }
 
-void FilterDialog::setupEquationFilter(const IdentifierStates &filter)
+void FilterDialog::setupEquationFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
-    bool showAttributes = !(mViewType == PredefinedViewEnum::EqnAttributes ||
-                            mViewType == PredefinedViewEnum::Jaccobian ||
-                            mViewType == PredefinedViewEnum::MinMax);
-    bool showSymbols = mViewType != PredefinedViewEnum::VarAttributes;
-    auto filterItem = setupSymTreeItems(FilterTreeItem::EquationText, filter,
+    bool showAttributes = !(mViewType == ViewDataType::EqnAttributes    ||
+                            mViewType == ViewDataType::Jaccobian        ||
+                            mViewType == ViewDataType::MinMax           ||
+                            mViewType == ViewDataType::SymbolView);
+    bool showSymbols = mViewType != ViewDataType::VarAttributes;
+    auto filterItem = setupSymTreeItems(FilterTreeItem::EquationText, filter, dFilter,
                                         showAttributes, showSymbols);
     auto oldEqnModel = ui->rowView->selectionModel();
     auto eqnTreeModel = new FilterTreeModel(filterItem, ui->rowView);
@@ -228,13 +229,14 @@ void FilterDialog::setupEquationFilter(const IdentifierStates &filter)
                         });
 }
 
-void FilterDialog::setupVariableFilter(const IdentifierStates &filter)
+void FilterDialog::setupVariableFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
-    bool showAttributes = !(mViewType == PredefinedViewEnum::VarAttributes ||
-                            mViewType == PredefinedViewEnum::Jaccobian ||
-                            mViewType == PredefinedViewEnum::MinMax);
-    bool showSymbols = mViewType != PredefinedViewEnum::EqnAttributes;
-    auto filterItem = setupSymTreeItems(FilterTreeItem::VariableText, filter,
+    bool showAttributes = !(mViewType == ViewDataType::VarAttributes    ||
+                            mViewType == ViewDataType::Jaccobian        ||
+                            mViewType == ViewDataType::MinMax           ||
+                            mViewType == ViewDataType::SymbolView);
+    bool showSymbols = mViewType != ViewDataType::EqnAttributes;
+    auto filterItem = setupSymTreeItems(FilterTreeItem::VariableText, filter, dFilter,
                                         showAttributes, showSymbols);
     auto oldVarModel = ui->columnView->selectionModel();
     auto varTreeModel = new FilterTreeModel(filterItem, ui->columnView);
@@ -285,6 +287,7 @@ void FilterDialog::setupLabelFilter()
 
 FilterTreeItem* FilterDialog::setupSymTreeItems(const QString &text,
                                                 const IdentifierStates &filter,
+                                                const IdentifierStates &dFilter,
                                                 bool showAttributes,
                                                 bool showSymbols)
 {
@@ -292,25 +295,27 @@ FilterTreeItem* FilterDialog::setupSymTreeItems(const QString &text,
     root->setCheckable(false);
     auto attributes = new FilterTreeItem(FilterTreeItem::AttributesText, Qt::Unchecked, root);
     attributes->setCheckable(false);
+    if ((mViewType == ViewDataType::VarAttributes && text == FilterTreeItem::EquationText) ||
+            (mViewType == ViewDataType::EqnAttributes && text == FilterTreeItem::VariableText)) {
+        for (const auto& item : filter) {
+            auto fItem = new FilterTreeItem(item.Text, item.Checked, attributes);
+            fItem->setSymbolIndex(item.SymbolIndex);
+            attributes->append(fItem);
+        }
+    }
     auto symbols = new FilterTreeItem(text, Qt::Unchecked, root);
     symbols->setCheckable(false);
-    Q_FOREACH(auto item, filter) {
-        if (item.SymbolIndex < constant->PredefinedHeaderLength) {
-            if (!showAttributes) continue;
-            auto fItem = new FilterTreeItem(item.Text,
-                                            item.Checked,
-                                            attributes);
-            fItem->setSymbolIndex(item.SymbolIndex);
-            fItem->setEnabled(item.Enabled);
-            attributes->append(fItem);
-        } else {
-            if (!showSymbols) continue;
-            auto fItem = new FilterTreeItem(item.Text,
-                                            item.Checked,
-                                            symbols);
-            fItem->setSymbolIndex(item.SymbolIndex);
-            symbols->append(fItem);
+    for (const auto& item : filter) {
+        if (!showSymbols) continue;
+        auto fItem = new FilterTreeItem(item.Text, item.Checked, symbols);
+        auto defaultItem = dFilter.value(item.SymbolIndex);
+        if (mViewType == ViewDataType::SymbolView       &&
+                item.Checked == Qt::Unchecked           &&
+                defaultItem.Checked == Qt::Unchecked) {
+            fItem->setEnabled(false);
         }
+        fItem->setSymbolIndex(item.SymbolIndex);
+        symbols->append(fItem);
     }
     showAttributes ? root->append(attributes) : delete attributes;
     showSymbols ? root->append(symbols) : delete symbols;

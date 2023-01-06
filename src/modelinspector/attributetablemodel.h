@@ -59,6 +59,11 @@ public:
 
     ~EquationAttributeTableModel();
 
+    QVariant headerData(int section, Qt::Orientation orientation,
+                        int role = Qt::DisplayRole) const override;
+
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 };
 
@@ -72,6 +77,9 @@ public:
     ~VariableAttributeTableModel();
 
     QVariant data(const QModelIndex &index, int role) const override;
+
+    QVariant headerData(int section, Qt::Orientation orientation,
+                        int role = Qt::DisplayRole) const override;
 
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 

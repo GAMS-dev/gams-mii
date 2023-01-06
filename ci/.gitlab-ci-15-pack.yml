@@ -2,14 +2,12 @@ pack-deg:
   stage: pack
   tags: [macos]
   variables:
-    qtpath: /Users/gitlab/Qt/5.15.2/clang_64/bin
+    qtpath: /Users/gitlab/Qt/6.4.2/macos/bin
   needs: [build-deg]
   script:
     - WORKSPACE=$(pwd)
     - PATH="${qtpath}:${PATH}"
     - cd build/src/bin
-    - MACOS_KEYCHAIN_PASSWD=`cat ~/.gsv.keychainpasswd`
-    - security unlock-keychain -p ${MACOS_KEYCHAIN_PASSWD}
     - macdeployqt "modelinspector.app" -always-overwrite
     - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/modelinspector.entitlements.plist "modelinspector.app"
     - hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"  
@@ -25,12 +23,13 @@ pack-leg:
   stage: pack
   tags: [linux]
   image:
-    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt5:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6:latest
     entrypoint: [""]   # prevent startup.sh
   needs: [build-leg]
   variables:
-    qtpath: /opt/Qt/5.15.2/bin
+    qtpath: /opt/Qt/6.4.2/bin
   script:
+    # setup environment
     - PATH="${qtpath}:${PATH}"
     # create folder structure
     - mkdir -p appdir/usr/bin
@@ -41,7 +40,7 @@ pack-leg:
     - cp -r icons/* appdir/usr/share/pixmaps
     - cp platform/linux/modelinspector.desktop appdir/usr/share/modelinspector.desktop
     # build the AppImage
-    - /opt/linuxdeployqt/linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/modelinspector.desktop -appimage -bundle-non-qt-libs -no-translations -extra-plugins=iconengines
+    - /opt/linuxdeploy/linuxdeploy-x86_64.AppImage --appdir=appdir --plugin=qt --output=appimage --desktop-file=appdir/usr/share/modelinspector.desktop 
     - mv Model_Inspector-x86_64.AppImage model-inspector-leg-x86_64.AppImage
   artifacts:
     name: "model-inspector-leg-x86_64"
@@ -53,14 +52,14 @@ pack-wei:
   stage: pack
   tags: [windows]
   image:
-    name: $GAMS_CONTAINER_REGISTRY/machines/wei/builder-qt:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6:latest
   needs: [build-wei]
   variables:
     vcinsdir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC
     cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
   script:
     - $env:VCINSTALLDIR = "$vcinsdir"
-    - $env:Path = "C:\Qt\5.15.2\msvc2019_64\bin;" + $env:Path
+    - $env:Path = "C:\Qt\6.4.2\msvc2019_64\bin;" + $env:Path
     - '& $cmd_vcvars'
     - mkdir model-inspector
     - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/x64/Microsoft.VC142.CRT/*" "model-inspector"

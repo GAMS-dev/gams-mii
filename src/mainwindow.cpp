@@ -39,7 +39,7 @@ using gams::studio::modelinspector::AggregationDialog;
 using gams::studio::modelinspector::FilterDialog;
 using gams::studio::modelinspector::ModelInspector;
 using gams::studio::modelinspector::SearchResultModel;
-using gams::studio::modelinspector::PredefinedViewEnum;
+using gams::studio::modelinspector::ViewDataType;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -84,11 +84,13 @@ void MainWindow::on_actionOpen_triggered()
     auto fileName = QFileDialog::getOpenFileName(this,
                                                  tr("Open Model File"),
                                                  workspace(),
-                                                 tr("GAMS source (*.gms *.dmp)"));
+                                                 tr("GAMS source (*.gms *.dmp *.dat)"));
     if (fileName.isEmpty())
         return;
     ui->modelEdit->setText(fileName);
     ui->gamslibCheckBox->setChecked(false);
+    QFileInfo fi(ui->modelEdit->text());
+    ui->logEdit->append("Loading scatch data from: " + fi.dir().path());
 }
 
 void MainWindow::on_actionOpen_Project_triggered()
@@ -103,23 +105,31 @@ void MainWindow::on_actionRun_triggered()
     if (!dir.mkpath(path))
         ui->logEdit->append("Error: Could not create workspace " + path);
 
-    QStringList params = ui->paramsEdit->text().split(" ",
-                                                      Qt::SkipEmptyParts,
-                                                      Qt::CaseInsensitive);
-    auto index = params.indexOf(QRegExp("scrdir.*"));
-    if (index >= 0) {
-        auto scrdir = params.at(index);
-        scrdir = scrdir.replace("scrdir=", "").trimmed();
-        ui->modelInspector->setScratchDir(scrdir);
+    if (ui->modelEdit->text().endsWith(".dat")) {
+        QFileInfo fi(ui->modelEdit->text());
+        auto dir = fi.dir().dirName();
+        ui->modelInspector->setWorkspace(fi.dir().path()+"/..");
+        ui->modelInspector->setScratchDir(dir);
+        loadModelInstance(0, QProcess::NormalExit);
+    } else {
+        QStringList params = ui->paramsEdit->text().split(" ",
+                                                          Qt::SkipEmptyParts,
+                                                          Qt::CaseInsensitive);
+        auto index = params.indexOf(QRegularExpression("scrdir.*"));
+        if (index >= 0) {
+            auto scrdir = params.at(index);
+            scrdir = scrdir.replace("scrdir=", "").trimmed();
+            ui->modelInspector->setScratchDir(scrdir);
+        }
+
+        if (ui->gamslibCheckBox->isChecked())
+            loadGAMSModel(path);
+
+        mProcess->setModel(ui->modelEdit->text());
+        mProcess->setParameters(params);
+        mProcess->setWorkingDir(path);
+        mProcess->execute();
     }
-
-    if (ui->gamslibCheckBox->isChecked())
-        loadGAMSModel(path);
-
-    mProcess->setModel(ui->modelEdit->text());
-    mProcess->setParameters(params);
-    mProcess->setWorkingDir(path);
-    mProcess->execute();
 }
 
 void MainWindow::on_action_Quit_triggered()
@@ -274,7 +284,7 @@ void MainWindow::aggregationUpdate()
 void MainWindow::globalFilterUpdate()
 {
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
-    if (ui->modelInspector->aggregation().viewType() != PredefinedViewEnum::MinMax)
+    if (ui->modelInspector->aggregation().viewType() != ViewDataType::MinMax)
         ui->modelInspector->setAggregation(ui->modelInspector->defaultAggregation());
     ui->modelInspector->setIdentifierFilter(mFilterDialog->idendifierFilter());
     ui->modelInspector->setValueFilter(mFilterDialog->valueFilter());
@@ -298,23 +308,21 @@ void MainWindow::updateModelInstance()
 
 void MainWindow::viewChanged(int viewType)
 {
-    if (viewType == (int)PredefinedViewEnum::Statistic || viewType == (int)PredefinedViewEnum::Unknown) {
+    if (viewType == (int)ViewDataType::Statistic || viewType == (int)ViewDataType::Unknown) {
         ui->action_Search->setEnabled(false);
         ui->searchEdit->setEnabled(false);
         ui->actionFilters->setEnabled(false);
         ui->actionAggregation->setEnabled(false);
-    } else {
+    } else { // TODO !!! activate and fix crashes
         ui->action_Search->setEnabled(true);
         ui->searchEdit->setEnabled(true);
         ui->actionFilters->setEnabled(true);
         ui->actionAggregation->setEnabled(true);
         static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
         setGlobalFiltersData();
-        setAggregationData();
-        mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
-        ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
-        setAggregationData();
-        setGlobalFiltersData();
+        //setAggregationData();
+        //mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
+        //ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
     }
 }
 
@@ -400,18 +408,21 @@ void MainWindow::loadGAMSModel(const QString &path)
 void MainWindow::setGlobalFiltersData()
 {
     mFilterDialog->setViewType(ui->modelInspector->viewType());
-    mFilterDialog->setValueFilter(ui->modelInspector->valueFilter());
+    auto filter = ui->modelInspector->valueFilter();
+    filter.UseAbsoluteValuesGlobal = ui->actionShow_Absolute->isChecked();
     mFilterDialog->setDefaultValueFilter(ui->modelInspector->defaultValueFilter());
-    mFilterDialog->setIdentifierFilter(ui->modelInspector->identifierFilter());
+    mFilterDialog->setValueFilter(filter);
     mFilterDialog->setDefaultIdentifierFilter(ui->modelInspector->defaultIdentifierFilter());
-    mFilterDialog->setLabelFilter(ui->modelInspector->labelFilter());
+    mFilterDialog->setIdentifierFilter(ui->modelInspector->identifierFilter());
     mFilterDialog->setDefaultLabelFilter(ui->modelInspector->defaultLabelFilter());
+    mFilterDialog->setLabelFilter(ui->modelInspector->labelFilter());
 }
 
 void MainWindow::setAggregationData()
 {
     mAggregationDialog->setAggregation(ui->modelInspector->aggregation(),
-                                       ui->modelInspector->identifierFilter());
+                                       ui->modelInspector->identifierFilter(),
+                                       ui->actionShow_Absolute->isChecked());
     mAggregationDialog->setDefaultAggregation(ui->modelInspector->defaultAggregation());
     mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
 }

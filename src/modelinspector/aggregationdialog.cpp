@@ -12,6 +12,8 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
+QRegularExpression AggregationDialog::RegExp = QRegularExpression("^\\d+$");
+
 AggregationDialog::AggregationDialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::AggregationDialog)
@@ -35,17 +37,20 @@ const Aggregation& AggregationDialog::aggregation() const
 }
 
 void AggregationDialog::setAggregation(const Aggregation &aggregation,
-                                       const IdentifierFilter &filter)
+                                       const IdentifierFilter &filter,
+                                       bool absValuesGlobal)
 {
+
     mAggregation = aggregation;
     mIdentifierFilter = filter;
+    mAbsValuesGlobal = absValuesGlobal;
     ui->filterEdit->setText("");
     ui->aggregationBox->setCurrentText(mAggregation.typeText());
     mAggregationMethod = ui->aggregationBox->currentIndex();
     ui->absoluteBox->setChecked(mAggregation.useAbsoluteValues());
     setAggregationMethodAvailability();
     setupAggregationView();
-    if (aggregation.useAbsoluteValuesGlobal())
+    if (mAbsValuesGlobal)
         ui->absoluteBox->setEnabled(false);
     else
         ui->absoluteBox->setEnabled(true);
@@ -68,13 +73,13 @@ void AggregationDialog::on_deselectButton_clicked()
 
 void AggregationDialog::on_cancelButton_clicked()
 {
-    setAggregation(mAggregation, mIdentifierFilter);
+    setAggregation(mAggregation, mIdentifierFilter, mAbsValuesGlobal);
     close();
 }
 
 void AggregationDialog::on_resetButton_clicked()
 {
-    setAggregation(mDefaultAggregation, mIdentifierFilter);
+    setAggregation(mDefaultAggregation, mIdentifierFilter, mAbsValuesGlobal);
     applyAggregation();
     emit aggregationUpdated();
 }
@@ -94,7 +99,7 @@ void AggregationDialog::on_applyButton_clicked()
 void AggregationDialog::filterUpdate(const QString &text)
 {
     if (!mAggregationModel) return;
-    if (QRegExp("^\\d+$").exactMatch(text) || text.isEmpty()) {
+    if (RegExp.match(text).hasMatch() || text.isEmpty()) {
         mAggregationModel->setFilterWildcard(text);
         ui->view->expandAll();
     }
@@ -168,7 +173,7 @@ void AggregationDialog::setAggregationMethodAvailability()
     for (int r=0; r<model->rowCount()-1; ++r) {
         auto item = model->item(r);
         if (!item) continue;
-        if (mAggregation.viewType() == PredefinedViewEnum::MinMax) {
+        if (mAggregation.viewType() == ViewDataType::MinMax) {
             auto flags = item->flags();
             flags.setFlag(Qt::ItemIsEnabled, false);
             item->setFlags(flags);
@@ -179,7 +184,7 @@ void AggregationDialog::setAggregationMethodAvailability()
         }
     }
     auto item = model->item(model->rowCount()-1);
-    if (item && mAggregation.viewType() == PredefinedViewEnum::MinMax) {
+    if (item && mAggregation.viewType() == ViewDataType::MinMax) {
         auto flags = item->flags();
         flags.setFlag(Qt::ItemIsEnabled, true);
         item->setFlags(flags);

@@ -29,4 +29,5 @@ SUBDIRS +=              \
     testlabeltreeitem \
     testmodelinstance   \
     testsectiontreeitem \
-    testsymbol
+    testsymbol \
+    testviewconfigurationprovider

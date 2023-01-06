@@ -9,79 +9,71 @@ namespace gams {
 namespace studio{
 namespace modelinspector {
 
-class ColumnRowFilterModel;
 class HierarchicalHeaderView;
 class MinMaxIdentifierFilterModel;
 class MinMaxModelInstanceTableModel;
 class ValueFormatProxyModel;
 
-class MinMaxTableViewFrame : public AbstractTableViewFrame
+class MinMaxTableViewFrame final : public AbstractTableViewFrame
 {
     Q_OBJECT
 
 public:
     MinMaxTableViewFrame(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
+    void aggregate(QSharedPointer<AbstractModelInstance> modelInstance);
+
     AbstractTableViewFrame* clone(int view) override;
 
-    PredefinedViewEnum type() const override
+    ViewDataType type() const override
     {
-        return PredefinedViewEnum::MinMax;
+        return ViewDataType::MinMax;
     }
+
+    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
     void setIdentifierFilter(const IdentifierFilter &filter) override;
 
-    const Aggregation& appliedAggregation() const override;
-
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance, int view) override;
-
     void setValueFilter(const ValueFilter &filter) override;
 
-    void setAggregation(const Aggregation &aggregation, int view) override;
+    void setAggregation(const Aggregation &aggregation) override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    void setupFiltersAggregation(QAbstractItemModel *model, const LabelFilter &filter) override;
+    const QList<Symbol*>& selectedEquations() const;
+    const QList<Symbol*>& selectedVariables() const;
 
-    QList<Symbol> selectedEquations() const;
-    QList<Symbol> selectedVariables() const;
-
-    void reset(int view) override;
+    void reset() override;
 
     void updateView() override;
 
-public slots:
+signals:
+    void newSymbolViewRequested();
+
+protected slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
 
 private slots:
     void customMenuRequested(const QPoint &pos);
 
-protected:
-    Aggregation getDefaultAggregation() const override;
-
-    Aggregation appliedAggregation(const Aggregation &aggregation, int view) const override;
-
 private:
     void setupSelectionMenu();
-    void handleRowColumnSelection(PredefinedViewEnum type);
-    void updateValueFilter() override;
+    void handleRowColumnSelection();
     void setIdentifierFilterCheckState(int symbolIndex, Qt::CheckState state,
                                        Qt::Orientation orientation);
-    void cloneFilterAndAggregation(MinMaxTableViewFrame *clone, int newView);
 
 private:
     QSharedPointer<MinMaxModelInstanceTableModel> mModelInstanceModel;
     QMenu *mSelectionMenu;
 
-    QList<Symbol> mSelectedEquations;
-    QList<Symbol> mSelectedVariables;
+    QList<Symbol*> mSelectedEquations;
+    QList<Symbol*> mSelectedVariables;
 
     HierarchicalHeaderView* mHorizontalHeader = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
     ValueFormatProxyModel* mValueFormatModel = nullptr;
     MinMaxIdentifierFilterModel* mIdentifierFilterModel = nullptr;
-    ColumnRowFilterModel* mColumnRowFilterModel = nullptr;
 };
 
 }

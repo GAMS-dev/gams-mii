@@ -2,16 +2,19 @@
 #define ABSTRACTMODELINSTANCE_H
 
 #include "symbol.h"
-#include "aggregation.h"
 
 #include <QString>
 #include <QStringList>
+#include <QSharedPointer>
 
 namespace gams {
 namespace studio {
 namespace modelinspector {
 
 typedef QPair<double, double> Range;
+
+class AbstractViewConfiguration;
+class DataMatrix;
 
 class AbstractModelInstance
 {
@@ -22,8 +25,6 @@ protected:
 
 public:
     virtual ~AbstractModelInstance();
-
-    virtual void initialize() = 0;
 
     QString workspace() const;
 
@@ -41,11 +42,14 @@ public:
 
     void setUseOutput(bool useOutput);
 
-    double modelMinimum(PredefinedViewEnum type) const;
-    void setModelMinimum(double value, PredefinedViewEnum type);
+    double jaccMinimum() const;
+    double jaccMaximum() const;
 
-    double modelMaximum(PredefinedViewEnum type) const;
-    void setModelMaximum(double value, PredefinedViewEnum type);
+    double modelMinimum(ViewDataType type) const;
+    void setModelMinimum(double value, ViewDataType type);
+
+    double modelMaximum(ViewDataType type) const;
+    void setModelMaximum(double value, ViewDataType type);
 
     QString logMessages();
 
@@ -74,13 +78,13 @@ public:
      * @param Section index of equation in raw data matrix.
      * @return Equation.
      */
-    virtual Symbol equation(int sectionIndex) const;
+    virtual Symbol* equation(int sectionIndex) const;
 
     /**
      * @brief All equations known by the model instance.
      * @return All known equations.
      */
-    virtual const QVector<Symbol>& equations() const = 0;
+    virtual const QVector<Symbol*>& equations() const = 0;
 
     /**
      * @brief Total number of variables.
@@ -104,13 +108,13 @@ public:
      * @param Section index of variable in raw data matrix.
      * @return Variable.
      */
-    virtual Symbol variable(int sectionIndex) const;
+    virtual Symbol* variable(int sectionIndex) const;
 
     /**
      * @brief All variables known by the model instance.
      * @return All known variables.
      */
-    virtual const QVector<Symbol>& variables() const = 0;
+    virtual const QVector<Symbol*>& variables() const = 0;
 
     virtual int coefficents() const = 0;
 
@@ -128,6 +132,8 @@ public:
 
     virtual Range rhsRange() const = 0;
 
+    const QStringList& labels() const;
+
     virtual QString longestEquationText() const = 0;
 
     virtual QString longestVariableText() const = 0;
@@ -136,25 +142,39 @@ public:
 
     virtual int maximumVariableDimension() const = 0;
 
-    virtual const QVector<Symbol>& symbols(Symbol::Type type) const = 0;
+    virtual const QVector<Symbol*>& symbols(Symbol::Type type) const = 0;
 
-    virtual void loadData(LabelFilter &labelFilter) = 0;
+    virtual void loadData() = 0;
 
-    virtual int rowCount(PredefinedViewEnum viewType) const = 0;
+    virtual int rowCount(int view) const = 0;
 
-    virtual int columnCount(PredefinedViewEnum viewType) const = 0;
+    virtual int rowCount(ViewDataType viewType) const = 0;
+
+    virtual int rowEntries(int row, int view) const = 0;
+
+    virtual int columnCount(int view) const = 0;
+
+    virtual int columnCount(ViewDataType viewType) const = 0;
+
+    virtual int columnEntries(int column, int view) const = 0;
+
+    virtual QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) = 0;
 
     virtual QVariant data(int row, int column, int view) const = 0;
+
+    virtual QVariant data(int row, int column) const = 0;
 
     virtual QString headerData(int sectionIndex,
                                int dimension,
                                Qt::Orientation orientation) const = 0;
 
-    virtual void aggregate(const Aggregation &aggregation) = 0;
+    virtual void aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig) = 0;
 
     virtual int headerData(int logicalIndex,
                            Qt::Orientation orientation,
                            int view) const = 0;
+
+    virtual void jaccobianData(DataMatrix& dataMatrix) = 0;
 
 protected:
     QString mScratchDir;
@@ -169,13 +189,12 @@ protected:
     double mModelAttributeMinimumV = 0.0;
     double mModelAttributeMaximumV = 0.0;
 
-    double mModelJaccMinimum = 0.0;
-    double mModelJaccMaximum = 0.0;
-
-    double mModelMinMaxMinimum = 0.0;
-    double mModelMinMaxMaximum = 0.0;
+    double mModelJaccMinimum = std::numeric_limits<double>::max();
+    double mModelJaccMaximum = std::numeric_limits<double>::lowest();
 
     QStringList mLogMessages;
+
+    QStringList mLabels;
 };
 
 class EmptyModelInstance : public AbstractModelInstance
@@ -185,11 +204,9 @@ public:
                        const QString &systemDir = QString(),
                        const QString &scratchDir = QString());
 
-    void initialize() override;
+    const QVector<Symbol*>& equations() const override;
 
-    const QVector<Symbol>& equations() const override;
-
-    const QVector<Symbol>& variables() const override;
+    const QVector<Symbol*>& variables() const override;
 
     int coefficents() const override;
 
@@ -215,28 +232,42 @@ public:
 
     int maximumVariableDimension() const override;
 
-    const QVector<Symbol>& symbols(Symbol::Type type) const override;
+    const QVector<Symbol*>& symbols(Symbol::Type type) const override;
 
-    void loadData(LabelFilter &labelFilter) override;
+    void loadData() override;
 
-    int rowCount(PredefinedViewEnum viewType) const override;
+    int rowCount(int view) const override;
 
-    int columnCount(PredefinedViewEnum viewType) const override;
+    int rowCount(ViewDataType viewType) const override;
+
+    int rowEntries(int row, int view) const override;
+
+    int columnCount(int view) const override;
+
+    int columnCount(ViewDataType viewType) const override;
+
+    int columnEntries(int column, int view) const override;
+
+    QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) override;
 
     QVariant data(int row, int column, int view) const override;
+
+    QVariant data(int row, int column) const override;
 
     QString headerData(int sectionIndex,
                        int dimension,
                        Qt::Orientation orientation) const override;
 
-    void aggregate(const Aggregation &aggregation) override;
+    void aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
 
     int headerData(int logicalIndex,
                    Qt::Orientation orientation,
                    int view) const override;
 
+    void jaccobianData(DataMatrix& dataMatrix) override;
+
 private:
-    QVector<Symbol> mSymbols;
+    QVector<Symbol*> mSymbols;
 };
 
 }

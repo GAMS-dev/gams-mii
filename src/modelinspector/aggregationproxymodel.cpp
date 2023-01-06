@@ -31,7 +31,7 @@ void AggregationProxyModel::setAggregation(const Aggregation &aggregation,
 {
     mAggregation = aggregation;
     mAppliedAggregation = appliedAggregation;
-    mModelInstance->aggregate(mAppliedAggregation);
+    //mModelInstance->aggregate(mAppliedAggregation); TODO !!! move like MinMax?
     invalidate();
 }
 
@@ -70,10 +70,10 @@ bool AggregationProxyModel::filterAcceptsColumn(int sourceColumn,
     auto sectionIndex = sourceModel()->headerData(sourceColumn, Qt::Horizontal).toInt(&ok);
     if (!ok) return true;
     auto variable = mModelInstance->variable(sectionIndex);
-    int startSection = variable.firstSection();
+    int startSection = variable->firstSection();
     if (startSection < 0) return true;
     if (mAppliedAggregation.aggregationMap()[Qt::Horizontal].contains(startSection)) {
-        return mAppliedAggregation.aggregationMap()[Qt::Horizontal][variable.firstSection()].isSectionVisible(sectionIndex);
+        return mAppliedAggregation.aggregationMap()[Qt::Horizontal][variable->firstSection()].isSectionVisible(sectionIndex);
     }
     return QSortFilterProxyModel::filterAcceptsColumn(sourceColumn, sourceParent);
 }
@@ -85,10 +85,10 @@ bool AggregationProxyModel::filterAcceptsRow(int sourceRow,
     auto sectionIndex = sourceModel()->headerData(sourceRow, Qt::Vertical).toInt(&ok);
     if (!ok) return true;
     auto equation = mModelInstance->equation(sectionIndex);
-    int startSection = equation.firstSection();
+    int startSection = equation->firstSection();
     if (startSection < 0) return true;
     if (mAppliedAggregation.aggregationMap()[Qt::Vertical].contains(startSection)) {
-        return mAppliedAggregation.aggregationMap()[Qt::Vertical][equation.firstSection()].isSectionVisible(sectionIndex);
+        return mAppliedAggregation.aggregationMap()[Qt::Vertical][equation->firstSection()].isSectionVisible(sectionIndex);
     }
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }

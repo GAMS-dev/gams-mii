@@ -94,7 +94,6 @@ SOURCES += \
     modelinspector/minmaxtableviewframe.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
-    modelinspector/modelinstancetablemodel.cpp \
     modelinspector/modelinstancetableview.cpp \
     modelinspector/search.cpp \
     modelinspector/searchresultmodel.cpp \
@@ -104,8 +103,11 @@ SOURCES += \
     modelinspector/standardtableviewframe.cpp \
     modelinspector/statisticedit.cpp \
     modelinspector/symbol.cpp \
+    modelinspector/symbolmodelinstancetablemodel.cpp \
+    modelinspector/symbolviewframe.cpp \
     modelinspector/valueformatproxymodel.cpp \
-    modelinspector/searchresultview.cpp
+    modelinspector/searchresultview.cpp \
+    modelinspector/viewconfigurationprovider.cpp
 
 HEADERS += \
     exception.h \
@@ -137,7 +139,6 @@ HEADERS += \
     modelinspector/minmaxtableviewframe.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
-    modelinspector/modelinstancetablemodel.h \
     modelinspector/modelinstancetableview.h \
     modelinspector/search.h \
     modelinspector/searchresultmodel.h \
@@ -147,8 +148,11 @@ HEADERS += \
     modelinspector/standardtableviewframe.h \
     modelinspector/statisticedit.h \
     modelinspector/symbol.h \
+    modelinspector/symbolmodelinstancetablemodel.h \
+    modelinspector/symbolviewframe.h \
     modelinspector/valueformatproxymodel.h \
-    modelinspector/searchresultview.h
+    modelinspector/searchresultview.h \
+    modelinspector/viewconfigurationprovider.h
 
 FORMS += \
     mainwindow.ui \

@@ -13,11 +13,6 @@ MinMaxIdentifierFilterModel::MinMaxIdentifierFilterModel(QSharedPointer<Abstract
 
 }
 
-IdentifierFilter& MinMaxIdentifierFilterModel::identifierFilter()
-{
-    return mIdentifierFilter;
-}
-
 void MinMaxIdentifierFilterModel::setIdentifierFilter(const IdentifierFilter &filter,
                                                       const Aggregation &appliedAggregation)
 {
@@ -35,17 +30,13 @@ bool MinMaxIdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
     auto sectionIndex = sourceModel()->headerData(sourceColumn, Qt::Horizontal).toInt(&ok);
     if (!ok) return true;
 
-    Q_FOREACH(const auto& item, mIdentifierFilter[Qt::Horizontal]) {
-        if (item.Checked == Qt::Checked) {
+    for (auto iter=mIdentifierFilter[Qt::Horizontal].constBegin(); iter!=mIdentifierFilter[Qt::Horizontal].constEnd(); ++iter) {
+        if (iter->Checked == Qt::Checked) {
             continue;
         }
-        if (sectionIndex < constant->PredefinedHeaderLength &&
-                item.SymbolIndex == sectionIndex) {
-            return false;
-        }
         auto sym = mModelInstance->variable(sectionIndex);
-        if (item.Text == sym.name() && sectionIndex >= sym.firstSection() &&
-                sectionIndex <= sym.lastSection()) {
+        if (iter->Text == sym->name() && sectionIndex >= sym->firstSection() &&
+                sectionIndex <= sym->lastSection()) {
             return false;
         }
     }
@@ -61,20 +52,16 @@ bool MinMaxIdentifierFilterModel::filterAcceptsRow(int sourceRow,
     auto sectionIndex = sourceModel()->headerData(sourceRow, Qt::Vertical).toInt(&ok);
     if (!ok) return true;
 
-    Q_FOREACH(const auto& item, mIdentifierFilter[Qt::Vertical]) {
-        if (item.Checked == Qt::Checked) {
+    for (auto iter=mIdentifierFilter[Qt::Vertical].constBegin(); iter!=mIdentifierFilter[Qt::Vertical].constEnd(); ++iter) {
+        if (iter->Checked == Qt::Checked) {
             continue;
         }
-        if (sectionIndex < constant->PredefinedHeaderLength &&
-                item.SymbolIndex == sectionIndex) {
-            return false;
-        }
-        Symbol sym;
+        Symbol *sym;
         if (mAppliedAggregation.indexToEquation().contains(sectionIndex))
             sym = mAppliedAggregation.indexToEquation().value(sectionIndex);
         else
             sym = mAppliedAggregation.indexToEquation().value(sectionIndex-1);
-        if (item.Text == sym.name()) {
+        if (iter->Text == sym->name()) {
             return false;
         }
     }
@@ -83,7 +70,6 @@ bool MinMaxIdentifierFilterModel::filterAcceptsRow(int sourceRow,
 
 MinMaxModelInstanceTableModel::MinMaxModelInstanceTableModel(QObject *parent)
     : QAbstractTableModel(parent)
-    , mViewType(PredefinedViewEnum::MinMax)
 {
 
 }
@@ -91,26 +77,6 @@ MinMaxModelInstanceTableModel::MinMaxModelInstanceTableModel(QObject *parent)
 MinMaxModelInstanceTableModel::~MinMaxModelInstanceTableModel()
 {
 
-}
-
-const Aggregation& MinMaxModelInstanceTableModel::aggregation() const
-{
-    return mAggregation;
-}
-
-const Aggregation& MinMaxModelInstanceTableModel::appliedAggregation() const
-{
-    return mAppliedAggregation;
-}
-
-void MinMaxModelInstanceTableModel::setAggregation(const Aggregation &aggregation,
-                                                   const Aggregation &appliedAggregation)
-{
-    beginResetModel();
-    mAggregation = aggregation;
-    mAppliedAggregation = appliedAggregation;
-    mModelInstance->aggregate(mAppliedAggregation);
-    endResetModel();
 }
 
 void MinMaxModelInstanceTableModel::setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance)
@@ -125,15 +91,8 @@ QVariant MinMaxModelInstanceTableModel::data(const QModelIndex &index, int role)
     if (role == Qt::TextAlignmentRole) {
         return Qt::AlignRight;
     }
-    if (role == Qt::DisplayRole && mAppliedAggregation.isActive()) {
-        if (!index.isValid())
-            return QVariant();
-        QVariant value = mModelInstance->data(index.row(), index.column(), mView);
-        return value == 0.0 ? QVariant() : value;
-    }
-    if (index.isValid() && role == Qt::DisplayRole) {
-        auto value = mModelInstance->data(index.row(), index.column(), mView);
-        return value == 0.0 ? QVariant() : value;
+    if (role == Qt::DisplayRole && index.isValid()) {
+        return mModelInstance->data(index.row(), index.column(), mView);
     }
     return QVariant();
 }
@@ -149,13 +108,11 @@ Qt::ItemFlags MinMaxModelInstanceTableModel::flags(const QModelIndex &index) con
 
 QVariant MinMaxModelInstanceTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if (role == Qt::DisplayRole && mAppliedAggregation.isActive()) {
+    if (role == Qt::DisplayRole) {
         auto realIndex = mModelInstance->headerData(section, orientation, mView);
         return realIndex < 0 ? QVariant() : realIndex;
     }
-    if (role != Qt::DisplayRole)
-        return QAbstractItemModel::headerData(section, orientation, role);
-    return section;
+    return QAbstractItemModel::headerData(section, orientation, role);
 }
 
 QModelIndex MinMaxModelInstanceTableModel::index(int row, int column, const QModelIndex &parent) const
@@ -168,13 +125,13 @@ QModelIndex MinMaxModelInstanceTableModel::index(int row, int column, const QMod
 int MinMaxModelInstanceTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->rowCount(PredefinedViewEnum::MinMax);
+    return mModelInstance->rowCount(ViewDataType::MinMax);
 }
 
 int MinMaxModelInstanceTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->columnCount(PredefinedViewEnum::MinMax);
+    return mModelInstance->columnCount(ViewDataType::MinMax);
 }
 
 int MinMaxModelInstanceTableModel::view() const

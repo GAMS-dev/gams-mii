@@ -66,9 +66,9 @@ public:
 
     int lastSection() const;
 
-    int firstJaccSection() const;
+    int logicalIndex() const;
 
-    int lastJaccSection() const;
+    void setLogicalIndex(int index);
 
     QSharedPointer<LabelTreeItem> labelTree() const;
 
@@ -89,6 +89,7 @@ private:
     QString mName;
     int mDimension = -1;
     Type mType = Unknown;
+    int mLogicalIndex = -1;
 
     SectionLabels mSectionLabels;
 

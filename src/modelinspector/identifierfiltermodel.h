@@ -20,7 +20,6 @@ public:
     IdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
                           QObject *parent = nullptr);
 
-    IdentifierFilter& identifierFilter();
     void setIdentifierFilter(const IdentifierFilter &filter);
 
 protected:
@@ -30,9 +29,33 @@ protected:
     bool filterAcceptsRow(int sourceRow,
                           const QModelIndex &sourceParent) const override;
 
-private:
+protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     IdentifierFilter mIdentifierFilter;
+};
+
+class VarIdentifierFilterModel : public IdentifierFilterModel
+{
+    Q_OBJECT
+
+public:
+    VarIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                          QObject *parent = nullptr);
+
+    bool filterAcceptsRow(int sourceRow,
+                          const QModelIndex &sourceParent) const override;
+};
+
+class EqnIdentifierFilterModel : public IdentifierFilterModel
+{
+    Q_OBJECT
+
+public:
+    EqnIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                          QObject *parent = nullptr);
+
+    bool filterAcceptsColumn(int sourceColumn,
+                             const QModelIndex &sourceParent) const override;
 };
 
 class IdentifierLabelFilterModel : public QSortFilterProxyModel
@@ -45,7 +68,6 @@ public:
 
     void clearIdentifierFilter();
 
-    IdentifierFilter& identifierFilter();
     IdentifierState identifierState(int symbolIndex,
                                     Qt::Orientation orientation) const;
     void setIdentifierState(const IdentifierState &state,
@@ -58,7 +80,7 @@ protected:
     bool filterAcceptsRow(int sourceRow,
                           const QModelIndex &sourceParent) const override;
 
-private:
+protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     IdentifierFilter mIdentifierFilter;
 };

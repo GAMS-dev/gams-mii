@@ -25,6 +25,7 @@
 int main(int argc, char *argv[])
 {
     QApplication::setApplicationVersion(MI_VERSION);
+    QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));
 
     QApplication a(argc, argv);
     CommonPaths::setSystemDir();

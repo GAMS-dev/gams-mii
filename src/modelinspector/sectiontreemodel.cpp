@@ -19,7 +19,7 @@ SectionTreeModel::~SectionTreeModel()
     delete mRoot;
 }
 
-void SectionTreeModel::appendCustomView(const QString &text, PredefinedViewEnum type, int page)
+void SectionTreeModel::appendCustomView(const QString &text, ViewDataType type, int page)
 {
     beginResetModel();
     auto item = new SectionTreeItem(text, page, mCustomRoot);
@@ -145,48 +145,43 @@ bool SectionTreeModel::removeRows(int row, int count, const QModelIndex &parent)
 void SectionTreeModel::loadModelData()
 {
     auto viewItem = new SectionTreeItem("Predefined Views",
-                                        (int)PredefinedViewEnum::Unknown,
+                                        (int)ViewDataType::Unknown,
                                         mRoot);
     mRoot->append(viewItem);
 
-    SectionTreeItem *mainItem;
+    SectionTreeItem *mainItem = nullptr;
     for (int i=0; i<constant->PredefinedViewTexts.size(); ++i) {
         if (constant->PredefinedViewTexts.at(i) == constant->Statistic) {
             mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)PredefinedViewEnum::Statistic,
+                                           (int)ViewDataType::Statistic,
                                            viewItem);
-            mainItem->setType(PredefinedViewEnum::Statistic);
+            mainItem->setType(ViewDataType::Statistic);
         } else if (constant->PredefinedViewTexts.at(i) == constant->EquationAttributes) {
             mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)PredefinedViewEnum::EqnAttributes,
+                                           (int)ViewDataType::EqnAttributes,
                                            viewItem);
             mainItem->setType(constant->PredefinedViewTexts.at(i));
         } else if (constant->PredefinedViewTexts.at(i) == constant->VariableAttributes) {
             mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)PredefinedViewEnum::VarAttributes,
+                                           (int)ViewDataType::VarAttributes,
                                            viewItem);
             mainItem->setType(constant->PredefinedViewTexts.at(i));
         } else if (constant->PredefinedViewTexts.at(i) == constant->Jaccobian)  {
             mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)PredefinedViewEnum::Jaccobian,
+                                           (int)ViewDataType::Jaccobian,
                                            viewItem);
             mainItem->setType(constant->PredefinedViewTexts.at(i));
         } else if (constant->PredefinedViewTexts.at(i) == constant->MinMax) {
             mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)PredefinedViewEnum::MinMax,
-                                           viewItem);
-            mainItem->setType(constant->PredefinedViewTexts.at(i));
-        } else {
-            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)PredefinedViewEnum::Full,
+                                           (int)ViewDataType::MinMax,
                                            viewItem);
             mainItem->setType(constant->PredefinedViewTexts.at(i));
         }
-        viewItem->append(mainItem);
+        if (mainItem) viewItem->append(mainItem);
     }
 
     mCustomRoot = new SectionTreeItem("Custom Views",
-                                      (int)PredefinedViewEnum::Unknown,
+                                      (int)ViewDataType::Unknown,
                                       mRoot);
     mRoot->append(mCustomRoot);
 }

@@ -1,4 +1,5 @@
 #include "columnrowfiltermodel.h"
+#include "symbolmodelinstancetablemodel.h"
 
 namespace gams {
 namespace studio {
@@ -13,21 +14,19 @@ ColumnRowFilterModel::ColumnRowFilterModel(QObject *parent)
 bool ColumnRowFilterModel::filterAcceptsColumn(int sourceColumn,
                                                const QModelIndex &sourceParent) const
 {
-    for (int r=0; r<sourceModel()->rowCount(); ++r) {
-        if (!sourceModel()->index(r, sourceColumn, sourceParent).data().toString().isEmpty())
-            return true;
-    }
-    return false;
+    bool ok;
+    auto entries = sourceModel()->data(sourceModel()->index(0, sourceColumn, sourceParent),
+                                       SymbolModelInstanceTableModel::ColumnEntryRole).toInt(&ok);
+    return ok && entries;
 }
 
 bool ColumnRowFilterModel::filterAcceptsRow(int sourceRow,
                                             const QModelIndex &sourceParent) const
 {
-    for (int c=0; c<sourceModel()->columnCount(); ++c) {
-        if (!sourceModel()->index(sourceRow, c, sourceParent).data().toString().isEmpty())
-            return true;
-    }
-    return false;
+    bool ok;
+    auto entries = sourceModel()->data(sourceModel()->index(sourceRow, 0, sourceParent),
+                                       SymbolModelInstanceTableModel::RowEntryRole).toInt(&ok);
+    return ok && entries;
 }
 
 }

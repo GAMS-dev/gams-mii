@@ -40,7 +40,7 @@ class SectionTreeModel;
 class SearchResultModel;
 
 class ModelInspector : public QWidget
-{
+{// TODO !!! use ViewConfig in MI interface?
     Q_OBJECT
 
 public:
@@ -85,7 +85,7 @@ public:
     Aggregation defaultAggregation() const;
     void setAggregation(const Aggregation &aggregation);
 
-    PredefinedViewEnum viewType() const;
+    ViewDataType viewType() const;
 
     void resetColumnRowFilter();
 
@@ -104,7 +104,8 @@ public slots:
     void resetDefaultViews();
 
     void saveModelView();
-    void saveReducedModelView(gams::studio::modelinspector::PredefinedViewEnum type);
+    void createNewViewClone();
+    void createNewSymbolView();
 
     void removeModelView();
 
@@ -122,10 +123,6 @@ private:
     void clearCustomViews();
 
     AbstractTableViewFrame* currentView() const;
-
-    IdentifierFilter newIdentifierFilter(const IdentifierFilter &currentFilter,
-                                         const QList<Symbol> &eqnFilter,
-                                         const QList<Symbol> &varFilter);
 
 private:
     Ui::ModelInspector* ui;

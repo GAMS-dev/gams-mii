@@ -39,8 +39,8 @@ public:
     void setLabelFilter(const LabelFilter &filter);
     void setDefaultLabelFilter(const LabelFilter &filter);
 
-    PredefinedViewEnum viewType() const;
-    void setViewType(PredefinedViewEnum viewType);
+    ViewDataType viewType() const;
+    void setViewType(ViewDataType viewType);
 
 signals:
     void filterUpdated();
@@ -67,11 +67,12 @@ private slots:
     void on_labelBox_currentIndexChanged(int index);
 
 private:
-    void setupEquationFilter(const IdentifierStates &filter);
-    void setupVariableFilter(const IdentifierStates &filter);
+    void setupEquationFilter(const IdentifierStates &filter, const IdentifierStates &dFilter);
+    void setupVariableFilter(const IdentifierStates &filter, const IdentifierStates &dFilter);
     void setupLabelFilter();
     FilterTreeItem* setupSymTreeItems(const QString &text,
                                       const IdentifierStates &filter,
+                                      const IdentifierStates &dFilter,
                                       bool showAttributes,
                                       bool showSymbols);
     void setupLabelTreeItems(const QString &text, Qt::Orientation orientation, FilterTreeItem *root);
@@ -101,7 +102,7 @@ private:
 private:
     Ui::FilterDialog *ui;
 
-    PredefinedViewEnum mViewType;
+    ViewDataType mViewType;
 
     IdentifierFilter mIdentifierFilter;
     IdentifierFilter mDefaultIdentifierFilter;

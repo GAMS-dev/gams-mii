@@ -29,8 +29,8 @@ QVariant AttributeTableModel::data(const QModelIndex &index, int role) const
         return Qt::AlignRight;
     }
     if (index.isValid() && role == Qt::DisplayRole) {
-        auto value = mModelInstance->data(index.row(), index.column(), mView);
-        return value == 0.0 ? QVariant() : value;
+    //    auto value = mModelInstance->data(index.row(), index.column(), mView);
+    //    return value == 0.0 ? QVariant() : value;
     }
     return QVariant();
 }
@@ -78,10 +78,30 @@ EquationAttributeTableModel::~EquationAttributeTableModel()
 
 }
 
+QVariant EquationAttributeTableModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (role == Qt::TextAlignmentRole) {
+        return Qt::AlignLeft;
+    }
+    if (role != Qt::DisplayRole) {
+        return QAbstractItemModel::headerData(section, orientation, role);
+    }
+    if (orientation == Qt::Horizontal && section < constant->PredefinedHeaderLength) {
+        return constant->PredefinedHeader[section];
+    }
+    return section;
+}
+
+int EquationAttributeTableModel::columnCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+    return mModelInstance->columnCount(ViewDataType::EqnAttributes);
+}
+
 int EquationAttributeTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->rowCount(PredefinedViewEnum::EqnAttributes);
+    return mModelInstance->rowCount(ViewDataType::EqnAttributes);
 }
 
 VariableAttributeTableModel::VariableAttributeTableModel(QObject *parent)
@@ -101,22 +121,33 @@ QVariant VariableAttributeTableModel::data(const QModelIndex &index, int role) c
         return Qt::AlignRight;
     }
     if (index.isValid() && role == Qt::DisplayRole) {
-        auto value = mModelInstance->data(index.row(), index.column(), mView);
-        return value == 0.0 ? QVariant() : value;
+    //    auto value = mModelInstance->data(index.row(), index.column(), mView);
+    //    return value == 0.0 ? QVariant() : value;
     }
     return QVariant();
+}
+
+QVariant VariableAttributeTableModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (role != Qt::DisplayRole) {
+        return QAbstractItemModel::headerData(section, orientation, role);
+    }
+    if (orientation == Qt::Vertical && section < constant->PredefinedHeaderLength) {
+        return constant->PredefinedHeader[section];
+    }
+    return section;
 }
 
 int VariableAttributeTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->columnCount(PredefinedViewEnum::VarAttributes);
+    return mModelInstance->columnCount(ViewDataType::VarAttributes);
 }
 
 int VariableAttributeTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->rowCount(PredefinedViewEnum::VarAttributes);
+    return mModelInstance->rowCount(ViewDataType::VarAttributes);
 }
 
 }

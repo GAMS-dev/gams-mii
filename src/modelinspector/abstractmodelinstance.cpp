@@ -61,76 +61,72 @@ void AbstractModelInstance::setUseOutput(bool useOutput)
     mUseOutput = useOutput;
 }
 
-double AbstractModelInstance::modelMinimum(PredefinedViewEnum type) const
+double AbstractModelInstance::jaccMinimum() const
+{
+    return mModelJaccMinimum;
+}
+
+double AbstractModelInstance::jaccMaximum() const
+{
+    return mModelJaccMaximum;
+}
+
+double AbstractModelInstance::modelMinimum(ViewDataType type) const
 {
     switch (type) {
-    case PredefinedViewEnum::EqnAttributes:
+    case ViewDataType::EqnAttributes:
         return mModelAttributeMinimumV;
-    case PredefinedViewEnum::VarAttributes:
+    case ViewDataType::VarAttributes:
         return mModelAttributeMinimumH;
-    case PredefinedViewEnum::Jaccobian:
+    case ViewDataType::Jaccobian:
         return mModelJaccMinimum;
-    case PredefinedViewEnum::MinMax:
-        return mModelMinMaxMinimum;
-    case PredefinedViewEnum::Full:
-        return std::min(mModelAttributeMinimumH, std::min(mModelAttributeMinimumV, mModelJaccMinimum));
     default:
-        return 0.0;
+        return std::numeric_limits<double>::lowest();
     }
 }
 
-void AbstractModelInstance::setModelMinimum(double value, PredefinedViewEnum type)
+void AbstractModelInstance::setModelMinimum(double value, ViewDataType type)
 {
     switch (type) {
-    case PredefinedViewEnum::EqnAttributes:
+    case ViewDataType::EqnAttributes:
         mModelAttributeMinimumV = value;
         break;
-    case PredefinedViewEnum::VarAttributes:
+    case ViewDataType::VarAttributes:
         mModelAttributeMinimumH = value;
         break;
-    case PredefinedViewEnum::Jaccobian:
+    case ViewDataType::Jaccobian:
         mModelJaccMinimum = value;
-        break;
-    case PredefinedViewEnum::MinMax:
-        mModelMinMaxMinimum = value;
         break;
     default:
         return;
     }
 }
 
-double AbstractModelInstance::modelMaximum(PredefinedViewEnum type) const
+double AbstractModelInstance::modelMaximum(ViewDataType type) const
 {
     switch (type) {
-    case PredefinedViewEnum::EqnAttributes:
+    case ViewDataType::EqnAttributes:
         return mModelAttributeMaximumV;
-    case PredefinedViewEnum::VarAttributes:
+    case ViewDataType::VarAttributes:
         return mModelAttributeMaximumH;
-    case PredefinedViewEnum::Jaccobian:
+    case ViewDataType::Jaccobian:
         return mModelJaccMaximum;
-    case PredefinedViewEnum::MinMax:
-        return mModelMinMaxMaximum;
-    case PredefinedViewEnum::Full:
-        return std::max(mModelAttributeMaximumH, std::max(mModelAttributeMaximumV, mModelJaccMaximum));
     default:
-        return 0.0;
+        return std::numeric_limits<double>::max();
     }
 }
 
-void AbstractModelInstance::setModelMaximum(double value, PredefinedViewEnum type)
+void AbstractModelInstance::setModelMaximum(double value, ViewDataType type)
 {
     switch (type) {
-    case PredefinedViewEnum::EqnAttributes:
+    case ViewDataType::EqnAttributes:
         mModelAttributeMaximumV = value;
         break;
-    case PredefinedViewEnum::VarAttributes:
+    case ViewDataType::VarAttributes:
         mModelAttributeMaximumH = value;
         break;
-    case PredefinedViewEnum::Jaccobian:
+    case ViewDataType::Jaccobian:
         mModelJaccMaximum = value;
-        break;
-    case PredefinedViewEnum::MinMax:
-        mModelMinMaxMaximum = value;
         break;
     default:
         return;
@@ -164,10 +160,10 @@ int AbstractModelInstance::equationRowCount() const
     return 0;
 }
 
-Symbol AbstractModelInstance::equation(int sectionIndex) const
+Symbol* AbstractModelInstance::equation(int sectionIndex) const
 {
     Q_UNUSED(sectionIndex);
-    return Symbol();
+    return nullptr;
 }
 
 int AbstractModelInstance::variableCount() const
@@ -186,10 +182,15 @@ int AbstractModelInstance::variableRowCount() const
     return 0;
 }
 
-Symbol AbstractModelInstance::variable(int sectionIndex) const
+Symbol* AbstractModelInstance::variable(int sectionIndex) const
 {
     Q_UNUSED(sectionIndex);
-    return Symbol();
+    return nullptr;
+}
+
+const QStringList &AbstractModelInstance::labels() const
+{
+    return mLabels;
 }
 
 EmptyModelInstance::EmptyModelInstance(const QString &workspace,
@@ -200,17 +201,12 @@ EmptyModelInstance::EmptyModelInstance(const QString &workspace,
 
 }
 
-void EmptyModelInstance::initialize()
-{
-
-}
-
-const QVector<Symbol> &EmptyModelInstance::equations() const
+const QVector<Symbol*> &EmptyModelInstance::equations() const
 {
     return mSymbols;
 }
 
-const QVector<Symbol> &EmptyModelInstance::variables() const
+const QVector<Symbol*> &EmptyModelInstance::variables() const
 {
     return mSymbols;
 }
@@ -275,27 +271,60 @@ int EmptyModelInstance::maximumVariableDimension() const
     return 0;
 }
 
-const QVector<Symbol> &EmptyModelInstance::symbols(Symbol::Type type) const
+const QVector<Symbol*> &EmptyModelInstance::symbols(Symbol::Type type) const
 {
     Q_UNUSED(type);
     return mSymbols;
 }
 
-void EmptyModelInstance::loadData(LabelFilter &labelFilter)
+void EmptyModelInstance::loadData()
 {
-    Q_UNUSED(labelFilter);
+
 }
 
-int EmptyModelInstance::rowCount(PredefinedViewEnum viewType) const
+int EmptyModelInstance::rowCount(int view) const
+{
+    Q_UNUSED(view);
+    return 0;
+}
+
+int EmptyModelInstance::rowCount(ViewDataType viewType) const
 {
     Q_UNUSED(viewType);
     return 0;
 }
 
-int EmptyModelInstance::columnCount(PredefinedViewEnum viewType) const
+int EmptyModelInstance::rowEntries(int row, int view) const
+{
+    Q_UNUSED(row);
+    Q_UNUSED(view);
+    return 0;
+}
+
+int EmptyModelInstance::columnCount(int view) const
+{
+    Q_UNUSED(view);
+    return 0;
+}
+
+int EmptyModelInstance::columnCount(ViewDataType viewType) const
 {
     Q_UNUSED(viewType);
     return 0;
+}
+
+int EmptyModelInstance::columnEntries(int column, int view) const
+{
+    Q_UNUSED(column);
+    Q_UNUSED(view);
+    return 0;
+}
+
+QSharedPointer<AbstractViewConfiguration> EmptyModelInstance::clone(int view, int newView)
+{
+    Q_UNUSED(view);
+    Q_UNUSED(newView);
+    return nullptr;
 }
 
 QVariant EmptyModelInstance::data(int row, int column, int view) const
@@ -303,6 +332,12 @@ QVariant EmptyModelInstance::data(int row, int column, int view) const
     Q_UNUSED(row);
     Q_UNUSED(column);
     Q_UNUSED(view);
+    return QVariant();
+}
+QVariant EmptyModelInstance::data(int row, int column) const
+{
+    Q_UNUSED(row);
+    Q_UNUSED(column);
     return QVariant();
 }
 
@@ -316,9 +351,9 @@ QString EmptyModelInstance::headerData(int sectionIndex,
     return QString();
 }
 
-void EmptyModelInstance::aggregate(const Aggregation &aggregation)
+void EmptyModelInstance::aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig)
 {
-    Q_UNUSED(aggregation);
+    Q_UNUSED(viewConfig);
 }
 
 int EmptyModelInstance::headerData(int logicalIndex,
@@ -329,6 +364,11 @@ int EmptyModelInstance::headerData(int logicalIndex,
     Q_UNUSED(orientation);
     Q_UNUSED(view);
     return 0;
+}
+
+void EmptyModelInstance::jaccobianData(DataMatrix &dataMatrix)
+{
+    Q_UNUSED(dataMatrix);
 }
 
 }

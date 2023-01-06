@@ -127,19 +127,21 @@ void TestAggregation::test_default_aggregation()
     QVERIFY(aggregation.aggregationMap().isEmpty());
     QVERIFY(aggregation.aggregationSymbols(Qt::Horizontal).isEmpty());
     QVERIFY(aggregation.aggregationSymbols(Qt::Vertical).isEmpty());
-    QVERIFY(aggregation.identifierFilter().isEmpty());
-    QCOMPARE(aggregation.valueFilter().MinValue, std::numeric_limits<double>::lowest());
-    QCOMPARE(aggregation.valueFilter().MaxValue, std::numeric_limits<double>::max());
-    QCOMPARE(aggregation.valueFilter().ExcludeRange, false);
-    QCOMPARE(aggregation.valueFilter().UseAbsoluteValues, false);
-    QVERIFY(aggregation.valueFilter().accepts("EPS"));
-    QVERIFY(aggregation.valueFilter().accepts("+INF"));
-    QVERIFY(aggregation.valueFilter().accepts("-INF"));
 }
 
 void TestAggregation::test_getSet_aggregation()
 {
+    Aggregation aggregation;
+    aggregation.setUseAbsoluteValues(true);
+    QCOMPARE(aggregation.useAbsoluteValues(), true);
+    aggregation.setType(Aggregation::MinMax);
+    QCOMPARE(aggregation.type(), Aggregation::MinMax);
+    QCOMPARE(aggregation.typeText(), "MinMax");
+    aggregation.setType("Count");
+    QCOMPARE(aggregation.type(), Aggregation::Count);
+    QCOMPARE(aggregation.typeText(), "Count");
 
+    // TODO rest...
 }
 
 void TestAggregation::test_default_aggregator()
