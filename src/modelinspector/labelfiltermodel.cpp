@@ -118,36 +118,6 @@ bool LabelFilterModel::matchesAnyRowLabels(const LabelCheckStates &checkStates,
     return false;
 }
 
-EqnLabelFilterModel::EqnLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                                         QObject *parent)
-    : LabelFilterModel(modelInstance, parent)
-{
-
-}
-
-bool EqnLabelFilterModel::filterAcceptsColumn(int sourceColumn,
-                                              const QModelIndex &sourceParent) const
-{
-    Q_UNUSED(sourceColumn);
-    Q_UNUSED(sourceParent);
-    return true;
-}
-
-VarLabelFilterModel::VarLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                                         QObject *parent)
-    : LabelFilterModel(modelInstance, parent)
-{
-
-}
-
-bool VarLabelFilterModel::filterAcceptsRow(int sourceRow,
-                                           const QModelIndex &sourceParent) const
-{
-    Q_UNUSED(sourceRow);
-    Q_UNUSED(sourceParent);
-    return true;
-}
-
 }
 }
 }

@@ -156,16 +156,6 @@ void SectionTreeModel::loadModelData()
                                            (int)ViewDataType::Statistic,
                                            viewItem);
             mainItem->setType(ViewDataType::Statistic);
-        } else if (constant->PredefinedViewTexts.at(i) == constant->EquationAttributes) {
-            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)ViewDataType::EqnAttributes,
-                                           viewItem);
-            mainItem->setType(constant->PredefinedViewTexts.at(i));
-        } else if (constant->PredefinedViewTexts.at(i) == constant->VariableAttributes) {
-            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)ViewDataType::VarAttributes,
-                                           viewItem);
-            mainItem->setType(constant->PredefinedViewTexts.at(i));
         } else if (constant->PredefinedViewTexts.at(i) == constant->Jaccobian)  {
             mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
                                            (int)ViewDataType::Jaccobian,

@@ -93,7 +93,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="statisticPage">
        <property name="sizePolicy">
@@ -146,82 +146,6 @@
             <widget class="gams::studio::modelinspector::StatisticEdit" name="statisticEdit"/>
            </item>
           </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="eqnAttrPage">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_6">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="gams::studio::modelinspector::EqnTableViewFrame" name="eqnAttrFrame">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="varAttrPage">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_7">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="gams::studio::modelinspector::VarTableViewFrame" name="varAttrFrame">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
          </widget>
         </item>
        </layout>
@@ -305,18 +229,6 @@
    <class>gams::studio::modelinspector::StatisticEdit</class>
    <extends>QTextEdit</extends>
    <header>modelinspector/statisticedit.h</header>
-  </customwidget>
-  <customwidget>
-   <class>gams::studio::modelinspector::EqnTableViewFrame</class>
-   <extends>QFrame</extends>
-   <header>modelinspector/standardtableviewframe.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>gams::studio::modelinspector::VarTableViewFrame</class>
-   <extends>QFrame</extends>
-   <header>modelinspector/standardtableviewframe.h</header>
-   <container>1</container>
   </customwidget>
   <customwidget>
    <class>gams::studio::modelinspector::JaccTableViewFrame</class>

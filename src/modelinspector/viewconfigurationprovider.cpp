@@ -57,125 +57,6 @@ protected:
     //    //aggregation.setAggregationSymbols(Qt::Vertical, initAggregation(Symbol::Equation));
     //    //return aggregation;
     //}
-
-};
-
-class EqnViewConfiguration final : public AbstractViewConfiguration
-{
-public:
-    EqnViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
-        : AbstractViewConfiguration(viewType, modelInstance)
-    {
-
-    }
-
-    AbstractViewConfiguration* clone() override
-    {
-        return new EqnViewConfiguration(*this);
-    }
-
-    void initialize(QAbstractItemModel *model) override
-    {
-        Q_UNUSED(model);
-        createLabelFilter();
-        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(mViewType);
-        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(mViewType);
-        mCurrentValueFilter = mDefaultValueFilter;
-        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
-        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
-        mCurrentIdentifierFilter = mDefaultIdentifierFilter;
-        //createDefaultAggregation(); TODO !!! activate aggregation
-        //createCurrentAggregation();
-    }
-
-protected:
-    IdentifierStates createDefaultSymbolFilter(Qt::Orientation orientation) const override
-    {
-        IdentifierStates states;
-        if (orientation == Qt::Vertical) {
-            int symIndex = 0;
-            for (const auto& sym : mModelInstance->equations()) {
-                IdentifierState identifierState;
-                identifierState.Enabled = true;
-                identifierState.SectionIndex = symIndex;
-                identifierState.SymbolIndex = sym->firstSection();
-                identifierState.Text = sym->name();
-                identifierState.Checked = Qt::Checked;
-                states[sym->firstSection()] = identifierState;
-                symIndex++;
-            }
-        } else {
-            int section = 0;
-            for (const auto& attr : constant->PredefinedHeader) {
-                IdentifierState identifierState;
-                identifierState.Enabled = true;
-                identifierState.SymbolIndex = section;
-                identifierState.Text = attr;
-                identifierState.Checked = Qt::Checked;
-                states[section++] = identifierState;
-            }
-        }
-        return states;
-    }
-};
-
-class VarViewConfiguration final : public AbstractViewConfiguration
-{
-public:
-    VarViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
-        : AbstractViewConfiguration(viewType, modelInstance)
-    {
-
-    }
-
-    AbstractViewConfiguration* clone() override
-    {
-        return new VarViewConfiguration(*this);
-    }
-
-    void initialize(QAbstractItemModel *model) override
-    {
-        Q_UNUSED(model);
-        createLabelFilter();
-        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(mViewType);
-        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(mViewType);
-        mCurrentValueFilter = mDefaultValueFilter;
-        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
-        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
-        mCurrentIdentifierFilter = mDefaultIdentifierFilter;
-        //createDefaultAggregation(); TODO !!! activate aggregation
-        //createCurrentAggregation();
-    }
-
-protected:
-    IdentifierStates createDefaultSymbolFilter(Qt::Orientation orientation) const override
-    {
-        IdentifierStates states;
-        if (orientation == Qt::Horizontal) {
-            int symIndex = 0;
-            for (const auto& sym : mModelInstance->variables()) {
-                IdentifierState identifierState;
-                identifierState.Enabled = true;
-                identifierState.SectionIndex = symIndex;
-                identifierState.SymbolIndex = sym->firstSection();
-                identifierState.Text = sym->name();
-                identifierState.Checked = Qt::Checked;
-                states[sym->firstSection()] = identifierState;
-                symIndex++;
-            }
-        } else {
-            int section = 0;
-            for (const auto& attr : constant->PredefinedHeader) {
-                IdentifierState identifierState;
-                identifierState.Enabled = true;
-                identifierState.SymbolIndex = section;
-                identifierState.Text = attr;
-                identifierState.Checked = Qt::Checked;
-                states[section++] = identifierState;
-            }
-        }
-        return states;
-    }
 };
 
 class JaccobianViewConfiguration final : public AbstractViewConfiguration
@@ -529,10 +410,6 @@ AbstractViewConfiguration *ViewConfigurationProvider::configuration(ViewDataType
                                                                     QSharedPointer<AbstractModelInstance> modelInstance)
 {
     switch (viewType) {
-    case ViewDataType::EqnAttributes:
-        return new EqnViewConfiguration(viewType, modelInstance);
-    case ViewDataType::VarAttributes:
-        return new VarViewConfiguration(viewType, modelInstance);
     case ViewDataType::MinMax:
         return new MinMaxViewConfiguration(viewType, modelInstance);
     case ViewDataType::Jaccobian:

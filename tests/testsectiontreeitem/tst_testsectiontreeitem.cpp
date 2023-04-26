@@ -88,10 +88,6 @@ void TestSectionTreeItem::test_getSet()
 void TestSectionTreeItem::test_setTypeText()
 {
     SectionTreeItem item("default");
-    item.setType(constant->EquationAttributes);
-    QCOMPARE(item.type(), ViewDataType::EqnAttributes);
-    item.setType(constant->VariableAttributes);
-    QCOMPARE(item.type(), ViewDataType::VarAttributes);
     item.setType(constant->Jaccobian);
     QCOMPARE(item.type(), ViewDataType::Jaccobian);
     item.setType(constant->Statistic);

@@ -605,10 +605,6 @@ int ModelInstance::rowCount(int view) const
 int ModelInstance::rowCount(ViewDataType viewType) const
 {
     switch (viewType) {
-    case ViewDataType::EqnAttributes:
-        return equationRowCount();
-    case ViewDataType::VarAttributes:
-        return constant->PredefinedHeaderLength;
     case ViewDataType::Jaccobian:
         return equationRowCount();
     case ViewDataType::MinMax: // one row for max and min
@@ -631,10 +627,6 @@ int ModelInstance::columnCount(int view) const
 int ModelInstance::columnCount(ViewDataType viewType) const
 {
     switch (viewType) {
-    case ViewDataType::EqnAttributes:
-        return constant->PredefinedHeaderLength;
-    case ViewDataType::VarAttributes:
-        return variableRowCount();
     case ViewDataType::Jaccobian:
         return variableRowCount();
     case ViewDataType::MinMax:
@@ -883,13 +875,6 @@ QVariant ModelInstance::specialValueMinMax(double value, Qt::Orientation orienta
         return constant->N_INF;
     else if (GMS_SV_EPS == value)
         return constant->EPS;
-    if (orientation == Qt::Horizontal) {
-        mModelAttributeMinimumH = ValueFilter::minValue(mModelAttributeMinimumH, value);
-        mModelAttributeMaximumH = ValueFilter::maxValue(mModelAttributeMaximumH, value);
-    } else {
-        mModelAttributeMinimumV = ValueFilter::minValue(mModelAttributeMinimumV, value);
-        mModelAttributeMaximumV = ValueFilter::maxValue(mModelAttributeMaximumV, value);
-    }
     return value;
 }
 

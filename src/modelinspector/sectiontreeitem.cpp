@@ -96,10 +96,6 @@ void SectionTreeItem::setType(const QString &text)
 {
     if (text == constant->Statistic)
         mType = ViewDataType::Statistic;
-    else if (text == constant->EquationAttributes)
-        mType = ViewDataType::EqnAttributes;
-    else if (text == constant->VariableAttributes)
-        mType = ViewDataType::VarAttributes;
     else if (text == constant->Jaccobian)
         mType = ViewDataType::Jaccobian;
     else if (text == constant->MinMax)

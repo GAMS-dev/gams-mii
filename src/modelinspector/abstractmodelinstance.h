@@ -183,12 +183,6 @@ protected:
 
     bool mUseOutput = false;
 
-    double mModelAttributeMinimumH = 0.0;
-    double mModelAttributeMaximumH = 0.0;
-
-    double mModelAttributeMinimumV = 0.0;
-    double mModelAttributeMaximumV = 0.0;
-
     double mModelJaccMinimum = std::numeric_limits<double>::max();
     double mModelJaccMaximum = std::numeric_limits<double>::lowest();
 

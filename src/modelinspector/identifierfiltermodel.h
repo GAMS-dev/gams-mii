@@ -34,30 +34,6 @@ protected:
     IdentifierFilter mIdentifierFilter;
 };
 
-class VarIdentifierFilterModel : public IdentifierFilterModel
-{
-    Q_OBJECT
-
-public:
-    VarIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                          QObject *parent = nullptr);
-
-    bool filterAcceptsRow(int sourceRow,
-                          const QModelIndex &sourceParent) const override;
-};
-
-class EqnIdentifierFilterModel : public IdentifierFilterModel
-{
-    Q_OBJECT
-
-public:
-    EqnIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                          QObject *parent = nullptr);
-
-    bool filterAcceptsColumn(int sourceColumn,
-                             const QModelIndex &sourceParent) const override;
-};
-
 class IdentifierLabelFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT

@@ -32,14 +32,10 @@ struct Constant
     const int PredefinedHeaderLength = PredefinedHeader.size();
 
     const QString Statistic = "Statistic";
-    const QString EquationAttributes = "Equation Attributes";
-    const QString VariableAttributes = "Variable Attributes";
     const QString Jaccobian = "Jaccobian";
     const QString MinMax = "Min Max";
     const QString SymbolView = "Symbol View";
     const QStringList PredefinedViewTexts = { Statistic,
-                                              EquationAttributes,
-                                              VariableAttributes,
                                               Jaccobian,
                                               MinMax };
 };
@@ -55,11 +51,9 @@ enum class ViewType
 enum class ViewDataType
 {
     Statistic       = 0,
-    EqnAttributes   = 1,
-    VarAttributes   = 2,
-    Jaccobian       = 3,
-    MinMax          = 4,
-    SymbolView      = 5,
+    Jaccobian       = 1,
+    MinMax          = 2,
+    SymbolView      = 3,
     Unknown         = 127
 };
 

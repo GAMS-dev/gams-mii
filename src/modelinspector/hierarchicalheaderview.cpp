@@ -386,14 +386,10 @@ public:
             return symbol->dimension();
         }
         if (orientation == Qt::Horizontal) {
-            if (mHeaderView->viewType() == ViewDataType::EqnAttributes)
-                return 0;
             if (mHeaderView->model()->columnCount() != mHeaderView->modelInstance()->columnCount(ViewDataType::Jaccobian))
                 return maximumSymbolDimension(); // TODO filter case
         }
         if (orientation == Qt::Vertical) {
-            if (mHeaderView->viewType() == ViewDataType::VarAttributes)
-                return 0;
             if (mHeaderView->model()->rowCount() != mHeaderView->modelInstance()->rowCount(ViewDataType::Jaccobian))
                 return maximumSymbolDimension(); // TODO filter case
         }

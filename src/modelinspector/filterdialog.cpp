@@ -204,11 +204,10 @@ void FilterDialog::on_labelBox_currentIndexChanged(int index)
 
 void FilterDialog::setupEquationFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
-    bool showAttributes = !(mViewType == ViewDataType::EqnAttributes    ||
-                            mViewType == ViewDataType::Jaccobian        ||
+    bool showAttributes = !(mViewType == ViewDataType::Jaccobian        ||
                             mViewType == ViewDataType::MinMax           ||
                             mViewType == ViewDataType::SymbolView);
-    bool showSymbols = mViewType != ViewDataType::VarAttributes;
+    bool showSymbols = true;
     auto filterItem = setupSymTreeItems(FilterTreeItem::EquationText, filter, dFilter,
                                         showAttributes, showSymbols);
     auto oldEqnModel = ui->rowView->selectionModel();
@@ -231,11 +230,10 @@ void FilterDialog::setupEquationFilter(const IdentifierStates &filter, const Ide
 
 void FilterDialog::setupVariableFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
-    bool showAttributes = !(mViewType == ViewDataType::VarAttributes    ||
-                            mViewType == ViewDataType::Jaccobian        ||
+    bool showAttributes = !(mViewType == ViewDataType::Jaccobian        ||
                             mViewType == ViewDataType::MinMax           ||
                             mViewType == ViewDataType::SymbolView);
-    bool showSymbols = mViewType != ViewDataType::EqnAttributes;
+    bool showSymbols = true;
     auto filterItem = setupSymTreeItems(FilterTreeItem::VariableText, filter, dFilter,
                                         showAttributes, showSymbols);
     auto oldVarModel = ui->columnView->selectionModel();
@@ -295,14 +293,6 @@ FilterTreeItem* FilterDialog::setupSymTreeItems(const QString &text,
     root->setCheckable(false);
     auto attributes = new FilterTreeItem(FilterTreeItem::AttributesText, Qt::Unchecked, root);
     attributes->setCheckable(false);
-    if ((mViewType == ViewDataType::VarAttributes && text == FilterTreeItem::EquationText) ||
-            (mViewType == ViewDataType::EqnAttributes && text == FilterTreeItem::VariableText)) {
-        for (const auto& item : filter) {
-            auto fItem = new FilterTreeItem(item.Text, item.Checked, attributes);
-            fItem->setSymbolIndex(item.SymbolIndex);
-            attributes->append(fItem);
-        }
-    }
     auto symbols = new FilterTreeItem(text, Qt::Unchecked, root);
     symbols->setCheckable(false);
     for (const auto& item : filter) {

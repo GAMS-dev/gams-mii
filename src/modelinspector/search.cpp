@@ -51,9 +51,6 @@ void Search::run(QList<SearchResult> &result)
     } else if (mViewDataType == ViewDataType::SymbolView || mViewDataType == ViewDataType::Jaccobian) {
         search(Qt::Horizontal, result);
         search(Qt::Vertical, result);
-    } else if (mViewDataType == ViewDataType::EqnAttributes || mViewDataType == ViewDataType::VarAttributes) {
-        searchAttributeHeader(Qt::Horizontal, result);
-        searchAttributeHeader(Qt::Vertical, result);
     }
 }
 
@@ -94,17 +91,6 @@ void Search::searchAttributeHeader(Qt::Orientation orientation, QList<SearchResu
                                                    mDataModel->rowCount();
     for (int section=0; section<sections; ++section) {
         auto value = mDataModel->headerData(section, orientation);
-        if (mViewDataType == ViewDataType::EqnAttributes &&
-                orientation == Qt::Horizontal &&
-                compare(value.toString())) {
-            result.append(SearchResult{section, orientation});
-            continue;
-        } else if (mViewDataType == ViewDataType::VarAttributes &&
-                   orientation == Qt::Vertical &&
-                   compare(value.toString())) {
-            result.append(SearchResult{section, orientation});
-            continue;
-        }
         int realSection = mDataModel->headerData(section, orientation).toInt(&ok);
         if (!ok) continue;
         searchHeader(section, realSection, orientation, result);

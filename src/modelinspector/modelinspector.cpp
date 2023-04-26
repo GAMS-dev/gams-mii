@@ -39,8 +39,6 @@ ModelInspector::ModelInspector(QWidget *parent)
     , mSectionModel(new SectionTreeModel(this))
 {
     ui->setupUi(this);
-    ui->eqnAttrFrame->setView((int)ViewDataType::EqnAttributes);
-    ui->varAttrFrame->setView((int)ViewDataType::VarAttributes);
     ui->jaccFrame->setView((int)ViewDataType::Jaccobian);
     ui->minMaxFrame->setView((int)ViewDataType::MinMax);
     mSectionModel->loadModelData();
@@ -260,10 +258,6 @@ void ModelInspector::resetZoom()
 void ModelInspector::resetDefaultViews()
 {
     ui->statisticEdit->resetZoom();
-    ui->eqnAttrFrame->reset();
-    ui->eqnAttrFrame->resetZoom();
-    ui->varAttrFrame->reset();
-    ui->varAttrFrame->resetZoom();
     ui->jaccFrame->reset();
     ui->jaccFrame->resetZoom();
     ui->minMaxFrame->reset();
@@ -387,10 +381,6 @@ void ModelInspector::setupConnections()
 {
     connect(ui->sectionView, &SectionTreeView::currentItemChanged,
             this, &ModelInspector::setCurrentView);
-    connect(ui->eqnAttrFrame, &EqnTableViewFrame::filtersChanged,
-            this, &ModelInspector::filtersChanged);
-    connect(ui->varAttrFrame, &VarTableViewFrame::filtersChanged,
-            this, &ModelInspector::filtersChanged);
     connect(ui->minMaxFrame, &MinMaxTableViewFrame::filtersChanged,
             this, &ModelInspector::filtersChanged);
     connect(ui->sectionView, &SectionTreeView::saveViewTriggered,
@@ -416,8 +406,6 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
     mModelInstance->loadData();
     ui->minMaxFrame->aggregate(mModelInstance);
 
-    ui->eqnAttrFrame->setupView(mModelInstance);
-    ui->varAttrFrame->setupView(mModelInstance);
     ui->jaccFrame->setupView(mModelInstance);
     ui->minMaxFrame->setupView(mModelInstance);
 
@@ -440,10 +428,6 @@ void ModelInspector::clearCustomViews()
 AbstractTableViewFrame* ModelInspector::currentView() const
 {
     switch (ui->stackedWidget->currentIndex()) {
-    case (int)ViewDataType::EqnAttributes:
-        return ui->eqnAttrFrame;
-    case (int)ViewDataType::VarAttributes:
-        return ui->varAttrFrame;
     case (int)ViewDataType::Jaccobian:
         return ui->jaccFrame;
     case (int)ViewDataType::MinMax:

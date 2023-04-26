@@ -74,10 +74,6 @@ double AbstractModelInstance::jaccMaximum() const
 double AbstractModelInstance::modelMinimum(ViewDataType type) const
 {
     switch (type) {
-    case ViewDataType::EqnAttributes:
-        return mModelAttributeMinimumV;
-    case ViewDataType::VarAttributes:
-        return mModelAttributeMinimumH;
     case ViewDataType::Jaccobian:
         return mModelJaccMinimum;
     default:
@@ -88,12 +84,6 @@ double AbstractModelInstance::modelMinimum(ViewDataType type) const
 void AbstractModelInstance::setModelMinimum(double value, ViewDataType type)
 {
     switch (type) {
-    case ViewDataType::EqnAttributes:
-        mModelAttributeMinimumV = value;
-        break;
-    case ViewDataType::VarAttributes:
-        mModelAttributeMinimumH = value;
-        break;
     case ViewDataType::Jaccobian:
         mModelJaccMinimum = value;
         break;
@@ -105,10 +95,6 @@ void AbstractModelInstance::setModelMinimum(double value, ViewDataType type)
 double AbstractModelInstance::modelMaximum(ViewDataType type) const
 {
     switch (type) {
-    case ViewDataType::EqnAttributes:
-        return mModelAttributeMaximumV;
-    case ViewDataType::VarAttributes:
-        return mModelAttributeMaximumH;
     case ViewDataType::Jaccobian:
         return mModelJaccMaximum;
     default:
@@ -119,12 +105,6 @@ double AbstractModelInstance::modelMaximum(ViewDataType type) const
 void AbstractModelInstance::setModelMaximum(double value, ViewDataType type)
 {
     switch (type) {
-    case ViewDataType::EqnAttributes:
-        mModelAttributeMaximumV = value;
-        break;
-    case ViewDataType::VarAttributes:
-        mModelAttributeMaximumH = value;
-        break;
     case ViewDataType::Jaccobian:
         mModelJaccMaximum = value;
         break;

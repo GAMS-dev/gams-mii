@@ -65,44 +65,6 @@ bool IdentifierFilterModel::filterAcceptsRow(int sourceRow,
     return true;
 }
 
-VarIdentifierFilterModel::VarIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                                                   QObject *parent)
-    : IdentifierFilterModel(modelInstance, parent)
-{
-
-}
-
-bool VarIdentifierFilterModel::filterAcceptsRow(int sourceRow,
-                                                     const QModelIndex &sourceParent) const
-{
-    Q_UNUSED(sourceParent);
-    if (mIdentifierFilter[Qt::Vertical].isEmpty())
-        return true;
-    auto text = sourceModel()->headerData(sourceRow, Qt::Vertical).toString();
-    auto sectionIndex = constant->PredefinedHeader.indexOf(text);
-    auto item = mIdentifierFilter[Qt::Vertical].value(sectionIndex);
-    return item.Checked == Qt::Unchecked ? false : true;
-}
-
-EqnIdentifierFilterModel::EqnIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                                                   QObject *parent)
-    : IdentifierFilterModel(modelInstance, parent)
-{
-
-}
-
-bool EqnIdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
-                                                   const QModelIndex &sourceParent) const
-{
-    Q_UNUSED(sourceParent);
-    if (mIdentifierFilter[Qt::Horizontal].isEmpty())
-        return true;
-    auto text = sourceModel()->headerData(sourceColumn, Qt::Horizontal).toString();
-    auto sectionIndex = constant->PredefinedHeader.indexOf(text);
-    auto item = mIdentifierFilter[Qt::Horizontal].value(sectionIndex);
-    return item.Checked == Qt::Unchecked ? false : true;
-}
-
 IdentifierLabelFilterModel::IdentifierLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
                                                        QObject *parent)
     : QSortFilterProxyModel(parent)
