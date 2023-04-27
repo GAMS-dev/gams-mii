@@ -34,6 +34,7 @@ void TestModelInstance::test_constructor_initialize()
     const QString systemDir = "mySysDir";
     const QString scratchDir = "myScratchDir";
     ModelInstance instance(workspace, systemDir, scratchDir);
+    QVERIFY(!instance.logMessages().isEmpty());
     auto realWorkspace = QDir(workspace).absolutePath();
     QCOMPARE(instance.workspace(), realWorkspace);
     QCOMPARE(instance.systemDirectory(), systemDir);
@@ -43,6 +44,7 @@ void TestModelInstance::test_constructor_initialize()
 void TestModelInstance::test_default()
 {
     ModelInstance instance;
+    QVERIFY(!instance.logMessages().isEmpty());
     QCOMPARE(instance.workspace(), QDir(".").absolutePath());
     QCOMPARE(instance.systemDirectory(), QString());
     QCOMPARE(instance.scratchDirectory(), QString());
@@ -53,6 +55,7 @@ void TestModelInstance::test_default()
 void TestModelInstance::test_getSet()
 {
     ModelInstance instance;
+    QVERIFY(!instance.logMessages().isEmpty());
     instance.setWorkspace("my_workspace");
     QCOMPARE(instance.workspace(), QDir("my_workspace").absolutePath());
     instance.setSystemDirectory("my_system_dir");

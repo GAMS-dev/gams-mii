@@ -98,9 +98,12 @@ void ModelInspector::setShowOutput(bool showOutput)
 }
 
 void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
-{
-    auto frame = currentView();
-    if (frame) frame->setShowAbsoluteValues(absoluteValues);
+{// TOOD check performance... when all views get an update
+    ui->jaccFrame->setShowAbsoluteValues(absoluteValues);
+    ui->minMaxFrame->setShowAbsoluteValues(absoluteValues);
+    for (auto view : std::as_const(mCustomViews)) {
+        view->setShowAbsoluteValues(absoluteValues);
+    }
 }
 
 QList<SearchResult> ModelInspector::searchHeaders(const QString &term,

@@ -141,11 +141,11 @@ void SymbolViewFrame::updateView()
 
 void SymbolViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
-    if (mModelInstanceModel && mViewConfig->currentAggregation().useAbsoluteValues() != absoluteValues) {
+    if (mModelInstanceModel && mViewConfig->currentValueFilter().UseAbsoluteValues != absoluteValues) {
         mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
+        mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
         mModelInstance->aggregate(mViewConfig);
         emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
         mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
     }
 }

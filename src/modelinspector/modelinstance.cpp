@@ -115,6 +115,8 @@ int ModelInstance::nonLinearCoefficents() const
 
 Symbol* ModelInstance::equation(int sectionIndex) const
 {
+    if (sectionIndex >= vSectionIndexToSymbol.size())
+        return nullptr;
     return vSectionIndexToSymbol[sectionIndex];
 }
 
@@ -201,6 +203,8 @@ QString ModelInstance::longestVariableText() const
 
 Symbol* ModelInstance::variable(int sectionIndex) const
 {
+    if (sectionIndex >= hSectionIndexToSymbol.size())
+        return nullptr;
     return hSectionIndexToSymbol[sectionIndex];
 }
 
@@ -694,11 +698,15 @@ QString ModelInstance::headerData(int sectionIndex, int dimension, Qt::Orientati
 {
     if (orientation == Qt::Horizontal) {
         auto var = variable(sectionIndex);
+        if (!var)
+            return QString();
         if (dimension < 0)
             return var->name();
         return var->label(sectionIndex, dimension);
     }
     auto eqn = equation(sectionIndex);
+    if (!eqn)
+        return QString();
     if (dimension < 0)
         return eqn->name();
     return eqn->label(sectionIndex, dimension);

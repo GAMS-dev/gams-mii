@@ -650,8 +650,8 @@ public:
         if (!variable) return;
         mColumnEntryCount = new int[mColumnCount];
         std::fill(mColumnEntryCount, mColumnEntryCount+mColumnCount, 0);
-        mViewConfig->currentAggregation().useAbsoluteValues() ? aggregateAbs(equation, variable)
-                                                              : aggregateId(equation, variable);
+        mViewConfig->currentValueFilter().UseAbsoluteValues ? aggregateAbs(equation, variable)
+                                                            : aggregateId(equation, variable);
     }
 
     double data(int row, int column) const override

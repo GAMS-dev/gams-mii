@@ -45,9 +45,9 @@ public:
     double jaccMinimum() const;
     double jaccMaximum() const;
 
+    // TODO model min/max still needed... currently two locations (datahandler)
     double modelMinimum(ViewDataType type) const;
     void setModelMinimum(double value, ViewDataType type);
-
     double modelMaximum(ViewDataType type) const;
     void setModelMaximum(double value, ViewDataType type);
 

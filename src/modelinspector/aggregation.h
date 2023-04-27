@@ -156,7 +156,7 @@ public:
     bool isActive() const;
 
 private:
-    bool mUseAbsoluteValues = false;
+    bool mUseAbsoluteValues = false; // TODO remove... is duplicate to value filter
     Type mType = None;
     AggregationMap mAggregationMap;
     ViewDataType mViewType = ViewDataType::Unknown;
