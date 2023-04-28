@@ -17,12 +17,12 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-class DataHandler::AbstractDataAggregator
+class DataHandler::AbstractDataProvider
 {
 protected:
-    AbstractDataAggregator(DataHandler *dataHandler,
-                           AbstractModelInstance& modelInstance,
-                           QSharedPointer<AbstractViewConfiguration> viewConfig)
+    AbstractDataProvider(DataHandler *dataHandler,
+                         AbstractModelInstance& modelInstance,
+                         QSharedPointer<AbstractViewConfiguration> viewConfig)
         : mDataHandler(dataHandler)
         , mModelInstance(modelInstance)
         , mViewConfig(viewConfig)
@@ -30,8 +30,10 @@ protected:
 
     }
 
-    AbstractDataAggregator(const AbstractDataAggregator& other)
-        : mDataHandler(other.mDataHandler)
+    AbstractDataProvider(const AbstractDataProvider& other)
+        : mRowCount(other.mRowCount)
+        , mColumnCount(other.mColumnCount)
+        , mDataHandler(other.mDataHandler)
         , mModelInstance(other.mModelInstance)
         , mLogicalSectionMapping(other.mLogicalSectionMapping)
         , mViewConfig(other.mViewConfig->clone())
@@ -39,8 +41,10 @@ protected:
 
     }
 
-    AbstractDataAggregator(AbstractDataAggregator&& other) noexcept
-        : mDataHandler(other.mDataHandler)
+    AbstractDataProvider(AbstractDataProvider&& other) noexcept
+        : mRowCount(other.mRowCount)
+        , mColumnCount(other.mColumnCount)
+        , mDataHandler(other.mDataHandler)
         , mModelInstance(other.mModelInstance)
         , mLogicalSectionMapping(other.mLogicalSectionMapping)
         , mViewConfig(other.mViewConfig)
@@ -50,28 +54,28 @@ protected:
     }
 
 public:
-    virtual ~AbstractDataAggregator()
+    virtual ~AbstractDataProvider()
     {
     }
-
-    //const Aggregation& aggregation() const
-    //{
-    //    return mAppliedAggregation;
-    //}
-
-    //const AggregationMap& aggregationMap() const
-    //{
-    //    return mAppliedAggregation.aggregationMap();
-    //}
 
     DataRow* dataRow(int row)
     {
         return mDataHandler->mDataMatrix.row(row);
     }
 
-    virtual void aggregate() = 0;
+    virtual void loadData() = 0;
 
     virtual double data(int row, int column) const = 0;
+
+    virtual QVariant plainHeaderData(Qt::Orientation orientation,
+                                     int logicalIndex,
+                                     int dimension ) const
+    {
+        Q_UNUSED(orientation);
+        Q_UNUSED(logicalIndex);
+        Q_UNUSED(dimension);
+        return QVariant();
+    }
 
     virtual int headerData(Qt::Orientation orientation, int logicalIndex) const
     {
@@ -81,19 +85,19 @@ public:
         return -1;
     }
 
-    virtual int columnCount() const
-    {// TODO make abstract
-        return 0;
+    int columnCount() const
+    {
+        return mColumnCount;
+    }
+
+    int rowCount() const
+    {
+        return mRowCount;
     }
 
     virtual int columnEntries(int column) const
     {
         Q_UNUSED(column);
-        return 0;
-    }
-
-    virtual int rowCount() const
-    {// TODO make abstract
         return 0;
     }
 
@@ -108,22 +112,10 @@ public:
         return mViewConfig;
     }
 
-    //bool useAbsoluteValues() const
-    //{
-    //    return mAppliedAggregation.useAbsoluteValues();
-    //}
-
-    //void setFilterForTargetIndexChecked(Qt::Orientation orientation,
-    //                                    int symIndex, int targetIndex)
-    //{
-    //    mAppliedAggregation.setLabelState(orientation,
-    //                                      symIndex,
-    //                                      targetIndex,
-    //                                      Qt::Checked);
-    //}
-
-    auto& operator=(const AbstractDataAggregator& other)
+    auto& operator=(const AbstractDataProvider& other)
     {
+        mRowCount = other.mRowCount;
+        mColumnCount = other.mColumnCount;
         mDataHandler = other.mDataHandler;
         mModelInstance = other.mModelInstance;
         mLogicalSectionMapping = other.mLogicalSectionMapping;
@@ -131,8 +123,12 @@ public:
         return *this;
     }
 
-    auto& operator=(AbstractDataAggregator&& other) noexcept
+    auto& operator=(AbstractDataProvider&& other) noexcept
     {
+        mRowCount = other.mRowCount;
+        other.mRowCount = 0;
+        mColumnCount = other.mColumnCount;
+        other.mColumnCount = 0;
         mDataHandler = other.mDataHandler;
         mModelInstance = other.mModelInstance;
         mLogicalSectionMapping = other.mLogicalSectionMapping;
@@ -143,6 +139,8 @@ public:
     }
 
 protected:
+    int mRowCount = 0;
+    int mColumnCount = 0;
     DataHandler *mDataHandler;
     AbstractModelInstance& mModelInstance;
     SectionMapping mLogicalSectionMapping;
@@ -151,17 +149,18 @@ protected:
     double mDataMaximum = std::numeric_limits<double>::max();
 };
 
-class IdentityDataAggregator : public DataHandler::AbstractDataAggregator
+class IdentityDataProvider : public DataHandler::AbstractDataProvider
 {
 public:
-    IdentityDataAggregator(DataHandler *dataHandler,
-                           AbstractModelInstance& modelInstance)
-        : DataHandler::AbstractDataAggregator(dataHandler, modelInstance, nullptr)
+    IdentityDataProvider(DataHandler *dataHandler,
+                         AbstractModelInstance& modelInstance)
+        : DataHandler::AbstractDataProvider(dataHandler, modelInstance, nullptr)
     {
-
+        mRowCount = mModelInstance.equationRowCount();
+        mColumnCount = mModelInstance.variableRowCount();
     }
 
-    virtual void aggregate() override
+    virtual void loadData() override
     {
 
     }
@@ -174,197 +173,67 @@ public:
     }
 };
 
-class CountDataAggregator : public DataHandler::AbstractDataAggregator
+class MinMaxDataProvider final : public DataHandler::AbstractDataProvider
 {
 public:
-    CountDataAggregator(DataHandler *dataHandler,
-                        AbstractModelInstance& modelInstance,
-                        QSharedPointer<AbstractViewConfiguration> viewConfig)
-        : DataHandler::AbstractDataAggregator(dataHandler, modelInstance, viewConfig)
-    {
-
-    }
-
-    virtual void aggregate() override
-    {
-        // TODO !!! implement
-    }
-
-    double data(int row, int column) const override
-    {
-        Q_UNUSED(row);
-        Q_UNUSED(column);
-        return 0.0;
-    }
-};
-
-class MeanDataAggregator : public DataHandler::AbstractDataAggregator
-{
-public:
-    MeanDataAggregator(DataHandler *dataHandler,
+    MinMaxDataProvider(DataHandler *dataHandler,
                        AbstractModelInstance& modelInstance,
-                       QSharedPointer<AbstractViewConfiguration> viewConfig)
-        : DataHandler::AbstractDataAggregator(dataHandler, modelInstance, viewConfig)
+                       QSharedPointer<AbstractViewConfiguration> viewConfig,
+                       DataHandler::CoefficientCount& negPosCount)
+        : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
+        , mCoeffCount(negPosCount)
     {
-
-    }
-
-    virtual void aggregate() override
-    {
-        // TODO !!! implement
-    }
-
-    double data(int row, int column) const override
-    {
-        Q_UNUSED(row);
-        Q_UNUSED(column);
-        return 0.0;
-    }
-};
-
-class MedianDataAggregator : public DataHandler::AbstractDataAggregator
-{
-public:
-    MedianDataAggregator(DataHandler *dataHandler,
-                         AbstractModelInstance& modelInstance,
-                         QSharedPointer<AbstractViewConfiguration> viewConfig)
-        : DataHandler::AbstractDataAggregator(dataHandler, modelInstance, viewConfig)
-    {
-
-    }
-
-    virtual void aggregate() override
-    {
-        // TODO !!! implement
-    }
-
-    double data(int row, int column) const override
-    {
-        Q_UNUSED(row);
-        Q_UNUSED(column);
-        return 0.0;
-    }
-};
-
-class MinDataAggregator : public DataHandler::AbstractDataAggregator
-{
-public:
-    MinDataAggregator(DataHandler *dataHandler,
-                      AbstractModelInstance& modelInstance,
-                      QSharedPointer<AbstractViewConfiguration> viewConfig)
-        : DataHandler::AbstractDataAggregator(dataHandler, modelInstance, viewConfig)
-    {
-
-    }
-
-    virtual void aggregate() override
-    {
-        // TODO !!! implement
-    }
-
-    double data(int row, int column) const override
-    {
-        Q_UNUSED(row);
-        Q_UNUSED(column);
-        return 0.0;
-    }
-};
-
-class MaxDataAggregator : public DataHandler::AbstractDataAggregator
-{
-public:
-    MaxDataAggregator(DataHandler *dataHandler,
-                      AbstractModelInstance& modelInstance,
-                      QSharedPointer<AbstractViewConfiguration> viewConfig)
-        : DataHandler::AbstractDataAggregator(dataHandler, modelInstance, viewConfig)
-    {
-
-    }
-
-    virtual void aggregate() override
-    {
-        // TODO !!! implement
-    }
-
-    double data(int row, int column) const override
-    {
-        Q_UNUSED(row);
-        Q_UNUSED(column);
-        return 0.0;
-    }
-};
-
-class SumDataAggregator : public DataHandler::AbstractDataAggregator
-{
-public:
-    SumDataAggregator(DataHandler *dataHandler,
-                      AbstractModelInstance& modelInstance,
-                      QSharedPointer<AbstractViewConfiguration> viewConfig)
-        : DataHandler::AbstractDataAggregator(dataHandler, modelInstance, viewConfig)
-    {
-
-    }
-
-    virtual void aggregate() override
-    {
-        // TODO !!! implement
-    }
-
-    double data(int row, int column) const override
-    {
-        Q_UNUSED(row);
-        Q_UNUSED(column);
-        return 0.0;
-    }
-};
-
-class MinMaxDataAggregator : public DataHandler::AbstractDataAggregator
-{
-public:
-    MinMaxDataAggregator(DataHandler *dataHandler,
-                         AbstractModelInstance& modelInstance,
-                         QSharedPointer<AbstractViewConfiguration> viewConfig)
-        : DataHandler::AbstractDataAggregator(dataHandler, modelInstance, viewConfig)
-    {
-        mRowCount = mModelInstance.rowCount(ViewDataType::MinMax);
-        mColumnCount = mModelInstance.columnCount(ViewDataType::MinMax);
+        mRowCount = mModelInstance.equationCount() * 2 + 2; // one row for max and min
+        mAdditionalSectionLabels[mRowCount-2] = QStringList({"Variable", "Max"});
+        mAdditionalSectionLabels[mRowCount-1] = QStringList({"", "Min"});
+        mColumnCount = mModelInstance.variableCount() + 2;
+        for (auto var : mModelInstance.variables()) {
+            mHorizontalHeader.append(var->name());
+        }
+        mHorizontalHeader.append("RHS");
+        mHorizontalHeader.append("Equation");
         mDataMatrix = new double*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new double[mColumnCount];
             if (r % 2) {
-                std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount, std::numeric_limits<double>::lowest());
+                std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount,
+                          std::numeric_limits<double>::max());
             } else {
-                std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount, std::numeric_limits<double>::max());
+                std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount,
+                          std::numeric_limits<double>::lowest());
             }
         }
         mDataMinimum = std::numeric_limits<double>::max();
         mDataMaximum = std::numeric_limits<double>::lowest();
     }
 
-    MinMaxDataAggregator(const MinMaxDataAggregator& other)
-        : DataHandler::AbstractDataAggregator(other)
-        , mRowCount(other.mRowCount)
-        , mColumnCount(other.mColumnCount)
+    MinMaxDataProvider(const MinMaxDataProvider& other)
+        : DataHandler::AbstractDataProvider(other)
+        , mHorizontalHeader(other.mHorizontalHeader)
+        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
+        , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = new double*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new double[mColumnCount];
-            std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
+            std::copy(other.mDataMatrix[r],
+                      other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
     }
 
-    MinMaxDataAggregator(MinMaxDataAggregator&& other) noexcept
-        : DataHandler::AbstractDataAggregator(other)
-        , mRowCount(other.mRowCount)
-        , mColumnCount(other.mColumnCount)
+    MinMaxDataProvider(MinMaxDataProvider&& other) noexcept
+        : DataHandler::AbstractDataProvider(other)
+        , mHorizontalHeader(other.mHorizontalHeader)
+        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
+        , mCoeffCount(other.mCoeffCount)
     {
-        other.mRowCount = 0;
-        other.mColumnCount = 0;
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
+        other.mHorizontalHeader.clear();
+        other.mAdditionalSectionLabels.clear();
     }
 
-    ~MinMaxDataAggregator()
+    ~MinMaxDataProvider()
     {
         for (int r=0; r<mRowCount; ++r) {
             delete [] mDataMatrix[r];
@@ -372,7 +241,7 @@ public:
         delete [] mDataMatrix;
     }
 
-    virtual void aggregate() override
+    virtual void loadData() override
     {
         for (int row=0; row<mRowCount; ++row) {
             mLogicalSectionMapping[Qt::Vertical].append(row);
@@ -380,7 +249,7 @@ public:
         for (const auto& variable : mModelInstance.variables()) {
             mLogicalSectionMapping[Qt::Horizontal].append(variable->firstSection());
         }
-        mViewConfig->currentAggregation().useAbsoluteValues() ? aggregateAbs() : aggregateId();
+        mViewConfig->currentValueFilter().isAbsolute() ? aggregateAbs() : aggregateId();
     }
 
     double data(int row, int column) const override
@@ -388,47 +257,95 @@ public:
         return mDataMatrix[row][column];
     }
 
-    auto& operator=(const MinMaxDataAggregator& other)
+    QVariant plainHeaderData(Qt::Orientation orientation,
+                             int logicalIndex, int dimension) const override
+    {
+        if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
+            return mHorizontalHeader[logicalIndex];
+        }
+        if (orientation == Qt::Vertical && mAdditionalSectionLabels.contains(logicalIndex) && dimension < 2) {
+            return mAdditionalSectionLabels[logicalIndex][dimension];
+        }
+        return QVariant();
+    }
+
+    auto& operator=(const MinMaxDataProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
             delete [] mDataMatrix[r];
         }
         delete [] mDataMatrix;
-        mRowCount = other.mRowCount;
-        mColumnCount = other.mColumnCount;
         mDataMatrix = new double*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new double[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
+        mHorizontalHeader = other.mHorizontalHeader;
+        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
+        mCoeffCount = other.mCoeffCount;
         return *this;
     }
 
-    auto& operator=(MinMaxDataAggregator&& other) noexcept
+    auto& operator=(MinMaxDataProvider&& other) noexcept
     {
-        mRowCount = other.mRowCount;
-        other.mRowCount = 0;
-        mColumnCount = other.mColumnCount;
-        other.mColumnCount = 0;
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
+        mHorizontalHeader = other.mHorizontalHeader;
+        other.mHorizontalHeader.clear();
+        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
+        other.mAdditionalSectionLabels.clear();
+        mCoeffCount = other.mCoeffCount;
         return *this;
     }
 
 private:
     void aggregateId()
     {
-        int minRow = 0, maxRow = 1;
+        int minRow = 1, maxRow = 0;
         for (const auto& equation : mModelInstance.equations()) {
+            double rhsMin = std::numeric_limits<double>::max();
+            double rhsMax = std::numeric_limits<double>::lowest();
+            double eqnMin = std::numeric_limits<double>::max();
+            double eqnMax = std::numeric_limits<double>::lowest();
+            mCoeffCount.count()[maxRow][mColumnCount-2] = mModelInstance.equationType(equation->firstSection());
             for (int r=equation->firstSection(); r<=equation->lastSection(); ++r) {
                 auto sparseRow = dataRow(r);
+                auto rhs = mModelInstance.rhs(r);
+                if (rhs) {
+                    rhsMin = std::min(rhsMin, rhs);
+                    rhsMax = std::max(rhsMax, rhs);
+                    if (rhs < 0) --mCoeffCount.count()[minRow][mColumnCount-1];
+                    else if (rhs > 0) ++mCoeffCount.count()[maxRow][mColumnCount-1];
+                }
                 for (int i=0; i<sparseRow->entries(); ++i) {
+                    auto value = sparseRow->data()[i];
                     auto column = mModelInstance.variable(sparseRow->colIdx()[i])->logicalIndex();
-                    mDataMatrix[minRow][column] = std::min(sparseRow->data()[i], mDataMatrix[minRow][column]);
-                    mDataMatrix[maxRow][column] = std::max(sparseRow->data()[i], mDataMatrix[maxRow][column]);
+                    mDataMatrix[minRow][column] = std::min(value, mDataMatrix[minRow][column]);
+                    mDataMatrix[maxRow][column] = std::max(value, mDataMatrix[maxRow][column]);
+                    if (value < 0) {
+                        --mCoeffCount.count()[minRow][column];
+                    } else if (value > 0) {
+                        ++mCoeffCount.count()[maxRow][column];
+                    }
                 }
             }
-            for (int c=0; c<mColumnCount; ++c) {
+            mDataMatrix[minRow][mColumnCount-2] = rhsMin;
+            mDataMatrix[maxRow][mColumnCount-2] = rhsMax;
+            mDataMatrix[mRowCount-1][mColumnCount-2] = std::min(mDataMatrix[mRowCount-1][mColumnCount-2], rhsMin);
+            mDataMatrix[mRowCount-2][mColumnCount-2] = std::max(mDataMatrix[mRowCount-2][mColumnCount-2], rhsMax);
+            for (int c=0; c<mColumnCount-2; ++c) {
+                mDataMinimum = std::min(mDataMinimum, mDataMatrix[minRow][c]);
+                mDataMaximum = std::max(mDataMaximum, mDataMatrix[maxRow][c]);
+                mDataMatrix[mRowCount-1][c] = std::min(mDataMatrix[mRowCount-1][c], mDataMatrix[minRow][c]);
+                mDataMatrix[mRowCount-2][c] = std::max(mDataMatrix[mRowCount-2][c], mDataMatrix[maxRow][c]);
+                eqnMin = std::min(eqnMin, mDataMatrix[minRow][c]);
+                eqnMax = std::max(eqnMax, mDataMatrix[maxRow][c]);
+                setEmtpyCell(minRow, c);
+                setEmtpyCell(maxRow, c);
+            }
+            mDataMatrix[minRow][mColumnCount-1] = eqnMin;
+            mDataMatrix[maxRow][mColumnCount-1] = eqnMax;
+            for (int c=mColumnCount-2; c<mColumnCount; ++c) {
                 mDataMinimum = std::min(mDataMinimum, mDataMatrix[minRow][c]);
                 mDataMaximum = std::max(mDataMaximum, mDataMatrix[maxRow][c]);
                 setEmtpyCell(minRow, c);
@@ -437,6 +354,10 @@ private:
             minRow += 2;
             maxRow += 2;
         }
+        setEmtpyCell(mRowCount-2, mColumnCount-2);
+        setEmtpyCell(mRowCount-1, mColumnCount-2);
+        mDataMatrix[mRowCount-2][mColumnCount-1] = 0.0;
+        mDataMatrix[mRowCount-1][mColumnCount-1] = 0.0;
         mViewConfig->defaultValueFilter().MinValue = mDataMinimum;
         mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
         mViewConfig->currentValueFilter().MinValue = mDataMinimum;
@@ -447,17 +368,51 @@ private:
 
     void aggregateAbs()
     {
-        int minRow = 0, maxRow = 1;
+        int minRow = 1, maxRow = 0;
         for (const auto& equation : mModelInstance.equations()) {
+            double rhsMin = std::numeric_limits<double>::max();
+            double rhsMax = std::numeric_limits<double>::lowest();
+            double eqnMin = std::numeric_limits<double>::max();
+            double eqnMax = std::numeric_limits<double>::lowest();
+            mCoeffCount.count()[maxRow][mColumnCount-2] = mModelInstance.equationType(equation->firstSection());
             for (int r=equation->firstSection(); r<=equation->lastSection(); ++r) {
                 auto sparseRow = dataRow(r);
+                auto rhs = mModelInstance.rhs(r);
+                if (rhs) {
+                    rhsMin = std::min(rhsMin, std::abs(rhs));
+                    rhsMax = std::max(rhsMax, std::abs(rhs));
+                    if (rhs < 0) --mCoeffCount.count()[minRow][mColumnCount-1];
+                    else if (rhs > 0) ++mCoeffCount.count()[maxRow][mColumnCount-1];
+                }
                 for (int i=0; i<sparseRow->entries(); ++i) {
+                    auto value = sparseRow->data()[i];
                     auto column = mModelInstance.variable(sparseRow->colIdx()[i])->logicalIndex();
                     mDataMatrix[minRow][column] = std::min(std::abs(sparseRow->data()[i]), mDataMatrix[minRow][column]);
                     mDataMatrix[maxRow][column] = std::max(std::abs(sparseRow->data()[i]), mDataMatrix[maxRow][column]);
+                    if (value < 0) {
+                        --mCoeffCount.count()[minRow][column];
+                    } else if (value > 0) {
+                        ++mCoeffCount.count()[maxRow][column];
+                    }
                 }
             }
-            for (int c=0; c<mColumnCount; ++c) {
+            mDataMatrix[minRow][mColumnCount-2] = rhsMin;
+            mDataMatrix[maxRow][mColumnCount-2] = rhsMax;
+            mDataMatrix[mRowCount-1][mColumnCount-2] = std::min(mDataMatrix[mRowCount-1][mColumnCount-2], rhsMin);
+            mDataMatrix[mRowCount-2][mColumnCount-2] = std::max(mDataMatrix[mRowCount-2][mColumnCount-2], rhsMax);
+            for (int c=0; c<mColumnCount-2; ++c) {
+                mDataMinimum = std::min(mDataMinimum, mDataMatrix[minRow][c]);
+                mDataMaximum = std::max(mDataMaximum, mDataMatrix[maxRow][c]);
+                mDataMatrix[mRowCount-1][c] = std::min(mDataMatrix[mRowCount-1][c], mDataMatrix[minRow][c]);
+                mDataMatrix[mRowCount-2][c] = std::max(mDataMatrix[mRowCount-2][c], mDataMatrix[maxRow][c]);
+                eqnMin = std::min(eqnMin, mDataMatrix[minRow][c]);
+                eqnMax = std::max(eqnMax, mDataMatrix[maxRow][c]);
+                setEmtpyCell(minRow, c);
+                setEmtpyCell(maxRow, c);
+            }
+            mDataMatrix[minRow][mColumnCount-1] = eqnMin;
+            mDataMatrix[maxRow][mColumnCount-1] = eqnMax;
+            for (int c=mColumnCount-2; c<mColumnCount; ++c) {
                 mDataMinimum = std::min(mDataMinimum, mDataMatrix[minRow][c]);
                 mDataMaximum = std::max(mDataMaximum, mDataMatrix[maxRow][c]);
                 setEmtpyCell(minRow, c);
@@ -466,6 +421,10 @@ private:
             minRow += 2;
             maxRow += 2;
         }
+        setEmtpyCell(mRowCount-2, mColumnCount-2);
+        setEmtpyCell(mRowCount-1, mColumnCount-2);
+        mDataMatrix[mRowCount-2][mColumnCount-1] = 0.0;
+        mDataMatrix[mRowCount-1][mColumnCount-1] = 0.0;
         mViewConfig->defaultValueFilter().MinValue = mDataMinimum;
         mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
         mViewConfig->currentValueFilter().MinValue = mDataMinimum;
@@ -483,12 +442,13 @@ private:
     }
 
 private:
-    int mRowCount;
-    int mColumnCount;
     double** mDataMatrix;
+    QStringList mHorizontalHeader;
+    SectionLabels mAdditionalSectionLabels;
+    DataHandler::CoefficientCount& mCoeffCount;
 };
 
-class SymbolsDataAggregator : public DataHandler::AbstractDataAggregator
+class SymbolsDataProvider final : public DataHandler::AbstractDataProvider
 {
 private:
     class SymbolRow
@@ -585,19 +545,17 @@ private:
     };
 
 public:
-    SymbolsDataAggregator(DataHandler *dataHandler,
-                          AbstractModelInstance& modelInstance,
-                          QSharedPointer<AbstractViewConfiguration> viewConfig)
-        : DataHandler::AbstractDataAggregator(dataHandler, modelInstance, viewConfig)
+    SymbolsDataProvider(DataHandler *dataHandler,
+                        AbstractModelInstance& modelInstance,
+                        QSharedPointer<AbstractViewConfiguration> viewConfig)
+        : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
     {
         mDataMinimum = std::numeric_limits<double>::max();
         mDataMaximum = std::numeric_limits<double>::lowest();
     }
 
-    SymbolsDataAggregator(const SymbolsDataAggregator& other)
-        : DataHandler::AbstractDataAggregator(other)
-        , mRowCount(other.mRowCount)
-        , mColumnCount(other.mColumnCount)
+    SymbolsDataProvider(const SymbolsDataProvider& other)
+        : DataHandler::AbstractDataProvider(other)
     {
         mRows = new SymbolRow[mRowCount];
         std::copy(other.mRows, other.mRows+other.mRowCount, mRows);
@@ -605,10 +563,8 @@ public:
         std::copy(other.mColumnEntryCount, other.mColumnEntryCount+other.mColumnCount, mColumnEntryCount);
     }
 
-    SymbolsDataAggregator(SymbolsDataAggregator&& other) noexcept
-        : DataHandler::AbstractDataAggregator(other)
-        , mRowCount(other.mRowCount)
-        , mColumnCount(other.mColumnCount)
+    SymbolsDataProvider(SymbolsDataProvider&& other) noexcept
+        : DataHandler::AbstractDataProvider(other)
         , mRows(other.mRows)
         , mColumnEntryCount(other.mColumnEntryCount)
     {
@@ -618,13 +574,13 @@ public:
         other.mColumnEntryCount = nullptr;
     }
 
-    ~SymbolsDataAggregator()
+    ~SymbolsDataProvider()
     {
         if (mColumnEntryCount) delete [] mColumnEntryCount;
         if (mRows) delete [] mRows;
     }
 
-    void aggregate() override
+    void loadData() override
     {
         Symbol* equation = nullptr;
         for (const auto &filter : std::as_const(mViewConfig->currentIdentifierFilter()[Qt::Vertical])) {
@@ -663,19 +619,9 @@ public:
         return mRows[row].data()[column-mRows[row].firstIdx()];
     }
 
-    int columnCount() const override
-    {
-        return mLogicalSectionMapping[Qt::Horizontal].size();
-    }
-
     int columnEntries(int column) const override
     {
         return column < mColumnCount ? mColumnEntryCount[column] : 0;
-    }
-
-    int rowCount() const override
-    {
-        return mLogicalSectionMapping[Qt::Vertical].size();
     }
 
     int rowEntries(int row) const override
@@ -683,12 +629,10 @@ public:
         return row < mRowCount ? mRows[row].entries() : 0;
     }
 
-    auto& operator=(const SymbolsDataAggregator& other)
+    auto& operator=(const SymbolsDataProvider& other)
     {
         delete [] mRows;
         delete [] mColumnEntryCount;
-        mRowCount = other.mRowCount;
-        mColumnCount = other.mColumnCount;
         mRows = new SymbolRow[mRowCount];
         std::copy(other.mRows, other.mRows+other.mRowCount, mRows);
         mColumnEntryCount = new int[mColumnCount];
@@ -696,12 +640,8 @@ public:
         return *this;
     }
 
-    auto& operator=(SymbolsDataAggregator&& other) noexcept
+    auto& operator=(SymbolsDataProvider&& other) noexcept
     {
-        mRowCount = other.mRowCount;
-        other.mRowCount = 0;
-        mColumnCount = other.mColumnCount;
-        other.mColumnCount = 0;
         mRows = other.mRows;
         other.mRows = nullptr;
         mColumnEntryCount = other.mColumnEntryCount;
@@ -811,29 +751,568 @@ private:
     }
 
 private:
-    int mRowCount = 0;
-    int mColumnCount = 0;
     SymbolRow* mRows = nullptr;
     int* mColumnEntryCount = nullptr;
 };
 
+class BPOverviewDataProvider final : public DataHandler::AbstractDataProvider
+{
+public:
+    BPOverviewDataProvider(DataHandler *dataHandler,
+                           AbstractModelInstance& modelInstance,
+                           QSharedPointer<AbstractViewConfiguration> viewConfig,
+                           DataHandler::CoefficientCount& negPosCount)
+        : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
+        , mCoeffCount(negPosCount)
+    {
+        mRowCount = mModelInstance.equationCount() + 1;
+        for (auto eqn : mModelInstance.equations()) {
+            mVerticalHeader.append(eqn->name());
+        }
+        mVerticalHeader.append("Variable Type");
+        mColumnCount = mModelInstance.variableCount() + 2;
+        for (auto var : mModelInstance.variables()) {
+            mHorizontalHeader.append(var->name());
+        }
+        mHorizontalHeader.append("Type");
+        mHorizontalHeader.append("RHS");
+        mDataMatrix = new char*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mDataMatrix[r] = new char[mColumnCount];
+            std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount, 0);
+        }
+    }
+
+    BPOverviewDataProvider(const BPOverviewDataProvider& other)
+        : DataHandler::AbstractDataProvider(other)
+        , mHorizontalHeader(other.mHorizontalHeader)
+        , mVerticalHeader(other.mVerticalHeader)
+        , mCoeffCount(other.mCoeffCount)
+    {
+        mDataMatrix = new char*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mDataMatrix[r] = new char[mColumnCount];
+            std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
+        }
+    }
+
+    BPOverviewDataProvider(BPOverviewDataProvider&& other) noexcept
+        : DataHandler::AbstractDataProvider(other)
+        , mHorizontalHeader(other.mHorizontalHeader)
+        , mVerticalHeader(other.mVerticalHeader)
+        , mCoeffCount(other.mCoeffCount)
+    {
+        mDataMatrix = other.mDataMatrix;
+        other.mDataMatrix = nullptr;
+        other.mHorizontalHeader.clear();
+        other.mVerticalHeader.clear();
+    }
+
+    ~BPOverviewDataProvider()
+    {
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mDataMatrix[r];
+        }
+        delete [] mDataMatrix;
+    }
+
+    void loadData() override
+    {
+        int negRow = 1, posRow = 0;
+        for (int r=0; r<mModelInstance.equationCount(); ++r, negRow += 2, posRow += 2) {
+            for (int c=0; c<mColumnCount-2; ++c) {
+                if (mCoeffCount.count()[negRow][c] == 0 && mCoeffCount.count()[posRow][c] == 0) {
+                    mDataMatrix[r][c] = 0x0;
+                } else if (mCoeffCount.count()[negRow][c] == 0 && mCoeffCount.count()[posRow][c] > 0) {
+                    mDataMatrix[r][c] = '+';
+                } else if (mCoeffCount.count()[negRow][c] < 0 && mCoeffCount.count()[posRow][c] == 0) {
+                    mDataMatrix[r][c] = '-';
+                } else {
+                    mDataMatrix[r][c] = 'm';
+                }
+            }
+            mDataMatrix[r][mColumnCount-2] = mCoeffCount.count()[posRow][mCoeffCount.columnCount()-2];
+            if (mCoeffCount.count()[negRow][mColumnCount-1] == 0 &&
+                mCoeffCount.count()[posRow][mColumnCount-1] == 0) {
+                mDataMatrix[r][mColumnCount-1] = '0';
+            } else if (mCoeffCount.count()[negRow][mColumnCount-1] == 0 &&
+                       mCoeffCount.count()[posRow][mColumnCount-1] > 0) {
+                mDataMatrix[r][mColumnCount-1] = '+';
+            } else if (mCoeffCount.count()[negRow][mColumnCount-1] < 0 &&
+                       mCoeffCount.count()[posRow][mColumnCount-1] == 0) {
+                mDataMatrix[r][mColumnCount-1] = '-';
+            } else {
+                mDataMatrix[r][mColumnCount-1] = 'm';
+            }
+        }
+        int varColumn = 0;
+        auto columns = mModelInstance.variableRowCount();
+        double* lowerBounds = new double[columns];
+        double* upperBounds = new double[columns];
+        mModelInstance.variableLowerBounds(lowerBounds);
+        mModelInstance.variableUpperBounds(upperBounds);
+        for (const auto& variable : mModelInstance.variables()) {
+            auto lower = std::numeric_limits<double>::max();
+            auto upper = std::numeric_limits<double>::lowest();
+            for (int i=variable->firstSection(); i<variable->lastSection(); ++i) {
+                lower = std::min(lower, lowerBounds[i]);
+                upper = std::max(upper, upperBounds[i]);
+            }
+            if (mModelInstance.variableType(variable->firstSection()) == 'x') { // x = continuous
+                if (lower >= 0 && upper >= 0) {
+                    mDataMatrix[mRowCount-1][varColumn] = '+';
+                } else if (lower <= 0 && upper <= 0) {
+                    mDataMatrix[mRowCount-1][varColumn] = '-';
+                } else {
+                    mDataMatrix[mRowCount-1][varColumn] = 'u';
+                }
+            } else {
+                mDataMatrix[mRowCount-1][varColumn] = mModelInstance.variableType(variable->firstSection());
+            }
+            ++varColumn;
+        }
+        delete [] lowerBounds;
+        delete [] upperBounds;
+    }
+
+    double data(int row, int column) const override
+    {
+        return mDataMatrix[row][column];
+    }
+
+    QVariant plainHeaderData(Qt::Orientation orientation, int logicalIndex, int dimension) const override
+    {
+        Q_UNUSED(dimension);
+        if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
+            return mHorizontalHeader[logicalIndex];
+        } else if (orientation == Qt::Vertical && logicalIndex < mVerticalHeader.size()) {
+            return mVerticalHeader[logicalIndex];
+        }
+        return QString();
+    }
+
+    auto& operator=(const BPOverviewDataProvider& other)
+    {
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mDataMatrix[r];
+        }
+        delete [] mDataMatrix;
+        mDataMatrix = new char*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mDataMatrix[r] = new char[mColumnCount];
+            std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
+        }
+        mHorizontalHeader = other.mHorizontalHeader;
+        mVerticalHeader = other.mVerticalHeader;
+        mCoeffCount = other.mCoeffCount;
+        return *this;
+    }
+
+    auto& operator=(BPOverviewDataProvider&& other) noexcept
+    {
+        mDataMatrix = other.mDataMatrix;
+        other.mDataMatrix = nullptr;
+        mHorizontalHeader = other.mHorizontalHeader;
+        other.mHorizontalHeader.clear();
+        mVerticalHeader = other.mVerticalHeader;
+        other.mVerticalHeader.clear();
+        mCoeffCount = other.mCoeffCount;
+        return *this;
+    }
+
+private:
+    char** mDataMatrix;
+    QStringList mHorizontalHeader;
+    QStringList mVerticalHeader;
+    DataHandler::CoefficientCount& mCoeffCount;
+};
+
+class BPCountDataProvider final : public DataHandler::AbstractDataProvider
+{
+public:
+    BPCountDataProvider(DataHandler *dataHandler,
+                        AbstractModelInstance& modelInstance,
+                        QSharedPointer<AbstractViewConfiguration> viewConfig,
+                        DataHandler::CoefficientCount& negPosCount)
+        : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
+        , mCoeffCount(negPosCount)
+    {
+        mRowCount = mModelInstance.equationCount() * 2 + 4;
+        mAdditionalSectionLabels[mRowCount-4] = QStringList({"Coeff Cnts", "Pos"});
+        mAdditionalSectionLabels[mRowCount-3] = QStringList({"", "Neg"});
+        mAdditionalSectionLabels[mRowCount-2] = QStringList({"# of Vars", ""});
+        mAdditionalSectionLabels[mRowCount-1] = QStringList({"Variable Type", ""});
+        mColumnCount = mModelInstance.variableCount() + 4;
+        for (auto var : mModelInstance.variables()) {
+            mHorizontalHeader.append(var->name());
+        }
+        mHorizontalHeader.append("Type");
+        mHorizontalHeader.append("RHS");
+        mHorizontalHeader.append("Coeff Cnts");
+        mHorizontalHeader.append("# of Eqns");
+        mDataMatrix = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mDataMatrix[r] = new int[mColumnCount];
+            for (int c=0; r<mCoeffCount.rowCount() && c<mCoeffCount.columnCount(); ++c)
+                mDataMatrix[r][c] = mCoeffCount.count()[r][c];
+            if (r < mCoeffCount.rowCount())
+                std::fill(mDataMatrix[r]+mCoeffCount.columnCount(), mDataMatrix[r]+mColumnCount, 0);
+            else
+                std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount, 0);
+        }
+    }
+
+    BPCountDataProvider(const BPCountDataProvider& other)
+        : DataHandler::AbstractDataProvider(other)
+        , mHorizontalHeader(other.mHorizontalHeader)
+        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
+        , mCoeffCount(other.mCoeffCount)
+    {
+        mDataMatrix = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mDataMatrix[r] = new int[mColumnCount];
+            std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
+        }
+    }
+
+    BPCountDataProvider(BPCountDataProvider&& other) noexcept
+        : DataHandler::AbstractDataProvider(other)
+        , mHorizontalHeader(other.mHorizontalHeader)
+        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
+        , mCoeffCount(other.mCoeffCount)
+    {
+        mDataMatrix = other.mDataMatrix;
+        other.mDataMatrix = nullptr;
+        other.mHorizontalHeader.clear();
+        other.mAdditionalSectionLabels.clear();
+    }
+
+    ~BPCountDataProvider()
+    {
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mDataMatrix[r];
+        }
+        delete [] mDataMatrix;
+    }
+
+    void loadData() override
+    {
+        for (int row=0; row<mRowCount; ++row) {
+            mLogicalSectionMapping[Qt::Vertical].append(row);
+        }
+        for (int r=0, negRow = 1, posRow = 0; r<mModelInstance.equationCount(); ++r, negRow += 2, posRow += 2) {
+            for (int v=0; v<mModelInstance.variableCount(); ++v) {
+                mDataMatrix[negRow][mColumnCount-2] += mDataMatrix[negRow][v];
+                mDataMatrix[posRow][mColumnCount-2] += mDataMatrix[posRow][v];
+                mDataMatrix[mRowCount-3][v] += mDataMatrix[negRow][v];
+                mDataMatrix[mRowCount-4][v] += mDataMatrix[posRow][v];
+            }
+            mDataMatrix[mRowCount-3][mColumnCount-3] += mDataMatrix[negRow][mColumnCount-3];
+            mDataMatrix[mRowCount-4][mColumnCount-3] += mDataMatrix[posRow][mColumnCount-3];
+            mDataMatrix[mRowCount-3][mColumnCount-2] += mDataMatrix[negRow][mColumnCount-2];
+            mDataMatrix[mRowCount-4][mColumnCount-2] += mDataMatrix[posRow][mColumnCount-2];
+        }
+        int index = 0;
+        for (const auto& equation : mModelInstance.equations()) {
+            mDataMatrix[index][mColumnCount-1] = equation->entries();
+            index += 2;
+        }
+        index = 0;
+        for (const auto& variable : mModelInstance.variables()) {
+            mDataMatrix[mRowCount-2][index++] = variable->entries();
+        }
+        int varColumn = 0;
+        auto columns = mModelInstance.variableRowCount();
+        double* lowerBounds = new double[columns];
+        double* upperBounds = new double[columns];
+        mModelInstance.variableLowerBounds(lowerBounds);
+        mModelInstance.variableUpperBounds(upperBounds);
+        for (const auto& variable : mModelInstance.variables()) {
+            auto lower = std::numeric_limits<double>::max();
+            auto upper = std::numeric_limits<double>::lowest();
+            for (int i=variable->firstSection(); i<variable->lastSection(); ++i) {
+                lower = std::min(lower, lowerBounds[i]);
+                upper = std::max(upper, upperBounds[i]);
+            }
+            if (mModelInstance.variableType(variable->firstSection()) == 'x') { // x = continuous
+                if (lower >= 0 && upper >= 0) {
+                    mDataMatrix[mRowCount-1][varColumn] = '+';
+                } else if (lower <= 0 && upper <= 0) {
+                    mDataMatrix[mRowCount-1][varColumn] = '-';
+                } else {
+                    mDataMatrix[mRowCount-1][varColumn] = 'u';
+                }
+            } else {
+                mDataMatrix[mRowCount-1][varColumn] = mModelInstance.variableType(variable->firstSection());
+            }
+            ++varColumn;
+        }
+        delete [] lowerBounds;
+        delete [] upperBounds;
+    }
+
+    double data(int row, int column) const override
+    {
+        return mDataMatrix[row][column];
+    }
+
+    QVariant plainHeaderData(Qt::Orientation orientation, int logicalIndex, int dimension) const override
+    {
+        if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
+            return mHorizontalHeader[logicalIndex];
+        }
+        if (orientation == Qt::Vertical && mAdditionalSectionLabels.contains(logicalIndex) && dimension < 2) {
+            return mAdditionalSectionLabels[logicalIndex][dimension];
+        }
+        return QString();
+    }
+
+    auto& operator=(const BPCountDataProvider& other)
+    {
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mDataMatrix[r];
+        }
+        delete [] mDataMatrix;
+        mDataMatrix = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mDataMatrix[r] = new int[mColumnCount];
+            std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
+        }
+        mHorizontalHeader = other.mHorizontalHeader;
+        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
+        mCoeffCount = other.mCoeffCount;
+        return *this;
+    }
+
+    auto& operator=(BPCountDataProvider&& other) noexcept
+    {
+        mDataMatrix = other.mDataMatrix;
+        other.mDataMatrix = nullptr;
+        mHorizontalHeader = other.mHorizontalHeader;
+        other.mHorizontalHeader.clear();
+        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
+        other.mAdditionalSectionLabels.clear();
+        mCoeffCount = other.mCoeffCount;
+        return *this;
+    }
+
+private:
+    int** mDataMatrix;
+    QStringList mHorizontalHeader;
+    SectionLabels mAdditionalSectionLabels;
+    DataHandler::CoefficientCount& mCoeffCount;
+};
+
+class BPAverageDataProvider final : public DataHandler::AbstractDataProvider
+{
+public:
+    BPAverageDataProvider(DataHandler *dataHandler,
+                          AbstractModelInstance& modelInstance,
+                          QSharedPointer<AbstractViewConfiguration> viewConfig,
+                          DataHandler::CoefficientCount& negPosCount)
+        : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
+        , mCoeffCount(negPosCount)
+    {
+        mRowCount = mModelInstance.equationCount() * 2 + 4;
+        mAdditionalSectionLabels[mRowCount-4] = QStringList({"Cfs PerVar", "Pos"});
+        mAdditionalSectionLabels[mRowCount-3] = QStringList({"", "Neg"});
+        mAdditionalSectionLabels[mRowCount-2] = QStringList({"# of Vars", ""});
+        mAdditionalSectionLabels[mRowCount-1] = QStringList({"Variable Type", ""});
+        mColumnCount = mModelInstance.variableCount() + 4;
+        for (auto var : mModelInstance.variables()) {
+            mHorizontalHeader.append(var->name());
+        }
+        mHorizontalHeader.append("Type");
+        mHorizontalHeader.append("RHS");
+        mHorizontalHeader.append("Cfs PerEqu");
+        mHorizontalHeader.append("# of Eqns");
+        mDataMatrix = new double*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mDataMatrix[r] = new double[mColumnCount];
+            std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount, 0);
+        }
+    }
+
+    BPAverageDataProvider(const BPAverageDataProvider& other)
+        : DataHandler::AbstractDataProvider(other)
+        , mHorizontalHeader(other.mHorizontalHeader)
+        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
+        , mCoeffCount(other.mCoeffCount)
+    {
+        mDataMatrix = new double*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mDataMatrix[r] = new double[mColumnCount];
+            std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
+        }
+    }
+
+    BPAverageDataProvider(BPAverageDataProvider&& other) noexcept
+        : DataHandler::AbstractDataProvider(other)
+        , mHorizontalHeader(other.mHorizontalHeader)
+        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
+        , mCoeffCount(other.mCoeffCount)
+    {
+        mDataMatrix = other.mDataMatrix;
+        other.mDataMatrix = nullptr;
+        other.mHorizontalHeader.clear();
+        other.mAdditionalSectionLabels.clear();
+    }
+
+    ~BPAverageDataProvider()
+    {
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mDataMatrix[r];
+        }
+        delete [] mDataMatrix;
+    }
+
+    void loadData() override
+    {
+        for (int row=0; row<mRowCount; ++row) {
+            mLogicalSectionMapping[Qt::Vertical].append(row);
+        }
+        int index = 0;
+        for (const auto& equation : mModelInstance.equations()) {
+            mDataMatrix[index][mColumnCount-1] = equation->entries();
+            index += 2;
+        }
+        index = 0;
+        for (const auto& variable : mModelInstance.variables()) {
+            mDataMatrix[mRowCount-2][index++] = variable->entries();
+        }
+        for (int r=0, negRow = 1, posRow = 0; r<mModelInstance.equationCount(); ++r, negRow += 2, posRow += 2) {
+            for (int c=0; c<mColumnCount-4; ++c) {
+                mDataMatrix[negRow][c] = mCoeffCount.count()[negRow][c] / mDataMatrix[mRowCount-2][c];
+                mDataMatrix[negRow][mColumnCount-2] += mCoeffCount.count()[negRow][c];
+                mDataMatrix[mRowCount-3][c] += mCoeffCount.count()[negRow][c];
+                mDataMatrix[posRow][c] = mCoeffCount.count()[posRow][c] / mDataMatrix[mRowCount-2][c];
+                mDataMatrix[posRow][mColumnCount-2] += mCoeffCount.count()[posRow][c];
+                mDataMatrix[mRowCount-4][c] += mCoeffCount.count()[posRow][c];
+            }
+            for (int c=mCoeffCount.columnCount()-2;
+                 posRow<mCoeffCount.rowCount() && c<mCoeffCount.columnCount(); ++c) {
+                mDataMatrix[posRow][c] = mCoeffCount.count()[posRow][c];
+            }
+            mDataMatrix[negRow][mColumnCount-2] /= mDataMatrix[posRow][mColumnCount-1];
+            mDataMatrix[posRow][mColumnCount-2] /= mDataMatrix[posRow][mColumnCount-1];
+        }
+        for (int c=0; c<mColumnCount-4; ++c) {
+            mDataMatrix[mRowCount-3][c] /= mDataMatrix[mRowCount-2][c];
+            mDataMatrix[mRowCount-4][c] /= mDataMatrix[mRowCount-2][c];
+        }
+        int varColumn = 0;
+        auto columns = mModelInstance.variableRowCount();
+        double* lowerBounds = new double[columns];
+        double* upperBounds = new double[columns];
+        mModelInstance.variableLowerBounds(lowerBounds);
+        mModelInstance.variableUpperBounds(upperBounds);
+        for (const auto& variable : mModelInstance.variables()) {
+            auto lower = std::numeric_limits<double>::max();
+            auto upper = std::numeric_limits<double>::lowest();
+            for (int i=variable->firstSection(); i<variable->lastSection(); ++i) {
+                lower = std::min(lower, lowerBounds[i]);
+                upper = std::max(upper, upperBounds[i]);
+            }
+            if (mModelInstance.variableType(variable->firstSection()) == 'x') { // x = continuous
+                if (lower >= 0 && upper >= 0) {
+                    mDataMatrix[mRowCount-1][varColumn] = '+';
+                } else if (lower <= 0 && upper <= 0) {
+                    mDataMatrix[mRowCount-1][varColumn] = '-';
+                } else {
+                    mDataMatrix[mRowCount-1][varColumn] = 'u';
+                }
+            } else {
+                mDataMatrix[mRowCount-1][varColumn] = mModelInstance.variableType(variable->firstSection());
+            }
+            ++varColumn;
+        }
+        delete [] lowerBounds;
+        delete [] upperBounds;
+    }
+
+    double data(int row, int column) const override
+    {
+        return mDataMatrix[row][column];
+    }
+
+    QVariant plainHeaderData(Qt::Orientation orientation, int logicalIndex, int dimension) const override
+    {
+        if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
+            return mHorizontalHeader[logicalIndex];
+        }
+        if (orientation == Qt::Vertical && mAdditionalSectionLabels.contains(logicalIndex) && dimension < 2) {
+            return mAdditionalSectionLabels[logicalIndex][dimension];
+        }
+        return QVariant();
+    }
+
+    auto& operator=(const BPAverageDataProvider& other)
+    {
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mDataMatrix[r];
+        }
+        delete [] mDataMatrix;
+        mDataMatrix = new double*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mDataMatrix[r] = new double[mColumnCount];
+            std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
+        }
+        mHorizontalHeader = other.mHorizontalHeader;
+        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
+        mCoeffCount = other.mCoeffCount;
+        return *this;
+    }
+
+    auto& operator=(BPAverageDataProvider&& other) noexcept
+    {
+        mDataMatrix = other.mDataMatrix;
+        other.mDataMatrix = nullptr;
+        mHorizontalHeader = other.mHorizontalHeader;
+        other.mHorizontalHeader.clear();
+        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
+        other.mAdditionalSectionLabels.clear();
+        mCoeffCount = other.mCoeffCount;
+        return *this;
+    }
+
+private:
+    double** mDataMatrix;
+    QStringList mHorizontalHeader;
+    SectionLabels mAdditionalSectionLabels;
+    DataHandler::CoefficientCount& mCoeffCount;
+};
+
 DataHandler::DataHandler(AbstractModelInstance& modelInstance)
     : mModelInstance(modelInstance)
-    , mDataAggregator(QSharedPointer<AbstractDataAggregator>(new IdentityDataAggregator(this, mModelInstance)))
 {
+
+}
+
+DataHandler::~DataHandler()
+{
+    if (mCoeffCount) delete mCoeffCount;
 }
 
 void DataHandler::aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig)
 {
     if (!viewConfig) return;
-    newAggregator(viewConfig);
+    auto provider = newProvider(viewConfig);
     mDataCache.remove(viewConfig->view());
     if (viewConfig->currentAggregation().type() != Aggregation::None) {
-        mDataAggregator->aggregate();
+        provider->loadData();
     } else {
         return;
     }
-    mDataCache[viewConfig->view()] = mDataAggregator;
+    mDataCache[viewConfig->view()] = provider;
+}
+
+void DataHandler::loadData(QSharedPointer<AbstractViewConfiguration> viewConfig)
+{
+    if (!viewConfig) return;
+    auto provider = newProvider(viewConfig);
+    mDataCache.remove(viewConfig->view());
+    provider->loadData();
+    mDataCache[viewConfig->view()] = provider;
 }
 
 QVariant DataHandler::data(int row, int column, int view) const
@@ -844,18 +1323,20 @@ QVariant DataHandler::data(int row, int column, int view) const
     return QVariant();
 }
 
-QVariant DataHandler::data(int row, int column) const
-{// TODO (AF) implement or remove
-    Q_UNUSED(row);
-    Q_UNUSED(column);
-    return QVariant(); //mDataMatrix.value(row, column);
-}
-
 int DataHandler::headerData(int logicalIndex,
                             Qt::Orientation orientation,
                             int view) const
 {
-    return mDataCache.contains(view) ? mDataCache[view]->headerData(orientation, logicalIndex) : -1;
+    return mDataCache.contains(view) ? mDataCache[view]->headerData(orientation, logicalIndex)
+                                     : -1;
+}
+
+QVariant DataHandler::plainHeaderData(Qt::Orientation orientation,
+                                      int view, int logicalIndex,
+                                      int dimension) const
+{
+    return mDataCache.contains(view) ? mDataCache[view]->plainHeaderData(orientation, logicalIndex, dimension)
+                                     : QVariant();
 }
 
 int DataHandler::rowCount(int view) const
@@ -888,7 +1369,7 @@ QSharedPointer<AbstractViewConfiguration> DataHandler::clone(int view, int newVi
 {
     if (!mDataCache.contains(view))
         return nullptr;
-    mDataCache[newView] = QSharedPointer<AbstractDataAggregator>(cloneAggregator(view));
+    mDataCache[newView] = QSharedPointer<AbstractDataProvider>(cloneProvider(view));
     mDataCache[newView]->viewConfig()->setView(newView);
     return mDataCache[newView]->viewConfig();
 }
@@ -899,102 +1380,72 @@ void DataHandler::loadJaccobian()
     mModelInstance.jaccobianData(mDataMatrix);
 }
 
-DataHandler::AbstractDataAggregator* DataHandler::cloneAggregator(int view)
+DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int view)
 {
-    switch(mDataCache[view]->viewConfig()->currentAggregation().type()) {
-    case Aggregation::Count:
+    switch (mDataCache[view]->viewConfig()->viewType()) {
+    case ViewDataType::BP_Scaling:
     {
-        auto aggregator = static_cast<CountDataAggregator*>(mDataCache[view].get());
-        return new CountDataAggregator(*aggregator);
+        auto aggregator = static_cast<MinMaxDataProvider*>(mDataCache[view].get());
+        return new MinMaxDataProvider(*aggregator);
     }
-    case Aggregation::Mean:
+    case ViewDataType::Symbols:
     {
-        auto aggregator = static_cast<MeanDataAggregator*>(mDataCache[view].get());
-        return new MeanDataAggregator(*aggregator);
+        auto aggregator = static_cast<SymbolsDataProvider*>(mDataCache[view].get());
+        return new SymbolsDataProvider(*aggregator);
     }
-    case Aggregation::Median:
+    case ViewDataType::BP_Overview:
     {
-        auto aggregator = static_cast<MedianDataAggregator*>(mDataCache[view].get());
-        return new MedianDataAggregator(*aggregator);
+        auto aggregator = static_cast<BPOverviewDataProvider*>(mDataCache[view].get());
+        return new BPOverviewDataProvider(*aggregator);
     }
-    case Aggregation::Maximum:
+    case ViewDataType::BP_Count:
     {
-        auto aggregator = static_cast<MaxDataAggregator*>(mDataCache[view].get());
-        return new MaxDataAggregator(*aggregator);
+        auto aggregator = static_cast<BPCountDataProvider*>(mDataCache[view].get());
+        return new BPCountDataProvider(*aggregator);
     }
-    case Aggregation::Minimum:
+    case ViewDataType::BP_Average:
     {
-        auto aggregator = static_cast<MinDataAggregator*>(mDataCache[view].get());
-        return new MinDataAggregator(*aggregator);
-    }
-    case Aggregation::Sum:
-    {
-        auto aggregator = static_cast<SumDataAggregator*>(mDataCache[view].get());
-        return new SumDataAggregator(*aggregator);
-    }
-    case Aggregation::MinMax:
-    {
-        auto aggregator = static_cast<MinMaxDataAggregator*>(mDataCache[view].get());
-        return new MinMaxDataAggregator(*aggregator);
-    }
-    case Aggregation::Symols:
-    {
-        auto aggregator = static_cast<SymbolsDataAggregator*>(mDataCache[view].get());
-        return new SymbolsDataAggregator(*aggregator);
+        auto aggregator = static_cast<BPAverageDataProvider*>(mDataCache[view].get());
+        return new BPAverageDataProvider(*aggregator);
     }
     default:
-    {
-        return new IdentityDataAggregator(this, mModelInstance);
-    }
+        return new IdentityDataProvider(this, mModelInstance);
     }
 }
 
-void DataHandler::newAggregator(QSharedPointer<AbstractViewConfiguration> viewConfig)
+QSharedPointer<DataHandler::AbstractDataProvider> DataHandler::newProvider(QSharedPointer<AbstractViewConfiguration> viewConfig)
 {
-    switch (viewConfig->currentAggregation().type()) {
-    case Aggregation::Count:
-        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new CountDataAggregator(this,
-                                                                                         mModelInstance,
-                                                                                         viewConfig));
-        break;
-    case Aggregation::Mean:
-        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new MeanDataAggregator(this,
-                                                                                        mModelInstance,
-                                                                                        viewConfig));
-        break;
-    case Aggregation::Median:
-        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new MedianDataAggregator(this,
-                                                                                          mModelInstance,
-                                                                                          viewConfig));
-        break;
-    case Aggregation::Maximum:
-        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new MaxDataAggregator(this,
-                                                                                       mModelInstance,
-                                                                                       viewConfig));
-        break;
-    case Aggregation::Minimum:
-        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new MinDataAggregator(this,
-                                                                                       mModelInstance,
-                                                                                       viewConfig));
-        break;
-    case Aggregation::Sum:
-        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new SumDataAggregator(this,
-                                                                                       mModelInstance,
-                                                                                       viewConfig));
-        break;
-    case Aggregation::MinMax:
-        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new MinMaxDataAggregator(this,
-                                                                                          mModelInstance,
-                                                                                          viewConfig));
-        break;
-    case Aggregation::Symols:
-        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new SymbolsDataAggregator(this,
-                                                                                           mModelInstance,
-                                                                                           viewConfig));
-        break;
+    if (!mCoeffCount) {
+        mCoeffCount = new CoefficientCount(mModelInstance.variableCount()+2,
+                                           mModelInstance.equationCount()*2);
+    }
+    switch (viewConfig->viewType()) {
+    case ViewDataType::BP_Scaling:
+        return QSharedPointer<AbstractDataProvider>(new MinMaxDataProvider(this,
+                                                                           mModelInstance,
+                                                                           viewConfig,
+                                                                           *mCoeffCount));
+    case ViewDataType::Symbols:
+        return QSharedPointer<AbstractDataProvider>(new SymbolsDataProvider(this,
+                                                                            mModelInstance,
+                                                                            viewConfig));
+    case ViewDataType::BP_Overview:
+        return QSharedPointer<AbstractDataProvider>(new BPOverviewDataProvider(this,
+                                                                               mModelInstance,
+                                                                               viewConfig,
+                                                                               *mCoeffCount));
+    case ViewDataType::BP_Count:
+        return QSharedPointer<AbstractDataProvider>(new BPCountDataProvider(this,
+                                                                            mModelInstance,
+                                                                            viewConfig,
+                                                                            *mCoeffCount));
+    case ViewDataType::BP_Average:
+        return QSharedPointer<AbstractDataProvider>(new BPAverageDataProvider(this,
+                                                                              mModelInstance,
+                                                                              viewConfig,
+                                                                              *mCoeffCount));
     default:
-        mDataAggregator = QSharedPointer<AbstractDataAggregator>(new IdentityDataAggregator(this, mModelInstance));
-        break;
+        return QSharedPointer<AbstractDataProvider>(new IdentityDataProvider(this, mModelInstance));
     }
 }
 

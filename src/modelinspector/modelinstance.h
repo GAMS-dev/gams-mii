@@ -50,6 +50,8 @@ public:
 
     int equationCount(EquationType type) const override;
 
+    char equationType(int row) const override;
+
     int equationRowCount() const override;
 
     Symbol* equation(int sectionIndex) const override;
@@ -59,6 +61,8 @@ public:
     int variableCount() const override;
 
     int variableCount(VariableType type) const override;
+
+    char variableType(int column) const override;
 
     int variableRowCount() const override;
 
@@ -80,7 +84,13 @@ public:
 
     Range boundsRange() const override;
 
+    void variableLowerBounds(double *bounds) override;
+
+    void variableUpperBounds(double *bounds) override;
+
     Range rhsRange() const override;
+
+    double rhs(int row) const override;
 
     QString longestEquationText() const override;
 
@@ -96,35 +106,26 @@ public:
 
     int rowCount(int view) const override;
 
-    int rowCount(ViewDataType viewType) const override;
-
     int rowEntries(int row, int view) const override;
 
     int columnCount(int view) const override;
-
-    int columnCount(ViewDataType viewType) const override;
 
     int columnEntries(int column, int view) const override;
 
     QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) override;
 
+    void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
+
     QVariant data(int row, int column, int view) const override;
 
-    QVariant data(int row, int column) const override;
+    QVariant headerData(int logicalIndex,
+                        Qt::Orientation orientation,
+                        int view, int role) const override;
 
-    QString headerData(int sectionIndex,
-                       int dimension,
-                       Qt::Orientation orientation) const override;
-
-    void aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
-
-    int headerData(int logicalIndex,
-                   Qt::Orientation orientation,
-                   int view) const override;
+    QVariant plainHeaderData(Qt::Orientation orientation,
+                             int view, int logicalIndex, int dimension) const override;
 
     void jaccobianData(DataMatrix& dataMatrix) override;
-    //double horizontalAttribute(const QString &header, int column);
-    //double verticalAttribute(const QString &header, int row);
 
 private:
     void initialize();
@@ -139,11 +140,10 @@ private:
     void loadVariableDimensions(Symbol *symbol);
     void loadLabels();
 
-    //void loadLabelTree(Symbol *symbol) const;
     QPair<double, double> equationBounds(int row);
 
     QVariant specialValue(double value);
-    QVariant specialValueMinMax(double value, Qt::Orientation orientation);
+    QVariant specialValueMinMax(double value);
     QVariant specialMarginalValue(double value);
     QVariant specialMarginalEquValueBasis(double value, int rIndex);
     QVariant specialMarginalVarValueBasis(double value, int cIndex);

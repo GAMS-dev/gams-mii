@@ -61,16 +61,6 @@ void AbstractModelInstance::setUseOutput(bool useOutput)
     mUseOutput = useOutput;
 }
 
-double AbstractModelInstance::jaccMinimum() const
-{
-    return mModelJaccMinimum;
-}
-
-double AbstractModelInstance::jaccMaximum() const
-{
-    return mModelJaccMaximum;
-}
-
 double AbstractModelInstance::modelMinimum(ViewDataType type) const
 {
     switch (type) {
@@ -226,9 +216,25 @@ Range EmptyModelInstance::boundsRange() const
     return Range();
 }
 
+void EmptyModelInstance::variableLowerBounds(double *bounds)
+{
+    Q_UNUSED(bounds);
+}
+
+void EmptyModelInstance::variableUpperBounds(double *bounds)
+{
+    Q_UNUSED(bounds);
+}
+
 Range EmptyModelInstance::rhsRange() const
 {
     return Range();
+}
+
+double EmptyModelInstance::rhs(int row) const
+{
+    Q_UNUSED(row);
+    return 0.0;
 }
 
 QString EmptyModelInstance::longestEquationText() const
@@ -262,15 +268,21 @@ void EmptyModelInstance::loadData()
 
 }
 
-int EmptyModelInstance::rowCount(int view) const
+char EmptyModelInstance::equationType(int row) const
 {
-    Q_UNUSED(view);
+    Q_UNUSED(row);
     return 0;
 }
 
-int EmptyModelInstance::rowCount(ViewDataType viewType) const
+char EmptyModelInstance::variableType(int column) const
 {
-    Q_UNUSED(viewType);
+    Q_UNUSED(column);
+    return 0;
+}
+
+int EmptyModelInstance::rowCount(int view) const
+{
+    Q_UNUSED(view);
     return 0;
 }
 
@@ -284,12 +296,6 @@ int EmptyModelInstance::rowEntries(int row, int view) const
 int EmptyModelInstance::columnCount(int view) const
 {
     Q_UNUSED(view);
-    return 0;
-}
-
-int EmptyModelInstance::columnCount(ViewDataType viewType) const
-{
-    Q_UNUSED(viewType);
     return 0;
 }
 
@@ -307,6 +313,11 @@ QSharedPointer<AbstractViewConfiguration> EmptyModelInstance::clone(int view, in
     return nullptr;
 }
 
+void EmptyModelInstance::loadData(QSharedPointer<AbstractViewConfiguration> viewConfig)
+{
+    Q_UNUSED(viewConfig);
+}
+
 QVariant EmptyModelInstance::data(int row, int column, int view) const
 {
     Q_UNUSED(row);
@@ -314,36 +325,27 @@ QVariant EmptyModelInstance::data(int row, int column, int view) const
     Q_UNUSED(view);
     return QVariant();
 }
-QVariant EmptyModelInstance::data(int row, int column) const
-{
-    Q_UNUSED(row);
-    Q_UNUSED(column);
-    return QVariant();
-}
 
-QString EmptyModelInstance::headerData(int sectionIndex,
-                                       int dimension,
-                                       Qt::Orientation orientation) const
-{
-    Q_UNUSED(sectionIndex);
-    Q_UNUSED(dimension);
-    Q_UNUSED(orientation);
-    return QString();
-}
-
-void EmptyModelInstance::aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig)
-{
-    Q_UNUSED(viewConfig);
-}
-
-int EmptyModelInstance::headerData(int logicalIndex,
-                                   Qt::Orientation orientation,
-                                   int view) const
+QVariant EmptyModelInstance::headerData(int logicalIndex,
+                                        Qt::Orientation orientation,
+                                        int view, int role) const
 {
     Q_UNUSED(logicalIndex);
     Q_UNUSED(orientation);
     Q_UNUSED(view);
+    Q_UNUSED(role);
     return 0;
+}
+
+QVariant EmptyModelInstance::plainHeaderData(Qt::Orientation orientation,
+                                             int view, int logicalIndex,
+                                             int dimension) const
+{
+    Q_UNUSED(orientation);
+    Q_UNUSED(view);
+    Q_UNUSED(logicalIndex);
+    Q_UNUSED(dimension);
+    return QVariant();
 }
 
 void EmptyModelInstance::jaccobianData(DataMatrix &dataMatrix)

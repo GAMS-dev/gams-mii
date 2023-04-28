@@ -15,13 +15,8 @@ class SymbolModelInstanceTableModel final : public QAbstractTableModel
     Q_OBJECT
 
 public:
-    enum Roles {
-        RowEntryRole = Qt::UserRole,
-        ColumnEntryRole
-    };
-
     SymbolModelInstanceTableModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                                   QObject *parent = nullptr);
+                                  QObject *parent = nullptr);
 
     void setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance);
 

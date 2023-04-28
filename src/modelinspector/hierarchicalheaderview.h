@@ -36,6 +36,9 @@ public:
     ViewDataType viewType() const;
     void setViewType(ViewDataType viewType);
 
+    int view() const;
+    void setView(int view);
+
 public slots:
     void customMenuRequested(const QPoint &position);
     void resetSymbolLabelFilters();
@@ -63,6 +66,7 @@ private:
     HierarchicalHeaderView_private *mPrivate;
     QSharedPointer<AbstractModelInstance> mModelInstance;
     ViewDataType mViewType = ViewDataType::Unknown;
+    int mView;
 
     QMenu *mFilterMenu;
     LabelFilterWidget *mFilterWidget;

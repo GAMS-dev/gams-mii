@@ -106,9 +106,7 @@ public:
         Median,
         Maximum,
         Minimum,
-        MinMax,
         Sum,
-        Symols,
         None
     };
 
@@ -156,7 +154,7 @@ public:
     bool isActive() const;
 
 private:
-    bool mUseAbsoluteValues = false; // TODO remove... is duplicate to value filter
+    bool mUseAbsoluteValues = false;
     Type mType = None;
     AggregationMap mAggregationMap;
     ViewDataType mViewType = ViewDataType::Unknown;

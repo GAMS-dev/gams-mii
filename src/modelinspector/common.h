@@ -33,14 +33,43 @@ struct Constant
 
     const QString Statistic = "Statistic";
     const QString Jaccobian = "Jaccobian";
-    const QString MinMax = "Min Max";
+    const QString MinMax = "Blockpic Scaling";
     const QString SymbolView = "Symbol View";
+    const QString BPOverview = "Blockpic Overview";
+    const QString BPCount    = "Blockpic Count";
+    const QString BPAverage  = "Blockpic Average";
     const QStringList PredefinedViewTexts = { Statistic,
                                               Jaccobian,
-                                              MinMax };
+                                              BPOverview,
+                                              BPCount,
+                                              BPAverage,
+                                              MinMax
+                                              };
 };
 
 Q_GLOBAL_STATIC(Constant, constant);
+
+struct Mi
+{
+    enum ItemDataRole
+    {
+        IndexDataRole = Qt::UserRole,
+        LabelDataRole,
+        RowEntryRole,
+        ColumnEntryRole
+    };
+
+    static QHash<int, QByteArray> roleNames()
+    {
+        static QHash<int, QByteArray> mapping {
+            {IndexDataRole, "indexdata"},
+            {LabelDataRole, "labeldata"},
+            {RowEntryRole, "rowentry"},
+            {ColumnEntryRole, "columnentry"}
+        };
+        return mapping;
+    }
+};
 
 enum class ViewType
 {
@@ -50,11 +79,43 @@ enum class ViewType
 
 enum class ViewDataType
 {
-    Statistic       = 0,
-    Jaccobian       = 1,
-    MinMax          = 2,
-    SymbolView      = 3,
-    Unknown         = 127
+    Statistic           = 0,
+    Jaccobian           = 1,
+    BP_Scaling          = 2,
+    BP_Overview         = 3,
+    BP_Count            = 4,
+    BP_Average          = 5,
+    Symbols             = 7,
+    Unknown             = 127
+};
+
+class ViewProperties
+{// TODO add enums ViewDataType/ViewType?
+public:
+    static bool isAggregatable(ViewDataType type)
+    {
+        switch (type) {
+        case ViewDataType::BP_Overview:
+        case ViewDataType::BP_Count:
+        case ViewDataType::BP_Average:
+        case ViewDataType::BP_Scaling:
+            return false;
+        default:
+            return true;
+        }
+    }
+
+    static bool isStandardView(ViewDataType type)
+    {
+        switch (type) {
+        case ViewDataType::BP_Count:
+        case ViewDataType::BP_Average:
+        case ViewDataType::BP_Scaling:
+            return false;
+        default:
+            return true;
+        }
+    }
 };
 
 enum class EquationType

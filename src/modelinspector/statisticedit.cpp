@@ -76,6 +76,7 @@ void StatisticEdit::resetZoom()
 
 void StatisticEdit::showStatistic(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
+    Q_UNUSED(modelInstance);
     //auto matrixRange = modelInstance->matrixRange();
     //auto objectiveRange = modelInstance->objectiveRange();
     //auto boundsRange = modelInstance->boundsRange();

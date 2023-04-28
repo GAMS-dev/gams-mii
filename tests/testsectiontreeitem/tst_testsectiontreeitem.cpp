@@ -93,7 +93,7 @@ void TestSectionTreeItem::test_setTypeText()
     item.setType(constant->Statistic);
     QCOMPARE(item.type(), ViewDataType::Statistic);
     item.setType(constant->MinMax);
-    QCOMPARE(item.type(), ViewDataType::MinMax);
+    QCOMPARE(item.type(), ViewDataType::BP_Scaling);
     item.setType("lala");
     QCOMPARE(item.type(), ViewDataType::Unknown);
 }

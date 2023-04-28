@@ -55,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->modelInspector->setSystemDirectory(CommonPaths::systemDir());
     ui->searchResultView->setModel(new SearchResultModel(ui->searchResultView));
     ui->statusBar->addPermanentWidget(mAggregationStatusLabel);
+    ui->actionAggregation->setEnabled(false);
     setWindowTitle(windowTitle() + " " + QApplication::applicationVersion());
     mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
     setupConnections();
@@ -284,8 +285,6 @@ void MainWindow::aggregationUpdate()
 void MainWindow::globalFilterUpdate()
 {
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
-    if (ui->modelInspector->aggregation().viewType() != ViewDataType::MinMax)
-        ui->modelInspector->setAggregation(ui->modelInspector->defaultAggregation());
     ui->modelInspector->setIdentifierFilter(mFilterDialog->idendifierFilter());
     ui->modelInspector->setValueFilter(mFilterDialog->valueFilter());
     ui->modelInspector->setLabelFilter(mFilterDialog->labelFilter());
@@ -312,12 +311,12 @@ void MainWindow::viewChanged(int viewType)
         ui->action_Search->setEnabled(false);
         ui->searchEdit->setEnabled(false);
         ui->actionFilters->setEnabled(false);
-        ui->actionAggregation->setEnabled(false);
+        //ui->actionAggregation->setEnabled(false);
     } else { // TODO !!! activate and fix crashes
         ui->action_Search->setEnabled(true);
         ui->searchEdit->setEnabled(true);
         ui->actionFilters->setEnabled(true);
-        ui->actionAggregation->setEnabled(true);
+        //ui->actionAggregation->setEnabled(false);
         static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
         setGlobalFiltersData();
         //setAggregationData();

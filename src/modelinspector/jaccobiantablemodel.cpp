@@ -63,13 +63,23 @@ QModelIndex JaccobianTableModel::index(int row, int column,
 int JaccobianTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->rowCount(mViewType);
+    return mModelInstance->rowCount(mView);
 }
 
 int JaccobianTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->columnCount(mViewType);
+    return mModelInstance->columnCount(mView);
+}
+
+int JaccobianTableModel::view() const
+{
+    return mView;
+}
+
+void JaccobianTableModel::setView(int view)
+{
+    mView = view;
 }
 
 }

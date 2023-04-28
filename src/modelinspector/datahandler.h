@@ -186,17 +186,118 @@ private:
 class DataHandler
 {
 public:
-    class AbstractDataAggregator;
+    class AbstractDataProvider;
+
+    struct CoefficientCount
+    {
+        CoefficientCount()
+        {
+
+        }
+
+        CoefficientCount(const CoefficientCount& other)
+            : mColumnCount(other.mColumnCount)
+            , mRowCount(other.mRowCount)
+        {
+            mCount = new int*[mRowCount];
+            for (int r=0; r<mRowCount; ++r) {
+                mCount[r] = new int[mColumnCount];
+                std::copy(other.mCount[r], other.mCount[r]+other.mColumnCount, mCount[r]);
+            }
+        }
+
+        CoefficientCount(CoefficientCount&& other) noexcept
+            : mCount(other.mCount)
+            , mColumnCount(other.mColumnCount)
+            , mRowCount(other.mRowCount)
+        {
+            other.mCount = nullptr;
+            other.mColumnCount = 0;
+            other.mRowCount = 0;
+        }
+
+        CoefficientCount(int columnCount, int rowCount)
+            : mColumnCount(columnCount)
+            , mRowCount(rowCount)
+        {
+            mCount = new int*[mRowCount];
+            for (int r=0; r<mRowCount; ++r) {
+                mCount[r] = new int[mColumnCount];
+                std::fill(mCount[r], mCount[r]+mColumnCount, 0);
+            }
+        }
+
+        ~CoefficientCount()
+        {
+            for (int r=0; r<mRowCount; ++r) {
+                delete [] mCount[r];
+            }
+            if (mCount) delete [] mCount;
+        }
+
+        int** count()
+        {
+            return mCount;
+        }
+
+        int columnCount() const
+        {
+            return mColumnCount;
+        }
+
+        int rowCount() const
+        {
+            return mRowCount;
+        }
+
+        auto& operator=(const CoefficientCount& other)
+        {
+            mRowCount = other.mColumnCount;
+            mColumnCount = other.mColumnCount;
+            for (int r=0; r<mRowCount; ++r) {
+                delete [] mCount[r];
+            }
+            delete [] mCount;
+            mCount = new int*[mRowCount];
+            for (int r=0; r<mRowCount; ++r) {
+                mCount[r] = new int[mColumnCount];
+                std::copy(other.mCount[r], other.mCount[r]+other.mColumnCount, mCount[r]);
+            }
+            return *this;
+        }
+
+        auto& operator=(CoefficientCount&& other) noexcept
+        {
+            mCount = other.mCount;
+            other.mCount = nullptr;
+            mColumnCount = other.mColumnCount;
+            other.mColumnCount = 0;
+            mRowCount = other.mRowCount;
+            other.mRowCount = 0;
+            return *this;
+        }
+
+    private:
+        int** mCount = nullptr;
+        int mColumnCount = 0;
+        int mRowCount = 0;
+    };
 
     DataHandler(AbstractModelInstance& modelInstance);
 
+    ~DataHandler();
+
     void aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig);
+
+    void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig);
 
     QVariant data(int row, int column, int view) const;
 
-    QVariant data(int row, int column) const;
-
     int headerData(int logicalIndex, Qt::Orientation orientation, int view) const;
+
+    QVariant plainHeaderData(Qt::Orientation orientation,
+                             int view, int logicalIndex,
+                             int dimension) const;
 
     int rowCount(int view) const;
 
@@ -211,15 +312,15 @@ public:
     void loadJaccobian();
 
 private:
-    AbstractDataAggregator* cloneAggregator(int view);
-    void newAggregator(QSharedPointer<AbstractViewConfiguration> viewConfig);
+    AbstractDataProvider *cloneProvider(int view);
+    QSharedPointer<AbstractDataProvider> newProvider(QSharedPointer<AbstractViewConfiguration> viewConfig);
 
 private:
     AbstractModelInstance& mModelInstance;
-    QSharedPointer<AbstractDataAggregator> mDataAggregator;
 
     DataMatrix mDataMatrix;
-    QMap<int, QSharedPointer<AbstractDataAggregator>> mDataCache;
+    CoefficientCount *mCoeffCount = nullptr;
+    QMap<int, QSharedPointer<AbstractDataProvider>> mDataCache;
 };
 
 }

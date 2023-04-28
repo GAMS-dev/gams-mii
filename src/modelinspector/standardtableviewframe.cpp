@@ -1,11 +1,9 @@
 #include "standardtableviewframe.h"
 #include "ui_standardtableviewframe.h"
 #include "hierarchicalheaderview.h"
-#include "attributetablemodel.h"
 #include "columnrowfiltermodel.h"
 #include "identifierfiltermodel.h"
 #include "labelfiltermodel.h"
-#include "aggregationproxymodel.h"
 #include "valueformatproxymodel.h"
 #include "jaccobiantablemodel.h"
 #include "abstractmodelinstance.h"
@@ -42,20 +40,20 @@ void AbstractStandardTableViewFrame::setAggregation(const Aggregation &aggregati
 
 void AbstractStandardTableViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
-    if (mAggregationModel && mAggregationModel->appliedAggregation().isActive() &&
-            mAggregationModel->appliedAggregation().useAbsoluteValues() != absoluteValues) {
-        auto aggregation = mAggregationModel->aggregation();
-        aggregation.setUseAbsoluteValues(absoluteValues);
-        auto appliedAggregation = mAggregationModel->appliedAggregation();
-        appliedAggregation.setUseAbsoluteValues(absoluteValues);
-        mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-        mAggregationModel->setAggregation(aggregation, appliedAggregation);
-    } else {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-    }
-    mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-    mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal = absoluteValues;
-    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+    //if (mAggregationModel && mAggregationModel->appliedAggregation().isActive() &&
+    //        mAggregationModel->appliedAggregation().useAbsoluteValues() != absoluteValues) {
+    //    auto aggregation = mAggregationModel->aggregation();
+    //    aggregation.setUseAbsoluteValues(absoluteValues);
+    //    auto appliedAggregation = mAggregationModel->appliedAggregation();
+    //    appliedAggregation.setUseAbsoluteValues(absoluteValues);
+    //    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
+    //    mAggregationModel->setAggregation(aggregation, appliedAggregation);
+    //} else {
+    //    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
+    //}
+    //mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
+    //mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal = absoluteValues;
+    //mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
     //updateValueFilter(); TODO VF
 }
 
@@ -130,49 +128,8 @@ void JaccTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
 {
     mModelInstance = modelInstance;
     mViewConfig->setModelInstance(mModelInstance);
-    mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
-                                                   mModelInstance,
-                                                   ui->tableView);
-    mHorizontalHeader->setViewType(ViewDataType::Jaccobian);
-    connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &JaccTableViewFrame::setIdentifierLabelFilter);
-
-    mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
-                                                 mModelInstance,
-                                                 ui->tableView);
-    mVerticalHeader->setViewType(ViewDataType::Jaccobian);
-    connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &JaccTableViewFrame::setIdentifierLabelFilter);
-
-    auto baseModel = new JaccobianTableModel(ui->tableView);
-    baseModel->setModelInstance(mModelInstance);
-    mValueFormatModel = new JaccobianValueFormatProxyModel(ui->tableView);
-    mValueFormatModel->setSourceModel(baseModel);
-    mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);
-    mLabelFilterModel->setSourceModel(mValueFormatModel);
-    mIdentifierFilterModel = new IdentifierFilterModel(mModelInstance, ui->tableView);
-    mIdentifierFilterModel->setSourceModel(mLabelFilterModel);
-    mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->tableView);
-    mIdentifierLabelFilterModel->setSourceModel(mIdentifierFilterModel);
-    //mAggregationModel = new AggregationProxyModel(mModelInstance, ui->tableView);
-    //mAggregationModel->setView(mViewConfig->view());
-    //mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
-    //mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
-    //mColumnRowFilterModel->setSourceModel(mAggregationModel);
-
-    ui->tableView->setHorizontalHeader(mHorizontalHeader);
-    ui->tableView->setVerticalHeader(mVerticalHeader);
-    auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(mIdentifierLabelFilterModel);
-    delete oldSelectionModel;
-    mHorizontalHeader->setVisible(true);
-    mVerticalHeader->setVisible(true);
-
-    mBaseModel = QSharedPointer<JaccobianTableModel>(baseModel);
-
-    //ui->tableView->resizeColumnsToContents();
-    //ui->tableView->resizeRowsToContents();
-    mViewConfig->initialize(ui->tableView->model());
+    mModelInstance->loadData(mViewConfig);
+    setupView();
 }
 
 void JaccTableViewFrame::setLabelFilter(const LabelFilter &filter)
@@ -221,6 +178,51 @@ void JaccTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspe
     }
     updateView();
     emit filtersChanged();
+}
+
+void JaccTableViewFrame::setupView()
+{
+    mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
+                                                   mModelInstance,
+                                                   ui->tableView);
+    mHorizontalHeader->setViewType(ViewDataType::Jaccobian);
+    connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
+            this, &JaccTableViewFrame::setIdentifierLabelFilter);
+
+    mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
+                                                 mModelInstance,
+                                                 ui->tableView);
+    mVerticalHeader->setViewType(ViewDataType::Jaccobian);
+    connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
+            this, &JaccTableViewFrame::setIdentifierLabelFilter);
+
+    auto baseModel = new JaccobianTableModel(ui->tableView);
+    baseModel->setModelInstance(mModelInstance);
+    baseModel->setView(mViewConfig->view());
+    mValueFormatModel = new JaccobianValueFormatProxyModel(ui->tableView);
+    mValueFormatModel->setSourceModel(baseModel);
+    mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);
+    mLabelFilterModel->setSourceModel(mValueFormatModel);
+    mIdentifierFilterModel = new IdentifierFilterModel(mModelInstance, ui->tableView);
+    mIdentifierFilterModel->setSourceModel(mLabelFilterModel);
+    mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->tableView);
+    mIdentifierLabelFilterModel->setSourceModel(mIdentifierFilterModel);
+    //mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
+    //mColumnRowFilterModel->setSourceModel(mAggregationModel);
+
+    ui->tableView->setHorizontalHeader(mHorizontalHeader);
+    ui->tableView->setVerticalHeader(mVerticalHeader);
+    auto oldSelectionModel = ui->tableView->selectionModel();
+    ui->tableView->setModel(mIdentifierLabelFilterModel);
+    delete oldSelectionModel;
+    mHorizontalHeader->setVisible(true);
+    mVerticalHeader->setVisible(true);
+
+    mBaseModel = QSharedPointer<JaccobianTableModel>(baseModel);
+
+    //ui->tableView->resizeColumnsToContents();
+    //ui->tableView->resizeRowsToContents();
+    mViewConfig->initialize(ui->tableView->model());
 }
 
 }

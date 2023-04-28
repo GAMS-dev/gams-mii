@@ -130,12 +130,11 @@ void AbstractTableViewFrame::setViewConfig(QSharedPointer<AbstractViewConfigurat
     mViewConfig = viewConfig;
 }
 
-QList<SearchResult> AbstractTableViewFrame::search(const QString &term, bool isRegEx, ViewDataType type)
+QList<SearchResult> AbstractTableViewFrame::search(const QString &term, bool isRegEx)
 {
     QList<SearchResult> result;
     if (!term.isEmpty()) {
-        Search search(mModelInstance, ui->tableView->model(),
-                      currentAggregation(), term, isRegEx, type);
+        Search search(mModelInstance, mViewConfig, ui->tableView->model(), term, isRegEx);
         search.run(result);
     }
     return result;

@@ -14,7 +14,6 @@ class IdentifierFilterModel;
 class IdentifierLabelFilterModel;
 class ValueFormatProxyModel;
 class LabelFilterModel;
-class AggregationProxyModel;
 class HierarchicalHeaderView;
 class JaccobianTableModel;
 
@@ -48,7 +47,6 @@ protected:
     IdentifierFilterModel* mIdentifierFilterModel = nullptr;
     IdentifierLabelFilterModel* mIdentifierLabelFilterModel = nullptr;
     LabelFilterModel* mLabelFilterModel = nullptr;
-    AggregationProxyModel* mAggregationModel = nullptr;
     ColumnRowFilterModel* mColumnRowFilterModel = nullptr;
 };
 
@@ -74,6 +72,9 @@ public:
 protected slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
+
+private:
+    void setupView();
 
 private:
     QSharedPointer<JaccobianTableModel> mBaseModel;

@@ -1,6 +1,7 @@
 #include "search.h"
 #include "common.h"
 #include "abstractmodelinstance.h"
+#include "viewconfigurationprovider.h"
 
 #include <QAbstractItemModel>
 #include <QRegularExpression>
@@ -12,20 +13,13 @@ namespace studio {
 namespace modelinspector {
 
 Search::Search(QSharedPointer<AbstractModelInstance> modelInstance,
+               QSharedPointer<AbstractViewConfiguration> viewConfig,
                QAbstractItemModel *dataModel,
-               const Aggregation &appliedAggregation,
-               const QString &term, bool isRegEx, ViewDataType type)
-    : Search(modelInstance, dataModel, term, isRegEx, type)
-{
-    mAppliedAggregation = appliedAggregation;
-}
-
-Search::Search(QSharedPointer<AbstractModelInstance> modelInstance,
-               QAbstractItemModel *dataModel,
-               const QString &term, bool isRegEx, ViewDataType type)
+               const QString &term,
+               bool isRegEx)
     : mModelInstance(modelInstance)
+    , mViewConfig(viewConfig)
     , mDataModel(dataModel)
-    , mViewDataType(type)
 {
     if (isRegEx) {
         QRegularExpression regex(term);
@@ -41,33 +35,64 @@ Search::Search(QSharedPointer<AbstractModelInstance> modelInstance,
 
 void Search::run(QList<SearchResult> &result)
 {
-    if (!mModelInstance || !mDataModel) return;
-    if (mAppliedAggregation.isActive() && mAppliedAggregation.type() == Aggregation::MinMax) {
-        searchMinMax(Qt::Horizontal, result);
-        searchMinMax(Qt::Vertical, result);
-    } else if (mAppliedAggregation.isActive()) {
-        searchAggregated(Qt::Horizontal, result);
-        searchAggregated(Qt::Vertical, result);
-    } else if (mViewDataType == ViewDataType::SymbolView || mViewDataType == ViewDataType::Jaccobian) {
-        search(Qt::Horizontal, result);
-        search(Qt::Vertical, result);
+    if (!mModelInstance || !mDataModel)
+        return;
+    switch (mViewConfig->viewType()) {
+    case ViewDataType::BP_Overview:
+        searchPlainHeader(Qt::Horizontal, result);
+        searchPlainHeader(Qt::Vertical, result);
+        break;
+    case ViewDataType::BP_Count:
+    case ViewDataType::BP_Average:
+    case ViewDataType::BP_Scaling:
+        searchPlainHeader(Qt::Horizontal, result);
+        searchHeaderHierarchy(Qt::Vertical, result);
+        break;
+    default:
+        searchHeaderHierarchy(Qt::Horizontal, result);
+        searchHeaderHierarchy(Qt::Vertical, result);
+        break;
     }
 }
 
-void Search::search(Qt::Orientation orientation, QList<SearchResult> &result)
+void Search::searchPlainHeader(Qt::Orientation orientation, QList<SearchResult> &result)
+{
+    int sections = orientation == Qt::Horizontal ? mDataModel->columnCount() :
+                                                   mDataModel->rowCount();
+    for (int section=0; section<sections; ++section) {
+        auto label = mDataModel->headerData(section, orientation, Mi::LabelDataRole).toString();
+        if (compare(label)) result.append(SearchResult{section, orientation});
+    }
+}
+
+void Search::searchHeaderHierarchy(Qt::Orientation orientation, QList<SearchResult> &result)
 {
     bool ok;
     int sections = orientation == Qt::Horizontal ? mDataModel->columnCount() :
                                                    mDataModel->rowCount();
-    for (int section=0; section<sections; ++section) {
-        int realSection = mDataModel->headerData(section, orientation).toInt(&ok);
-        if (!ok) continue;
-        searchHeader(section, realSection, orientation, result);
+
+    switch (mViewConfig->viewType()) {
+    case ViewDataType::BP_Count:
+    case ViewDataType::BP_Average:
+    case ViewDataType::BP_Scaling:
+        for (int section=0; section<sections; ++section) {
+            int realSection = mDataModel->headerData(section, orientation).toInt(&ok);
+            if (!ok) continue;
+            searchFixedHeaderHierarchy(section, realSection, orientation, result);
+        }
+        break;
+    default:
+        for (int section=0; section<sections; ++section) {
+            int realSection = mDataModel->headerData(section, orientation).toInt(&ok);
+            if (!ok) continue;
+            searchHeaderHierarchy(section, realSection, orientation, result);
+        }
+        break;
     }
 }
 
-void Search::searchHeader(int logicalIndex, int sectionIndex,
-                          Qt::Orientation orientation, QList<SearchResult> &result)
+void Search::searchHeaderHierarchy(int logicalIndex, int sectionIndex,
+                                   Qt::Orientation orientation, QList<SearchResult> &result)
 {
     auto sym = orientation == Qt::Horizontal ? mModelInstance->variable(sectionIndex)
                                              : mModelInstance->equation(sectionIndex);
@@ -75,7 +100,7 @@ void Search::searchHeader(int logicalIndex, int sectionIndex,
         result.append(SearchResult{logicalIndex, orientation});
     } else {
         auto labels = sym->sectionLabels()[sectionIndex];
-        Q_FOREACH(const auto label, labels) {
+        for (const auto& label : labels) {
             if (compare(label)) {
                 result.append(SearchResult{logicalIndex, orientation});
                 break;
@@ -84,94 +109,40 @@ void Search::searchHeader(int logicalIndex, int sectionIndex,
     }
 }
 
-void Search::searchAttributeHeader(Qt::Orientation orientation, QList<SearchResult> &result)
+void Search::searchFixedHeaderHierarchy(int logicalIndex,
+                                        int sectionIndex,
+                                        Qt::Orientation orientation,
+                                        QList<SearchResult> &result)
 {
-    bool ok;
-    int sections = orientation == Qt::Horizontal ? mDataModel->columnCount() :
-                                                   mDataModel->rowCount();
-    for (int section=0; section<sections; ++section) {
-        auto value = mDataModel->headerData(section, orientation);
-        int realSection = mDataModel->headerData(section, orientation).toInt(&ok);
-        if (!ok) continue;
-        searchHeader(section, realSection, orientation, result);
-    }
-}
-
-void Search::searchMinMax(Qt::Orientation orientation, QList<SearchResult> &result)
-{
-    bool ok;
-    int sections = orientation == Qt::Horizontal ? mDataModel->columnCount() :
-                                                   mDataModel->rowCount();
-    for (int section=0; section<sections; ++section) {
-        int realSection = mDataModel->headerData(section, orientation).toInt(&ok);
-        if (!ok) continue;
-        searchMinMaxHeader(section, realSection, orientation, result);
-    }
-}
-
-void Search::searchMinMaxHeader(int logicalIndex,
-                                    int sectionIndex,
-                                    Qt::Orientation orientation,
-                                    QList<SearchResult> &result)
-{
-    Symbol *sym;
-    if (mAppliedAggregation.indexToSymbol(orientation).contains(sectionIndex)) {
-        sym = mAppliedAggregation.indexToSymbol(orientation).value(sectionIndex);
-    } else {
-        sym = orientation == Qt::Horizontal ? mModelInstance->variable(sectionIndex)
-                                            : mModelInstance->equation(sectionIndex);
-    }
-    if (orientation == Qt::Horizontal && compare(sym->name())) {
-        result.append(SearchResult{logicalIndex, orientation});
-    } else if (orientation == Qt::Vertical) {
-        int index = sectionIndex;
-        if (!mAppliedAggregation.aggregationSymbols(Qt::Vertical).contains(index)) {
-            --index;
-        }
-        auto item = mAppliedAggregation.aggregationSymbols(Qt::Vertical).value(index);
-        Q_FOREACH(const auto label, item.labels()[sectionIndex]) {
-            if (compare(item.text()) || compare(label)) {
-                result.append(SearchResult{logicalIndex, orientation});
-                break;
-            }
-        }
-    }
-}
-
-void Search::searchAggregated(Qt::Orientation orientation, QList<SearchResult> &result)
-{
-    bool ok;
-    int sections = orientation == Qt::Horizontal ? mDataModel->columnCount() :
-                                                   mDataModel->rowCount();
-    for (int section=0; section<sections; ++section) {
-        int realSection = mDataModel->headerData(section, orientation).toInt(&ok);
-        if (!ok) continue;
-        searchAggregatedHeader(section, realSection, orientation, result);
-    }
-}
-
-void Search::searchAggregatedHeader(int logicalIndex, int sectionIndex,
-                                    Qt::Orientation orientation, QList<SearchResult> &result)
-{
-    if (sectionIndex < constant->PredefinedHeaderLength && compare(constant->PredefinedHeader.at(sectionIndex))) {
-        result.append(SearchResult{logicalIndex, orientation});
+    if (orientation == Qt::Horizontal)
         return;
+    if (mViewConfig->currentAggregation().indexToSymbol(orientation).contains(sectionIndex)) {
+        auto sym = mViewConfig->currentAggregation().indexToSymbol(orientation).value(sectionIndex);
+        if (compare(sym->name())) {
+            result.append(SearchResult{logicalIndex, orientation});
+        }
+    } else { // TODO !!! search additional headers... generic solution
+        //auto rows = mModelInstance->rowCount(mViewConfig->view());
+        //auto label = mModelInstance->plainHeaderData(Qt::Vertical,
+        //                                             mViewConfig->view(),
+        //                                             rows-2,
+        //                                             0).toString();
+        //if (compare(label)) {
+        //    result.append(SearchResult{logicalIndex, orientation});
+        //}
     }
-
-    Symbol *sym = orientation == Qt::Horizontal ? mModelInstance->variable(sectionIndex)
-                                                : mModelInstance->equation(sectionIndex);
-    if (!mAppliedAggregation.indexToSymbol(orientation).contains(sectionIndex) &&
-            !mAppliedAggregation.indexToSymbol(orientation).contains(sym->firstSection())) {
-        searchHeader(logicalIndex, sectionIndex, orientation, result);
-        return;
+    int index = sectionIndex;
+    if (!mViewConfig->currentAggregation().aggregationSymbols(Qt::Vertical).contains(index)) {
+        --index;
     }
-    auto item = mAppliedAggregation.aggregationSymbols(orientation).value(sym->firstSection());
-    Q_FOREACH(const auto label, item.labels()[sectionIndex]) {
+    auto item = mViewConfig->currentAggregation().aggregationSymbols(Qt::Vertical).value(index);
+    for (const auto& label : item.labels()[sectionIndex]) {
         if (compare(item.text()) || compare(label)) {
             result.append(SearchResult{logicalIndex, orientation});
             break;
         }
     }
+    // TODO !!! remove duplicates
 }
 
 }

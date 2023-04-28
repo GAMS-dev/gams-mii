@@ -90,19 +90,9 @@ void TestEmptyModelInstance::test_default()
     QCOMPARE(instance.maximumVariableDimension(), 0);
     //QCOMPARE(instance.symbols(Symbol::Equation), QVector<Symbol>());
     //QCOMPARE(instance.symbols(Symbol::Variable), QVector<Symbol>());
-    QCOMPARE(instance.rowCount(ViewDataType::Statistic), 0);
-    QCOMPARE(instance.rowCount(ViewDataType::Jaccobian), 0);
-    QCOMPARE(instance.rowCount(ViewDataType::MinMax), 0);
-    QCOMPARE(instance.rowCount(ViewDataType::Unknown), 0);
-    QCOMPARE(instance.columnCount(ViewDataType::Statistic), 0);
-    QCOMPARE(instance.columnCount(ViewDataType::Jaccobian), 0);
-    QCOMPARE(instance.columnCount(ViewDataType::MinMax), 0);
-    QCOMPARE(instance.columnCount(ViewDataType::Unknown), 0);
     //QCOMPARE(instance.data(0, 1, 4), QVariant());
-    QCOMPARE(instance.headerData(1, 0, Qt::Horizontal), QString());
-    QCOMPARE(instance.headerData(2, 1, Qt::Vertical), QString());
-    QCOMPARE(instance.headerData(0, Qt::Horizontal, 2), 0);
-    QCOMPARE(instance.headerData(1, Qt::Vertical, 2), 0);
+    //QCOMPARE(instance.headerData(0, Qt::Horizontal, 2), 0);
+    //QCOMPARE(instance.headerData(1, Qt::Vertical, 2), 0);
 }
 
 void TestEmptyModelInstance::test_getSet()
@@ -122,9 +112,9 @@ void TestEmptyModelInstance::test_modelMinimum_default()
 {
     EmptyModelInstance instance;
     QCOMPARE(instance.modelMinimum(ViewDataType::Jaccobian), std::numeric_limits<double>::max());
-    QCOMPARE(instance.modelMinimum(ViewDataType::MinMax), std::numeric_limits<double>::lowest());
+    QCOMPARE(instance.modelMinimum(ViewDataType::BP_Scaling), std::numeric_limits<double>::lowest());
     QCOMPARE(instance.modelMinimum(ViewDataType::Statistic), std::numeric_limits<double>::lowest());
-    QCOMPARE(instance.modelMinimum(ViewDataType::SymbolView), std::numeric_limits<double>::lowest());
+    QCOMPARE(instance.modelMinimum(ViewDataType::Symbols), std::numeric_limits<double>::lowest());
     QCOMPARE(instance.modelMinimum(ViewDataType::Unknown), std::numeric_limits<double>::lowest());
 }
 
@@ -147,9 +137,9 @@ void TestEmptyModelInstance::test_modelMaximum_default()
 {
     EmptyModelInstance instance;
     QCOMPARE(instance.modelMaximum(ViewDataType::Jaccobian), std::numeric_limits<double>::lowest());
-    QCOMPARE(instance.modelMaximum(ViewDataType::MinMax), std::numeric_limits<double>::max());
+    QCOMPARE(instance.modelMaximum(ViewDataType::BP_Scaling), std::numeric_limits<double>::max());
     QCOMPARE(instance.modelMaximum(ViewDataType::Statistic), std::numeric_limits<double>::max());
-    QCOMPARE(instance.modelMaximum(ViewDataType::SymbolView), std::numeric_limits<double>::max());
+    QCOMPARE(instance.modelMaximum(ViewDataType::Symbols), std::numeric_limits<double>::max());
     QCOMPARE(instance.modelMaximum(ViewDataType::Unknown), std::numeric_limits<double>::max());
 }
 

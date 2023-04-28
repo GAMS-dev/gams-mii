@@ -104,7 +104,6 @@ public slots:
     void resetDefaultViews();
 
     void saveModelView();
-    void createNewViewClone();
     void createNewSymbolView();
 
     void removeModelView();

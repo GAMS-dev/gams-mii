@@ -77,9 +77,9 @@ SOURCES += \
     modelinspector/abstracttableviewframe.cpp \
     modelinspector/aggregation.cpp \
     modelinspector/aggregationdialog.cpp \
-    modelinspector/aggregationproxymodel.cpp \
-    modelinspector/attributetablemodel.cpp \
+    modelinspector/blockpicviewframe.cpp \
     modelinspector/columnrowfiltermodel.cpp \
+    modelinspector/comprehensivetablemodel.cpp \
     modelinspector/datahandler.cpp \
     modelinspector/filterdialog.cpp \
     modelinspector/filtertreeitem.cpp \
@@ -90,7 +90,7 @@ SOURCES += \
     modelinspector/labelfiltermodel.cpp \
     modelinspector/labelfilterwidget.cpp \
     modelinspector/labeltreeitem.cpp \
-    modelinspector/minmaxmodelinstancetablemodel.cpp \
+    modelinspector/minmaxidentifierfiltermodel.cpp \
     modelinspector/minmaxtableviewframe.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
@@ -121,10 +121,10 @@ HEADERS += \
     modelinspector/abstracttableviewframe.h \
     modelinspector/aggregation.h \
     modelinspector/aggregationdialog.h \
-    modelinspector/aggregationproxymodel.h \
-    modelinspector/attributetablemodel.h \
+    modelinspector/blockpicviewframe.h \
     modelinspector/columnrowfiltermodel.h \
     modelinspector/common.h \
+    modelinspector/comprehensivetablemodel.h \
     modelinspector/datahandler.h \
     modelinspector/filterdialog.h \
     modelinspector/filtertreeitem.h \
@@ -135,7 +135,7 @@ HEADERS += \
     modelinspector/labelfiltermodel.h \
     modelinspector/labelfilterwidget.h \
     modelinspector/labeltreeitem.h \
-    modelinspector/minmaxmodelinstancetablemodel.h \
+    modelinspector/minmaxidentifierfiltermodel.h \
     modelinspector/minmaxtableviewframe.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \

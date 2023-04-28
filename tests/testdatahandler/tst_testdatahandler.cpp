@@ -106,8 +106,6 @@ void TestDataHandler::test_DataHandler_empty()
     QCOMPARE(dataHandler.data(4, 2, -1), QVariant());
     QCOMPARE(dataHandler.data(4, 2, 0), QVariant());
     QCOMPARE(dataHandler.data(4, 2, 84), QVariant());
-    QCOMPARE(dataHandler.data(-4, -2), QVariant());
-    QCOMPARE(dataHandler.data(4, 2), QVariant());
     QCOMPARE(dataHandler.headerData(-1, Qt::Horizontal, -1), -1);
     QCOMPARE(dataHandler.headerData(-1, Qt::Vertical, -1), -1);
     QCOMPARE(dataHandler.headerData(1, Qt::Horizontal, 1), -1);

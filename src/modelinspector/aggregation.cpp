@@ -179,8 +179,6 @@ void Aggregation::setType(const QString &text)
         mType = Maximum;
     } else if (!text.compare(MinimumText, Qt::CaseInsensitive)) {
         mType = Minimum;
-    } else if (text.startsWith(MinMaxText, Qt::CaseInsensitive)) {
-        mType = MinMax;
     } else if (!text.compare(SumText, Qt::CaseInsensitive)) {
         mType = Sum;
     } else if (!text.compare(NoneText, Qt::CaseInsensitive)) {
@@ -201,8 +199,6 @@ const QString& Aggregation::typeText() const
         return MaximumText;
     case Minimum:
         return MinimumText;
-    case MinMax:
-        return MinMaxText;
     case Sum:
         return SumText;
     default:

@@ -205,8 +205,8 @@ void FilterDialog::on_labelBox_currentIndexChanged(int index)
 void FilterDialog::setupEquationFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
     bool showAttributes = !(mViewType == ViewDataType::Jaccobian        ||
-                            mViewType == ViewDataType::MinMax           ||
-                            mViewType == ViewDataType::SymbolView);
+                            mViewType == ViewDataType::BP_Scaling           ||
+                            mViewType == ViewDataType::Symbols);
     bool showSymbols = true;
     auto filterItem = setupSymTreeItems(FilterTreeItem::EquationText, filter, dFilter,
                                         showAttributes, showSymbols);
@@ -231,8 +231,8 @@ void FilterDialog::setupEquationFilter(const IdentifierStates &filter, const Ide
 void FilterDialog::setupVariableFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
     bool showAttributes = !(mViewType == ViewDataType::Jaccobian        ||
-                            mViewType == ViewDataType::MinMax           ||
-                            mViewType == ViewDataType::SymbolView);
+                            mViewType == ViewDataType::BP_Scaling           ||
+                            mViewType == ViewDataType::Symbols);
     bool showSymbols = true;
     auto filterItem = setupSymTreeItems(FilterTreeItem::VariableText, filter, dFilter,
                                         showAttributes, showSymbols);
@@ -299,7 +299,7 @@ FilterTreeItem* FilterDialog::setupSymTreeItems(const QString &text,
         if (!showSymbols) continue;
         auto fItem = new FilterTreeItem(item.Text, item.Checked, symbols);
         auto defaultItem = dFilter.value(item.SymbolIndex);
-        if (mViewType == ViewDataType::SymbolView       &&
+        if (mViewType == ViewDataType::Symbols       &&
                 item.Checked == Qt::Unchecked           &&
                 defaultItem.Checked == Qt::Unchecked) {
             fItem->setEnabled(false);

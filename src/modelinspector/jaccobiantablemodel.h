@@ -37,7 +37,12 @@ public:
 
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
+    int view() const;
+
+    void setView(int view);
+
 private:
+    int mView;
     ViewDataType mViewType;
     QSharedPointer<AbstractModelInstance> mModelInstance;
 };

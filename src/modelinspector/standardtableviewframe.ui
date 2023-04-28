@@ -27,7 +27,11 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="gams::studio::modelinspector::ModelInstanceTableView" name="tableView"/>
+    <widget class="gams::studio::modelinspector::ModelInstanceTableView" name="tableView">
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

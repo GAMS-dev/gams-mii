@@ -2,7 +2,8 @@
 #include "ui_standardtableviewframe.h"
 #include "hierarchicalheaderview.h"
 #include "valueformatproxymodel.h"
-#include "minmaxmodelinstancetablemodel.h"
+#include "comprehensivetablemodel.h"
+#include "minmaxidentifierfiltermodel.h"
 #include "abstractmodelinstance.h"
 #include "viewconfigurationprovider.h"
 
@@ -17,31 +18,41 @@ namespace modelinspector {
 
 MinMaxTableViewFrame::MinMaxTableViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractTableViewFrame(parent, f)
-    , mModelInstanceModel(new MinMaxModelInstanceTableModel)
+    , mBaseModel(new ComprehensiveTableModel)
     , mSelectionMenu(new QMenu(this))
 {
     ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
-    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::MinMax));
-
-    setupSelectionMenu();
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::BP_Scaling));
+    mSelectionMenu->addAction(mSymbolAction);
+    connect(mSymbolAction, &QAction::triggered, this, [this]{handleRowColumnSelection();});
     connect(ui->tableView, &QWidget::customContextMenuRequested,
             this, &MinMaxTableViewFrame::customMenuRequested);
 }
 
-void MinMaxTableViewFrame::aggregate(QSharedPointer<AbstractModelInstance> modelInstance)
+MinMaxTableViewFrame::MinMaxTableViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
+                                           QSharedPointer<AbstractViewConfiguration> viewConfig,
+                                           QWidget *parent, Qt::WindowFlags f)
+    : AbstractTableViewFrame(parent, f)
+    , mBaseModel(new ComprehensiveTableModel)
+    , mSelectionMenu(new QMenu(this))
 {
     mModelInstance = modelInstance;
-    mViewConfig->setModelInstance(mModelInstance);
-    mViewConfig->initialize(nullptr);
-    mModelInstance->aggregate(mViewConfig);
+    ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
+    mViewConfig = viewConfig;
+    mSelectionMenu->addAction(mSymbolAction);
+    connect(mSymbolAction, &QAction::triggered, this, [this]{handleRowColumnSelection();});
+    connect(ui->tableView, &QWidget::customContextMenuRequested,
+            this, &MinMaxTableViewFrame::customMenuRequested);
 }
 
 AbstractTableViewFrame* MinMaxTableViewFrame::clone(int view)
 {
-    auto frame = new MinMaxTableViewFrame;
-    frame->setView(view);
-    frame->setViewConfig(QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view)));
-    frame->setupView(mModelInstance);
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
+    if (!viewConfig)
+        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::BP_Scaling,
+                                                                                                        mModelInstance));
+    auto frame = new MinMaxTableViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
+    frame->setupView();
     frame->setValueFilter(frame->viewConfig()->currentValueFilter());
     frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
     return frame;
@@ -59,45 +70,9 @@ void MinMaxTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> model
 {
     mModelInstance = modelInstance;
     mViewConfig->setModelInstance(mModelInstance);
-    mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
-                                                   mModelInstance,
-                                                   ui->tableView);
-    mHorizontalHeader->setViewType(ViewDataType::MinMax);
-    connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &MinMaxTableViewFrame::setIdentifierLabelFilter);
-
-    mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
-                                                 mModelInstance,
-                                                 ui->tableView);
-    mVerticalHeader->setViewType(ViewDataType::MinMax);
-    connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &MinMaxTableViewFrame::setIdentifierLabelFilter);
-
-    auto modelInstanceModel = new MinMaxModelInstanceTableModel(ui->tableView);
-    modelInstanceModel->setModelInstance(mModelInstance);
-    modelInstanceModel->setView(mViewConfig->view());
-    mValueFormatModel = new MinMaxValueFormatProxyModel(ui->tableView);
-    mValueFormatModel->setSourceModel(modelInstanceModel);
-    mIdentifierFilterModel = new MinMaxIdentifierFilterModel(mModelInstance, ui->tableView);
-    mIdentifierFilterModel->setSourceModel(mValueFormatModel);
-
-    ui->tableView->setHorizontalHeader(mHorizontalHeader);
-    ui->tableView->setVerticalHeader(mVerticalHeader);
-    auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(mIdentifierFilterModel);
-    delete oldSelectionModel;
-    mHorizontalHeader->setVisible(true);
-    mVerticalHeader->setVisible(true);
-
-    mModelInstanceModel = QSharedPointer<MinMaxModelInstanceTableModel>(modelInstanceModel);
-
-    const auto& applied = mViewConfig->currentAggregation();
-    mHorizontalHeader->setAppliedAggregation(applied);
-    mVerticalHeader->setAppliedAggregation(applied);
-    emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-
-    ui->tableView->resizeColumnsToContents();
-    ui->tableView->resizeRowsToContents();
+    mViewConfig->initialize(nullptr);
+    mModelInstance->loadData(mViewConfig);
+    setupView();
 }
 
 const QList<Symbol*>& MinMaxTableViewFrame::selectedEquations() const
@@ -137,10 +112,10 @@ void MinMaxTableViewFrame::setValueFilter(const ValueFilter &filter)
 
 void MinMaxTableViewFrame::setAggregation(const Aggregation &aggregation)
 {
-    if (mModelInstanceModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
+    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
         mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->aggregate(mViewConfig);
-        emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+        mModelInstance->loadData(mViewConfig);
+        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
         mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
         mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
         emit filtersChanged();
@@ -149,11 +124,11 @@ void MinMaxTableViewFrame::setAggregation(const Aggregation &aggregation)
 
 void MinMaxTableViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
-    if (mModelInstanceModel && mViewConfig->currentAggregation().useAbsoluteValues() != absoluteValues) {
+    if (mBaseModel && mViewConfig->currentValueFilter().isAbsolute() != absoluteValues) {
         mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-        mModelInstance->aggregate(mViewConfig);
-        emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
         mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
+        mModelInstance->loadData(mViewConfig);
+        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
         mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
     }
 }
@@ -174,14 +149,49 @@ void MinMaxTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelins
 
 void MinMaxTableViewFrame::customMenuRequested(const QPoint &pos)
 {
+    if (ui->tableView->selectionModel()->selectedIndexes().empty())
+        return;
+    if (ui->tableView->selectionModel()->selectedIndexes().first().row() < mModelInstance->equationCount()*2 &&
+        ui->tableView->selectionModel()->selectedIndexes().first().column() < mModelInstance->variableCount()) {
+        mSymbolAction->setEnabled(true);
+    } else {
+        mSymbolAction->setEnabled(false);
+    }
     mSelectionMenu->popup(ui->tableView->viewport()->mapToGlobal(pos));
 }
 
-void MinMaxTableViewFrame::setupSelectionMenu()
+void MinMaxTableViewFrame::setupView()
 {
-    auto action = new QAction("Show selected symbols", this);
-    mSelectionMenu->addAction(action);
-    connect(action, &QAction::triggered, this, [this]{handleRowColumnSelection();});
+    mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
+                                                 mModelInstance,
+                                                 ui->tableView);
+    mVerticalHeader->setViewType(ViewDataType::BP_Scaling);
+    mVerticalHeader->setView(mViewConfig->view());
+    connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
+            this, &MinMaxTableViewFrame::setIdentifierLabelFilter);
+
+    auto baseModel = new ComprehensiveTableModel(ui->tableView);
+    baseModel->setModelInstance(mModelInstance);
+    baseModel->setView(mViewConfig->view());
+    mValueFormatModel = new MinMaxValueFormatProxyModel(ui->tableView);
+    mValueFormatModel->setSourceModel(baseModel);
+    mIdentifierFilterModel = new MinMaxIdentifierFilterModel(mModelInstance, ui->tableView);
+    mIdentifierFilterModel->setSourceModel(mValueFormatModel);
+
+    ui->tableView->setVerticalHeader(mVerticalHeader);
+    auto oldSelectionModel = ui->tableView->selectionModel();
+    ui->tableView->setModel(mIdentifierFilterModel);
+    delete oldSelectionModel;
+    ui->tableView->horizontalHeader()->setVisible(true);
+    ui->tableView->verticalHeader()->setVisible(true);
+    mBaseModel = QSharedPointer<ComprehensiveTableModel>(baseModel);
+
+    const auto& applied = mViewConfig->currentAggregation();
+    mVerticalHeader->setAppliedAggregation(applied);
+    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
 }
 
 void MinMaxTableViewFrame::handleRowColumnSelection()
@@ -190,7 +200,8 @@ void MinMaxTableViewFrame::handleRowColumnSelection()
     auto indexes = ui->tableView->selectionModel()->selectedIndexes();
     int section;
     for (const auto& index : indexes) {
-        section = ui->tableView->model()->headerData(index.row(), Qt::Vertical).toInt();
+        section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
+                                                     Mi::IndexDataRole).toInt();
         if (mViewConfig->currentAggregation().indexToEquation().contains(section)) {
             auto symbol = mViewConfig->currentAggregation().indexToEquation()[section];
             rowSymbols[symbol->firstSection()] = symbol;
@@ -198,21 +209,27 @@ void MinMaxTableViewFrame::handleRowColumnSelection()
             auto symbol = mModelInstance->equation(section);
             rowSymbols[symbol->firstSection()] = symbol;
         }
-        section = ui->tableView->model()->headerData(index.column(), Qt::Horizontal).toInt();
-        if (mViewConfig->currentAggregation().indexToVariable().contains(section)) {
-            auto symbol = mViewConfig->currentAggregation().indexToVariable()[section];
-            columnSymbols[symbol->firstSection()] = symbol;
-        } else {
+        section = ui->tableView->model()->headerData(index.column(), Qt::Horizontal,
+                                                     Mi::IndexDataRole).toInt();
+        // TODO !!! drop this aggregation stuff (indexToVariable)... not needed anymore or fix this
+        //if (mViewConfig->currentAggregation().indexToVariable().contains(section)) {
+        //    auto symbol = mViewConfig->currentAggregation().indexToVariable()[section];
+        //    qDebug() << "A" << section << symbol->name();
+        //    columnSymbols[symbol->firstSection()] = symbol;
+        //} else {
             auto symbol = mModelInstance->variable(section);
+            //qDebug() << "B" << section << symbol->name();
             columnSymbols[symbol->firstSection()] = symbol;
-        }
+        //}
     }
     mSelectedEquations = rowSymbols.values();
     mSelectedVariables = columnSymbols.values();
     emit newSymbolViewRequested();
 }
 
-void MinMaxTableViewFrame::setIdentifierFilterCheckState(int symbolIndex, Qt::CheckState state, Qt::Orientation orientation)
+void MinMaxTableViewFrame::setIdentifierFilterCheckState(int symbolIndex,
+                                                         Qt::CheckState state,
+                                                         Qt::Orientation orientation)
 {
     auto symbols = mViewConfig->currentIdentifierFilter()[orientation];
     for (auto iter=symbols.begin(); iter!=symbols.end(); ++iter) {

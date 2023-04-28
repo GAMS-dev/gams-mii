@@ -17,7 +17,9 @@ public:
     SymbolViewFrame(int view, QSharedPointer<AbstractModelInstance> modelInstance,
                     QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    void aggregate();
+    SymbolViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
+                    QSharedPointer<AbstractViewConfiguration> viewConfig,
+                    QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
     AbstractTableViewFrame *clone(int view) override;
 
@@ -38,6 +40,9 @@ public:
 protected slots:
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
+
+private:
+    void setupView();
 
 private:
     QSharedPointer<SymbolModelInstanceTableModel> mModelInstanceModel;

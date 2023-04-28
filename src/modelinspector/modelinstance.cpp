@@ -152,6 +152,13 @@ int ModelInstance::equationCount(EquationType type) const
     }
 }
 
+char ModelInstance::equationType(int row) const
+{
+    char buffer[GMS_SSSIZE];
+    gmoGetEquTypeTxt(mGMO, row, buffer);
+    return QString(buffer).replace('=', "").trimmed().at(0).toLatin1();
+}
+
 int ModelInstance::equationRowCount() const
 {
     return gmoM(mGMO);
@@ -182,6 +189,13 @@ int ModelInstance::variableCount(VariableType type) const
     default:
         return 0;
     }
+}
+
+char ModelInstance::variableType(int column) const
+{
+    char buffer[GMS_SSSIZE];
+    gmoGetVarTypeTxt(mGMO, column, buffer);
+    return QString(buffer).at(0).toLatin1();
 }
 
 int ModelInstance::variableRowCount() const
@@ -277,7 +291,7 @@ void ModelInstance::loadSymbols()
             sym->setFirstSection(sectionIndexEqn);
             sym->setLogicalIndex(eqnIndex++);
             sectionIndexEqn += sym->entries();
-            loadEquationDimensions(sym); // TODO !!! perf: optimize or load/lazy load
+            loadEquationDimensions(sym); // TODO !!! PERF optimize or load/lazy load
             sym->setLabelTree(QSharedPointer<LabelTreeItem>(new LabelTreeItem));
             mEquations.append(sym);
             for (int i=sym->firstSection(); i<=sym->lastSection(); ++i) {
@@ -291,7 +305,7 @@ void ModelInstance::loadSymbols()
             sym->setFirstSection(sectionIndexVar);
             sym->setLogicalIndex(varIndex++);
             sectionIndexVar += sym->entries();
-            loadVariableDimensions(sym); // TODO !!! perf: optimize or load/lazy load
+            loadVariableDimensions(sym); // TODO !!! PERF optimize or load/lazy load
             sym->setLabelTree(QSharedPointer<LabelTreeItem>(new LabelTreeItem));
             mVariables.append(sym);
             for (int i=sym->firstSection(); i<=sym->lastSection(); ++i) {
@@ -402,73 +416,6 @@ void ModelInstance::loadVariableDimensions(Symbol *symbol)
     }
 }
 
-//void ModelInstance::loadLabelTree(Symbol *symbol) const
-//{// TODO !!! this causes a major performance issue
-    //char quote;
-    //int nDomains;
-    //int symIndex;
-    //char labelName[GMS_SSSIZE];
-    //int domains[GLOBAL_MAX_INDEX_DIM];
-    //LabelTreeItem *root = new LabelTreeItem;
-    //for (int j=0; j<symbol->entries(); ++j) {
-    //    if (gmoGetjSolverQuiet(mGMO, symbol->offset() + j) < 0) {
-    //        continue;
-    //    }
-    //    if (symbol->isVariable()) {
-    //        if (dctColUels(mDCT, symbol->offset()+j, &symIndex, domains, &nDomains))
-    //            continue;
-    //    } else {
-    //        if (dctRowUels(mDCT, symbol->offset()+j, &symIndex, domains, &nDomains))
-    //            continue;
-    //    }
-
-    //    LabelTreeItem* newParent = root;
-    //    QList<LabelTreeItem*> nextLevel = root->childs();
-    //    for (int k=0; k<nDomains; ++k) {
-    //        dctUelLabel(mDCT, domains[k], &quote, labelName, GMS_SSSIZE);
-    //        if (nextLevel.isEmpty()) {
-    //            auto child = new LabelTreeItem(labelName, newParent);
-    //            nextLevel = child->childs();
-    //            newParent->append(child);
-    //            newParent = child;
-    //            continue;
-    //        }
-    //        LabelTreeItem* currentItem = nullptr;
-    //        for (const auto& item : qAsConst(nextLevel)) {
-    //            if (!item->text().compare(labelName)) {
-    //                currentItem = item;
-    //                break;
-    //            }
-    //        }
-    //        if (currentItem) {
-    //            newParent = currentItem;
-    //            nextLevel = currentItem->childs();
-    //        } else {
-    //            auto child = new LabelTreeItem(labelName, newParent);
-    //            nextLevel = child->childs();
-    //            newParent->append(child);
-    //            newParent = child;
-    //        }
-    //    }
-    //}
-
-    //QList<LabelTreeItem*> items { root->childs() };
-    //while (!items.isEmpty()) {
-    //    QList<LabelTreeItem*> nextLevel;
-    //    for (int nodes=items.size(), gap=symbol->entries()/nodes, currentSection=symbol->firstSection();
-    //         nodes>0; --nodes, currentSection+=gap) {
-    //        auto item = items.takeFirst();
-    //        item->setSectionIndex(currentSection);
-    //        if (!item->hasChildren())
-    //            item->setSections({currentSection});
-    //        nextLevel.append(item->childs());
-    //    }
-    //    items = nextLevel;
-    //}
-
-    //symbol->setLabelTree(QSharedPointer<LabelTreeItem>(root));
-//}
-
 const QVector<Symbol*>& ModelInstance::symbols(Symbol::Type type) const
 {
     return type == Symbol::Equation ? mEquations : mVariables;
@@ -546,7 +493,7 @@ Range ModelInstance::objectiveRange() const
 
 Range ModelInstance::boundsRange() const
 {
-    gmoObjStyleSet(mGMO, gmoObjType_Fun);
+    //gmoObjStyleSet(mGMO, gmoObjType_Fun);
     Range range;
     auto columns = variableRowCount();
 
@@ -558,6 +505,7 @@ Range ModelInstance::boundsRange() const
             } else {
                 range.first = std::min(range.first, lowerVals[i]);
             }
+            qDebug() << i << lowerVals[i];
         }
     }
 
@@ -569,13 +517,28 @@ Range ModelInstance::boundsRange() const
             } else {
                 range.second = std::max(range.second, upperVals[i]);
             }
+            qDebug() << i << upperVals[i];
         }
     }
 
     delete [] lowerVals;
     delete [] upperVals;
-    gmoObjStyleSet(mGMO, gmoObjType_Var);
+    //gmoObjStyleSet(mGMO, gmoObjType_Var);
     return range;
+}
+
+void ModelInstance::variableLowerBounds(double *bounds)
+{
+    if (gmoGetVarLower(mGMO, bounds)) {
+        mLogMessages << "variableLowerBounds() -> Something went wrong!";
+    }
+}
+
+void ModelInstance::variableUpperBounds(double *bounds)
+{
+    if (gmoGetVarUpper(mGMO, bounds)) {
+        mLogMessages << "variableUpperBounds() -> Something went wrong!";
+    }
 }
 
 Range ModelInstance::rhsRange() const
@@ -601,21 +564,14 @@ Range ModelInstance::rhsRange() const
     return range;
 }
 
+double ModelInstance::rhs(int row) const
+{
+    return gmoGetRhsOne(mGMO, row);
+}
+
 int ModelInstance::rowCount(int view) const
 {
     return mDataHandler->rowCount(view);
-}
-
-int ModelInstance::rowCount(ViewDataType viewType) const
-{
-    switch (viewType) {
-    case ViewDataType::Jaccobian:
-        return equationRowCount();
-    case ViewDataType::MinMax: // one row for max and min
-        return equationCount() * 2;
-    default:
-        return equationRowCount();
-    }
 }
 
 int ModelInstance::rowEntries(int row, int view) const
@@ -628,18 +584,6 @@ int ModelInstance::columnCount(int view) const
     return mDataHandler->columnCount(view);
 }
 
-int ModelInstance::columnCount(ViewDataType viewType) const
-{
-    switch (viewType) {
-    case ViewDataType::Jaccobian:
-        return variableRowCount();
-    case ViewDataType::MinMax:
-        return variableCount();
-    default:
-        return variableRowCount();
-    }
-}
-
 int ModelInstance::columnEntries(int column, int view) const
 {
     return mDataHandler->columnEntries(column, view);
@@ -648,6 +592,11 @@ int ModelInstance::columnEntries(int column, int view) const
 QSharedPointer<AbstractViewConfiguration> ModelInstance::clone(int view, int newView)
 {
     return mDataHandler->clone(view, newView);
+}
+
+void ModelInstance::loadData(QSharedPointer<AbstractViewConfiguration> viewConfig)
+{
+    return mDataHandler->loadData(viewConfig);
 }
 
 void ModelInstance::loadLabels()
@@ -677,39 +626,25 @@ QVariant ModelInstance::data(int row, int column, int view) const
     return mDataHandler->data(row, column, view);
 }
 
-QVariant ModelInstance::data(int row, int column) const
+QVariant ModelInstance::headerData(int logicalIndex,
+                                   Qt::Orientation orientation,
+                                   int view, int role) const
 {
-    return mDataHandler->data(row, column);
-}
-
-void ModelInstance::aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig)
-{
-    mDataHandler->aggregate(viewConfig);
-}
-
-int ModelInstance::headerData(int logicalIndex,
-                              Qt::Orientation orientation,
-                              int view) const
-{
-    return mDataHandler->headerData(logicalIndex, orientation, view);
-}
-
-QString ModelInstance::headerData(int sectionIndex, int dimension, Qt::Orientation orientation) const
-{
-    if (orientation == Qt::Horizontal) {
-        auto var = variable(sectionIndex);
-        if (!var)
-            return QString();
-        if (dimension < 0)
-            return var->name();
-        return var->label(sectionIndex, dimension);
+    if (role == Mi::IndexDataRole) {
+        return mDataHandler->headerData(logicalIndex, orientation, view);
     }
-    auto eqn = equation(sectionIndex);
-    if (!eqn)
-        return QString();
-    if (dimension < 0)
-        return eqn->name();
-    return eqn->label(sectionIndex, dimension);
+    if (role == Mi::LabelDataRole) {
+        return mDataHandler->plainHeaderData(orientation, view, logicalIndex, 0);
+    }
+    return QVariant();
+}
+
+QVariant ModelInstance::plainHeaderData(Qt::Orientation orientation,
+                                        int view,
+                                        int logicalIndex,
+                                        int dimension) const
+{
+    return mDataHandler->plainHeaderData(orientation, view, logicalIndex, dimension);
 }
 
 void ModelInstance::initialize()
@@ -873,7 +808,7 @@ QVariant ModelInstance::specialValue(double value)
     return value;
 }
 
-QVariant ModelInstance::specialValueMinMax(double value, Qt::Orientation orientation)
+QVariant ModelInstance::specialValueMinMax(double value)
 {
     if (value == 0.0)
         return QVariant();

@@ -84,7 +84,7 @@ public:
     QSharedPointer<AbstractViewConfiguration> viewConfig() const;
     void setViewConfig(QSharedPointer<AbstractViewConfiguration> viewConfig);
 
-    QList<SearchResult> search(const QString &term, bool isRegEx, ViewDataType type);
+    QList<SearchResult> search(const QString &term, bool isRegEx);
 
     void zoomIn();
     void zoomOut();

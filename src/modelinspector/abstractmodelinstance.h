@@ -42,9 +42,6 @@ public:
 
     void setUseOutput(bool useOutput);
 
-    double jaccMinimum() const;
-    double jaccMaximum() const;
-
     // TODO model min/max still needed... currently two locations (datahandler)
     double modelMinimum(ViewDataType type) const;
     void setModelMinimum(double value, ViewDataType type);
@@ -66,6 +63,8 @@ public:
      * @param GMO equation type.
      */
     virtual int equationCount(EquationType type) const;
+
+    virtual char equationType(int row) const = 0;
 
     /**
      * @brief Total number of equation rows.
@@ -90,6 +89,8 @@ public:
      * @brief Total number of variables.
      */
     virtual int variableCount() const;
+
+    virtual char variableType(int column) const = 0;
 
     /**
      * @brief Number of variables defined by <c>type</c>.
@@ -130,7 +131,13 @@ public:
 
     virtual Range boundsRange() const = 0;
 
+    virtual void variableLowerBounds(double *bounds) = 0;
+
+    virtual void variableUpperBounds(double *bounds) = 0;
+
     virtual Range rhsRange() const = 0;
+
+    virtual double rhs(int row) const = 0;
 
     const QStringList& labels() const;
 
@@ -148,31 +155,25 @@ public:
 
     virtual int rowCount(int view) const = 0;
 
-    virtual int rowCount(ViewDataType viewType) const = 0;
-
     virtual int rowEntries(int row, int view) const = 0;
 
     virtual int columnCount(int view) const = 0;
-
-    virtual int columnCount(ViewDataType viewType) const = 0;
 
     virtual int columnEntries(int column, int view) const = 0;
 
     virtual QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) = 0;
 
+    virtual void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) = 0;
+
     virtual QVariant data(int row, int column, int view) const = 0;
 
-    virtual QVariant data(int row, int column) const = 0;
+    virtual QVariant plainHeaderData(Qt::Orientation orientation,
+                                     int view, int logicalIndex,
+                                     int dimension = 0) const = 0;
 
-    virtual QString headerData(int sectionIndex,
-                               int dimension,
-                               Qt::Orientation orientation) const = 0;
-
-    virtual void aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig) = 0;
-
-    virtual int headerData(int logicalIndex,
-                           Qt::Orientation orientation,
-                           int view) const = 0;
+    virtual QVariant headerData(int logicalIndex,
+                                Qt::Orientation orientation,
+                                int view, int role) const = 0;
 
     virtual void jaccobianData(DataMatrix& dataMatrix) = 0;
 
@@ -216,7 +217,13 @@ public:
 
     Range boundsRange() const override;
 
+    void variableLowerBounds(double *bounds) override;
+
+    void variableUpperBounds(double *bounds) override;
+
     Range rhsRange() const override;
+
+    double rhs(int row) const override;
 
     QString longestEquationText() const override;
 
@@ -230,33 +237,31 @@ public:
 
     void loadData() override;
 
-    int rowCount(int view) const override;
+    char equationType(int row) const override;
 
-    int rowCount(ViewDataType viewType) const override;
+    char variableType(int column) const override;
+
+    int rowCount(int view) const override;
 
     int rowEntries(int row, int view) const override;
 
     int columnCount(int view) const override;
 
-    int columnCount(ViewDataType viewType) const override;
-
     int columnEntries(int column, int view) const override;
 
     QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) override;
 
+    void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
+
     QVariant data(int row, int column, int view) const override;
 
-    QVariant data(int row, int column) const override;
+    QVariant headerData(int logicalIndex,
+                        Qt::Orientation orientation,
+                        int view, int role) const override;
 
-    QString headerData(int sectionIndex,
-                       int dimension,
-                       Qt::Orientation orientation) const override;
-
-    void aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
-
-    int headerData(int logicalIndex,
-                   Qt::Orientation orientation,
-                   int view) const override;
+    QVariant plainHeaderData(Qt::Orientation orientation,
+                             int view, int logicalIndex,
+                             int dimension) const override;
 
     void jaccobianData(DataMatrix& dataMatrix) override;
 

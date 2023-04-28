@@ -34,6 +34,10 @@ public:
         mView = view;
     }
 
+    inline ViewDataType viewType() const {
+        return mViewType;
+    }
+
     Aggregation& currentAggregation() {
         return mCurrentAggregation;
     }
@@ -108,7 +112,6 @@ protected:
 
 protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
-    ViewDataType mViewType;
     int mView;
 
     LabelFilter mCurrentLabelFilter;
@@ -122,6 +125,9 @@ protected:
 
     Aggregation mCurrentAggregation;
     Aggregation mDefaultAggregation;
+
+private:
+    ViewDataType mViewType;
 };
 
 class ViewConfigurationProvider final

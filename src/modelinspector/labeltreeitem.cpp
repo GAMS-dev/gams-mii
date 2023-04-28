@@ -212,22 +212,6 @@ SectionLabels LabelTreeItem::sectionLabels(int startSection, int dimension) cons
     return sectionLabels;
 }
 
-SectionLabels LabelTreeItem::minMaxSectionLabels(const QString &symName, int startSection)
-{// TODO header drawing rules... when to generate empty label cells
-    SectionLabels sectionLabels;
-    for (int d=1, s=startSection; s<=startSection+2; ++d, ++s) {
-        auto data = sectionLabels[s];
-        if (d == 1) {
-            data << symName << "Min";
-            sectionLabels[s] = data;
-        } else if (d == 2) {
-            data << QString() << "Max";
-            sectionLabels[s] = data;
-        }
-    }
-    return sectionLabels;
-}
-
 QString LabelTreeItem::text() const
 {
     return mText;

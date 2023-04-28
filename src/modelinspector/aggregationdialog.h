@@ -51,7 +51,6 @@ private slots:
 private:
     void setupAggregationView();
     void setupTreeItems(Qt::Orientation orientation, FilterTreeItem *root);
-    void setAggregationMethodAvailability();
 
     void applyAggregation();
     AggregationSymbols checkStates(FilterTreeItem *item);

@@ -34,29 +34,6 @@ protected:
         Q_UNUSED(orientation);
         return IdentifierStates();
     }
-
-    //void createDefaultAggregation()
-    //{
-    //    //auto initAggregation = [this](Symbol::Type type) {
-    //    //    AggregationSymbols items;
-    //    //    Q_FOREACH(const auto& sym, mModelInstance->symbols(type)) {
-    //    //        AggregationItem aggrItem;
-    //    //        aggrItem.setText(sym->name());
-    //    //        aggrItem.setSymbolIndex(sym->firstSection());
-    //    //        aggrItem.setDomainLabels(sym->domainLabels());
-    //    //        for (int d=1; d<=sym->dimension(); ++d) {
-    //    //            aggrItem.setCheckState(d, Qt::Unchecked);
-    //    //        }
-    //    //        items[aggrItem.symbolIndex()] = aggrItem;
-    //    //    }
-    //    //    return items;
-    //    //};
-    //    //Aggregation aggregation;
-    //    //aggregation.setViewType(mViewType);
-    //    //aggregation.setAggregationSymbols(Qt::Horizontal, initAggregation(Symbol::Variable));
-    //    //aggregation.setAggregationSymbols(Qt::Vertical, initAggregation(Symbol::Equation));
-    //    //return aggregation;
-    //}
 };
 
 class JaccobianViewConfiguration final : public AbstractViewConfiguration
@@ -77,14 +54,12 @@ public:
     {
         Q_UNUSED(model);
         createLabelFilter();
-        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(mViewType);
-        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(mViewType);
+        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(viewType());
+        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(viewType());
         mCurrentValueFilter = mDefaultValueFilter;
         mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
         mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
-        //createDefaultAggregation(); TODO !!! activate aggregation
-        //createCurrentAggregation();
     }
 
 protected:
@@ -181,8 +156,8 @@ private:
             }
             return items;
         };
-        mDefaultAggregation.setType(Aggregation::MinMax);
-        mDefaultAggregation.setViewType(mViewType);
+        mDefaultAggregation.setType(Aggregation::None);
+        mDefaultAggregation.setViewType(viewType());
         mDefaultAggregation.setAggregationSymbols(Qt::Horizontal, initAggregation(Symbol::Variable));
         mDefaultAggregation.setAggregationSymbols(Qt::Vertical, initAggregation(Symbol::Equation));
     }
@@ -190,7 +165,8 @@ private:
     void createCurrentAggregation()
     {
         AggregationMap map;
-        for (auto mapIter=mDefaultAggregation.aggregationMap().keyValueBegin(); mapIter!=mDefaultAggregation.aggregationMap().keyValueEnd(); ++mapIter) {
+        for (auto mapIter=mDefaultAggregation.aggregationMap().keyValueBegin();
+             mapIter!=mDefaultAggregation.aggregationMap().keyValueEnd(); ++mapIter) {
             if (mapIter->first == Qt::Horizontal) {
                 int lastSymEndIndex = -1;
                 Q_FOREACH(auto item, mapIter->second) {
@@ -217,7 +193,7 @@ private:
         mCurrentAggregation.setUseAbsoluteValues(mDefaultAggregation.useAbsoluteValues());
         mCurrentAggregation.setType(mDefaultAggregation.type());
         mCurrentAggregation.setAggregationMap(map);
-        mCurrentAggregation.setViewType(mViewType);
+        mCurrentAggregation.setViewType(viewType());
     }
 
     void aggregateEquation(AggregationItem &item, Symbol *symbol, int &lastSymEndIndex)
@@ -228,7 +204,7 @@ private:
             item.setMappedSections(symbol->labelTree()->visibleSectionsSorted());
         auto labelTree = aggregateLabels(symbol, lastSymEndIndex);
         item.setVisibleSections(labelTree->visibleSectionsSorted());
-        auto labels = labelTree->minMaxSectionLabels(item.text(), labelTree->sectionIndex());
+        auto labels = sectionLabels(item.text(), labelTree->sectionIndex());
         item.setLabels(labels);
         item.setAggregatedLabelTree(labelTree);
         item.setVisibleSectionCount(labelTree->sectionExtent());
@@ -251,6 +227,22 @@ private:
         lastSymEndIndex = minItem->sectionIndex();
         return QSharedPointer<LabelTreeItem>(root);
     }
+
+    SectionLabels sectionLabels(const QString &symName, int startSection)
+    {
+        SectionLabels sectionLabels;
+        for (int d=1, s=startSection; s<=startSection+2; ++d, ++s) {
+            auto data = sectionLabels[s];
+            if (d == 1) {
+                data << symName << "Max";
+                sectionLabels[s] = data;
+            } else if (d == 2) {
+                data << QString() << "Min";
+                sectionLabels[s] = data;
+            }
+        }
+        return sectionLabels;
+    }
 };
 
 class SymbolViewConfiguration final : public AbstractViewConfiguration
@@ -263,10 +255,8 @@ public:
         mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
         mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
-        mDefaultAggregation.setType(Aggregation::Symols);
-        mDefaultAggregation.setViewType(mViewType);
-        mCurrentAggregation.setType(Aggregation::Symols);
-        mCurrentAggregation.setViewType(mViewType);
+        mDefaultAggregation.setViewType(this->viewType());
+        mCurrentAggregation.setViewType(this->viewType());
     }
 
     AbstractViewConfiguration* clone() override
@@ -297,6 +287,215 @@ protected:
             symIndex++;
         }
         return states;
+    }
+};
+
+class BlockpicOverviewViewConfiguration final : public AbstractViewConfiguration
+{
+public:
+    BlockpicOverviewViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+        : AbstractViewConfiguration(viewType, modelInstance)
+    {
+
+    }
+
+    AbstractViewConfiguration* clone() override
+    {
+        return new BlockpicOverviewViewConfiguration(*this);
+    }
+
+    void initialize(QAbstractItemModel *model) override
+    {
+        Q_UNUSED(model);
+        createLabelFilter();
+        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(viewType());
+        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(viewType());
+        mCurrentValueFilter = mDefaultValueFilter;
+        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
+        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
+        mCurrentIdentifierFilter = mDefaultIdentifierFilter;
+    }
+
+protected:
+    IdentifierStates createDefaultSymbolFilter(Qt::Orientation orientation) const override
+    {
+        const auto& symbols = orientation == Qt::Horizontal ? mModelInstance->variables()
+                                                            : mModelInstance->equations();
+        int symIndex = 0;
+        IdentifierStates states;
+        for (const auto& sym : symbols) {
+            IdentifierState identifierState;
+            identifierState.Enabled = true;
+            identifierState.SectionIndex = symIndex;
+            identifierState.SymbolIndex = sym->firstSection();
+            identifierState.Text = sym->name();
+            identifierState.Checked = Qt::Checked;
+            states[sym->firstSection()] = identifierState;
+            symIndex++;
+        }
+        return states;
+    }
+};
+
+class BlockpicNegPosViewConfiguration final : public AbstractViewConfiguration
+{
+public:
+    BlockpicNegPosViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+        : AbstractViewConfiguration(viewType, modelInstance)
+    {
+
+    }
+
+    AbstractViewConfiguration* clone() override
+    {
+        return new BlockpicNegPosViewConfiguration(*this);
+    }
+
+    void initialize(QAbstractItemModel *model) override
+    {
+        Q_UNUSED(model);
+        createLabelFilter();
+        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
+        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
+        mCurrentIdentifierFilter = mDefaultIdentifierFilter;
+        createDefaultAggregation();
+        createCurrentAggregation();
+    }
+
+protected:
+    IdentifierStates createDefaultSymbolFilter(Qt::Orientation orientation) const override
+    {
+        const auto& symbols = orientation == Qt::Horizontal ? mModelInstance->variables()
+                                                            : mModelInstance->equations();
+        int symIndex = 0;
+        IdentifierStates states;
+        for (const auto& sym : symbols) {
+            IdentifierState identifierState;
+            identifierState.Enabled = true;
+            identifierState.SectionIndex = symIndex;
+            identifierState.SymbolIndex = sym->firstSection();
+            identifierState.Text = sym->name();
+            identifierState.Checked = Qt::Checked;
+            states[sym->firstSection()] = identifierState;
+            symIndex++;
+        }
+        return states;
+    }
+
+private:
+    void createDefaultAggregation()
+    {
+        auto initAggregation = [this](Symbol::Type type) {
+            AggregationSymbols items;
+            Q_FOREACH(const auto& sym, mModelInstance->symbols(type)) {
+                AggregationItem aggrItem;
+                aggrItem.setText(sym->name());
+                aggrItem.setSymbolIndex(sym->firstSection());
+                aggrItem.setDomainLabels(sym->domainLabels());
+                if (sym->isScalar() && type == Symbol::Equation) {
+                    aggrItem.setCheckState(0, Qt::Checked);
+                } else if (sym->isScalar() && type == Symbol::Variable) {
+                    aggrItem.setCheckState(0, Qt::Unchecked);
+                    aggrItem.setScalar(true);
+                } else if (type == Symbol::Equation) {
+                    for (int d=1; d<=sym->dimension(); ++d) {
+                        aggrItem.setCheckState(d, Qt::Checked);
+                    }
+                } else {
+                    for (int d=1; d<=sym->dimension(); ++d) {
+                        aggrItem.setCheckState(d, Qt::Checked);
+                    }
+                }
+                items[aggrItem.symbolIndex()] = aggrItem;
+            }
+            return items;
+        };
+        mDefaultAggregation.setType(Aggregation::None);
+        mDefaultAggregation.setViewType(viewType());
+        mDefaultAggregation.setAggregationSymbols(Qt::Horizontal, initAggregation(Symbol::Variable));
+        mDefaultAggregation.setAggregationSymbols(Qt::Vertical, initAggregation(Symbol::Equation));
+    }
+
+    void createCurrentAggregation()
+    {
+        AggregationMap map;
+        for (auto mapIter=mDefaultAggregation.aggregationMap().keyValueBegin();
+             mapIter!=mDefaultAggregation.aggregationMap().keyValueEnd(); ++mapIter) {
+            if (mapIter->first == Qt::Horizontal) {
+                int lastSymEndIndex = -1;
+                for (auto item : mapIter->second) {
+                    auto symbol = mModelInstance->variable(item.symbolIndex());
+                    item.setMappedSections({symbol->firstSection()});
+                    item.setVisibleSectionCount(1);
+                    lastSymEndIndex = lastSymEndIndex < 0 ? symbol->firstSection() : lastSymEndIndex + 1;
+                    mCurrentAggregation.indexToSymbol(Qt::Horizontal)[lastSymEndIndex] = symbol;
+                    map[mapIter->first][item.symbolIndex()] = item;
+                }
+            } else {
+                int lastSymEndIndex = -1;
+                for (auto item : mapIter->second) {
+                    auto symbol = mModelInstance->equation(item.symbolIndex());
+                    aggregateEquation(item, symbol, lastSymEndIndex);
+
+                    map[mapIter->first][item.newSymbolIndex()] = item;
+                    mCurrentAggregation.startSectionMapping()[item.symbolIndex()] = item.newSymbolIndex();
+                    mCurrentAggregation.indexToSymbol(Qt::Vertical)[item.newSymbolIndex()] = symbol;
+                    mCurrentAggregation.indexToSymbol(Qt::Vertical)[item.newSymbolIndex()+1] = symbol;
+                }
+            }
+        }
+        mCurrentAggregation.setUseAbsoluteValues(mDefaultAggregation.useAbsoluteValues());
+        mCurrentAggregation.setType(mDefaultAggregation.type());
+        mCurrentAggregation.setAggregationMap(map);
+        mCurrentAggregation.setViewType(viewType());
+    }
+
+    void aggregateEquation(AggregationItem &item, Symbol *symbol, int &lastSymEndIndex)
+    {
+        if (symbol->isScalar())
+            item.setMappedSections({symbol->firstSection()});
+        else
+            item.setMappedSections(symbol->labelTree()->visibleSectionsSorted());
+        auto labelTree = aggregateLabels(symbol, lastSymEndIndex);
+        item.setVisibleSections(labelTree->visibleSectionsSorted());
+        auto labels = sectionLabels(item.text(), labelTree->sectionIndex());
+        item.setLabels(labels);
+        item.setAggregatedLabelTree(labelTree);
+        item.setVisibleSectionCount(labelTree->sectionExtent());
+        item.setUnitedSections(labelTree->unitedSections());
+    }
+
+    QSharedPointer<LabelTreeItem> aggregateLabels(Symbol *symbol, int &lastSymEndIndex)
+    {
+        auto root = new LabelTreeItem;
+        auto maxItem = new LabelTreeItem("Pos", root);
+        int index = lastSymEndIndex < 0 ? symbol->firstSection() : lastSymEndIndex + 1;
+        root->setSectionIndex(index);
+        maxItem->setSectionIndex(index);
+        maxItem->setSections({maxItem->sectionIndex()});
+        root->append(maxItem);
+        auto minItem = new LabelTreeItem("Neg", root);
+        minItem->setSectionIndex(index + 1);
+        minItem->setSections({minItem->sectionIndex()});
+        root->append(minItem);
+        lastSymEndIndex = minItem->sectionIndex();
+        return QSharedPointer<LabelTreeItem>(root);
+    }
+
+    SectionLabels sectionLabels(const QString &symName, int startSection)
+    {
+        SectionLabels sectionLabels;
+        for (int d=1, s=startSection; s<=startSection+2; ++d, ++s) {
+            auto data = sectionLabels[s];
+            if (d == 1) {
+                data << symName << "Pos";
+                sectionLabels[s] = data;
+            } else if (d == 2) {
+                data << QString() << "Neg";
+                sectionLabels[s] = data;
+            }
+        }
+        return sectionLabels;
     }
 };
 
@@ -341,61 +540,6 @@ void AbstractViewConfiguration::updateIdentifierFilter(const QList<Symbol *> &eq
     mDefaultIdentifierFilter = mCurrentIdentifierFilter;
 }
 
-//const Aggregation& AbstractViewConfiguration::appliedAggregation() const
-//{
-//    return mCurrentAggregation;
-//
-    // TODO !!!
-    //AggregationMap map;
-    //Aggregation appliedAggregation;
-    //for (auto mapIter=mCurrentAggregation.aggregationMap().keyValueBegin(); mapIter!=mCurrentAggregation.aggregationMap().keyValueEnd(); ++mapIter) {
-    //    if (mapIter->first == Qt::Horizontal) {
-    //        int lastSymEndIndex = -1;
-    //        Q_FOREACH(auto item, mapIter->second) {
-    //            for (auto iter=item.checkStates().keyValueBegin(); iter!=item.checkStates().keyValueEnd(); ++iter) {
-    //                if (iter->second != Qt::Unchecked) {
-    //                    auto symbol = mModelInstance->variable(item.symbolIndex());
-    //                    Aggregator aggregator(symbol);
-    //                    aggregator.applyFilterStates(mCurrentIdentifierFilter.value(mapIter->first)[symbol->firstSection()],
-    //                                                 mCurrentLabelFilter.LabelCheckStates.value(mapIter->first),
-    //                                                 mCurrentLabelFilter.Any);
-    //                    aggregator.aggregate(item, mCurrentAggregation.type(), mCurrentAggregation.typeText(), lastSymEndIndex);
-    //                    appliedAggregation.indexToSymbol(Qt::Horizontal)[item.symbolIndex()] = symbol;
-    //                    map[mapIter->first][item.symbolIndex()] = item;
-    //                    break;
-    //                }
-    //            }
-    //        }
-    //    } else {
-    //        int lastSymEndIndex = -1;
-    //        Q_FOREACH(auto item, mapIter->second) {
-    //            for (auto iter=item.checkStates().keyValueBegin(); iter!=item.checkStates().keyValueEnd(); ++iter) {
-    //                if (iter->second != Qt::Unchecked) {
-    //                    auto symbol = mModelInstance->equation(item.symbolIndex());
-    //                    Aggregator aggregator(symbol);
-    //                    aggregator.applyFilterStates(mCurrentIdentifierFilter.value(mapIter->first)[symbol->firstSection()],
-    //                                                 mCurrentLabelFilter.LabelCheckStates.value(mapIter->first),
-    //                                                 mCurrentLabelFilter.Any);
-    //                    aggregator.aggregate(item, mCurrentAggregation.type(), mCurrentAggregation.typeText(), lastSymEndIndex);
-    //                    appliedAggregation.indexToSymbol(Qt::Vertical)[item.symbolIndex()] = symbol;
-    //                    map[mapIter->first][item.symbolIndex()] = item;
-    //                    break;
-    //                }
-    //            }
-    //        }
-    //    }
-    //}
-
-    //appliedAggregation.setUseAbsoluteValues(mCurrentAggregation.useAbsoluteValues());
-    //appliedAggregation.setType(mCurrentAggregation.type());
-    //appliedAggregation.setAggregationMap(map);
-    //appliedAggregation.setIdentifierFilter(mCurrentIdentifierFilter);
-    //appliedAggregation.setValueFilter(mCurrentValueFilter);
-    //appliedAggregation.setViewType(mViewType);
-    //appliedAggregation.setView(mView);
-    //return appliedAggregation;
-//}
-
 void AbstractViewConfiguration::createLabelFilter()
 {
     for (const auto& label : mModelInstance->labels()) {
@@ -410,12 +554,17 @@ AbstractViewConfiguration *ViewConfigurationProvider::configuration(ViewDataType
                                                                     QSharedPointer<AbstractModelInstance> modelInstance)
 {
     switch (viewType) {
-    case ViewDataType::MinMax:
+    case ViewDataType::BP_Scaling:
         return new MinMaxViewConfiguration(viewType, modelInstance);
     case ViewDataType::Jaccobian:
         return new JaccobianViewConfiguration(viewType, modelInstance);
-    case ViewDataType::SymbolView:
+    case ViewDataType::Symbols:
         return new SymbolViewConfiguration(viewType, modelInstance);
+    case ViewDataType::BP_Overview:
+        return new BlockpicOverviewViewConfiguration(viewType, modelInstance);
+    case ViewDataType::BP_Count:
+    case ViewDataType::BP_Average:
+        return new BlockpicNegPosViewConfiguration(viewType, modelInstance);
     default:
         return new DefaultViewConfiguration(viewType, modelInstance);
     }

@@ -11,7 +11,7 @@ namespace modelinspector {
 
 class HierarchicalHeaderView;
 class MinMaxIdentifierFilterModel;
-class MinMaxModelInstanceTableModel;
+class ComprehensiveTableModel;
 class ValueFormatProxyModel;
 
 class MinMaxTableViewFrame final : public AbstractTableViewFrame
@@ -21,13 +21,15 @@ class MinMaxTableViewFrame final : public AbstractTableViewFrame
 public:
     MinMaxTableViewFrame(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    void aggregate(QSharedPointer<AbstractModelInstance> modelInstance);
+    MinMaxTableViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
+                         QSharedPointer<AbstractViewConfiguration> viewConfig,
+                         QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
     AbstractTableViewFrame* clone(int view) override;
 
     ViewDataType type() const override
     {
-        return ViewDataType::MinMax;
+        return ViewDataType::BP_Scaling;
     }
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
@@ -58,19 +60,19 @@ private slots:
     void customMenuRequested(const QPoint &pos);
 
 private:
-    void setupSelectionMenu();
+    void setupView();
     void handleRowColumnSelection();
     void setIdentifierFilterCheckState(int symbolIndex, Qt::CheckState state,
                                        Qt::Orientation orientation);
 
 private:
-    QSharedPointer<MinMaxModelInstanceTableModel> mModelInstanceModel;
+    QSharedPointer<ComprehensiveTableModel> mBaseModel;
     QMenu *mSelectionMenu;
+    QAction *mSymbolAction = new QAction("Show selected symbols", this);
 
     QList<Symbol*> mSelectedEquations;
     QList<Symbol*> mSelectedVariables;
 
-    HierarchicalHeaderView* mHorizontalHeader = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
     ValueFormatProxyModel* mValueFormatModel = nullptr;
     MinMaxIdentifierFilterModel* mIdentifierFilterModel = nullptr;

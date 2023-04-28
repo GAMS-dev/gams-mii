@@ -7,6 +7,8 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
+// TODO !!! general empty column/row filter
+
 class ColumnRowFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT

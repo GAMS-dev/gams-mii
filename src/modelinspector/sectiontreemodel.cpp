@@ -136,6 +136,7 @@ bool SectionTreeModel::removeRows(int row, int count, const QModelIndex &parent)
 {
     if (!parent.isValid()) return false;
     auto item = static_cast<SectionTreeItem*>(parent.internalPointer());
+    if (!item->childCount()) return false;
     beginRemoveRows(parent, row, row+count);
     item->remove(row, count);
     endRemoveRows();
@@ -163,7 +164,22 @@ void SectionTreeModel::loadModelData()
             mainItem->setType(constant->PredefinedViewTexts.at(i));
         } else if (constant->PredefinedViewTexts.at(i) == constant->MinMax) {
             mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)ViewDataType::MinMax,
+                                           (int)ViewDataType::BP_Scaling,
+                                           viewItem);
+            mainItem->setType(constant->PredefinedViewTexts.at(i));
+        } else if (constant->PredefinedViewTexts.at(i) == constant->BPOverview) {
+            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
+                                           (int)ViewDataType::BP_Overview,
+                                           viewItem);
+            mainItem->setType(constant->PredefinedViewTexts.at(i));
+        } else if (constant->PredefinedViewTexts.at(i) == constant->BPCount) {
+            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
+                                           (int)ViewDataType::BP_Count,
+                                           viewItem);
+            mainItem->setType(constant->PredefinedViewTexts.at(i));
+        } else if (constant->PredefinedViewTexts.at(i) == constant->BPAverage) {
+            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
+                                           (int)ViewDataType::BP_Average,
                                            viewItem);
             mainItem->setType(constant->PredefinedViewTexts.at(i));
         }

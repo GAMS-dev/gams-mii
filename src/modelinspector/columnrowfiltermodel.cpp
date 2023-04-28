@@ -1,5 +1,5 @@
 #include "columnrowfiltermodel.h"
-#include "symbolmodelinstancetablemodel.h"
+#include "common.h"
 
 namespace gams {
 namespace studio {
@@ -16,7 +16,7 @@ bool ColumnRowFilterModel::filterAcceptsColumn(int sourceColumn,
 {
     bool ok;
     auto entries = sourceModel()->data(sourceModel()->index(0, sourceColumn, sourceParent),
-                                       SymbolModelInstanceTableModel::ColumnEntryRole).toInt(&ok);
+                                       Mi::ColumnEntryRole).toInt(&ok);
     return ok && entries;
 }
 
@@ -25,7 +25,7 @@ bool ColumnRowFilterModel::filterAcceptsRow(int sourceRow,
 {
     bool ok;
     auto entries = sourceModel()->data(sourceModel()->index(sourceRow, 0, sourceParent),
-                                       SymbolModelInstanceTableModel::RowEntryRole).toInt(&ok);
+                                       Mi::RowEntryRole).toInt(&ok);
     return ok && entries;
 }
 

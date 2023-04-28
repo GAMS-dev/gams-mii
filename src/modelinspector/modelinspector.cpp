@@ -40,7 +40,10 @@ ModelInspector::ModelInspector(QWidget *parent)
 {
     ui->setupUi(this);
     ui->jaccFrame->setView((int)ViewDataType::Jaccobian);
-    ui->minMaxFrame->setView((int)ViewDataType::MinMax);
+    ui->minMaxFrame->setView((int)ViewDataType::BP_Scaling);
+    ui->bpOverviewFrame->setView((int)ViewDataType::BP_Overview);
+    ui->bpCountFrame->setView((int)ViewDataType::BP_Count);
+    ui->bpAverageFrame->setView((int)ViewDataType::BP_Average);
     mSectionModel->loadModelData();
     ui->sectionView->setModel(mSectionModel);
     loadModelInstance(false);
@@ -98,7 +101,7 @@ void ModelInspector::setShowOutput(bool showOutput)
 }
 
 void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
-{// TOOD check performance... when all views get an update
+{// TOOD PERF check performance... when all views get an update
     ui->jaccFrame->setShowAbsoluteValues(absoluteValues);
     ui->minMaxFrame->setShowAbsoluteValues(absoluteValues);
     for (auto view : std::as_const(mCustomViews)) {
@@ -106,11 +109,10 @@ void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
     }
 }
 
-QList<SearchResult> ModelInspector::searchHeaders(const QString &term,
-                                                  bool isRegEx)
+QList<SearchResult> ModelInspector::searchHeaders(const QString &term, bool isRegEx)
 {
     auto frame = currentView();
-    return frame ? frame->search(term, isRegEx, frame->type()) : QList<SearchResult>();
+    return frame ? frame->search(term, isRegEx) : QList<SearchResult>();
 }
 
 ViewActionStates ModelInspector::viewActionStates() const
@@ -279,24 +281,15 @@ void ModelInspector::saveModelView()
     clone->setParent(ui->stackedWidget, view->windowFlags());
     int page = ui->stackedWidget->addWidget(clone);
     mCustomViews[page] = clone;
+    if (clone->type() == ViewDataType::BP_Scaling) {
+        connect(static_cast<MinMaxTableViewFrame*>(clone), &MinMaxTableViewFrame::filtersChanged,
+                this, &ModelInspector::filtersChanged);
+        connect(static_cast<MinMaxTableViewFrame*>(clone), &MinMaxTableViewFrame::newSymbolViewRequested,
+                this, &ModelInspector::createNewSymbolView);
+    }
     mSectionModel->appendCustomView(text, view->type(), page);
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Custom);
-}
-
-void ModelInspector::createNewViewClone()
-{
-    auto* clone = currentView()->clone(ui->stackedWidget->count());
-    clone->setParent(ui->stackedWidget, currentView()->windowFlags());
-    int page = ui->stackedWidget->addWidget(clone);
-    clone->reset();
-    mCustomViews[page] = clone;
-    mSectionModel->appendCustomView(constant->SymbolView, currentView()->type(), page);
-    ui->sectionView->expandAll();
-    setCurrentViewIndex(ViewType::Custom);
-    clone->viewConfig()->updateIdentifierFilter(ui->minMaxFrame->selectedEquations(),
-                                                ui->minMaxFrame->selectedVariables());
-    clone->updateView();
 }
 
 void ModelInspector::createNewSymbolView()
@@ -310,10 +303,10 @@ void ModelInspector::createNewSymbolView()
             currentMinMax->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal;
     view->viewConfig()->updateIdentifierFilter(ui->minMaxFrame->selectedEquations(),
                                                ui->minMaxFrame->selectedVariables());
-    view->aggregate();
+    view->setupView(mModelInstance);
     int page = ui->stackedWidget->addWidget(view);
     mCustomViews[page] = view;
-    mSectionModel->appendCustomView(constant->SymbolView, ViewDataType::SymbolView, page);
+    mSectionModel->appendCustomView(constant->SymbolView, ViewDataType::Symbols, page);
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Custom);
     connect(view, &MinMaxTableViewFrame::filtersChanged,
@@ -407,11 +400,11 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
         mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
     }
     mModelInstance->loadData();
-    ui->minMaxFrame->aggregate(mModelInstance);
-
     ui->jaccFrame->setupView(mModelInstance);
     ui->minMaxFrame->setupView(mModelInstance);
-
+    ui->bpOverviewFrame->setupView(mModelInstance);
+    ui->bpCountFrame->setupView(mModelInstance);
+    ui->bpAverageFrame->setupView(mModelInstance);
     setCurrentViewIndex(ViewType::Predefined);
 }
 
@@ -420,7 +413,7 @@ void ModelInspector::clearCustomViews()
     auto customViewIndex = ui->sectionView->model()->index((int)ViewType::Custom, 0);
     int rows = ui->sectionView->model()->rowCount(customViewIndex);
     ui->sectionView->model()->removeRows(0, rows, customViewIndex);
-    Q_FOREACH(auto wgt, mCustomViews) {
+    for (auto wgt : qAsConst(mCustomViews)) {
         ui->stackedWidget->removeWidget(wgt);
         wgt->setParent(nullptr);
         delete wgt;
@@ -433,7 +426,13 @@ AbstractTableViewFrame* ModelInspector::currentView() const
     switch (ui->stackedWidget->currentIndex()) {
     case (int)ViewDataType::Jaccobian:
         return ui->jaccFrame;
-    case (int)ViewDataType::MinMax:
+    case (int)ViewDataType::BP_Overview:
+        return ui->bpOverviewFrame;
+    case (int)ViewDataType::BP_Count:
+        return ui->bpCountFrame;
+    case (int)ViewDataType::BP_Average:
+        return ui->bpAverageFrame;
+    case (int)ViewDataType::BP_Scaling:
         return ui->minMaxFrame;
     default:
         if (mCustomViews.contains(ui->stackedWidget->currentIndex()))

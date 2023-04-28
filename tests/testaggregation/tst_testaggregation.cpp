@@ -134,9 +134,6 @@ void TestAggregation::test_getSet_aggregation()
     Aggregation aggregation;
     aggregation.setUseAbsoluteValues(true);
     QCOMPARE(aggregation.useAbsoluteValues(), true);
-    aggregation.setType(Aggregation::MinMax);
-    QCOMPARE(aggregation.type(), Aggregation::MinMax);
-    QCOMPARE(aggregation.typeText(), "MinMax");
     aggregation.setType("Count");
     QCOMPARE(aggregation.type(), Aggregation::Count);
     QCOMPARE(aggregation.typeText(), "Count");

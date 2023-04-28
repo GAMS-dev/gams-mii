@@ -14,7 +14,8 @@ class LabelTreeItem
 public:
     explicit LabelTreeItem(LabelTreeItem *parent);
 
-    explicit LabelTreeItem(const QString &text = QString(), LabelTreeItem *parent = nullptr);
+    explicit LabelTreeItem(const QString &text = QString(),
+                           LabelTreeItem *parent = nullptr);
 
     explicit LabelTreeItem(const char *text, LabelTreeItem *parent = nullptr);
 
@@ -73,7 +74,6 @@ public:
     QList<int> visibleSectionsSorted() const;
 
     SectionLabels sectionLabels(int startSection, int dimension) const;
-    SectionLabels minMaxSectionLabels(const QString &symName, int startSection);
 
     QString text() const;
 

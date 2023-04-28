@@ -6,7 +6,7 @@ namespace studio{
 namespace modelinspector {
 
 SymbolModelInstanceTableModel::SymbolModelInstanceTableModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                                                               QObject *parent)
+                                                             QObject *parent)
     : QAbstractTableModel(parent)
     , mModelInstance(modelInstance)
 {
@@ -28,10 +28,10 @@ QVariant SymbolModelInstanceTableModel::data(const QModelIndex &index, int role)
     if (role == Qt::DisplayRole && index.isValid()) {
         return mModelInstance->data(index.row(), index.column(), mView);
     }
-    if (role == ColumnEntryRole) {
+    if (role == Mi::ColumnEntryRole) {
         return mModelInstance->columnEntries(index.column(), mView);
     }
-    if (role == RowEntryRole) {
+    if (role == Mi::RowEntryRole) {
         return mModelInstance->rowEntries(index.row(), mView);
     }
     return QVariant();
@@ -47,19 +47,20 @@ Qt::ItemFlags SymbolModelInstanceTableModel::flags(const QModelIndex &index) con
 }
 
 QVariant SymbolModelInstanceTableModel::headerData(int section,
-                                                    Qt::Orientation orientation,
-                                                    int role) const
+                                                   Qt::Orientation orientation,
+                                                   int role) const
 {
     if (role == Qt::DisplayRole) {
-        auto realIndex = mModelInstance->headerData(section, orientation, mView);
+        auto realIndex = mModelInstance->headerData(section, orientation,
+                                                    mView, Mi::IndexDataRole).toInt();
         return realIndex < 0 ? QVariant() : realIndex;
     }
     return QAbstractItemModel::headerData(section, orientation, role);
 }
 
 QModelIndex SymbolModelInstanceTableModel::index(int row,
-                                                  int column,
-                                                  const QModelIndex &parent) const
+                                                 int column,
+                                                 const QModelIndex &parent) const
 {
     if (hasIndex(row, column, parent))
         return createIndex(row, column);
@@ -80,11 +81,7 @@ int SymbolModelInstanceTableModel::columnCount(const QModelIndex &parent) const
 
 QHash<int, QByteArray> SymbolModelInstanceTableModel::roleNames() const
 {
-    static QHash<int, QByteArray> mapping {
-        {RowEntryRole, "rowentry"},
-        {ColumnEntryRole, "columnentry"}
-    };
-    return mapping;
+    return Mi::roleNames();
 }
 
 int SymbolModelInstanceTableModel::view() const
