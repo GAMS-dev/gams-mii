@@ -30,6 +30,19 @@ install-gams-deg:
     expire_in: 1 hour
     paths: [gamsdist/*]
 
+install-gams-dac:
+  stage: install-gams
+  when: on_success
+  tags: [macos-arm64]
+  needs: [fetch-prerequisites]
+  script:
+    - python3 ci/fetch_gams.py fetch_dac $PF_CUSTOM_BRANCH $SSH_KEY_PORTING
+    - python3 ci/fetch_gams.py install
+  artifacts:
+    name: gams-dac
+    expire_in: 1 hour
+    paths: [gamsdist/*]
+
 install-gams-leg:
   stage: install-gams
   when: on_success

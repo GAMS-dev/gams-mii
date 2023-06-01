@@ -1,3 +1,52 @@
+pack-dac:
+  stage: pack
+  tags: [macos-arm64]
+  variables:
+    qtpath: /Users/gitlab/Qt/6.4.3/macos/bin
+  needs: [build-dac]
+  script:
+    - WORKSPACE=$(pwd)
+    - PATH="${qtpath}:${PATH}"
+    - cd build/src/bin
+    - macdeployqt "modelinspector.app" -always-overwrite
+    - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/modelinspector.entitlements.plist "modelinspector.app"
+    - hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"  
+    - codesign --verify --verbose modelinspector.app
+    - mv "modelinspector.dmg" "$WORKSPACE/model-inspector-dac-x86_64.dmg"
+    - cd ${WORKSPACE}
+    - DMG_NAME=model-inspector-dac-x86_64.dmg
+    # leave pipeline if it is not a Release, Release Tag or RC build
+    - |+
+      if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
+        echo "Notarization skipped!" > upload.log
+        echo "Notarization skipped!" > report.xml
+        cat upload.log
+        cat report.xml
+        exit 0;
+      fi
+    # notarize dmg
+    - |+
+      if xcrun notarytool submit $DMG_NAME --team-id ${GAMS_CODESIGN_IDENTITY} --apple-id ${GAMS_APPLEID_USER} --password ${GAMS_APPLEID_PASSWORD} --wait --timeout 30m
+      then
+        echo "Notarization successful"
+      else
+        echo "Notarization failed"
+        exit 1
+      fi
+    - |+
+      if xcrun stapler staple $DMG_NAME
+      then
+        echo "Stapled ticket to app bundle"
+      else
+        echo "Stapling failed"
+        exit 1
+      fi
+  artifacts:
+    name: "model-inspector-dac-x86_64"
+    paths: ['model-inspector-dac-x86_64.dmg']
+    expose_as: 'model-inspector-dac-x86_64'
+    expire_in: 1 days
+
 pack-deg:
   stage: pack
   tags: [macos]
@@ -13,6 +62,34 @@ pack-deg:
     - hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"  
     - codesign --verify --verbose modelinspector.app
     - mv "modelinspector.dmg" "$WORKSPACE/model-inspector-deg-x86_64.dmg"
+    - cd ${WORKSPACE}
+    - DMG_NAME=model-inspector-deg-x86_64.dmg
+    # leave pipeline if it is not a Release, Release Tag or RC build
+    - |+
+      if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
+        echo "Notarization skipped!" > upload.log
+        echo "Notarization skipped!" > report.xml
+        cat upload.log
+        cat report.xml
+        exit 0;
+      fi
+    # notarize dmg
+    - |+
+      if xcrun notarytool submit $DMG_NAME --team-id ${GAMS_CODESIGN_IDENTITY} --apple-id ${GAMS_APPLEID_USER} --password ${GAMS_APPLEID_PASSWORD} --wait --timeout 30m
+      then
+        echo "Notarization successful"
+      else
+        echo "Notarization failed"
+        exit 1
+      fi
+    - |+
+      if xcrun stapler staple $DMG_NAME
+      then
+        echo "Stapled ticket to app bundle"
+      else
+        echo "Stapling failed"
+        exit 1
+      fi
   artifacts:
     name: "model-inspector-deg-x86_64"
     paths: ['model-inspector-deg-x86_64.dmg']

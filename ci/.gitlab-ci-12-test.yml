@@ -1,3 +1,31 @@
+test-dac:
+  stage: test
+  tags: [macos-arm64]
+  allow_failure: true
+  dependencies: [install-gams-dac,build-dac]
+  variables:
+    qtpath: /Users/gitlab/Qt/6.4.3/macos/bin
+  script:
+    - GAMS_PATH=$(pwd)/gamsdist
+    - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
+    - echo $PF_GAMS_LICENSE > $GAMS_PATH/gamslice.txt
+    - cd build && mkdir reports
+    - REPORTS_DIR=$(pwd)/reports
+    - |+
+      set +e
+      cd tests/bin
+      for f in *
+      do
+        ./$f -xunitxml -o $REPORTS_DIR/$f.xml
+      done
+  artifacts:
+    name: unittest-results-dac
+    paths: 
+      - build/reports/*
+      - build/src/bin/*
+    reports:
+      junit: build/reports/*
+
 test-deg:
   stage: test
   tags: [macos]
