@@ -34,7 +34,6 @@ struct Constant
     const QString Statistic = "Statistic";
     const QString Jaccobian = "Jaccobian";
     const QString MinMax = "Blockpic Scaling";
-    const QString SymbolView = "Symbol View";
     const QString BPOverview = "Blockpic Overview";
     const QString BPCount    = "Blockpic Count";
     const QString BPAverage  = "Blockpic Average";

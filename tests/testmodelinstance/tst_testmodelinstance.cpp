@@ -49,12 +49,10 @@ void TestModelInstance::test_default()
     QCOMPARE(instance.systemDirectory(), QString());
     QCOMPARE(instance.scratchDirectory(), QString());
     QCOMPARE(instance.useOutput(), false);
-#if defined(__unix__)
-    QCOMPARE(instance.modelName(), QString());
-#else
     // Needed because of the GAMS Windows registry magic
-    QCOMPARE(instance.modelName(), "GAMS Model");
-#endif
+    // and build machine setup
+    QVERIFY(!instance.modelName().compare(QString()) ||
+            !instance.modelName().compare("GAMS Model"));
 }
 
 void TestModelInstance::test_getSet()

@@ -306,7 +306,9 @@ void ModelInspector::createNewSymbolView()
     view->setupView(mModelInstance);
     int page = ui->stackedWidget->addWidget(view);
     mCustomViews[page] = view;
-    mSectionModel->appendCustomView(constant->SymbolView, ViewDataType::Symbols, page);
+    QString pageName = ui->minMaxFrame->selectedEquations().constFirst()->name() + " + " +
+                       ui->minMaxFrame->selectedVariables().constFirst()->name();
+    mSectionModel->appendCustomView(pageName, ViewDataType::Symbols, page);
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Custom);
     connect(view, &MinMaxTableViewFrame::filtersChanged,
