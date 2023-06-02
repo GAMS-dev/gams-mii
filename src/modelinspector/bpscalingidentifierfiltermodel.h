@@ -1,5 +1,5 @@
-#ifndef MINMAXIDENTIFIERFILTERMODEL_H
-#define MINMAXIDENTIFIERFILTERMODEL_H
+#ifndef BPSCALINGIDENTIFIERFILTERMODEL_H
+#define BPSCALINGIDENTIFIERFILTERMODEL_H
 
 #include <QSharedPointer>
 #include <QSortFilterProxyModel>
@@ -13,12 +13,12 @@ namespace modelinspector {
 
 class AbstractModelInstance;
 
-class MinMaxIdentifierFilterModel : public QSortFilterProxyModel
+class BPScalingIdentifierFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
 public:
-    MinMaxIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+    BPScalingIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
                                 QObject *parent = nullptr);
 
     void setIdentifierFilter(const IdentifierFilter &filter, const Aggregation &appliedAggregation);
@@ -40,4 +40,4 @@ private:
 }
 }
 
-#endif // MINMAXIDENTIFIERFILTERMODEL_H
+#endif // BPSCALINGIDENTIFIERFILTERMODEL_H

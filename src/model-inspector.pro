@@ -77,7 +77,8 @@ SOURCES += \
     modelinspector/abstracttableviewframe.cpp \
     modelinspector/aggregation.cpp \
     modelinspector/aggregationdialog.cpp \
-    modelinspector/blockpicviewframe.cpp \
+    modelinspector/bpscalingidentifierfiltermodel.cpp \
+    modelinspector/bpviewframe.cpp \
     modelinspector/columnrowfiltermodel.cpp \
     modelinspector/comprehensivetablemodel.cpp \
     modelinspector/datahandler.cpp \
@@ -90,8 +91,6 @@ SOURCES += \
     modelinspector/labelfiltermodel.cpp \
     modelinspector/labelfilterwidget.cpp \
     modelinspector/labeltreeitem.cpp \
-    modelinspector/minmaxidentifierfiltermodel.cpp \
-    modelinspector/minmaxtableviewframe.cpp \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
     modelinspector/modelinstancetableview.cpp \
@@ -101,7 +100,6 @@ SOURCES += \
     modelinspector/sectiontreemodel.cpp \
     modelinspector/sectiontreeview.cpp \
     modelinspector/standardtableviewframe.cpp \
-    modelinspector/statisticedit.cpp \
     modelinspector/symbol.cpp \
     modelinspector/symbolmodelinstancetablemodel.cpp \
     modelinspector/symbolviewframe.cpp \
@@ -121,7 +119,8 @@ HEADERS += \
     modelinspector/abstracttableviewframe.h \
     modelinspector/aggregation.h \
     modelinspector/aggregationdialog.h \
-    modelinspector/blockpicviewframe.h \
+    modelinspector/bpscalingidentifierfiltermodel.h \
+    modelinspector/bpviewframe.h \
     modelinspector/columnrowfiltermodel.h \
     modelinspector/common.h \
     modelinspector/comprehensivetablemodel.h \
@@ -135,8 +134,6 @@ HEADERS += \
     modelinspector/labelfiltermodel.h \
     modelinspector/labelfilterwidget.h \
     modelinspector/labeltreeitem.h \
-    modelinspector/minmaxidentifierfiltermodel.h \
-    modelinspector/minmaxtableviewframe.h \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
     modelinspector/modelinstancetableview.h \
@@ -146,7 +143,6 @@ HEADERS += \
     modelinspector/sectiontreemodel.h \
     modelinspector/sectiontreeview.h \
     modelinspector/standardtableviewframe.h \
-    modelinspector/statisticedit.h \
     modelinspector/symbol.h \
     modelinspector/symbolmodelinstancetablemodel.h \
     modelinspector/symbolviewframe.h \

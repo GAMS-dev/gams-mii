@@ -1,11 +1,11 @@
-#include "minmaxidentifierfiltermodel.h"
+#include "bpscalingidentifierfiltermodel.h"
 #include "abstractmodelinstance.h"
 
 namespace gams {
 namespace studio{
 namespace modelinspector {
 
-MinMaxIdentifierFilterModel::MinMaxIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+BPScalingIdentifierFilterModel::BPScalingIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
                                                          QObject *parent)
     : QSortFilterProxyModel(parent)
     , mModelInstance(modelInstance)
@@ -13,7 +13,7 @@ MinMaxIdentifierFilterModel::MinMaxIdentifierFilterModel(QSharedPointer<Abstract
 
 }
 
-void MinMaxIdentifierFilterModel::setIdentifierFilter(const IdentifierFilter &filter,
+void BPScalingIdentifierFilterModel::setIdentifierFilter(const IdentifierFilter &filter,
                                                       const Aggregation &appliedAggregation)
 {
     mIdentifierFilter = filter;
@@ -21,7 +21,7 @@ void MinMaxIdentifierFilterModel::setIdentifierFilter(const IdentifierFilter &fi
     invalidateFilter();
 }
 
-bool MinMaxIdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
+bool BPScalingIdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
                                                       const QModelIndex &sourceParent) const
 {
     Q_UNUSED(sourceParent);
@@ -44,7 +44,7 @@ bool MinMaxIdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
     return true;
 }
 
-bool MinMaxIdentifierFilterModel::filterAcceptsRow(int sourceRow,
+bool BPScalingIdentifierFilterModel::filterAcceptsRow(int sourceRow,
                                                    const QModelIndex &sourceParent) const
 {
     Q_UNUSED(sourceParent);

@@ -90,9 +90,7 @@ void TestSectionTreeItem::test_setTypeText()
     SectionTreeItem item("default");
     item.setType(constant->Jaccobian);
     QCOMPARE(item.type(), ViewDataType::Jaccobian);
-    item.setType(constant->Statistic);
-    QCOMPARE(item.type(), ViewDataType::Statistic);
-    item.setType(constant->MinMax);
+    item.setType(constant->BPScaling);
     QCOMPARE(item.type(), ViewDataType::BP_Scaling);
     item.setType("lala");
     QCOMPARE(item.type(), ViewDataType::Unknown);

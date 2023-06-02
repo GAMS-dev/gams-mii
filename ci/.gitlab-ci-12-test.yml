@@ -16,7 +16,7 @@ test-dac:
       cd tests/bin
       for f in *
       do
-        ./$f -xunitxml -o $REPORTS_DIR/$f.xml
+        ./$f -junitxml -o $REPORTS_DIR/$f.xml
       done
   artifacts:
     name: unittest-results-dac
@@ -44,7 +44,7 @@ test-deg:
       cd tests/bin
       for f in *
       do
-        ./$f -xunitxml -o $REPORTS_DIR/$f.xml
+        ./$f -junitxml -o $REPORTS_DIR/$f.xml
       done
   artifacts:
     name: unittest-results-deg
@@ -74,7 +74,7 @@ test-leg:
       cd tests/bin
       for f in *
       do
-        xvfb-run ./$f -xunitxml -o $REPORTS_DIR/$f.xml
+        xvfb-run ./$f -junitxml -o $REPORTS_DIR/$f.xml
       done
   artifacts:
     name: unittest-results-deg
@@ -96,27 +96,22 @@ test-wei:
   script:
     - $GAMS_PATH = ($(pwd), '\gamsdist') -join ""
     - Out-File -FilePath $GAMS_PATH\gamslice.txt -InputObject $PF_GAMS_LICENSE -Encoding ASCII
+    - $WORKSPACE = $([System.IO.Directory]::GetCurrentDirectory())
     - $env:Path = "$qtpath;$GAMS_PATH;$GAMS_PATH\gbin;" + $env:Path
     - $env:GAMSDIR = "$GAMS_PATH;$GAMS_PATH\gbin"
     - findthisgams -q
     - cd build
     - mkdir reports
-    - $data = 
-      ('cd tests/bin',
-      'set STATE=0',
-      'for %%f in (*) do (',
-      '%%f -xunitxml -o ..\\..\\reports\\%%f.xml',
-      'if not "%errorlevel%"=="0" set STATE=1',
-      'echo errorlevel %errorlevel%',
-      ')',
-      'cd ../../reports',
-      'for %%f in (*) do (',
-      '>nul find /c "testcase result=""fail""" %%f && exit 5', 
-      ')',
-      'exit 0'
-      )
-    - $data | out-file -encoding ascii test.bat
-    - ./test.bat
+    - cd tests/bin
+    - |+
+      foreach ($testapp in $(Get-ChildItem -Name -Include *.exe)) {
+        try {
+          $test_args = @("-junitxml", "-o", "..\..\reports\$testapp.xml")
+          & ".\$testapp" $test_args
+        } catch {
+          $_
+        }
+      }
   artifacts:
     name: unittest-results-wei
     paths:

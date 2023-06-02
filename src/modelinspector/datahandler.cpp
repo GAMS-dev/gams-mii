@@ -173,10 +173,10 @@ public:
     }
 };
 
-class MinMaxDataProvider final : public DataHandler::AbstractDataProvider
+class BPScalingProvider final : public DataHandler::AbstractDataProvider
 {
 public:
-    MinMaxDataProvider(DataHandler *dataHandler,
+    BPScalingProvider(DataHandler *dataHandler,
                        AbstractModelInstance& modelInstance,
                        QSharedPointer<AbstractViewConfiguration> viewConfig,
                        DataHandler::CoefficientCount& negPosCount)
@@ -207,7 +207,7 @@ public:
         mDataMaximum = std::numeric_limits<double>::lowest();
     }
 
-    MinMaxDataProvider(const MinMaxDataProvider& other)
+    BPScalingProvider(const BPScalingProvider& other)
         : DataHandler::AbstractDataProvider(other)
         , mHorizontalHeader(other.mHorizontalHeader)
         , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
@@ -221,7 +221,7 @@ public:
         }
     }
 
-    MinMaxDataProvider(MinMaxDataProvider&& other) noexcept
+    BPScalingProvider(BPScalingProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(other)
         , mHorizontalHeader(other.mHorizontalHeader)
         , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
@@ -233,7 +233,7 @@ public:
         other.mAdditionalSectionLabels.clear();
     }
 
-    ~MinMaxDataProvider()
+    ~BPScalingProvider()
     {
         for (int r=0; r<mRowCount; ++r) {
             delete [] mDataMatrix[r];
@@ -269,7 +269,7 @@ public:
         return QVariant();
     }
 
-    auto& operator=(const MinMaxDataProvider& other)
+    auto& operator=(const BPScalingProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
             delete [] mDataMatrix[r];
@@ -286,7 +286,7 @@ public:
         return *this;
     }
 
-    auto& operator=(MinMaxDataProvider&& other) noexcept
+    auto& operator=(BPScalingProvider&& other) noexcept
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
@@ -1385,8 +1385,8 @@ DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int view)
     switch (mDataCache[view]->viewConfig()->viewType()) {
     case ViewDataType::BP_Scaling:
     {
-        auto aggregator = static_cast<MinMaxDataProvider*>(mDataCache[view].get());
-        return new MinMaxDataProvider(*aggregator);
+        auto aggregator = static_cast<BPScalingProvider*>(mDataCache[view].get());
+        return new BPScalingProvider(*aggregator);
     }
     case ViewDataType::Symbols:
     {
@@ -1421,7 +1421,7 @@ QSharedPointer<DataHandler::AbstractDataProvider> DataHandler::newProvider(QShar
     }
     switch (viewConfig->viewType()) {
     case ViewDataType::BP_Scaling:
-        return QSharedPointer<AbstractDataProvider>(new MinMaxDataProvider(this,
+        return QSharedPointer<AbstractDataProvider>(new BPScalingProvider(this,
                                                                            mModelInstance,
                                                                            viewConfig,
                                                                            *mCoeffCount));

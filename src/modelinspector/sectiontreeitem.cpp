@@ -94,11 +94,9 @@ void SectionTreeItem::setType(ViewDataType type) {
 
 void SectionTreeItem::setType(const QString &text)
 {
-    if (text == constant->Statistic)
-        mType = ViewDataType::Statistic;
-    else if (text == constant->Jaccobian)
+    if (text == constant->Jaccobian)
         mType = ViewDataType::Jaccobian;
-    else if (text == constant->MinMax)
+    else if (text == constant->BPScaling)
         mType = ViewDataType::BP_Scaling;
     else if (text == constant->BPOverview)
         mType = ViewDataType::BP_Overview;

@@ -152,17 +152,12 @@ void SectionTreeModel::loadModelData()
 
     SectionTreeItem *mainItem = nullptr;
     for (int i=0; i<constant->PredefinedViewTexts.size(); ++i) {
-        if (constant->PredefinedViewTexts.at(i) == constant->Statistic) {
-            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
-                                           (int)ViewDataType::Statistic,
-                                           viewItem);
-            mainItem->setType(ViewDataType::Statistic);
-        } else if (constant->PredefinedViewTexts.at(i) == constant->Jaccobian)  {
+        if (constant->PredefinedViewTexts.at(i) == constant->Jaccobian)  {
             mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
                                            (int)ViewDataType::Jaccobian,
                                            viewItem);
             mainItem->setType(constant->PredefinedViewTexts.at(i));
-        } else if (constant->PredefinedViewTexts.at(i) == constant->MinMax) {
+        } else if (constant->PredefinedViewTexts.at(i) == constant->BPScaling) {
             mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
                                            (int)ViewDataType::BP_Scaling,
                                            viewItem);

@@ -307,7 +307,7 @@ void MainWindow::updateModelInstance()
 
 void MainWindow::viewChanged(int viewType)
 {
-    if (viewType == (int)ViewDataType::Statistic || viewType == (int)ViewDataType::Unknown) {
+    if (viewType == (int)ViewDataType::Unknown) {
         ui->action_Search->setEnabled(false);
         ui->searchEdit->setEnabled(false);
         ui->actionFilters->setEnabled(false);

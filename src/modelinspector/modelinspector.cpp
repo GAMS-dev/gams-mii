@@ -123,7 +123,6 @@ ViewActionStates ModelInspector::viewActionStates() const
 void ModelInspector::loadModelInstance(bool loadModel)
 {
     setupModelInstanceView(loadModel);
-    ui->statisticEdit->showStatistic(mModelInstance);
     emit newLogMessage(mModelInstance->logMessages());
 }
 
@@ -232,37 +231,24 @@ void ModelInspector::resetColumnRowFilter()
 
 void ModelInspector::zoomIn()
 {
-    if (qApp->focusWidget() == ui->statisticEdit) {
-        ui->statisticEdit->zoomIn();
-    } else {
-        auto frame = currentView();
-        if (frame) frame->zoomIn();
-    }
+    auto frame = currentView();
+    if (frame) frame->zoomIn();
 }
 
 void ModelInspector::zoomOut()
 {
-    if (qApp->focusWidget() == ui->statisticEdit) {
-        ui->statisticEdit->zoomOut();
-    } else {
-        auto frame = currentView();
-        if (frame) frame->zoomOut();
-    }
+    auto frame = currentView();
+    if (frame) frame->zoomOut();
 }
 
 void ModelInspector::resetZoom()
 {
-    if (qApp->focusWidget() == ui->statisticEdit) {
-        ui->statisticEdit->resetZoom();
-    } else {
-        auto frame = currentView();
-        if (frame) frame->resetZoom();
-    }
+    auto frame = currentView();
+    if (frame) frame->resetZoom();
 }
 
 void ModelInspector::resetDefaultViews()
 {
-    ui->statisticEdit->resetZoom();
     ui->jaccFrame->reset();
     ui->jaccFrame->resetZoom();
     ui->minMaxFrame->reset();
@@ -282,9 +268,9 @@ void ModelInspector::saveModelView()
     int page = ui->stackedWidget->addWidget(clone);
     mCustomViews[page] = clone;
     if (clone->type() == ViewDataType::BP_Scaling) {
-        connect(static_cast<MinMaxTableViewFrame*>(clone), &MinMaxTableViewFrame::filtersChanged,
+        connect(static_cast<BPScalingViewFrame*>(clone), &BPScalingViewFrame::filtersChanged,
                 this, &ModelInspector::filtersChanged);
-        connect(static_cast<MinMaxTableViewFrame*>(clone), &MinMaxTableViewFrame::newSymbolViewRequested,
+        connect(static_cast<BPScalingViewFrame*>(clone), &BPScalingViewFrame::newSymbolViewRequested,
                 this, &ModelInspector::createNewSymbolView);
     }
     mSectionModel->appendCustomView(text, view->type(), page);
@@ -294,24 +280,27 @@ void ModelInspector::saveModelView()
 
 void ModelInspector::createNewSymbolView()
 {
-    auto currentMinMax = currentView();
+    auto currentMinMax = static_cast<BPScalingViewFrame*>(currentView());
     auto view = new SymbolViewFrame(ui->stackedWidget->count(), mModelInstance,
                                     ui->stackedWidget, currentMinMax->windowFlags());
     view->viewConfig()->currentValueFilter().UseAbsoluteValues =
             currentMinMax->viewConfig()->currentValueFilter().UseAbsoluteValues;
     view->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal =
             currentMinMax->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal;
-    view->viewConfig()->updateIdentifierFilter(ui->minMaxFrame->selectedEquations(),
-                                               ui->minMaxFrame->selectedVariables());
+    view->viewConfig()->updateIdentifierFilter(currentMinMax->selectedEquations(),
+                                               currentMinMax->selectedVariables());
     view->setupView(mModelInstance);
     int page = ui->stackedWidget->addWidget(view);
     mCustomViews[page] = view;
-    QString pageName = ui->minMaxFrame->selectedEquations().constFirst()->name() + " + " +
-                       ui->minMaxFrame->selectedVariables().constFirst()->name();
+    QString pageName = "Symbol View";
+    if (!currentMinMax->selectedEquations().isEmpty() && !currentMinMax->selectedVariables().isEmpty()) {
+        pageName = currentMinMax->selectedEquations().constFirst()->name() + " + " +
+                   currentMinMax->selectedVariables().constFirst()->name();
+    }
     mSectionModel->appendCustomView(pageName, ViewDataType::Symbols, page);
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Custom);
-    connect(view, &MinMaxTableViewFrame::filtersChanged,
+    connect(view, &BPScalingViewFrame::filtersChanged,
             this, &ModelInspector::filtersChanged);
     view->updateView();
 }
@@ -379,11 +368,11 @@ void ModelInspector::setupConnections()
 {
     connect(ui->sectionView, &SectionTreeView::currentItemChanged,
             this, &ModelInspector::setCurrentView);
-    connect(ui->minMaxFrame, &MinMaxTableViewFrame::filtersChanged,
+    connect(ui->minMaxFrame, &BPScalingViewFrame::filtersChanged,
             this, &ModelInspector::filtersChanged);
     connect(ui->sectionView, &SectionTreeView::saveViewTriggered,
             this, &ModelInspector::saveModelView);
-    connect(ui->minMaxFrame, &MinMaxTableViewFrame::newSymbolViewRequested,
+    connect(ui->minMaxFrame, &BPScalingViewFrame::newSymbolViewRequested,
             this, &ModelInspector::createNewSymbolView);
     connect(ui->sectionView, &SectionTreeView::removeViewTriggered,
             this, &ModelInspector::removeModelView);

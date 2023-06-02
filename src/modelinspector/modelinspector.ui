@@ -93,63 +93,8 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
-      <widget class="QWidget" name="statisticPage">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_9">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QFrame" name="frame_4">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="gams::studio::modelinspector::StatisticEdit" name="statisticEdit"/>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="jaccPage">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -203,7 +148,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="gams::studio::modelinspector::MinMaxTableViewFrame" name="minMaxFrame">
+         <widget class="gams::studio::modelinspector::BPScalingViewFrame" name="minMaxFrame">
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
           </property>
@@ -229,7 +174,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="gams::studio::modelinspector::BlockpicOverviewViewFrame" name="bpOverviewFrame">
+         <widget class="gams::studio::modelinspector::BPOverviewViewFrame" name="bpOverviewFrame">
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
           </property>
@@ -255,7 +200,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="gams::studio::modelinspector::BlockpicCountViewFrame" name="bpCountFrame">
+         <widget class="gams::studio::modelinspector::BPCountViewFrame" name="bpCountFrame">
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
           </property>
@@ -281,7 +226,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="gams::studio::modelinspector::BlockpicAverageViewFrame" name="bpAverageFrame">
+         <widget class="gams::studio::modelinspector::BPAverageViewFrame" name="bpAverageFrame">
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
           </property>
@@ -304,38 +249,33 @@
    <header>modelinspector/sectiontreeview.h</header>
   </customwidget>
   <customwidget>
-   <class>gams::studio::modelinspector::StatisticEdit</class>
-   <extends>QTextEdit</extends>
-   <header>modelinspector/statisticedit.h</header>
-  </customwidget>
-  <customwidget>
    <class>gams::studio::modelinspector::JaccTableViewFrame</class>
    <extends>QFrame</extends>
    <header>modelinspector/standardtableviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>gams::studio::modelinspector::MinMaxTableViewFrame</class>
+   <class>gams::studio::modelinspector::BPScalingViewFrame</class>
    <extends>QFrame</extends>
-   <header>modelinspector/minmaxtableviewframe.h</header>
+   <header>modelinspector/bpviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>gams::studio::modelinspector::BlockpicOverviewViewFrame</class>
+   <class>gams::studio::modelinspector::BPOverviewViewFrame</class>
    <extends>QFrame</extends>
-   <header>modelinspector/blockpicviewframe.h</header>
+   <header>modelinspector/bpviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>gams::studio::modelinspector::BlockpicCountViewFrame</class>
+   <class>gams::studio::modelinspector::BPCountViewFrame</class>
    <extends>QFrame</extends>
-   <header>modelinspector/blockpicviewframe.h</header>
+   <header>modelinspector/bpviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>gams::studio::modelinspector::BlockpicAverageViewFrame</class>
+   <class>gams::studio::modelinspector::BPAverageViewFrame</class>
    <extends>QFrame</extends>
-   <header>modelinspector/blockpicviewframe.h</header>
+   <header>modelinspector/bpviewframe.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

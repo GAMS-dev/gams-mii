@@ -50,14 +50,14 @@ protected:
     int mView;
 };
 
-class BlockpicOverviewTableModel final : public ComprehensiveTableModel
+class BPOverviewTableModel final : public ComprehensiveTableModel
 {
     Q_OBJECT
 
 public:
-    explicit BlockpicOverviewTableModel(QObject *parent = nullptr);
+    explicit BPOverviewTableModel(QObject *parent = nullptr);
 
-    explicit BlockpicOverviewTableModel(int view,
+    explicit BPOverviewTableModel(int view,
                                         QSharedPointer<AbstractModelInstance> modelInstance,
                                         QObject *parent = nullptr);
 
@@ -67,28 +67,28 @@ public:
                         int role = Qt::DisplayRole) const override;
 };
 
-class BlockpicCountTableModel final : public ComprehensiveTableModel
+class BPCountTableModel final : public ComprehensiveTableModel
 {
     Q_OBJECT
 
 public:
-    explicit BlockpicCountTableModel(QObject *parent = nullptr);
+    explicit BPCountTableModel(QObject *parent = nullptr);
 
-    explicit BlockpicCountTableModel(int view,
+    explicit BPCountTableModel(int view,
                                      QSharedPointer<AbstractModelInstance> modelInstance,
                                      QObject *parent = nullptr);
 
     QVariant data(const QModelIndex &index, int role) const override;
 };
 
-class BlockpicAverageTableModel final : public ComprehensiveTableModel
+class BPAverageTableModel final : public ComprehensiveTableModel
 {
     Q_OBJECT
 
 public:
-    explicit BlockpicAverageTableModel(QObject *parent = nullptr);
+    explicit BPAverageTableModel(QObject *parent = nullptr);
 
-    explicit BlockpicAverageTableModel(int view,
+    explicit BPAverageTableModel(int view,
                                        QSharedPointer<AbstractModelInstance> modelInstance,
                                        QObject *parent = nullptr);
 

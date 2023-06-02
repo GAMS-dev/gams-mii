@@ -31,18 +31,16 @@ struct Constant
     const QStringList PredefinedHeader { Level, Lower, Marginal, Scale, Upper };
     const int PredefinedHeaderLength = PredefinedHeader.size();
 
-    const QString Statistic = "Statistic";
     const QString Jaccobian = "Jaccobian";
-    const QString MinMax = "Blockpic Scaling";
+    const QString BPScaling = "Blockpic Scaling";
     const QString BPOverview = "Blockpic Overview";
     const QString BPCount    = "Blockpic Count";
     const QString BPAverage  = "Blockpic Average";
-    const QStringList PredefinedViewTexts = { Statistic,
-                                              Jaccobian,
+    const QStringList PredefinedViewTexts = { Jaccobian,
                                               BPOverview,
                                               BPCount,
                                               BPAverage,
-                                              MinMax
+                                              BPScaling
                                               };
 };
 
@@ -78,13 +76,12 @@ enum class ViewType
 
 enum class ViewDataType
 {
-    Statistic           = 0,
-    Jaccobian           = 1,
-    BP_Scaling          = 2,
-    BP_Overview         = 3,
-    BP_Count            = 4,
-    BP_Average          = 5,
-    Symbols             = 7,
+    Jaccobian           = 0,
+    BP_Scaling          = 1,
+    BP_Overview         = 2,
+    BP_Count            = 3,
+    BP_Average          = 4,
+    Symbols             = 5,
     Unknown             = 127
 };
 

@@ -118,13 +118,13 @@ void ComprehensiveTableModel::setView(int view)
     mView = view;
 }
 
-BlockpicOverviewTableModel::BlockpicOverviewTableModel(QObject *parent)
+BPOverviewTableModel::BPOverviewTableModel(QObject *parent)
     : ComprehensiveTableModel(parent)
 {
 
 }
 
-BlockpicOverviewTableModel::BlockpicOverviewTableModel(int view,
+BPOverviewTableModel::BPOverviewTableModel(int view,
                                                        QSharedPointer<AbstractModelInstance> modelInstance,
                                                        QObject *parent)
     : ComprehensiveTableModel(view, modelInstance, parent)
@@ -132,7 +132,7 @@ BlockpicOverviewTableModel::BlockpicOverviewTableModel(int view,
 
 }
 
-QVariant BlockpicOverviewTableModel::data(const QModelIndex &index, int role) const
+QVariant BPOverviewTableModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::TextAlignmentRole) {
         return Qt::AlignRight;
@@ -143,7 +143,7 @@ QVariant BlockpicOverviewTableModel::data(const QModelIndex &index, int role) co
     return QVariant();
 }
 
-QVariant BlockpicOverviewTableModel::headerData(int section,
+QVariant BPOverviewTableModel::headerData(int section,
                                                 Qt::Orientation orientation,
                                                 int role) const
 {
@@ -154,13 +154,13 @@ QVariant BlockpicOverviewTableModel::headerData(int section,
     return QAbstractItemModel::headerData(section, orientation, role);
 }
 
-BlockpicCountTableModel::BlockpicCountTableModel(QObject *parent)
+BPCountTableModel::BPCountTableModel(QObject *parent)
     : ComprehensiveTableModel(parent)
 {
 
 }
 
-BlockpicCountTableModel::BlockpicCountTableModel(int view,
+BPCountTableModel::BPCountTableModel(int view,
                                                  QSharedPointer<AbstractModelInstance> modelInstance,
                                                  QObject *parent)
     : ComprehensiveTableModel(view, modelInstance, parent)
@@ -168,7 +168,7 @@ BlockpicCountTableModel::BlockpicCountTableModel(int view,
 
 }
 
-QVariant BlockpicCountTableModel::data(const QModelIndex &index, int role) const
+QVariant BPCountTableModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::TextAlignmentRole) {
         return Qt::AlignRight;
@@ -183,13 +183,13 @@ QVariant BlockpicCountTableModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-BlockpicAverageTableModel::BlockpicAverageTableModel(QObject *parent)
+BPAverageTableModel::BPAverageTableModel(QObject *parent)
     : ComprehensiveTableModel(parent)
 {
 
 }
 
-BlockpicAverageTableModel::BlockpicAverageTableModel(int view,
+BPAverageTableModel::BPAverageTableModel(int view,
                                                      QSharedPointer<AbstractModelInstance> modelInstance,
                                                      QObject *parent)
     : ComprehensiveTableModel(view, modelInstance, parent)
@@ -197,7 +197,7 @@ BlockpicAverageTableModel::BlockpicAverageTableModel(int view,
 
 }
 
-QVariant BlockpicAverageTableModel::data(const QModelIndex &index, int role) const
+QVariant BPAverageTableModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::TextAlignmentRole) {
         return Qt::AlignRight;
