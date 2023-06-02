@@ -70,25 +70,9 @@ public:
 
     const QVector<Symbol*>& variables() const override;
 
-    int coefficents() const override;
-
-    int positiveCoefficents() const override;
-
-    int negativeCoefficents() const override;
-
-    int nonLinearCoefficents() const override;
-
-    Range matrixRange() const override;
-
-    Range objectiveRange() const override;
-
-    Range boundsRange() const override;
-
     void variableLowerBounds(double *bounds) override;
 
     void variableUpperBounds(double *bounds) override;
-
-    Range rhsRange() const override;
 
     double rhs(int row) const override;
 

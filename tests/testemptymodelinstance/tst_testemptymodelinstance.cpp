@@ -76,14 +76,6 @@ void TestEmptyModelInstance::test_default()
     QCOMPARE(instance.variableRowCount(), 0);
     //QCOMPARE(instance.variable(0), Symbol());
     QVERIFY(instance.variables().isEmpty());
-    QCOMPARE(instance.coefficents(), 0);
-    QCOMPARE(instance.positiveCoefficents(), 0);
-    QCOMPARE(instance.negativeCoefficents(), 0);
-    QCOMPARE(instance.nonLinearCoefficents(), 0);
-    QCOMPARE(instance.matrixRange(), Range());
-    QCOMPARE(instance.objectiveRange(), Range());
-    QCOMPARE(instance.boundsRange(), Range());
-    QCOMPARE(instance.rhsRange(), Range());
     QCOMPARE(instance.longestEquationText(), QString());
     QCOMPARE(instance.longestVariableText(), QString());
     QCOMPARE(instance.maximumEquationDimension(), 0);

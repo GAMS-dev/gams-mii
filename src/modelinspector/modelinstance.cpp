@@ -37,6 +37,7 @@ ModelInstance::ModelInstance(const QString &workspace,
     , mDataHandler(new DataHandler(*this))
 {
     initialize();
+    loadScratchData();
 }
 
 ModelInstance::~ModelInstance()
@@ -57,60 +58,6 @@ QString ModelInstance::modelName() const
         return name;
     }
     return QString();
-}
-
-int ModelInstance::coefficents() const
-{
-    return gmoNZ(mGMO);
-}
-
-int ModelInstance::positiveCoefficents() const
-{
-    const int columns = variableRowCount();
-    int *colidx = new int[columns];
-    double *jacval = new double[columns];
-    int *nlflag = new int[columns];
-    int nz;
-    int nlnz;
-    int positiveCoeffs = 0;
-    for (int row=0; row<equationRowCount(); ++row) {
-        gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
-        for (int idx = 0; idx<nz+nlnz; ++idx) {
-            if (jacval[idx] >= 0)
-                ++positiveCoeffs;
-        }
-    }
-    delete [] colidx;
-    delete [] jacval;
-    delete [] nlflag;
-    return positiveCoeffs;
-}
-
-int ModelInstance::negativeCoefficents() const
-{
-    const int columns = variableRowCount();
-    int *colidx = new int[columns];
-    double *jacval = new double[columns];
-    int *nlflag = new int[columns];
-    int nz;
-    int nlnz;
-    int negativeCoeffs = 0;
-    for (int row=0; row<equationRowCount(); ++row) {
-        gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
-        for (int idx = 0; idx<nz+nlnz; ++idx) {
-            if (jacval[idx] < 0)
-                ++negativeCoeffs;
-        }
-    }
-    delete [] colidx;
-    delete [] jacval;
-    delete [] nlflag;
-    return negativeCoeffs;
-}
-
-int ModelInstance::nonLinearCoefficents() const
-{
-    return gmoNLNZ(mGMO);
 }
 
 Symbol* ModelInstance::equation(int sectionIndex) const
@@ -248,6 +195,7 @@ void ModelInstance::loadScratchData()
     mLogMessages << "CTRL File: " + ctrlFile;
     if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str())) {
         mLogMessages << "ERROR: Could not initialize model instance";
+        mState = Error;
         return;
     }
 
@@ -255,6 +203,7 @@ void ModelInstance::loadScratchData()
     gmoRegisterEnvironment(mGMO, mGEV, msg);
     if (gmoLoadDataLegacy(mGMO, msg)) {
         mLogMessages << "ERROR: Could not load model instance (input): " + QString(msg);
+        mState = Error;
         return;
     }
 
@@ -264,6 +213,7 @@ void ModelInstance::loadScratchData()
         gmoNameSolFileSet(mGMO, solFile.toStdString().c_str());
         if (gmoLoadSolutionLegacy(mGMO)) {
             mLogMessages << "ERROR: Could not load model instance (output): " + QString(msg);
+            mState = Error;
             return;
         }
     }
@@ -274,6 +224,7 @@ void ModelInstance::loadScratchData()
     mDCT = (dctHandle_t)gmoDict(mGMO);
     if (!mDCT) {
         mLogMessages << "ERROR: Could not load dictionary file.";
+        mState = Error;
         return;
     }
 
@@ -331,10 +282,11 @@ Symbol* ModelInstance::loadSymbol(int index)
     sym->setEntries(dctSymEntries(mDCT, index));
 
     char symbolName[GMS_SSSIZE];
-    if (dctSymName(mDCT, index, symbolName, GMS_SSSIZE))
+    if (dctSymName(mDCT, index, symbolName, GMS_SSSIZE)) {
         sym->setName("##ERROR##");
-    else
+    } else {
         sym->setName(symbolName);
+    }
 
     auto type = dctSymType(mDCT, index);
     if (type == dcteqnSymType) {
@@ -423,108 +375,9 @@ const QVector<Symbol*>& ModelInstance::symbols(Symbol::Type type) const
 
 void ModelInstance::loadData()
 {
-    loadScratchData();
     loadSymbols();
     loadLabels();
     mDataHandler->loadJaccobian();
-}
-
-Range ModelInstance::matrixRange() const
-{
-    gmoObjStyleSet(mGMO, gmoObjType_Fun);
-    Range range;
-    const int columns = variableRowCount();
-    int *colidx = new int[columns];
-    double *jacval = new double[columns];
-    int *nlflag = new int[columns];
-    int nz;
-    int nlnz;
-
-    for (int row=0; row<equationRowCount(); ++row) {
-        gmoGetRowSparse(mGMO, row, colidx, jacval, nlflag, &nz, &nlnz);
-        for (int idx = 0; idx<nz+nlnz; ++idx) {
-            if (row == 0 && idx == 0) {
-                range.first = jacval[idx];
-                range.second = jacval[idx];
-            } else {
-                range.first = std::min(range.first, jacval[idx]);
-                range.second = std::max(range.second, jacval[idx]);
-            }
-        }
-    }
-
-    delete [] colidx;
-    delete [] jacval;
-    delete [] nlflag;
-    gmoObjStyleSet(mGMO, gmoObjType_Var);
-    return range;
-}
-
-Range ModelInstance::objectiveRange() const
-{
-    gmoObjStyleSet(mGMO, gmoObjType_Fun);
-    Range range;
-    const int columns = variableRowCount();
-    int *colidx = new int[columns];
-    double *jacval = new double[columns];
-    int *nlflag = new int[columns];
-    int nz;
-    int nlnz;
-
-    for (int row=0; row<equationRowCount(); ++row) {
-        gmoGetObjSparse(mGMO, colidx, jacval, nlflag, &nz, &nlnz);
-        for (int idx=0; idx<nz+nlnz; ++idx) {
-            if (row == 0 && idx == 0) {
-                range.first = jacval[idx];
-                range.second = jacval[idx];
-            } else {
-                range.first = std::min(range.first, jacval[idx]);
-                range.second = std::max(range.second, jacval[idx]);
-            }
-        }
-    }
-
-    delete [] colidx;
-    delete [] jacval;
-    delete [] nlflag;
-    gmoObjStyleSet(mGMO, gmoObjType_Var);
-    return range;
-}
-
-Range ModelInstance::boundsRange() const
-{
-    //gmoObjStyleSet(mGMO, gmoObjType_Fun);
-    Range range;
-    auto columns = variableRowCount();
-
-    auto lowerVals = new double[columns];
-    if (!gmoGetVarLower(mGMO, lowerVals)) {
-        for (int i=0; i< columns; ++i) {
-            if (i == 0) {
-                range.first = lowerVals[i];
-            } else {
-                range.first = std::min(range.first, lowerVals[i]);
-            }
-            qDebug() << i << lowerVals[i];
-        }
-    }
-
-    auto upperVals = new double[columns];
-    if (!gmoGetVarUpper(mGMO, upperVals)) {
-        for (int i=0; i< columns; ++i) {
-            if (i == 0) {
-                range.second = upperVals[i];
-            } else {
-                range.second = std::max(range.second, upperVals[i]);
-            }
-            qDebug() << i << upperVals[i];
-        }
-    }
-
-    delete [] lowerVals;
-    delete [] upperVals;
-    //gmoObjStyleSet(mGMO, gmoObjType_Var);
-    return range;
 }
 
 void ModelInstance::variableLowerBounds(double *bounds)
@@ -539,29 +392,6 @@ void ModelInstance::variableUpperBounds(double *bounds)
     if (gmoGetVarUpper(mGMO, bounds)) {
         mLogMessages << "variableUpperBounds() -> Something went wrong!";
     }
-}
-
-Range ModelInstance::rhsRange() const
-{
-    gmoObjStyleSet(mGMO, gmoObjType_Fun);
-    Range range;
-    auto rows = equationRowCount();
-    auto *vals = new double[rows];
-    if (gmoGetRhs(mGMO, vals))
-        return range;
-    for (int i=0; i<rows; ++i) {
-        if (i == 0) {
-            range.first = vals[i];
-            range.second = vals[i];
-        } else {
-            range.first = std::min(range.first, vals[i]);
-            range.second = std::max(range.second, vals[i]);
-        }
-    }
-
-    delete [] vals;
-    gmoObjStyleSet(mGMO, gmoObjType_Var);
-    return range;
 }
 
 double ModelInstance::rhs(int row) const
@@ -661,6 +491,7 @@ void ModelInstance::initialize()
                     msg,
                     sizeof(msg))) {
         mLogMessages << "ERROR: " + QString(msg);
+        mState = Error;
         return;
     }
 
@@ -673,6 +504,7 @@ void ModelInstance::initialize()
                     msg,
                     sizeof(msg))) {
         mLogMessages << "ERROR: " + QString(msg);
+        mState = Error;
         return;
     }
 
@@ -700,6 +532,7 @@ void ModelInstance::initialize()
                     msg,
                     sizeof(msg))) {
         mLogMessages << "ERROR: " + QString(msg);
+        mState = Error;
         return;
     }
 }

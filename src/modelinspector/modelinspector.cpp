@@ -386,8 +386,12 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
         mModelInstance = QSharedPointer<AbstractModelInstance>(new ModelInstance(mWorkspace,
                                                                                  mSystemDir,
                                                                                  mScratchDir));
-        mModelInstance->setUseOutput(showOutput);
-    } else {
+        if (mModelInstance->state() == AbstractModelInstance::Error)
+            emit newLogMessage(mModelInstance->logMessages());
+        else
+            mModelInstance->setUseOutput(showOutput);
+    }
+    if (!loadModel || mModelInstance->state() == AbstractModelInstance::Error) {
         mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
     }
     mModelInstance->loadData();

@@ -163,6 +163,11 @@ const QStringList &AbstractModelInstance::labels() const
     return mLabels;
 }
 
+AbstractModelInstance::State AbstractModelInstance::state() const
+{
+    return mState;
+}
+
 EmptyModelInstance::EmptyModelInstance(const QString &workspace,
                                        const QString &systemDir,
                                        const QString &scratchDir)
@@ -181,41 +186,6 @@ const QVector<Symbol*> &EmptyModelInstance::variables() const
     return mSymbols;
 }
 
-int EmptyModelInstance::coefficents() const
-{
-    return 0;
-}
-
-int EmptyModelInstance::positiveCoefficents() const
-{
-    return 0;
-}
-
-int EmptyModelInstance::negativeCoefficents() const
-{
-    return 0;
-}
-
-int EmptyModelInstance::nonLinearCoefficents() const
-{
-    return 0;
-}
-
-Range EmptyModelInstance::matrixRange() const
-{
-    return Range();
-}
-
-Range EmptyModelInstance::objectiveRange() const
-{
-    return Range();
-}
-
-Range EmptyModelInstance::boundsRange() const
-{
-    return Range();
-}
-
 void EmptyModelInstance::variableLowerBounds(double *bounds)
 {
     Q_UNUSED(bounds);
@@ -224,11 +194,6 @@ void EmptyModelInstance::variableLowerBounds(double *bounds)
 void EmptyModelInstance::variableUpperBounds(double *bounds)
 {
     Q_UNUSED(bounds);
-}
-
-Range EmptyModelInstance::rhsRange() const
-{
-    return Range();
 }
 
 double EmptyModelInstance::rhs(int row) const

@@ -11,8 +11,6 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-typedef QPair<double, double> Range;
-
 class AbstractViewConfiguration;
 class DataMatrix;
 
@@ -24,6 +22,13 @@ protected:
                           const QString &scratchDir);
 
 public:
+    enum State
+    {
+        Valid,
+        Warning,
+        Error
+    };
+
     virtual ~AbstractModelInstance();
 
     QString workspace() const;
@@ -117,25 +122,9 @@ public:
      */
     virtual const QVector<Symbol*>& variables() const = 0;
 
-    virtual int coefficents() const = 0;
-
-    virtual int positiveCoefficents() const = 0;
-
-    virtual int negativeCoefficents() const = 0;
-
-    virtual int nonLinearCoefficents() const = 0;
-
-    virtual Range matrixRange() const = 0;
-
-    virtual Range objectiveRange() const = 0;
-
-    virtual Range boundsRange() const = 0;
-
     virtual void variableLowerBounds(double *bounds) = 0;
 
     virtual void variableUpperBounds(double *bounds) = 0;
-
-    virtual Range rhsRange() const = 0;
 
     virtual double rhs(int row) const = 0;
 
@@ -177,7 +166,11 @@ public:
 
     virtual void jaccobianData(DataMatrix& dataMatrix) = 0;
 
+    State state() const;
+
 protected:
+    State mState = Valid;
+
     QString mScratchDir;
     QString mWorkspace;
     QString mSystemDir;
@@ -203,25 +196,9 @@ public:
 
     const QVector<Symbol*>& variables() const override;
 
-    int coefficents() const override;
-
-    int positiveCoefficents() const override;
-
-    int negativeCoefficents() const override;
-
-    int nonLinearCoefficents() const override;
-
-    Range matrixRange() const override;
-
-    Range objectiveRange() const override;
-
-    Range boundsRange() const override;
-
     void variableLowerBounds(double *bounds) override;
 
     void variableUpperBounds(double *bounds) override;
-
-    Range rhsRange() const override;
 
     double rhs(int row) const override;
 
