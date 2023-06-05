@@ -96,6 +96,10 @@ public:
 
     int columnEntries(int column, int view) const override;
 
+    int symbolRowCount(int view) const override;
+
+    int symbolColumnCount(int view) const override;
+
     QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) override;
 
     void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) override;

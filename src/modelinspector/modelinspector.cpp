@@ -40,7 +40,7 @@ ModelInspector::ModelInspector(QWidget *parent)
 {
     ui->setupUi(this);
     ui->jaccFrame->setView((int)ViewDataType::Jaccobian);
-    ui->minMaxFrame->setView((int)ViewDataType::BP_Scaling);
+    ui->bpScalingFrame->setView((int)ViewDataType::BP_Scaling);
     ui->bpOverviewFrame->setView((int)ViewDataType::BP_Overview);
     ui->bpCountFrame->setView((int)ViewDataType::BP_Count);
     ui->bpAverageFrame->setView((int)ViewDataType::BP_Average);
@@ -103,7 +103,7 @@ void ModelInspector::setShowOutput(bool showOutput)
 void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
 {// TOOD PERF check performance... when all views get an update
     ui->jaccFrame->setShowAbsoluteValues(absoluteValues);
-    ui->minMaxFrame->setShowAbsoluteValues(absoluteValues);
+    ui->bpScalingFrame->setShowAbsoluteValues(absoluteValues);
     for (auto view : std::as_const(mCustomViews)) {
         view->setShowAbsoluteValues(absoluteValues);
     }
@@ -251,8 +251,8 @@ void ModelInspector::resetDefaultViews()
 {
     ui->jaccFrame->reset();
     ui->jaccFrame->resetZoom();
-    ui->minMaxFrame->reset();
-    ui->minMaxFrame->resetZoom();
+    ui->bpScalingFrame->reset();
+    ui->bpScalingFrame->resetZoom();
     Q_FOREACH(auto view, mCustomViews) {
         view->resetZoom();
     }
@@ -267,11 +267,18 @@ void ModelInspector::saveModelView()
     clone->setParent(ui->stackedWidget, view->windowFlags());
     int page = ui->stackedWidget->addWidget(clone);
     mCustomViews[page] = clone;
-    if (clone->type() == ViewDataType::BP_Scaling) {
-        connect(static_cast<BPScalingViewFrame*>(clone), &BPScalingViewFrame::filtersChanged,
+    switch (clone->type()) {
+    case ViewDataType::BP_Overview:
+    case ViewDataType::BP_Count:
+    case ViewDataType::BP_Average:
+    case ViewDataType::BP_Scaling:
+        connect(static_cast<AbstractBPViewFrame*>(clone), &AbstractBPViewFrame::filtersChanged,
                 this, &ModelInspector::filtersChanged);
-        connect(static_cast<BPScalingViewFrame*>(clone), &BPScalingViewFrame::newSymbolViewRequested,
+        connect(static_cast<AbstractBPViewFrame*>(clone), &AbstractBPViewFrame::newSymbolViewRequested,
                 this, &ModelInspector::createNewSymbolView);
+        break;
+    default:
+        break;
     }
     mSectionModel->appendCustomView(text, view->type(), page);
     ui->sectionView->expandAll();
@@ -368,11 +375,17 @@ void ModelInspector::setupConnections()
 {
     connect(ui->sectionView, &SectionTreeView::currentItemChanged,
             this, &ModelInspector::setCurrentView);
-    connect(ui->minMaxFrame, &BPScalingViewFrame::filtersChanged,
+    connect(ui->bpScalingFrame, &BPScalingViewFrame::filtersChanged,
             this, &ModelInspector::filtersChanged);
     connect(ui->sectionView, &SectionTreeView::saveViewTriggered,
             this, &ModelInspector::saveModelView);
-    connect(ui->minMaxFrame, &BPScalingViewFrame::newSymbolViewRequested,
+    connect(ui->bpOverviewFrame, &AbstractBPViewFrame::newSymbolViewRequested,
+            this, &ModelInspector::createNewSymbolView);
+    connect(ui->bpCountFrame, &AbstractBPViewFrame::newSymbolViewRequested,
+            this, &ModelInspector::createNewSymbolView);
+    connect(ui->bpAverageFrame, &AbstractBPViewFrame::newSymbolViewRequested,
+            this, &ModelInspector::createNewSymbolView);
+    connect(ui->bpScalingFrame, &AbstractBPViewFrame::newSymbolViewRequested,
             this, &ModelInspector::createNewSymbolView);
     connect(ui->sectionView, &SectionTreeView::removeViewTriggered,
             this, &ModelInspector::removeModelView);
@@ -396,7 +409,7 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
     }
     mModelInstance->loadData();
     ui->jaccFrame->setupView(mModelInstance);
-    ui->minMaxFrame->setupView(mModelInstance);
+    ui->bpScalingFrame->setupView(mModelInstance);
     ui->bpOverviewFrame->setupView(mModelInstance);
     ui->bpCountFrame->setupView(mModelInstance);
     ui->bpAverageFrame->setupView(mModelInstance);
@@ -428,7 +441,7 @@ AbstractTableViewFrame* ModelInspector::currentView() const
     case (int)ViewDataType::BP_Average:
         return ui->bpAverageFrame;
     case (int)ViewDataType::BP_Scaling:
-        return ui->minMaxFrame;
+        return ui->bpScalingFrame;
     default:
         if (mCustomViews.contains(ui->stackedWidget->currentIndex()))
             return mCustomViews[ui->stackedWidget->currentIndex()];

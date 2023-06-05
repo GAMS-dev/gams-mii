@@ -150,6 +150,10 @@ public:
 
     virtual int columnEntries(int column, int view) const = 0;
 
+    virtual int symbolRowCount(int view) const = 0;
+
+    virtual int symbolColumnCount(int view) const = 0;
+
     virtual QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) = 0;
 
     virtual void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) = 0;
@@ -225,6 +229,10 @@ public:
     int columnCount(int view) const override;
 
     int columnEntries(int column, int view) const override;
+
+    int symbolRowCount(int view) const override;
+
+    int symbolColumnCount(int view) const override;
 
     QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) override;
 

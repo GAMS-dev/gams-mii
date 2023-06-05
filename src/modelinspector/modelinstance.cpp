@@ -419,6 +419,16 @@ int ModelInstance::columnEntries(int column, int view) const
     return mDataHandler->columnEntries(column, view);
 }
 
+int ModelInstance::symbolRowCount(int view) const
+{
+    return mDataHandler->symbolRowCount(view);
+}
+
+int ModelInstance::symbolColumnCount(int view) const
+{
+    return mDataHandler->symbolColumnCount(view);
+}
+
 QSharedPointer<AbstractViewConfiguration> ModelInstance::clone(int view, int newView)
 {
     return mDataHandler->clone(view, newView);

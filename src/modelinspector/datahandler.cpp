@@ -33,6 +33,8 @@ protected:
     AbstractDataProvider(const AbstractDataProvider& other)
         : mRowCount(other.mRowCount)
         , mColumnCount(other.mColumnCount)
+        , mSymbolRowCount(other.mSymbolRowCount)
+        , mSymbolColumnCount(other.mSymbolColumnCount)
         , mDataHandler(other.mDataHandler)
         , mModelInstance(other.mModelInstance)
         , mLogicalSectionMapping(other.mLogicalSectionMapping)
@@ -44,6 +46,8 @@ protected:
     AbstractDataProvider(AbstractDataProvider&& other) noexcept
         : mRowCount(other.mRowCount)
         , mColumnCount(other.mColumnCount)
+        , mSymbolRowCount(other.mSymbolRowCount)
+        , mSymbolColumnCount(other.mSymbolColumnCount)
         , mDataHandler(other.mDataHandler)
         , mModelInstance(other.mModelInstance)
         , mLogicalSectionMapping(other.mLogicalSectionMapping)
@@ -51,6 +55,10 @@ protected:
     {
         mLogicalSectionMapping.clear();
         other.mViewConfig = nullptr;
+        other.mRowCount = 0;
+        other.mColumnCount = 0;
+        other.mSymbolRowCount = 0;
+        other.mSymbolColumnCount = 0;
     }
 
 public:
@@ -95,6 +103,16 @@ public:
         return mRowCount;
     }
 
+    int symbolRowCount() const
+    {
+        return mSymbolRowCount;
+    }
+
+    int symbolColumnCount() const
+    {
+        return mSymbolColumnCount;
+    }
+
     virtual int columnEntries(int column) const
     {
         Q_UNUSED(column);
@@ -116,6 +134,8 @@ public:
     {
         mRowCount = other.mRowCount;
         mColumnCount = other.mColumnCount;
+        mSymbolRowCount = other.mSymbolRowCount;
+        mSymbolColumnCount = other.mSymbolColumnCount;
         mDataHandler = other.mDataHandler;
         mModelInstance = other.mModelInstance;
         mLogicalSectionMapping = other.mLogicalSectionMapping;
@@ -126,9 +146,13 @@ public:
     auto& operator=(AbstractDataProvider&& other) noexcept
     {
         mRowCount = other.mRowCount;
+        mSymbolRowCount = other.mSymbolRowCount;
         other.mRowCount = 0;
+        other.mSymbolRowCount = 0;
         mColumnCount = other.mColumnCount;
+        mSymbolColumnCount = other.mSymbolColumnCount;
         other.mColumnCount = 0;
+        other.mSymbolColumnCount = 0;
         mDataHandler = other.mDataHandler;
         mModelInstance = other.mModelInstance;
         mLogicalSectionMapping = other.mLogicalSectionMapping;
@@ -141,6 +165,8 @@ public:
 protected:
     int mRowCount = 0;
     int mColumnCount = 0;
+    int mSymbolRowCount = 0;
+    int mSymbolColumnCount = 0;
     DataHandler *mDataHandler;
     AbstractModelInstance& mModelInstance;
     SectionMapping mLogicalSectionMapping;
@@ -157,7 +183,9 @@ public:
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, nullptr)
     {
         mRowCount = mModelInstance.equationRowCount();
+        mSymbolRowCount = mRowCount;
         mColumnCount = mModelInstance.variableRowCount();
+        mSymbolColumnCount = mColumnCount;
     }
 
     virtual void loadData() override
@@ -177,16 +205,18 @@ class BPScalingProvider final : public DataHandler::AbstractDataProvider
 {
 public:
     BPScalingProvider(DataHandler *dataHandler,
-                       AbstractModelInstance& modelInstance,
-                       QSharedPointer<AbstractViewConfiguration> viewConfig,
-                       DataHandler::CoefficientCount& negPosCount)
+                      AbstractModelInstance& modelInstance,
+                      QSharedPointer<AbstractViewConfiguration> viewConfig,
+                      DataHandler::CoefficientCount& negPosCount)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
     {
-        mRowCount = mModelInstance.equationCount() * 2 + 2; // one row for max and min
+        mSymbolRowCount = mModelInstance.equationCount() * 2;
+        mRowCount = mSymbolRowCount + 2; // one row for max and min
         mAdditionalSectionLabels[mRowCount-2] = QStringList({"Variable", "Max"});
         mAdditionalSectionLabels[mRowCount-1] = QStringList({"", "Min"});
-        mColumnCount = mModelInstance.variableCount() + 2;
+        mSymbolColumnCount = mModelInstance.variableCount();
+        mColumnCount = mSymbolColumnCount + 2;
         for (auto var : mModelInstance.variables()) {
             mHorizontalHeader.append(var->name());
         }
@@ -765,12 +795,14 @@ public:
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
     {
-        mRowCount = mModelInstance.equationCount() + 1;
+        mSymbolRowCount = mModelInstance.equationCount();
+        mRowCount = mSymbolRowCount + 1;
         for (auto eqn : mModelInstance.equations()) {
             mVerticalHeader.append(eqn->name());
         }
         mVerticalHeader.append("Variable Type");
-        mColumnCount = mModelInstance.variableCount() + 2;
+        mSymbolColumnCount = mModelInstance.variableCount();
+        mColumnCount = mSymbolColumnCount + 2;
         for (auto var : mModelInstance.variables()) {
             mHorizontalHeader.append(var->name());
         }
@@ -819,6 +851,12 @@ public:
     void loadData() override
     {
         int negRow = 1, posRow = 0;
+        for (const auto& equations : mModelInstance.equations()) {
+            mLogicalSectionMapping[Qt::Vertical].append(equations->firstSection());
+        }
+        for (const auto& variable : mModelInstance.variables()) {
+            mLogicalSectionMapping[Qt::Horizontal].append(variable->firstSection());
+        }
         for (int r=0; r<mModelInstance.equationCount(); ++r, negRow += 2, posRow += 2) {
             for (int c=0; c<mColumnCount-2; ++c) {
                 if (mCoeffCount.count()[negRow][c] == 0 && mCoeffCount.count()[posRow][c] == 0) {
@@ -937,12 +975,14 @@ public:
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
     {
-        mRowCount = mModelInstance.equationCount() * 2 + 4;
+        mSymbolRowCount = mModelInstance.equationCount() * 2;
+        mRowCount = mSymbolRowCount + 4;
         mAdditionalSectionLabels[mRowCount-4] = QStringList({"Coeff Cnts", "Pos"});
         mAdditionalSectionLabels[mRowCount-3] = QStringList({"", "Neg"});
         mAdditionalSectionLabels[mRowCount-2] = QStringList({"# of Vars", ""});
         mAdditionalSectionLabels[mRowCount-1] = QStringList({"Variable Type", ""});
-        mColumnCount = mModelInstance.variableCount() + 4;
+        mSymbolColumnCount = mModelInstance.variableCount();
+        mColumnCount = mSymbolColumnCount + 4;
         for (auto var : mModelInstance.variables()) {
             mHorizontalHeader.append(var->name());
         }
@@ -999,6 +1039,9 @@ public:
     {
         for (int row=0; row<mRowCount; ++row) {
             mLogicalSectionMapping[Qt::Vertical].append(row);
+        }
+        for (const auto& variable : mModelInstance.variables()) {
+            mLogicalSectionMapping[Qt::Horizontal].append(variable->firstSection());
         }
         for (int r=0, negRow = 1, posRow = 0; r<mModelInstance.equationCount(); ++r, negRow += 2, posRow += 2) {
             for (int v=0; v<mModelInstance.variableCount(); ++v) {
@@ -1113,12 +1156,14 @@ public:
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
     {
-        mRowCount = mModelInstance.equationCount() * 2 + 4;
+        mSymbolRowCount = mModelInstance.equationCount() * 2;
+        mRowCount = mSymbolRowCount + 4;
         mAdditionalSectionLabels[mRowCount-4] = QStringList({"Cfs PerVar", "Pos"});
         mAdditionalSectionLabels[mRowCount-3] = QStringList({"", "Neg"});
         mAdditionalSectionLabels[mRowCount-2] = QStringList({"# of Vars", ""});
         mAdditionalSectionLabels[mRowCount-1] = QStringList({"Variable Type", ""});
-        mColumnCount = mModelInstance.variableCount() + 4;
+        mSymbolColumnCount = mModelInstance.variableCount();
+        mColumnCount = mSymbolColumnCount + 4;
         for (auto var : mModelInstance.variables()) {
             mHorizontalHeader.append(var->name());
         }
@@ -1170,6 +1215,9 @@ public:
     {
         for (int row=0; row<mRowCount; ++row) {
             mLogicalSectionMapping[Qt::Vertical].append(row);
+        }
+        for (const auto& variable : mModelInstance.variables()) {
+            mLogicalSectionMapping[Qt::Horizontal].append(variable->firstSection());
         }
         int index = 0;
         for (const auto& equation : mModelInstance.equations()) {
@@ -1365,6 +1413,16 @@ int DataHandler::columnEntries(int column, int view) const
     return mDataCache.contains(view) ? mDataCache[view]->columnEntries(column) : 0;
 }
 
+int DataHandler::symbolRowCount(int view) const
+{
+    return mDataCache.contains(view) ? mDataCache[view]->symbolRowCount() : 0;
+}
+
+int DataHandler::symbolColumnCount(int view) const
+{
+    return mDataCache.contains(view) ? mDataCache[view]->symbolColumnCount() : 0;
+}
+
 QSharedPointer<AbstractViewConfiguration> DataHandler::clone(int view, int newView)
 {
     if (!mDataCache.contains(view))
@@ -1385,28 +1443,28 @@ DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int view)
     switch (mDataCache[view]->viewConfig()->viewType()) {
     case ViewDataType::BP_Scaling:
     {
-        auto aggregator = static_cast<BPScalingProvider*>(mDataCache[view].get());
-        return new BPScalingProvider(*aggregator);
+        auto provider = static_cast<BPScalingProvider*>(mDataCache[view].get());
+        return new BPScalingProvider(*provider);
     }
     case ViewDataType::Symbols:
     {
-        auto aggregator = static_cast<SymbolsDataProvider*>(mDataCache[view].get());
-        return new SymbolsDataProvider(*aggregator);
+        auto provider = static_cast<SymbolsDataProvider*>(mDataCache[view].get());
+        return new SymbolsDataProvider(*provider);
     }
     case ViewDataType::BP_Overview:
     {
-        auto aggregator = static_cast<BPOverviewDataProvider*>(mDataCache[view].get());
-        return new BPOverviewDataProvider(*aggregator);
+        auto provider = static_cast<BPOverviewDataProvider*>(mDataCache[view].get());
+        return new BPOverviewDataProvider(*provider);
     }
     case ViewDataType::BP_Count:
     {
-        auto aggregator = static_cast<BPCountDataProvider*>(mDataCache[view].get());
-        return new BPCountDataProvider(*aggregator);
+        auto provider = static_cast<BPCountDataProvider*>(mDataCache[view].get());
+        return new BPCountDataProvider(*provider);
     }
     case ViewDataType::BP_Average:
     {
-        auto aggregator = static_cast<BPAverageDataProvider*>(mDataCache[view].get());
-        return new BPAverageDataProvider(*aggregator);
+        auto provider = static_cast<BPAverageDataProvider*>(mDataCache[view].get());
+        return new BPAverageDataProvider(*provider);
     }
     default:
         return new IdentityDataProvider(this, mModelInstance);

@@ -612,16 +612,14 @@ void HierarchicalHeaderView::customMenuRequested(const QPoint &position)
 {
     if (mPrivate->appliedAggregation().isActive())
         return;
-
     bool ok;
     int logicalIndex = logicalIndexAt(position);
     int sectionIndex = model()->headerData(logicalIndex, orientation()).toInt(&ok);
-    if (!ok) return;
-
+    if (!ok)
+        return;
     Symbol* symbol = mPrivate->symbol(sectionIndex);
     if (symbol->isScalar())
         return;
-
     auto filterTree = mPrivate->filterTree(logicalIndex, sectionIndex, symbol);
     mFilterWidget->setData(filterTree);
     mFilterMenu->popup(viewport()->mapToGlobal(position));

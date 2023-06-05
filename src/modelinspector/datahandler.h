@@ -307,6 +307,10 @@ public:
 
     int columnEntries(int column, int view) const;
 
+    int symbolRowCount(int view) const;
+
+    int symbolColumnCount(int view) const;
+
     QSharedPointer<AbstractViewConfiguration> clone(int view, int newView);
 
     void loadJaccobian();

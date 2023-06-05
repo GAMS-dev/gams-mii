@@ -3,7 +3,6 @@
 #include "viewconfigurationprovider.h"
 #include "comprehensivetablemodel.h"
 #include "ui_standardtableviewframe.h"
-#include "standardtableviewframe.h"
 #include "hierarchicalheaderview.h"
 #include "bpscalingidentifierfiltermodel.h"
 #include "valueformatproxymodel.h"
@@ -16,19 +15,154 @@ namespace gams {
 namespace studio{
 namespace modelinspector {
 
+AbstractBPViewFrame::AbstractBPViewFrame(ComprehensiveTableModel *model,
+                                         QWidget *parent,
+                                         Qt::WindowFlags f)
+    : AbstractTableViewFrame(parent, f)
+    , mBaseModel(model)
+    , mSelectionMenu(new QMenu(this))
+{
+    ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
+    mSelectionMenu->addAction(mSymbolAction);
+    connect(mSymbolAction, &QAction::triggered, this, [this]{handleRowColumnSelection();});
+    connect(ui->tableView, &QWidget::customContextMenuRequested,
+            this, &BPScalingViewFrame::customMenuRequested);
+}
+
+AbstractBPViewFrame::~AbstractBPViewFrame()
+{
+
+}
+
+const QList<Symbol*>& AbstractBPViewFrame::selectedEquations() const
+{
+    return mSelectedEquations;
+}
+
+const QList<Symbol*>& AbstractBPViewFrame::selectedVariables() const
+{
+    return mSelectedVariables;
+}
+
+void AbstractBPViewFrame::setAggregation(const Aggregation &aggregation)
+{
+    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
+        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
+        mModelInstance->loadData(mViewConfig);
+        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
+        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+        emit filtersChanged();
+    }
+}
+
+void AbstractBPViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
+{
+    mViewConfig->setCurrentIdentifierFilter(filter);
+    if (mIdentifierFilterModel)
+        mIdentifierFilterModel->setIdentifierFilter(filter,
+                                                    mViewConfig->currentAggregation());
+}
+
+void AbstractBPViewFrame::setShowAbsoluteValues(bool absoluteValues)
+{
+    if (mBaseModel && mViewConfig->currentValueFilter().isAbsolute() != absoluteValues) {
+        mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
+        mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
+        mModelInstance->loadData(mViewConfig);
+        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+    }
+}
+
+void AbstractBPViewFrame::reset()
+{
+    setIdentifierFilter(mViewConfig->defaultIdentifierFilter());
+    setValueFilter(mViewConfig->defaultValueFilter());
+    setLabelFilter(mViewConfig->defaultLabelFilter());
+    updateView();
+}
+
+void AbstractBPViewFrame::customMenuRequested(const QPoint &pos)
+{
+    if (ui->tableView->selectionModel()->selectedIndexes().empty())
+        return;
+    auto view = mViewConfig->view();
+    if (ui->tableView->selectionModel()->selectedIndexes().first().row() < mModelInstance->symbolRowCount(view) &&
+        ui->tableView->selectionModel()->selectedIndexes().first().column() < mModelInstance->symbolColumnCount(view)) {
+        mSymbolAction->setEnabled(true);
+    } else {
+        mSymbolAction->setEnabled(false);
+    }
+    mSelectionMenu->popup(ui->tableView->viewport()->mapToGlobal(pos));
+}
+
+void AbstractBPViewFrame::setIdentifierLabelFilter(const IdentifierState &state, Qt::Orientation orientation)
+{
+    if (state.disabled() && mIdentifierFilterModel) {
+        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
+        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter(),
+                                                    mViewConfig->currentAggregation());
+    } else {
+        mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
+    }
+    updateView();
+    emit filtersChanged();
+}
+
+void AbstractBPViewFrame::handleRowColumnSelection()
+{
+    QMap<int, Symbol*> rowSymbols, columnSymbols;
+    auto indexes = ui->tableView->selectionModel()->selectedIndexes();
+    int section;
+    for (const auto& index : indexes) {
+        // TODO !!! drop this aggregation stuff (indexToVariable)...
+        // not needed anymore or fix this... check HHeader implementation
+        section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
+                                                     Mi::IndexDataRole).toInt();
+        if (mViewConfig->currentAggregation().indexToEquation().contains(section)) {
+            auto symbol = mViewConfig->currentAggregation().indexToEquation()[section];
+            rowSymbols[symbol->firstSection()] = symbol;
+        } else {
+            auto symbol = mModelInstance->equation(section);
+            rowSymbols[symbol->firstSection()] = symbol;
+        }
+        section = ui->tableView->model()->headerData(index.column(), Qt::Horizontal,
+                                                     Mi::IndexDataRole).toInt();
+        auto symbol = mModelInstance->variable(section);
+        columnSymbols[symbol->firstSection()] = symbol;
+    }
+    mSelectedEquations = rowSymbols.values();
+    mSelectedVariables = columnSymbols.values();
+    emit newSymbolViewRequested();
+}
+
+void AbstractBPViewFrame::setIdentifierFilterCheckState(int symbolIndex,
+                                                        Qt::CheckState state,
+                                                        Qt::Orientation orientation)
+{
+    auto symbols = mViewConfig->currentIdentifierFilter()[orientation];
+    for (auto iter=symbols.begin(); iter!=symbols.end(); ++iter) {
+        if (iter->SymbolIndex == symbolIndex) {
+            iter->Checked = state;
+            break;
+        }
+    }
+    mViewConfig->currentIdentifierFilter()[orientation] = symbols;
+}
+
 BPOverviewViewFrame::BPOverviewViewFrame(QWidget *parent, Qt::WindowFlags f)
-    : AbstractStandardTableViewFrame(parent, f)
+    : AbstractBPViewFrame(new BPOverviewTableModel, parent, f)
 {
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type()));
 }
 
 BPOverviewViewFrame::BPOverviewViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                                                     QSharedPointer<AbstractViewConfiguration> viewConfig,
-                                                     QWidget *parent, Qt::WindowFlags f)
-    : AbstractStandardTableViewFrame(parent, f)
+                                         QSharedPointer<AbstractViewConfiguration> viewConfig,
+                                         QWidget *parent, Qt::WindowFlags f)
+    : AbstractBPViewFrame(new BPOverviewTableModel, parent, f)
 {
     mModelInstance = modelInstance;
-    ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
     mViewConfig = viewConfig;
 }
 
@@ -53,6 +187,11 @@ void BPOverviewViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelI
     setupView();
 }
 
+ViewDataType BPOverviewViewFrame::type() const
+{
+    return ViewDataType::BP_Overview;
+}
+
 void BPOverviewViewFrame::updateView()
 {
     //ui->tableView->resizeColumnsToContents();
@@ -60,25 +199,34 @@ void BPOverviewViewFrame::updateView()
     emit filtersChanged();
 }
 
-void BPOverviewViewFrame::setIdentifierLabelFilter(const IdentifierState &state,
-                                                         Qt::Orientation orientation)
-{// TODO !!! finalize
-    //if (state.disabled() && mIdentifierFilterModel) {
-    //    setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-    //    //mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter(),
-    //    //                                            mViewConfig->currentAggregation());
-    //} else {
-    //    mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
-    //}
-    //updateView();
-    //emit filtersChanged();
+void BPOverviewViewFrame::handleRowColumnSelection()
+{
+    QMap<int, Symbol*> rowSymbols, columnSymbols;
+    auto indexes = ui->tableView->selectionModel()->selectedIndexes();
+    int section;
+    for (const auto& index : indexes) {
+        if (!index.isValid())
+            return;
+        section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
+                                                     Mi::IndexDataRole).toInt();
+        auto equation = mModelInstance->equation(section);
+        rowSymbols[section] = equation;
+        section = ui->tableView->model()->headerData(index.column(), Qt::Horizontal,
+                                                     Mi::IndexDataRole).toInt();
+        auto variable = mModelInstance->variable(section);
+        columnSymbols[section] = variable;
+        break;
+    }
+    mSelectedEquations = rowSymbols.values();
+    mSelectedVariables = columnSymbols.values();
+    emit newSymbolViewRequested();
 }
 
 void BPOverviewViewFrame::setupView()
 {
     auto baseModel = new BPOverviewTableModel(mViewConfig->view(),
-                                                    mModelInstance,
-                                                    ui->tableView);
+                                              mModelInstance,
+                                              ui->tableView);
 
     auto oldSelectionModel = ui->tableView->selectionModel();
     ui->tableView->setModel(baseModel);
@@ -93,18 +241,17 @@ void BPOverviewViewFrame::setupView()
 }
 
 BPCountViewFrame::BPCountViewFrame(QWidget *parent, Qt::WindowFlags f)
-    : AbstractStandardTableViewFrame(parent, f)
+    : AbstractBPViewFrame(new ComprehensiveTableModel, parent, f)
 {
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type()));
 }
 
 BPCountViewFrame::BPCountViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                                               QSharedPointer<AbstractViewConfiguration> viewConfig,
-                                               QWidget *parent, Qt::WindowFlags f)
-    : AbstractStandardTableViewFrame(parent, f)
+                                   QSharedPointer<AbstractViewConfiguration> viewConfig,
+                                   QWidget *parent, Qt::WindowFlags f)
+    : AbstractBPViewFrame(new ComprehensiveTableModel, parent, f)
 {
     mModelInstance = modelInstance;
-    ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
     mViewConfig = viewConfig;
 }
 
@@ -181,7 +328,7 @@ void BPCountViewFrame::setupView()
 }
 
 BPAverageViewFrame::BPAverageViewFrame(QWidget *parent, Qt::WindowFlags f)
-    : AbstractStandardTableViewFrame(parent, f)
+    : AbstractBPViewFrame(new BPAverageTableModel, parent, f)
 {
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type()));
 }
@@ -189,7 +336,7 @@ BPAverageViewFrame::BPAverageViewFrame(QWidget *parent, Qt::WindowFlags f)
 BPAverageViewFrame::BPAverageViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
                                                    QSharedPointer<AbstractViewConfiguration> viewConfig,
                                                    QWidget *parent, Qt::WindowFlags f)
-    : AbstractStandardTableViewFrame(parent, f)
+    : AbstractBPViewFrame(new BPAverageTableModel, parent, f)
 {
     mModelInstance = modelInstance;
     ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -225,20 +372,6 @@ void BPAverageViewFrame::updateView()
     emit filtersChanged();
 }
 
-void BPAverageViewFrame::setIdentifierLabelFilter(const IdentifierState &state, Qt::Orientation orientation)
-{
-    // TODO !!! finalize
-    //if (state.disabled() && mIdentifierFilterModel) {
-    //    setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-    //    //mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter(),
-    //    //                                            mViewConfig->currentAggregation());
-    //} else {
-    //    mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
-    //}
-    //updateView();
-    //emit filtersChanged();
-}
-
 void BPAverageViewFrame::setupView()
 {
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
@@ -250,8 +383,8 @@ void BPAverageViewFrame::setupView()
             this, &BPAverageViewFrame::setIdentifierLabelFilter);
     
     auto baseModel = new BPAverageTableModel(mViewConfig->view(),
-                                                   mModelInstance,
-                                                   ui->tableView);
+                                             mModelInstance,
+                                             ui->tableView);
 
     ui->tableView->setVerticalHeader(mVerticalHeader);
     auto oldSelectionModel = ui->tableView->selectionModel();
@@ -270,32 +403,19 @@ void BPAverageViewFrame::setupView()
 }
 
 BPScalingViewFrame::BPScalingViewFrame(QWidget *parent, Qt::WindowFlags f)
-    : AbstractTableViewFrame(parent, f)
-    , mBaseModel(new ComprehensiveTableModel)
-    , mSelectionMenu(new QMenu(this))
+    : AbstractBPViewFrame(new ComprehensiveTableModel, parent, f)
 {
     ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::BP_Scaling));
-    mSelectionMenu->addAction(mSymbolAction);
-    connect(mSymbolAction, &QAction::triggered, this, [this]{handleRowColumnSelection();});
-    connect(ui->tableView, &QWidget::customContextMenuRequested,
-            this, &BPScalingViewFrame::customMenuRequested);
 }
 
 BPScalingViewFrame::BPScalingViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
                                        QSharedPointer<AbstractViewConfiguration> viewConfig,
                                        QWidget *parent, Qt::WindowFlags f)
-    : AbstractTableViewFrame(parent, f)
-    , mBaseModel(new ComprehensiveTableModel)
-    , mSelectionMenu(new QMenu(this))
+    : AbstractBPViewFrame(new ComprehensiveTableModel, parent, f)
 {
     mModelInstance = modelInstance;
-    ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
     mViewConfig = viewConfig;
-    mSelectionMenu->addAction(mSymbolAction);
-    connect(mSymbolAction, &QAction::triggered, this, [this]{handleRowColumnSelection();});
-    connect(ui->tableView, &QWidget::customContextMenuRequested,
-            this, &BPScalingViewFrame::customMenuRequested);
 }
 
 AbstractTableViewFrame* BPScalingViewFrame::clone(int view)
@@ -311,14 +431,6 @@ AbstractTableViewFrame* BPScalingViewFrame::clone(int view)
     return frame;
 }
 
-void BPScalingViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
-{
-    mViewConfig->setCurrentIdentifierFilter(filter);
-    if (mIdentifierFilterModel)
-        mIdentifierFilterModel->setIdentifierFilter(filter,
-                                                    mViewConfig->currentAggregation());
-}
-
 void BPScalingViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
@@ -326,24 +438,6 @@ void BPScalingViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     mViewConfig->initialize(nullptr);
     mModelInstance->loadData(mViewConfig);
     setupView();
-}
-
-const QList<Symbol*>& BPScalingViewFrame::selectedEquations() const
-{
-    return mSelectedEquations;
-}
-
-const QList<Symbol*>& BPScalingViewFrame::selectedVariables() const
-{
-    return mSelectedVariables;
-}
-
-void BPScalingViewFrame::reset()
-{
-    setIdentifierFilter(mViewConfig->defaultIdentifierFilter());
-    setValueFilter(mViewConfig->defaultValueFilter());
-    setLabelFilter(mViewConfig->defaultLabelFilter());
-    updateView();
 }
 
 void BPScalingViewFrame::updateView()
@@ -361,56 +455,6 @@ void BPScalingViewFrame::setValueFilter(const ValueFilter &filter)
     } else if (mValueFormatModel) {
         mValueFormatModel->setValueFilter(filter);
     }
-}
-
-void BPScalingViewFrame::setAggregation(const Aggregation &aggregation)
-{
-    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadData(mViewConfig);
-        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
-        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-        emit filtersChanged();
-    }
-}
-
-void BPScalingViewFrame::setShowAbsoluteValues(bool absoluteValues)
-{
-    if (mBaseModel && mViewConfig->currentValueFilter().isAbsolute() != absoluteValues) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-        mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-        mModelInstance->loadData(mViewConfig);
-        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-    }
-}
-
-void BPScalingViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
-                                                  Qt::Orientation orientation)
-{
-    if (state.disabled() && mIdentifierFilterModel) {
-        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter(),
-                                                    mViewConfig->currentAggregation());
-    } else {
-        mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
-    }
-    updateView();
-    emit filtersChanged();
-}
-
-void BPScalingViewFrame::customMenuRequested(const QPoint &pos)
-{
-    if (ui->tableView->selectionModel()->selectedIndexes().empty())
-        return;
-    if (ui->tableView->selectionModel()->selectedIndexes().first().row() < mModelInstance->equationCount()*2 &&
-        ui->tableView->selectionModel()->selectedIndexes().first().column() < mModelInstance->variableCount()) {
-        mSymbolAction->setEnabled(true);
-    } else {
-        mSymbolAction->setEnabled(false);
-    }
-    mSelectionMenu->popup(ui->tableView->viewport()->mapToGlobal(pos));
 }
 
 void BPScalingViewFrame::setupView()
@@ -445,47 +489,6 @@ void BPScalingViewFrame::setupView()
 
     ui->tableView->resizeColumnsToContents();
     ui->tableView->resizeRowsToContents();
-}
-
-void BPScalingViewFrame::handleRowColumnSelection()
-{
-    QMap<int, Symbol*> rowSymbols, columnSymbols;
-    auto indexes = ui->tableView->selectionModel()->selectedIndexes();
-    int section;
-    for (const auto& index : indexes) {
-        // TODO !!! drop this aggregation stuff (indexToVariable)...
-        // not needed anymore or fix this... check HHeader implementation
-        section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
-                                                     Mi::IndexDataRole).toInt();
-        if (mViewConfig->currentAggregation().indexToEquation().contains(section)) {
-            auto symbol = mViewConfig->currentAggregation().indexToEquation()[section];
-            rowSymbols[symbol->firstSection()] = symbol;
-        } else {
-            auto symbol = mModelInstance->equation(section);
-            rowSymbols[symbol->firstSection()] = symbol;
-        }
-        section = ui->tableView->model()->headerData(index.column(), Qt::Horizontal,
-                                                     Mi::IndexDataRole).toInt();
-        auto symbol = mModelInstance->variable(section);
-        columnSymbols[symbol->firstSection()] = symbol;
-    }
-    mSelectedEquations = rowSymbols.values();
-    mSelectedVariables = columnSymbols.values();
-    emit newSymbolViewRequested();
-}
-
-void BPScalingViewFrame::setIdentifierFilterCheckState(int symbolIndex,
-                                                       Qt::CheckState state,
-                                                       Qt::Orientation orientation)
-{
-    auto symbols = mViewConfig->currentIdentifierFilter()[orientation];
-    for (auto iter=symbols.begin(); iter!=symbols.end(); ++iter) {
-        if (iter->SymbolIndex == symbolIndex) {
-            iter->Checked = state;
-            break;
-        }
-    }
-    mViewConfig->currentIdentifierFilter()[orientation] = symbols;
 }
 
 }

@@ -151,6 +151,10 @@ QVariant BPOverviewTableModel::headerData(int section,
         return mModelInstance->headerData(section, orientation,
                                           mView, Mi::LabelDataRole);
     }
+    if (role == Mi::IndexDataRole) {
+        return mModelInstance->headerData(section, orientation,
+                                          mView, Mi::IndexDataRole);
+    }
     return QAbstractItemModel::headerData(section, orientation, role);
 }
 

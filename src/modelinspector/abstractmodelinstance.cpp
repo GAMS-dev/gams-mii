@@ -271,6 +271,18 @@ int EmptyModelInstance::columnEntries(int column, int view) const
     return 0;
 }
 
+int EmptyModelInstance::symbolRowCount(int view) const
+{
+    Q_UNUSED(view);
+    return 0;
+}
+
+int EmptyModelInstance::symbolColumnCount(int view) const
+{
+    Q_UNUSED(view);
+    return 0;
+}
+
 QSharedPointer<AbstractViewConfiguration> EmptyModelInstance::clone(int view, int newView)
 {
     Q_UNUSED(view);
