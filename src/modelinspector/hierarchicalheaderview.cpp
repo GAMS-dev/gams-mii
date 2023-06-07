@@ -36,16 +36,6 @@ public:
         mIdentifierFilter[orientation][state.SymbolIndex] = state;
     }
 
-    const Aggregation& appliedAggregation() const
-    {
-        return mAppliedAggregation;
-    }
-
-    void setAppliedAggregation(const Aggregation &appliedAggregation)
-    {
-        mAppliedAggregation = appliedAggregation;
-    }
-
     void resetSymbolLabelFilters()
     {
         mIdentifierFilter.clear();
@@ -120,7 +110,7 @@ public:
         paintHorizontalCell(painter, rect, styleOption, currentTop,
                             label(sectionIndex, -1, mHeaderView->orientation()),
                             logicalIndex, sectionIndex, -1, true);
-        if (mAppliedAggregation.type() != Aggregation::None || ViewProperties::isStandardView(mHeaderView->viewType())) {
+        if (ViewProperties::isStandardView(mHeaderView->viewType())) {
             for (int d=0; d<horizontalSectionDimension(sectionIndex); ++d) {
                 paintHorizontalCell(painter, rect, styleOption, currentTop,
                                     label(sectionIndex, d, mHeaderView->orientation()),
@@ -159,7 +149,7 @@ public:
             } else if (!styleOption.text.isEmpty()) {
                 painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
                                     mFilterIconSize.height(),
-                                    mAppliedAggregation.isActive() ? mPixmapFilterOff : mPixmapFilterOn);
+                                    ViewProperties::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
             }
         } else {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
@@ -241,7 +231,7 @@ public:
             } else if (!styleOption.text.isEmpty()) {
                 painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
                                     mFilterIconSize.height(),
-                                    mAppliedAggregation.isActive() ? mPixmapFilterOff : mPixmapFilterOn);
+                                    ViewProperties::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
             }
         } else {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
@@ -271,9 +261,6 @@ public:
                                bool isSymbol, const Symbol *symbol,
                                const QString &text)
     {// TODO header drawing rules... simplify and no on the fly stuff
-        if (dimension >= 0 && mAppliedAggregation.aggregationMap()[mHeaderView->orientation()].contains(symbol->firstSection())) {
-            return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][symbol->firstSection()].label(sectionIndex, dimension);
-        }
         if (isSymbol && logicalIndex > 0) {
             int prevSectionIdx = this->sectionIndex(logicalIndex-1);
             if (symbol && symbol->contains(prevSectionIdx))
@@ -294,17 +281,7 @@ public:
                              bool isSymbol, const Symbol *symbol,
                              const QString &text)
     {// TODO header drawing rules... simplify and no on the fly stuff
-        if (mAppliedAggregation.type() != Aggregation::None) {
-            if (dimension >= 0 && mAppliedAggregation.aggregationMap()[mHeaderView->orientation()].contains(symbol->firstSection())) {
-                return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][symbol->firstSection()].label(sectionIndex, dimension);
-            }
-        } else if (mAppliedAggregation.indexToSymbol(Qt::Vertical).contains(sectionIndex)) {
-            auto index = mAppliedAggregation.indexToSymbol(Qt::Vertical)[sectionIndex]->firstSection();
-            auto startIndex = mAppliedAggregation.startSectionMapping()[index];
-            return mAppliedAggregation.aggregationMap()[mHeaderView->orientation()][startIndex].label(sectionIndex, dimension < 0 ? 0 : dimension+1);
-        } else if (mHeaderView->viewType() == ViewDataType::BP_Scaling   ||
-                   mHeaderView->viewType() == ViewDataType::BP_Count ||
-                   mHeaderView->viewType() == ViewDataType::BP_Average) {
+        if (!ViewProperties::isStandardView(mHeaderView->viewType())) {
             return mHeaderView->modelInstance()->plainHeaderData(mHeaderView->orientation(),
                                                                  mHeaderView->view(),
                                                                  sectionIndex,
@@ -534,8 +511,6 @@ private:
 
     IdentifierFilter mIdentifierFilter;
     IdentifierLabelSections mVisibleLabelSections;
-
-    Aggregation mAppliedAggregation;
 };
 
 HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
@@ -577,11 +552,6 @@ void HierarchicalHeaderView::setIdentifierState(const IdentifierState &state)
     mPrivate->setIdentifierState(state, orientation());
 }
 
-void HierarchicalHeaderView::setAppliedAggregation(const Aggregation &appliedAggregation)
-{
-    mPrivate->setAppliedAggregation(appliedAggregation);
-}
-
 void HierarchicalHeaderView::setModel(QAbstractItemModel *model)
 {
     mPrivate->init();
@@ -610,8 +580,6 @@ void HierarchicalHeaderView::setView(int view)
 
 void HierarchicalHeaderView::customMenuRequested(const QPoint &position)
 {
-    if (mPrivate->appliedAggregation().isActive())
-        return;
     bool ok;
     int logicalIndex = logicalIndexAt(position);
     int sectionIndex = model()->headerData(logicalIndex, orientation()).toInt(&ok);

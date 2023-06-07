@@ -102,8 +102,9 @@ void ModelInspector::setShowOutput(bool showOutput)
 
 void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
 {// TOOD PERF check performance... when all views get an update
-    ui->jaccFrame->setShowAbsoluteValues(absoluteValues);
     ui->bpScalingFrame->setShowAbsoluteValues(absoluteValues);
+    ui->bpAverageFrame->setShowAbsoluteValues(absoluteValues);
+    ui->bpCountFrame->setShowAbsoluteValues(absoluteValues);
     for (auto view : std::as_const(mCustomViews)) {
         view->setShowAbsoluteValues(absoluteValues);
     }

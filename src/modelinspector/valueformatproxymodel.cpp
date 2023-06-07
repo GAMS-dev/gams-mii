@@ -121,13 +121,13 @@ QVariant JaccobianValueFormatProxyModel::data(const QModelIndex &index, int role
     return QVariant();
 }
 
-MinMaxValueFormatProxyModel::MinMaxValueFormatProxyModel(QObject *parent)
+BPValueFormatProxyModel::BPValueFormatProxyModel(QObject *parent)
     : ValueFormatProxyModel(parent)
 {
 
 }
 
-QVariant MinMaxValueFormatProxyModel::data(const QModelIndex &index, int role) const
+QVariant BPValueFormatProxyModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
@@ -136,12 +136,68 @@ QVariant MinMaxValueFormatProxyModel::data(const QModelIndex &index, int role) c
     bool ok;
     double value = QIdentityProxyModel::data(index, role).toDouble(&ok);
     if (ok) {
+        double retval = value;
+        if (mValueFilter.UseAbsoluteValues)
+            value = std::abs(value);
         if (!mValueFilter.ExcludeRange && value >= mValueFilter.MinValue && value <= mValueFilter.MaxValue)
-            return value;
+            return retval;
         else if (mValueFilter.ExcludeRange && (value < mValueFilter.MinValue || value > mValueFilter.MaxValue))
-            return value;
+            return retval;
     }
     return QVariant();
+}
+
+BPValueFormatTypeProxyModel::BPValueFormatTypeProxyModel(QObject *parent)
+    : ValueFormatProxyModel(parent)
+{
+
+}
+
+QVariant BPValueFormatTypeProxyModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid())
+        return QVariant();
+    if (role != Qt::DisplayRole ||
+        index.column() == columnCount()-4 || index.row() == rowCount()-1)
+        return QIdentityProxyModel::data(index, role);
+    bool ok;
+    double value = QIdentityProxyModel::data(index, role).toDouble(&ok);
+    if (ok) {
+        double retval = value;
+        if (mValueFilter.UseAbsoluteValues)
+            value = std::abs(value);
+        if (!mValueFilter.ExcludeRange && value >= mValueFilter.MinValue && value <= mValueFilter.MaxValue)
+            return retval;
+        else if (mValueFilter.ExcludeRange && (value < mValueFilter.MinValue || value > mValueFilter.MaxValue))
+            return retval;
+    }
+    return QVariant();
+}
+
+AbsFormatProxyModel::AbsFormatProxyModel(QObject *parent)
+    : QIdentityProxyModel(parent)
+{
+
+}
+
+QVariant AbsFormatProxyModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid())
+        return QVariant();
+    if (role == Qt::DisplayRole) {
+        bool ok;
+        double value = QIdentityProxyModel::data(index, role).toDouble(&ok);
+        if (ok && mAbsoluteValues)
+            return std::abs(value);
+    }
+    return QIdentityProxyModel::data(index, role);
+}
+
+void AbsFormatProxyModel::setAbsFormat(bool absoluteValues)
+{
+    beginResetModel();
+    mAbsoluteValues = absoluteValues;
+    endResetModel();
 }
 
 }

@@ -178,10 +178,6 @@ void SymbolViewFrame::setupView()
 
     mModelInstanceModel = QSharedPointer<SymbolModelInstanceTableModel>(baseModel);
 
-    const auto& applied = mViewConfig->currentAggregation();
-    mHorizontalHeader->setAppliedAggregation(applied);
-    mVerticalHeader->setAppliedAggregation(applied);
-    emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();
 }

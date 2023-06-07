@@ -59,9 +59,7 @@ QVariant ComprehensiveTableModel::headerData(int section,
 {
     if (role == Qt::DisplayRole) {
         if (orientation == Qt::Vertical) {
-            auto realIndex = mModelInstance->headerData(section, orientation,
-                                                        mView, Mi::IndexDataRole).toInt();
-            return realIndex < 0 ? QVariant() : realIndex;
+            return section;
         } else {
             return mModelInstance->headerData(section, orientation,
                                               mView, Mi::LabelDataRole);

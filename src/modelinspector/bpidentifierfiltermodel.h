@@ -1,10 +1,9 @@
-#ifndef BPSCALINGIDENTIFIERFILTERMODEL_H
-#define BPSCALINGIDENTIFIERFILTERMODEL_H
+#ifndef BPIDENTIFIERFILTERMODEL_H
+#define BPIDENTIFIERFILTERMODEL_H
 
 #include <QSharedPointer>
 #include <QSortFilterProxyModel>
 
-#include "aggregation.h"
 #include "common.h"
 
 namespace gams {
@@ -13,15 +12,15 @@ namespace modelinspector {
 
 class AbstractModelInstance;
 
-class BPScalingIdentifierFilterModel : public QSortFilterProxyModel
+class BPIdentifierFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
 public:
-    BPScalingIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                                QObject *parent = nullptr);
+    BPIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                            QObject *parent = nullptr);
 
-    void setIdentifierFilter(const IdentifierFilter &filter, const Aggregation &appliedAggregation);
+    void setIdentifierFilter(const IdentifierFilter &filter);
 
 protected:
     bool filterAcceptsColumn(int sourceColumn,
@@ -33,11 +32,10 @@ protected:
 private:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     IdentifierFilter mIdentifierFilter;
-    Aggregation mAppliedAggregation;
 };
 
 }
 }
 }
 
-#endif // BPSCALINGIDENTIFIERFILTERMODEL_H
+#endif // BPIDENTIFIERFILTERMODEL_H

@@ -32,8 +32,6 @@ private:
     void searchHeaderHierarchy(Qt::Orientation orientation, QList<SearchResult> &result);
     void searchHeaderHierarchy(int logicalIndex, int sectionIndex,
                                Qt::Orientation orientation, QList<SearchResult> &result);
-    void searchFixedHeaderHierarchy(int logicalIndex, int sectionIndex,
-                                    Qt::Orientation orientation, QList<SearchResult> &result);
 
 private:
     QSharedPointer<AbstractModelInstance> mModelInstance;

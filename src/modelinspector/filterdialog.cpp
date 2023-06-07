@@ -204,12 +204,7 @@ void FilterDialog::on_labelBox_currentIndexChanged(int index)
 
 void FilterDialog::setupEquationFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
-    bool showAttributes = !(mViewType == ViewDataType::Jaccobian        ||
-                            mViewType == ViewDataType::BP_Scaling           ||
-                            mViewType == ViewDataType::Symbols);
-    bool showSymbols = true;
-    auto filterItem = setupSymTreeItems(FilterTreeItem::EquationText, filter, dFilter,
-                                        showAttributes, showSymbols);
+    auto filterItem = setupSymTreeItems(FilterTreeItem::EquationText, filter, dFilter);
     auto oldEqnModel = ui->rowView->selectionModel();
     auto eqnTreeModel = new FilterTreeModel(filterItem, ui->rowView);
     mEqnFilterModel = new QSortFilterProxyModel(ui->rowView);
@@ -230,12 +225,7 @@ void FilterDialog::setupEquationFilter(const IdentifierStates &filter, const Ide
 
 void FilterDialog::setupVariableFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
-    bool showAttributes = !(mViewType == ViewDataType::Jaccobian        ||
-                            mViewType == ViewDataType::BP_Scaling           ||
-                            mViewType == ViewDataType::Symbols);
-    bool showSymbols = true;
-    auto filterItem = setupSymTreeItems(FilterTreeItem::VariableText, filter, dFilter,
-                                        showAttributes, showSymbols);
+    auto filterItem = setupSymTreeItems(FilterTreeItem::VariableText, filter, dFilter);
     auto oldVarModel = ui->columnView->selectionModel();
     auto varTreeModel = new FilterTreeModel(filterItem, ui->columnView);
     mVarFilterModel = new QSortFilterProxyModel(ui->columnEdit);
@@ -285,18 +275,13 @@ void FilterDialog::setupLabelFilter()
 
 FilterTreeItem* FilterDialog::setupSymTreeItems(const QString &text,
                                                 const IdentifierStates &filter,
-                                                const IdentifierStates &dFilter,
-                                                bool showAttributes,
-                                                bool showSymbols)
+                                                const IdentifierStates &dFilter)
 {
     auto root = new FilterTreeItem(QString(), Qt::Unchecked);
     root->setCheckable(false);
-    auto attributes = new FilterTreeItem(FilterTreeItem::AttributesText, Qt::Unchecked, root);
-    attributes->setCheckable(false);
     auto symbols = new FilterTreeItem(text, Qt::Unchecked, root);
     symbols->setCheckable(false);
     for (const auto& item : filter) {
-        if (!showSymbols) continue;
         auto fItem = new FilterTreeItem(item.Text, item.Checked, symbols);
         auto defaultItem = dFilter.value(item.SymbolIndex);
         if (mViewType == ViewDataType::Symbols       &&
@@ -307,8 +292,7 @@ FilterTreeItem* FilterDialog::setupSymTreeItems(const QString &text,
         fItem->setSymbolIndex(item.SymbolIndex);
         symbols->append(fItem);
     }
-    showAttributes ? root->append(attributes) : delete attributes;
-    showSymbols ? root->append(symbols) : delete symbols;
+    root->append(symbols);
     return root;
 }
 
@@ -424,16 +408,6 @@ void FilterDialog::updateRangeEdit(QLineEdit *edit, const QString &text)
         edit->setStyleSheet("color: red");
     } else {
         edit->setStyleSheet("color: "+QApplication::palette().text().color().name());
-    }
-}
-
-void FilterDialog::disableAttributes(QSortFilterProxyModel *model)
-{
-    auto* item = static_cast<FilterTreeModel*>(model->sourceModel())->filterItem();
-    auto attrItem = item->findChild(FilterTreeItem::AttributesText);
-    if (!attrItem) return;
-    Q_FOREACH(auto child, attrItem->childs()) {
-        child->setChecked(Qt::Unchecked);
     }
 }
 

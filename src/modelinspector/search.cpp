@@ -75,11 +75,11 @@ void Search::searchHeaderHierarchy(Qt::Orientation orientation, QList<SearchResu
     case ViewDataType::BP_Count:
     case ViewDataType::BP_Average:
     case ViewDataType::BP_Scaling:
-        for (int section=0; section<sections; ++section) {
-            int realSection = mDataModel->headerData(section, orientation).toInt(&ok);
-            if (!ok) continue;
-            searchFixedHeaderHierarchy(section, realSection, orientation, result);
-        }
+        //for (int section=0; section<sections; ++section) {
+        //    int realSection = mDataModel->headerData(section, orientation).toInt(&ok);
+        //    if (!ok) continue;
+        //    searchFixedHeaderHierarchy(section, realSection, orientation, result);
+        //}
         break;
     default:
         for (int section=0; section<sections; ++section) {
@@ -107,42 +107,6 @@ void Search::searchHeaderHierarchy(int logicalIndex, int sectionIndex,
             }
         }
     }
-}
-
-void Search::searchFixedHeaderHierarchy(int logicalIndex,
-                                        int sectionIndex,
-                                        Qt::Orientation orientation,
-                                        QList<SearchResult> &result)
-{
-    if (orientation == Qt::Horizontal)
-        return;
-    if (mViewConfig->currentAggregation().indexToSymbol(orientation).contains(sectionIndex)) {
-        auto sym = mViewConfig->currentAggregation().indexToSymbol(orientation).value(sectionIndex);
-        if (compare(sym->name())) {
-            result.append(SearchResult{logicalIndex, orientation});
-        }
-    } else { // TODO !!! search additional headers... generic solution
-        //auto rows = mModelInstance->rowCount(mViewConfig->view());
-        //auto label = mModelInstance->plainHeaderData(Qt::Vertical,
-        //                                             mViewConfig->view(),
-        //                                             rows-2,
-        //                                             0).toString();
-        //if (compare(label)) {
-        //    result.append(SearchResult{logicalIndex, orientation});
-        //}
-    }
-    int index = sectionIndex;
-    if (!mViewConfig->currentAggregation().aggregationSymbols(Qt::Vertical).contains(index)) {
-        --index;
-    }
-    auto item = mViewConfig->currentAggregation().aggregationSymbols(Qt::Vertical).value(index);
-    for (const auto& label : item.labels()[sectionIndex]) {
-        if (compare(item.text()) || compare(label)) {
-            result.append(SearchResult{logicalIndex, orientation});
-            break;
-        }
-    }
-    // TODO !!! remove duplicates
 }
 
 }

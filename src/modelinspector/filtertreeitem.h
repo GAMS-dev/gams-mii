@@ -63,7 +63,6 @@ public:
     bool isVisible() const;
     void setVisible(bool visible);
 
-    static const QString AttributesText;
     static const QString EquationText;
     static const QString VariableText;
 

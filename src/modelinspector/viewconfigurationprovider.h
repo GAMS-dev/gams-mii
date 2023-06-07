@@ -105,6 +105,10 @@ public:
         mDefaultValueFilter = filter;
     }
 
+    const SectionLabels& sectionLabels() const {
+        return mSectionLabels;
+    }
+
 protected:
     virtual IdentifierStates createDefaultSymbolFilter(Qt::Orientation orientation) const = 0;
 
@@ -113,6 +117,8 @@ protected:
 protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     int mView;
+
+    SectionLabels mSectionLabels;
 
     LabelFilter mCurrentLabelFilter;
     LabelFilter mDefaultLabelFilter;

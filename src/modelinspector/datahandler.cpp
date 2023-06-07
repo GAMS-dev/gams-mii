@@ -213,8 +213,6 @@ public:
     {
         mSymbolRowCount = mModelInstance.equationCount() * 2;
         mRowCount = mSymbolRowCount + 2; // one row for max and min
-        mAdditionalSectionLabels[mRowCount-2] = QStringList({"Variable", "Max"});
-        mAdditionalSectionLabels[mRowCount-1] = QStringList({"", "Min"});
         mSymbolColumnCount = mModelInstance.variableCount();
         mColumnCount = mSymbolColumnCount + 2;
         for (auto var : mModelInstance.variables()) {
@@ -240,7 +238,6 @@ public:
     BPScalingProvider(const BPScalingProvider& other)
         : DataHandler::AbstractDataProvider(other)
         , mHorizontalHeader(other.mHorizontalHeader)
-        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = new double*[mRowCount];
@@ -254,13 +251,11 @@ public:
     BPScalingProvider(BPScalingProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(other)
         , mHorizontalHeader(other.mHorizontalHeader)
-        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
         other.mHorizontalHeader.clear();
-        other.mAdditionalSectionLabels.clear();
     }
 
     ~BPScalingProvider()
@@ -273,8 +268,9 @@ public:
 
     virtual void loadData() override
     {
-        for (int row=0; row<mRowCount; ++row) {
-            mLogicalSectionMapping[Qt::Vertical].append(row);
+        for (const auto& equation : mModelInstance.equations()) {
+            mLogicalSectionMapping[Qt::Vertical].append(equation->firstSection());
+            mLogicalSectionMapping[Qt::Vertical].append(equation->firstSection());
         }
         for (const auto& variable : mModelInstance.variables()) {
             mLogicalSectionMapping[Qt::Horizontal].append(variable->firstSection());
@@ -293,8 +289,8 @@ public:
         if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
             return mHorizontalHeader[logicalIndex];
         }
-        if (orientation == Qt::Vertical && mAdditionalSectionLabels.contains(logicalIndex) && dimension < 2) {
-            return mAdditionalSectionLabels[logicalIndex][dimension];
+        if (orientation == Qt::Vertical && mViewConfig->sectionLabels().contains(logicalIndex) && dimension < 2) {
+            return mViewConfig->sectionLabels()[logicalIndex][dimension];
         }
         return QVariant();
     }
@@ -311,7 +307,6 @@ public:
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
         mHorizontalHeader = other.mHorizontalHeader;
-        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -322,8 +317,6 @@ public:
         other.mDataMatrix = nullptr;
         mHorizontalHeader = other.mHorizontalHeader;
         other.mHorizontalHeader.clear();
-        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
-        other.mAdditionalSectionLabels.clear();
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -411,7 +404,7 @@ private:
                 if (rhs) {
                     rhsMin = std::min(rhsMin, std::abs(rhs));
                     rhsMax = std::max(rhsMax, std::abs(rhs));
-                    if (rhs < 0) --mCoeffCount.count()[minRow][mColumnCount-1];
+                    if (rhs < 0) ++mCoeffCount.count()[minRow][mColumnCount-1];
                     else if (rhs > 0) ++mCoeffCount.count()[maxRow][mColumnCount-1];
                 }
                 for (int i=0; i<sparseRow->entries(); ++i) {
@@ -420,7 +413,7 @@ private:
                     mDataMatrix[minRow][column] = std::min(std::abs(sparseRow->data()[i]), mDataMatrix[minRow][column]);
                     mDataMatrix[maxRow][column] = std::max(std::abs(sparseRow->data()[i]), mDataMatrix[maxRow][column]);
                     if (value < 0) {
-                        --mCoeffCount.count()[minRow][column];
+                        ++mCoeffCount.count()[minRow][column];
                     } else if (value > 0) {
                         ++mCoeffCount.count()[maxRow][column];
                     }
@@ -474,7 +467,6 @@ private:
 private:
     double** mDataMatrix;
     QStringList mHorizontalHeader;
-    SectionLabels mAdditionalSectionLabels;
     DataHandler::CoefficientCount& mCoeffCount;
 };
 
@@ -975,12 +967,10 @@ public:
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
     {
+        mDataMinimum = std::numeric_limits<double>::max();
+        mDataMaximum = std::numeric_limits<double>::lowest();
         mSymbolRowCount = mModelInstance.equationCount() * 2;
         mRowCount = mSymbolRowCount + 4;
-        mAdditionalSectionLabels[mRowCount-4] = QStringList({"Coeff Cnts", "Pos"});
-        mAdditionalSectionLabels[mRowCount-3] = QStringList({"", "Neg"});
-        mAdditionalSectionLabels[mRowCount-2] = QStringList({"# of Vars", ""});
-        mAdditionalSectionLabels[mRowCount-1] = QStringList({"Variable Type", ""});
         mSymbolColumnCount = mModelInstance.variableCount();
         mColumnCount = mSymbolColumnCount + 4;
         for (auto var : mModelInstance.variables()) {
@@ -993,8 +983,13 @@ public:
         mDataMatrix = new int*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new int[mColumnCount];
-            for (int c=0; r<mCoeffCount.rowCount() && c<mCoeffCount.columnCount(); ++c)
+            for (int c=0; r<mCoeffCount.rowCount() && c<mCoeffCount.columnCount(); ++c) {
                 mDataMatrix[r][c] = mCoeffCount.count()[r][c];
+                if (c != mColumnCount-4) {
+                    mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[r][c]));
+                    mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[r][c]));
+                }
+            }
             if (r < mCoeffCount.rowCount())
                 std::fill(mDataMatrix[r]+mCoeffCount.columnCount(), mDataMatrix[r]+mColumnCount, 0);
             else
@@ -1005,7 +1000,6 @@ public:
     BPCountDataProvider(const BPCountDataProvider& other)
         : DataHandler::AbstractDataProvider(other)
         , mHorizontalHeader(other.mHorizontalHeader)
-        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = new int*[mRowCount];
@@ -1018,13 +1012,11 @@ public:
     BPCountDataProvider(BPCountDataProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(other)
         , mHorizontalHeader(other.mHorizontalHeader)
-        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
         other.mHorizontalHeader.clear();
-        other.mAdditionalSectionLabels.clear();
     }
 
     ~BPCountDataProvider()
@@ -1037,8 +1029,9 @@ public:
 
     void loadData() override
     {
-        for (int row=0; row<mRowCount; ++row) {
-            mLogicalSectionMapping[Qt::Vertical].append(row);
+        for (const auto& equation : mModelInstance.equations()) {
+            mLogicalSectionMapping[Qt::Vertical].append(equation->firstSection());
+            mLogicalSectionMapping[Qt::Vertical].append(equation->firstSection());
         }
         for (const auto& variable : mModelInstance.variables()) {
             mLogicalSectionMapping[Qt::Horizontal].append(variable->firstSection());
@@ -1050,19 +1043,34 @@ public:
                 mDataMatrix[mRowCount-3][v] += mDataMatrix[negRow][v];
                 mDataMatrix[mRowCount-4][v] += mDataMatrix[posRow][v];
             }
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[negRow][mColumnCount-2]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[negRow][mColumnCount-2]));
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[posRow][mColumnCount-2]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[posRow][mColumnCount-2]));
             mDataMatrix[mRowCount-3][mColumnCount-3] += mDataMatrix[negRow][mColumnCount-3];
             mDataMatrix[mRowCount-4][mColumnCount-3] += mDataMatrix[posRow][mColumnCount-3];
             mDataMatrix[mRowCount-3][mColumnCount-2] += mDataMatrix[negRow][mColumnCount-2];
             mDataMatrix[mRowCount-4][mColumnCount-2] += mDataMatrix[posRow][mColumnCount-2];
         }
+        for (int r=mRowCount-4; r<mRowCount-1; ++r) {
+            for (int c=0; c<mColumnCount; ++c) {
+                mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[r][c]));
+                mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[r][c]));
+            }
+        }
         int index = 0;
         for (const auto& equation : mModelInstance.equations()) {
             mDataMatrix[index][mColumnCount-1] = equation->entries();
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[index][mColumnCount-1]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[index][mColumnCount-1]));
             index += 2;
         }
         index = 0;
         for (const auto& variable : mModelInstance.variables()) {
-            mDataMatrix[mRowCount-2][index++] = variable->entries();
+            mDataMatrix[mRowCount-2][index] = variable->entries();
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[mRowCount-2][index]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[mRowCount-2][index]));
+            ++index;
         }
         int varColumn = 0;
         auto columns = mModelInstance.variableRowCount();
@@ -1090,6 +1098,10 @@ public:
             }
             ++varColumn;
         }
+        mViewConfig->defaultValueFilter().MinValue = mDataMinimum;
+        mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
+        mViewConfig->currentValueFilter().MinValue = mDataMinimum;
+        mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
         delete [] lowerBounds;
         delete [] upperBounds;
     }
@@ -1104,8 +1116,8 @@ public:
         if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
             return mHorizontalHeader[logicalIndex];
         }
-        if (orientation == Qt::Vertical && mAdditionalSectionLabels.contains(logicalIndex) && dimension < 2) {
-            return mAdditionalSectionLabels[logicalIndex][dimension];
+        if (orientation == Qt::Vertical && mViewConfig->sectionLabels().contains(logicalIndex) && dimension < 2) {
+            return mViewConfig->sectionLabels()[logicalIndex][dimension];
         }
         return QString();
     }
@@ -1122,7 +1134,6 @@ public:
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
         mHorizontalHeader = other.mHorizontalHeader;
-        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -1133,8 +1144,6 @@ public:
         other.mDataMatrix = nullptr;
         mHorizontalHeader = other.mHorizontalHeader;
         other.mHorizontalHeader.clear();
-        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
-        other.mAdditionalSectionLabels.clear();
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -1142,7 +1151,6 @@ public:
 private:
     int** mDataMatrix;
     QStringList mHorizontalHeader;
-    SectionLabels mAdditionalSectionLabels;
     DataHandler::CoefficientCount& mCoeffCount;
 };
 
@@ -1156,12 +1164,10 @@ public:
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
     {
+        mDataMinimum = std::numeric_limits<double>::max();
+        mDataMaximum = std::numeric_limits<double>::lowest();
         mSymbolRowCount = mModelInstance.equationCount() * 2;
         mRowCount = mSymbolRowCount + 4;
-        mAdditionalSectionLabels[mRowCount-4] = QStringList({"Cfs PerVar", "Pos"});
-        mAdditionalSectionLabels[mRowCount-3] = QStringList({"", "Neg"});
-        mAdditionalSectionLabels[mRowCount-2] = QStringList({"# of Vars", ""});
-        mAdditionalSectionLabels[mRowCount-1] = QStringList({"Variable Type", ""});
         mSymbolColumnCount = mModelInstance.variableCount();
         mColumnCount = mSymbolColumnCount + 4;
         for (auto var : mModelInstance.variables()) {
@@ -1181,7 +1187,6 @@ public:
     BPAverageDataProvider(const BPAverageDataProvider& other)
         : DataHandler::AbstractDataProvider(other)
         , mHorizontalHeader(other.mHorizontalHeader)
-        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = new double*[mRowCount];
@@ -1194,13 +1199,11 @@ public:
     BPAverageDataProvider(BPAverageDataProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(other)
         , mHorizontalHeader(other.mHorizontalHeader)
-        , mAdditionalSectionLabels(other.mAdditionalSectionLabels)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
         other.mHorizontalHeader.clear();
-        other.mAdditionalSectionLabels.clear();
     }
 
     ~BPAverageDataProvider()
@@ -1213,8 +1216,9 @@ public:
 
     void loadData() override
     {
-        for (int row=0; row<mRowCount; ++row) {
-            mLogicalSectionMapping[Qt::Vertical].append(row);
+        for (const auto& equation : mModelInstance.equations()) {
+            mLogicalSectionMapping[Qt::Vertical].append(equation->firstSection());
+            mLogicalSectionMapping[Qt::Vertical].append(equation->firstSection());
         }
         for (const auto& variable : mModelInstance.variables()) {
             mLogicalSectionMapping[Qt::Horizontal].append(variable->firstSection());
@@ -1222,11 +1226,16 @@ public:
         int index = 0;
         for (const auto& equation : mModelInstance.equations()) {
             mDataMatrix[index][mColumnCount-1] = equation->entries();
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[index][mColumnCount-1]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[index][mColumnCount-1]));
             index += 2;
         }
         index = 0;
         for (const auto& variable : mModelInstance.variables()) {
-            mDataMatrix[mRowCount-2][index++] = variable->entries();
+            mDataMatrix[mRowCount-2][index] = variable->entries();
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[mRowCount-2][index]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[mRowCount-2][index]));
+            ++index;
         }
         for (int r=0, negRow = 1, posRow = 0; r<mModelInstance.equationCount(); ++r, negRow += 2, posRow += 2) {
             for (int c=0; c<mColumnCount-4; ++c) {
@@ -1236,17 +1245,35 @@ public:
                 mDataMatrix[posRow][c] = mCoeffCount.count()[posRow][c] / mDataMatrix[mRowCount-2][c];
                 mDataMatrix[posRow][mColumnCount-2] += mCoeffCount.count()[posRow][c];
                 mDataMatrix[mRowCount-4][c] += mCoeffCount.count()[posRow][c];
+                mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[negRow][c]));
+                mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[posRow][c]));
+                mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[negRow][c]));
+                mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[posRow][c]));
             }
             for (int c=mCoeffCount.columnCount()-2;
                  posRow<mCoeffCount.rowCount() && c<mCoeffCount.columnCount(); ++c) {
                 mDataMatrix[posRow][c] = mCoeffCount.count()[posRow][c];
+                if (c != mColumnCount-4) {
+                    mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[posRow][c]));
+                    mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[posRow][c]));
+                }
             }
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[posRow][mColumnCount-1]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[posRow][mColumnCount-1]));
             mDataMatrix[negRow][mColumnCount-2] /= mDataMatrix[posRow][mColumnCount-1];
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[negRow][mColumnCount-2]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[negRow][mColumnCount-2]));
             mDataMatrix[posRow][mColumnCount-2] /= mDataMatrix[posRow][mColumnCount-1];
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[negRow][mColumnCount-2]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[negRow][mColumnCount-2]));
         }
         for (int c=0; c<mColumnCount-4; ++c) {
             mDataMatrix[mRowCount-3][c] /= mDataMatrix[mRowCount-2][c];
             mDataMatrix[mRowCount-4][c] /= mDataMatrix[mRowCount-2][c];
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[mRowCount-3][c]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[mRowCount-4][c]));
+            mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[mRowCount-3][c]));
+            mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[mRowCount-4][c]));
         }
         int varColumn = 0;
         auto columns = mModelInstance.variableRowCount();
@@ -1274,6 +1301,10 @@ public:
             }
             ++varColumn;
         }
+        mViewConfig->defaultValueFilter().MinValue = mDataMinimum;
+        mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
+        mViewConfig->currentValueFilter().MinValue = mDataMinimum;
+        mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
         delete [] lowerBounds;
         delete [] upperBounds;
     }
@@ -1288,8 +1319,8 @@ public:
         if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
             return mHorizontalHeader[logicalIndex];
         }
-        if (orientation == Qt::Vertical && mAdditionalSectionLabels.contains(logicalIndex) && dimension < 2) {
-            return mAdditionalSectionLabels[logicalIndex][dimension];
+        if (orientation == Qt::Vertical && mViewConfig->sectionLabels().contains(logicalIndex) && dimension < 2) {
+            return mViewConfig->sectionLabels()[logicalIndex][dimension];
         }
         return QVariant();
     }
@@ -1306,7 +1337,6 @@ public:
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
         mHorizontalHeader = other.mHorizontalHeader;
-        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -1317,8 +1347,6 @@ public:
         other.mDataMatrix = nullptr;
         mHorizontalHeader = other.mHorizontalHeader;
         other.mHorizontalHeader.clear();
-        mAdditionalSectionLabels = other.mAdditionalSectionLabels;
-        other.mAdditionalSectionLabels.clear();
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -1326,7 +1354,6 @@ public:
 private:
     double** mDataMatrix;
     QStringList mHorizontalHeader;
-    SectionLabels mAdditionalSectionLabels;
     DataHandler::CoefficientCount& mCoeffCount;
 };
 

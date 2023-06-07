@@ -4,7 +4,6 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-const QString FilterTreeItem::AttributesText = "Attributes";
 const QString FilterTreeItem::EquationText = "Equations";
 const QString FilterTreeItem::VariableText = "Variables";
 

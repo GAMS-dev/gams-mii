@@ -77,7 +77,7 @@ SOURCES += \
     modelinspector/abstracttableviewframe.cpp \
     modelinspector/aggregation.cpp \
     modelinspector/aggregationdialog.cpp \
-    modelinspector/bpscalingidentifierfiltermodel.cpp \
+    modelinspector/bpidentifierfiltermodel.cpp \
     modelinspector/bpviewframe.cpp \
     modelinspector/columnrowfiltermodel.cpp \
     modelinspector/comprehensivetablemodel.cpp \
@@ -119,7 +119,7 @@ HEADERS += \
     modelinspector/abstracttableviewframe.h \
     modelinspector/aggregation.h \
     modelinspector/aggregationdialog.h \
-    modelinspector/bpscalingidentifierfiltermodel.h \
+    modelinspector/bpidentifierfiltermodel.h \
     modelinspector/bpviewframe.h \
     modelinspector/columnrowfiltermodel.h \
     modelinspector/common.h \

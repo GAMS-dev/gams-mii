@@ -57,14 +57,39 @@ private:
     std::function<double(const QVariant &variant, bool *ok)> getValue;
 };
 
-class MinMaxValueFormatProxyModel final : public ValueFormatProxyModel
+class BPValueFormatProxyModel final : public ValueFormatProxyModel
 {
     Q_OBJECT
 
 public:
-    MinMaxValueFormatProxyModel(QObject *parent = nullptr);
+    BPValueFormatProxyModel(QObject *parent = nullptr);
 
     QVariant data(const QModelIndex &index, int role) const override;
+};
+
+class BPValueFormatTypeProxyModel final : public ValueFormatProxyModel
+{
+    Q_OBJECT
+
+public:
+    BPValueFormatTypeProxyModel(QObject *parent = nullptr);
+
+    QVariant data(const QModelIndex &index, int role) const override;
+};
+
+class AbsFormatProxyModel : public QIdentityProxyModel
+{
+    Q_OBJECT
+
+public:
+    AbsFormatProxyModel(QObject *parent = nullptr);
+
+    QVariant data(const QModelIndex &index, int role) const override;
+
+    void setAbsFormat(bool absoluteValues);
+
+private:
+    bool mAbsoluteValues = false;
 };
 
 }

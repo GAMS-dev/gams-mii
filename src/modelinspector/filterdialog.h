@@ -72,9 +72,7 @@ private:
     void setupLabelFilter();
     FilterTreeItem* setupSymTreeItems(const QString &text,
                                       const IdentifierStates &filter,
-                                      const IdentifierStates &dFilter,
-                                      bool showAttributes,
-                                      bool showSymbols);
+                                      const IdentifierStates &dFilter);
     void setupLabelTreeItems(const QString &text, Qt::Orientation orientation, FilterTreeItem *root);
 
     void applyCheckState(QTreeView* view,
@@ -86,8 +84,6 @@ private:
                                       QSortFilterProxyModel *model);
 
     void updateRangeEdit(QLineEdit *edit, const QString &text);
-
-    void disableAttributes(QSortFilterProxyModel *model);
 
     void resetValueFilter();
 

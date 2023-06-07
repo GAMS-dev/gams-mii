@@ -4,7 +4,7 @@
 #include "comprehensivetablemodel.h"
 #include "ui_standardtableviewframe.h"
 #include "hierarchicalheaderview.h"
-#include "bpscalingidentifierfiltermodel.h"
+#include "bpidentifierfiltermodel.h"
 #include "valueformatproxymodel.h"
 
 #include <QAction>
@@ -26,7 +26,7 @@ AbstractBPViewFrame::AbstractBPViewFrame(ComprehensiveTableModel *model,
     mSelectionMenu->addAction(mSymbolAction);
     connect(mSymbolAction, &QAction::triggered, this, [this]{handleRowColumnSelection();});
     connect(ui->tableView, &QWidget::customContextMenuRequested,
-            this, &BPScalingViewFrame::customMenuRequested);
+            this, &AbstractBPViewFrame::customMenuRequested);
 }
 
 AbstractBPViewFrame::~AbstractBPViewFrame()
@@ -60,8 +60,7 @@ void AbstractBPViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
 {
     mViewConfig->setCurrentIdentifierFilter(filter);
     if (mIdentifierFilterModel)
-        mIdentifierFilterModel->setIdentifierFilter(filter,
-                                                    mViewConfig->currentAggregation());
+        mIdentifierFilterModel->setIdentifierFilter(filter);
 }
 
 void AbstractBPViewFrame::setShowAbsoluteValues(bool absoluteValues)
@@ -73,6 +72,12 @@ void AbstractBPViewFrame::setShowAbsoluteValues(bool absoluteValues)
         emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
         mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
     }
+}
+
+void AbstractBPViewFrame::setValueFilter(const ValueFilter &filter)
+{
+    mViewConfig->setCurrentValueFilter(filter);
+    mValueFormatModel->setValueFilter(filter);
 }
 
 void AbstractBPViewFrame::reset()
@@ -101,8 +106,7 @@ void AbstractBPViewFrame::setIdentifierLabelFilter(const IdentifierState &state,
 {
     if (state.disabled() && mIdentifierFilterModel) {
         setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter(),
-                                                    mViewConfig->currentAggregation());
+        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
     } else {
         mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
     }
@@ -116,21 +120,17 @@ void AbstractBPViewFrame::handleRowColumnSelection()
     auto indexes = ui->tableView->selectionModel()->selectedIndexes();
     int section;
     for (const auto& index : indexes) {
-        // TODO !!! drop this aggregation stuff (indexToVariable)...
-        // not needed anymore or fix this... check HHeader implementation
+        if (!index.isValid())
+            continue;
         section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
                                                      Mi::IndexDataRole).toInt();
-        if (mViewConfig->currentAggregation().indexToEquation().contains(section)) {
-            auto symbol = mViewConfig->currentAggregation().indexToEquation()[section];
-            rowSymbols[symbol->firstSection()] = symbol;
-        } else {
-            auto symbol = mModelInstance->equation(section);
-            rowSymbols[symbol->firstSection()] = symbol;
-        }
+        auto equation = mModelInstance->equation(section);
+        rowSymbols[section] = equation;
         section = ui->tableView->model()->headerData(index.column(), Qt::Horizontal,
                                                      Mi::IndexDataRole).toInt();
-        auto symbol = mModelInstance->variable(section);
-        columnSymbols[symbol->firstSection()] = symbol;
+        auto variable = mModelInstance->variable(section);
+        columnSymbols[section] = variable;
+        break;
     }
     mSelectedEquations = rowSymbols.values();
     mSelectedVariables = columnSymbols.values();
@@ -183,8 +183,14 @@ void BPOverviewViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelI
 {
     mModelInstance = modelInstance;
     mViewConfig->setModelInstance(mModelInstance);
+    mViewConfig->initialize(nullptr);
     mModelInstance->loadData(mViewConfig);
     setupView();
+}
+
+void BPOverviewViewFrame::setValueFilter(const ValueFilter &filter)
+{
+    Q_UNUSED(filter);
 }
 
 ViewDataType BPOverviewViewFrame::type() const
@@ -199,37 +205,16 @@ void BPOverviewViewFrame::updateView()
     emit filtersChanged();
 }
 
-void BPOverviewViewFrame::handleRowColumnSelection()
-{
-    QMap<int, Symbol*> rowSymbols, columnSymbols;
-    auto indexes = ui->tableView->selectionModel()->selectedIndexes();
-    int section;
-    for (const auto& index : indexes) {
-        if (!index.isValid())
-            return;
-        section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
-                                                     Mi::IndexDataRole).toInt();
-        auto equation = mModelInstance->equation(section);
-        rowSymbols[section] = equation;
-        section = ui->tableView->model()->headerData(index.column(), Qt::Horizontal,
-                                                     Mi::IndexDataRole).toInt();
-        auto variable = mModelInstance->variable(section);
-        columnSymbols[section] = variable;
-        break;
-    }
-    mSelectedEquations = rowSymbols.values();
-    mSelectedVariables = columnSymbols.values();
-    emit newSymbolViewRequested();
-}
-
 void BPOverviewViewFrame::setupView()
 {
     auto baseModel = new BPOverviewTableModel(mViewConfig->view(),
                                               mModelInstance,
                                               ui->tableView);
+    mIdentifierFilterModel = new BPIdentifierFilterModel(mModelInstance, ui->tableView);
+    mIdentifierFilterModel->setSourceModel(baseModel);
 
     auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(baseModel);
+    ui->tableView->setModel(mIdentifierFilterModel);
     delete oldSelectionModel;
 
     ui->tableView->verticalHeader()->setVisible(true);
@@ -259,7 +244,7 @@ AbstractTableViewFrame *BPCountViewFrame::clone(int view)
 {
     auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
     if (!viewConfig)
-        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::BP_Count,
+        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
     auto frame = new BPCountViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
@@ -275,6 +260,12 @@ void BPCountViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInst
     mViewConfig->initialize(nullptr);
     mModelInstance->loadData(mViewConfig);
     setupView();
+}
+
+void BPCountViewFrame::setShowAbsoluteValues(bool absoluteValues)
+{
+    if (mAbsFormatModel)
+        mAbsFormatModel->setAbsFormat(absoluteValues);
 }
 
 void BPCountViewFrame::updateView()
@@ -308,20 +299,22 @@ void BPCountViewFrame::setupView()
             this, &BPCountViewFrame::setIdentifierLabelFilter);
     
     auto baseModel = new BPCountTableModel(mViewConfig->view(),
-                                                 mModelInstance,
-                                                 ui->tableView);
+                                           mModelInstance,
+                                           ui->tableView);
+    mValueFormatModel = new BPValueFormatTypeProxyModel(ui->tableView);
+    mValueFormatModel->setSourceModel(baseModel);
+    mAbsFormatModel = new AbsFormatProxyModel(ui->tableView);
+    mAbsFormatModel->setSourceModel(mValueFormatModel);
+    mIdentifierFilterModel = new BPIdentifierFilterModel(mModelInstance, ui->tableView);
+    mIdentifierFilterModel->setSourceModel(mAbsFormatModel);
 
     ui->tableView->setVerticalHeader(mVerticalHeader);
     auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(baseModel);
+    ui->tableView->setModel(mIdentifierFilterModel);
     delete oldSelectionModel;
     ui->tableView->verticalHeader()->setVisible(true);
     ui->tableView->horizontalHeader()->setVisible(true);
     mBaseModel = QSharedPointer<ComprehensiveTableModel>(baseModel);
-
-    const auto& applied = mViewConfig->currentAggregation();
-    mVerticalHeader->setAppliedAggregation(applied);
-    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
 
     ui->tableView->resizeColumnsToContents();
     ui->tableView->resizeRowsToContents();
@@ -347,7 +340,7 @@ AbstractTableViewFrame *BPAverageViewFrame::clone(int view)
 {
     auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
     if (!viewConfig)
-        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::BP_Average,
+        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
     auto frame = new BPAverageViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
@@ -363,6 +356,12 @@ void BPAverageViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     mViewConfig->initialize(nullptr);
     mModelInstance->loadData(mViewConfig);
     setupView();
+}
+
+void BPAverageViewFrame::setShowAbsoluteValues(bool absoluteValues)
+{
+    if (mAbsFormatModel)
+        mAbsFormatModel->setAbsFormat(absoluteValues);
 }
 
 void BPAverageViewFrame::updateView()
@@ -385,18 +384,20 @@ void BPAverageViewFrame::setupView()
     auto baseModel = new BPAverageTableModel(mViewConfig->view(),
                                              mModelInstance,
                                              ui->tableView);
+    mValueFormatModel = new BPValueFormatTypeProxyModel(ui->tableView);
+    mValueFormatModel->setSourceModel(baseModel);
+    mAbsFormatModel = new AbsFormatProxyModel(ui->tableView);
+    mAbsFormatModel->setSourceModel(mValueFormatModel);
+    mIdentifierFilterModel = new BPIdentifierFilterModel(mModelInstance, ui->tableView);
+    mIdentifierFilterModel->setSourceModel(mAbsFormatModel);
 
     ui->tableView->setVerticalHeader(mVerticalHeader);
     auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(baseModel);
+    ui->tableView->setModel(mIdentifierFilterModel);
     delete oldSelectionModel;
     ui->tableView->verticalHeader()->setVisible(true);
     ui->tableView->horizontalHeader()->setVisible(true);
     mBaseModel = QSharedPointer<ComprehensiveTableModel>(baseModel);
-
-    const auto& applied = mViewConfig->currentAggregation();
-    mVerticalHeader->setAppliedAggregation(applied);
-    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
 
     ui->tableView->resizeColumnsToContents();
     ui->tableView->resizeRowsToContents();
@@ -406,7 +407,7 @@ BPScalingViewFrame::BPScalingViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractBPViewFrame(new ComprehensiveTableModel, parent, f)
 {
     ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
-    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::BP_Scaling));
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type()));
 }
 
 BPScalingViewFrame::BPScalingViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
@@ -422,7 +423,7 @@ AbstractTableViewFrame* BPScalingViewFrame::clone(int view)
 {
     auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
     if (!viewConfig)
-        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::BP_Scaling,
+        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
     auto frame = new BPScalingViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
@@ -447,16 +448,6 @@ void BPScalingViewFrame::updateView()
     emit filtersChanged();
 }
 
-void BPScalingViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    mViewConfig->setCurrentValueFilter(filter);
-    if (mViewConfig->currentAggregation().useAbsoluteValues() != mViewConfig->currentValueFilter().UseAbsoluteValues) {
-        setShowAbsoluteValues(mViewConfig->currentValueFilter().UseAbsoluteValues);
-    } else if (mValueFormatModel) {
-        mValueFormatModel->setValueFilter(filter);
-    }
-}
-
 void BPScalingViewFrame::setupView()
 {
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
@@ -467,12 +458,12 @@ void BPScalingViewFrame::setupView()
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPScalingViewFrame::setIdentifierLabelFilter);
 
-    auto baseModel = new ComprehensiveTableModel(ui->tableView);
-    baseModel->setModelInstance(mModelInstance);
-    baseModel->setView(mViewConfig->view());
-    mValueFormatModel = new MinMaxValueFormatProxyModel(ui->tableView);
+    auto baseModel = new ComprehensiveTableModel(mViewConfig->view(),
+                                                 mModelInstance,
+                                                 ui->tableView);
+    mValueFormatModel = new BPValueFormatProxyModel(ui->tableView);
     mValueFormatModel->setSourceModel(baseModel);
-    mIdentifierFilterModel = new BPScalingIdentifierFilterModel(mModelInstance, ui->tableView);
+    mIdentifierFilterModel = new BPIdentifierFilterModel(mModelInstance, ui->tableView);
     mIdentifierFilterModel->setSourceModel(mValueFormatModel);
 
     ui->tableView->setVerticalHeader(mVerticalHeader);
@@ -482,10 +473,6 @@ void BPScalingViewFrame::setupView()
     ui->tableView->horizontalHeader()->setVisible(true);
     ui->tableView->verticalHeader()->setVisible(true);
     mBaseModel = QSharedPointer<ComprehensiveTableModel>(baseModel);
-
-    const auto& applied = mViewConfig->currentAggregation();
-    mVerticalHeader->setAppliedAggregation(applied);
-    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
 
     ui->tableView->resizeColumnsToContents();
     ui->tableView->resizeRowsToContents();

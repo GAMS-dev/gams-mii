@@ -8,11 +8,12 @@ namespace studio{
 namespace modelinspector {
 
 class BPOverviewTableModel;
-class BPScalingIdentifierFilterModel;
+class BPIdentifierFilterModel;
 class ComprehensiveTableModel;
 class HierarchicalHeaderView;
 class ComprehensiveTableModel;
 class ValueFormatProxyModel;
+class AbsFormatProxyModel;
 
 class AbstractBPViewFrame : public AbstractTableViewFrame
 {
@@ -34,28 +35,31 @@ public:
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
+    void setValueFilter(const ValueFilter &filter) override;
+
     void reset() override;
 
 signals:
     void newSymbolViewRequested();
 
 protected slots:
-    void customMenuRequested(const QPoint &pos);
-
     void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
                                   Qt::Orientation orientation) override;
 
-protected:
-    virtual void handleRowColumnSelection();
+private slots:
+    void customMenuRequested(const QPoint &pos);
 
+    void handleRowColumnSelection();
+
+protected:
     void setIdentifierFilterCheckState(int symbolIndex,
                                        Qt::CheckState state,
                                        Qt::Orientation orientation);
 
 protected:
     QSharedPointer<ComprehensiveTableModel> mBaseModel;
-    ValueFormatProxyModel* mValueFormatModel = nullptr;
-    BPScalingIdentifierFilterModel* mIdentifierFilterModel = nullptr;
+    ValueFormatProxyModel* mValueFormatModel = nullptr; // TODO !!! not needed for overview view
+    BPIdentifierFilterModel* mIdentifierFilterModel = nullptr;
 
     QMenu *mSelectionMenu;
     QAction *mSymbolAction = new QAction("Show selected symbols", this);
@@ -80,18 +84,14 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
+    void setValueFilter(const ValueFilter &filter) override;
+
     ViewDataType type() const override;
 
     void updateView() override;
 
-protected:
-    void handleRowColumnSelection() override;
-
 private:
     void setupView();
-
-private:
-    QSharedPointer<BPOverviewTableModel> mBaseModel;
 };
 
 class BPCountViewFrame final : public AbstractBPViewFrame
@@ -110,6 +110,8 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
+    void setShowAbsoluteValues(bool absoluteValues) override;
+
     inline ViewDataType type() const override
     {
         return ViewDataType::BP_Count;
@@ -125,6 +127,7 @@ private:
     void setupView();
 
 private:
+    AbsFormatProxyModel* mAbsFormatModel = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
 
@@ -144,6 +147,8 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
+    void setShowAbsoluteValues(bool absoluteValues) override;
+
     inline ViewDataType type() const override
     {
         return ViewDataType::BP_Average;
@@ -155,8 +160,8 @@ private:
     void setupView();
 
 private:
+    AbsFormatProxyModel* mAbsFormatModel = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
-    QSharedPointer<ComprehensiveTableModel> mBaseModel;
 };
 
 class BPScalingViewFrame final : public AbstractBPViewFrame
@@ -178,8 +183,6 @@ public:
     }
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
-
-    void setValueFilter(const ValueFilter &filter) override;
 
     void updateView() override;
 

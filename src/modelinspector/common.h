@@ -53,7 +53,10 @@ struct Mi
         IndexDataRole = Qt::UserRole,
         LabelDataRole,
         RowEntryRole,
-        ColumnEntryRole
+        ColumnEntryRole,
+        HorizontalDimensionRole,
+        VerticalDimensionRole,
+        SectionLabelRole
     };
 
     static QHash<int, QByteArray> roleNames()
@@ -62,7 +65,10 @@ struct Mi
             {IndexDataRole, "indexdata"},
             {LabelDataRole, "labeldata"},
             {RowEntryRole, "rowentry"},
-            {ColumnEntryRole, "columnentry"}
+            {ColumnEntryRole, "columnentry"},
+            {HorizontalDimensionRole, "horizontaldimension"},
+            {VerticalDimensionRole, "verticaldimension"},
+            {SectionLabelRole, "sectionlabel"}
         };
         return mapping;
     }
