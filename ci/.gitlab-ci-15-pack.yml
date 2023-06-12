@@ -117,8 +117,9 @@ pack-leg:
     - cp -r icons/* appdir/usr/share/pixmaps
     - cp platform/linux/modelinspector.desktop appdir/usr/share/modelinspector.desktop
     # build the AppImage
-    - /opt/linuxdeploy/linuxdeploy-x86_64.AppImage --appdir=appdir --plugin=qt --output=appimage --desktop-file=appdir/usr/share/modelinspector.desktop 
-    - mv Model_Inspector-x86_64.AppImage model-inspector-leg-x86_64.AppImage
+    - export VERSION=""
+    - /opt/linuxdeploy/linuxdeploy-x86_64.AppImage --appdir=appdir --plugin=qt --output=appimage --desktop-file=appdir/usr/share/modelinspector.desktop
+    - mv Model_Inspector--x86_64.AppImage model-inspector-leg-x86_64.AppImage
   artifacts:
     name: "model-inspector-leg-x86_64"
     paths: ['model-inspector-leg-x86_64.AppImage']
