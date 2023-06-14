@@ -123,7 +123,7 @@
        <widget class="QLineEdit" name="searchEdit"/>
       </item>
       <item>
-       <widget class="QCheckBox" name="regexBox">
+       <widget class="QCheckBox" name="searchRegexBox">
         <property name="text">
          <string>Regular Expression</string>
         </property>

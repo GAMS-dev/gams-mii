@@ -72,7 +72,7 @@ public:
 
     virtual void setupView(QSharedPointer<AbstractModelInstance> modelInstance) = 0;
 
-    virtual void setSearchSelection(const gams::studio::modelinspector::SearchResult &result);
+    virtual void setSearchSelection(const gams::studio::modelinspector::SearchResult::SearchEntry &result);
 
     virtual void reset() = 0;
 
@@ -84,7 +84,8 @@ public:
     QSharedPointer<AbstractViewConfiguration> viewConfig() const;
     void setViewConfig(QSharedPointer<AbstractViewConfiguration> viewConfig);
 
-    QList<SearchResult> search(const QString &term, bool isRegEx);
+    SearchResult& search(const QString &term, bool isRegEx);
+    SearchResult& searchResult();
 
     void zoomIn();
     void zoomOut();
@@ -93,9 +94,11 @@ public:
 signals:
     void filtersChanged();
 
+    void searchResultUpdated(const QList<SearchResult>&);
+
 protected slots:
     virtual void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
-                                          Qt::Orientation orientation) = 0;
+                                          Qt::Orientation orientation);
 
 protected:
     Ui::StandardTableViewFrame* ui;

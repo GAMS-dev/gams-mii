@@ -63,13 +63,26 @@ void TestCommon::test_predefinedHeader()
 
 void TestCommon::test_searchResult()
 {
-    SearchResult defaultResult;
-    QCOMPARE(defaultResult.Index, -1);
-    QCOMPARE(defaultResult.Orientation, Qt::Horizontal);
+    SearchResult result;
+    QCOMPARE(result.Term, QString());
+    QCOMPARE(result.IsRegEx, false);
+    QVERIFY(result.Entries.isEmpty());
 
-    SearchResult result { 5, Qt::Vertical };
-    QCOMPARE(result.Index, 5);
-    QCOMPARE(result.Orientation, Qt::Vertical);
+    result.Term = "x";
+    result.IsRegEx = true;
+    result.Entries.append(SearchResult::SearchEntry { 0, Qt::Horizontal });
+    QCOMPARE(result.Term, "x");
+    QCOMPARE(result.IsRegEx, true);
+    QVERIFY(!result.Entries.isEmpty());
+
+    SearchResult::SearchEntry entry;
+    QCOMPARE(entry.Index, -1);
+    QCOMPARE(entry.Orientation, Qt::Horizontal);
+
+    entry.Index = 42;
+    entry.Orientation = Qt::Vertical;
+    QCOMPARE(entry.Index, 42);
+    QCOMPARE(entry.Orientation, Qt::Vertical);
 }
 
 void TestCommon::test_default_identifierState()

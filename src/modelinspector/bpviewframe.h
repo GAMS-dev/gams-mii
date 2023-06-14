@@ -119,10 +119,6 @@ public:
 
     void updateView() override;
 
-protected slots:
-    void setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
-                                  Qt::Orientation orientation) override;
-
 private:
     void setupView();
 

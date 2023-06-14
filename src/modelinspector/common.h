@@ -178,8 +178,15 @@ typedef QHash<QString, Qt::CheckState> LabelCheckStates;
 
 struct SearchResult
 {
-    int Index = -1;
-    Qt::Orientation Orientation = Qt::Horizontal;
+    struct SearchEntry
+    {
+        int Index = -1;
+        Qt::Orientation Orientation = Qt::Horizontal;
+    };
+
+    QString Term;
+    bool IsRegEx = false;
+    QList<SearchEntry> Entries;
 };
 
 struct IdentifierState

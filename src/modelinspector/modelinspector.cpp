@@ -110,10 +110,16 @@ void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
     }
 }
 
-QList<SearchResult> ModelInspector::searchHeaders(const QString &term, bool isRegEx)
+SearchResult& ModelInspector::searchHeaders(const QString &term, bool isRegEx)
 {
     auto frame = currentView();
-    return frame ? frame->search(term, isRegEx) : QList<SearchResult>();
+    return frame ? frame->search(term, isRegEx) : mDefaultSearchResult;
+}
+
+SearchResult& ModelInspector::searchResult()
+{
+    auto frame = currentView();
+    return frame ? frame->searchResult() : mDefaultSearchResult;
 }
 
 ViewActionStates ModelInspector::viewActionStates() const
@@ -366,7 +372,7 @@ void ModelInspector::setCurrentViewIndex(gams::studio::modelinspector::ViewType 
     ui->sectionView->setCurrentIndex(index);
 }
 
-void ModelInspector::setSearchSelection(const gams::studio::modelinspector::SearchResult &result)
+void ModelInspector::setSearchSelection(const gams::studio::modelinspector::SearchResult::SearchEntry &result)
 {
     auto frame = currentView();
     if (frame) frame->setSearchSelection(result);

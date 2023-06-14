@@ -18,63 +18,84 @@ public:
     AbstractViewConfiguration(ViewDataType viewType,
                               QSharedPointer<AbstractModelInstance> modelInstance = nullptr);
 
-    virtual ~AbstractViewConfiguration() {}
+    virtual ~AbstractViewConfiguration()
+    {
+
+    }
 
     virtual AbstractViewConfiguration* clone() = 0;
 
     virtual void initialize(QAbstractItemModel *model) = 0;
 
+    QSharedPointer<AbstractModelInstance> modelInstance() const
+    {
+        return mModelInstance;
+    }
+
     void setModelInstance(QSharedPointer<AbstractModelInstance> modelInstance);
 
-    inline int view() const {
+    inline int view() const
+    {
         return mView;
     }
 
-    inline void setView(int view) {
+    inline void setView(int view)
+    {
         mView = view;
     }
 
-    inline ViewDataType viewType() const {
+    inline ViewDataType viewType() const
+    {
         return mViewType;
     }
 
-    Aggregation& currentAggregation() {
+    Aggregation& currentAggregation()
+    {
         return mCurrentAggregation;
     }
 
-    void setCurrentAggregation(const Aggregation& aggregation) {
+    void setCurrentAggregation(const Aggregation& aggregation)
+    {
         mCurrentAggregation = aggregation;
     }
 
-    const Aggregation& defaultAggregation() const {
+    const Aggregation& defaultAggregation() const
+    {
         return mDefaultAggregation;
     }
 
-    void setDefaultAggregation(const Aggregation& aggregation) {
+    void setDefaultAggregation(const Aggregation& aggregation)
+    {
         mDefaultAggregation = aggregation;
     }
 
-    const LabelFilter& currentLabelFiler() const {
+    const LabelFilter& currentLabelFiler() const
+    {
         return mCurrentLabelFilter;
     }
 
-    void setCurrentLabelFilter(const LabelFilter& filter) {
+    void setCurrentLabelFilter(const LabelFilter& filter)
+    {
         mCurrentLabelFilter = filter;
     }
 
-    const LabelFilter& defaultLabelFilter() const {
+    const LabelFilter& defaultLabelFilter() const
+    {
         return mDefaultLabelFilter;
     }
 
-    void setDefaultLabelFilter(const LabelFilter& filter) {
+    void setDefaultLabelFilter(const LabelFilter& filter)
+    {
         mDefaultLabelFilter = filter;
     }
 
-    IdentifierFilter& currentIdentifierFilter() {
+    IdentifierFilter& currentIdentifierFilter()
+    {
         return mCurrentIdentifierFilter;
     }
 
-    void setCurrentIdentifierFilter(const IdentifierFilter& filter) {
+    void setCurrentIdentifierFilter(const IdentifierFilter& filter)
+    {
         mCurrentIdentifierFilter = filter;
     }
 
@@ -82,18 +103,21 @@ public:
         return mDefaultIdentifierFilter;
     }
 
-    void setDefaultIdentifierFilter(const IdentifierFilter& filter) {
+    void setDefaultIdentifierFilter(const IdentifierFilter& filter)
+    {
         mDefaultIdentifierFilter = filter;
     }
 
     void updateIdentifierFilter(const QList<Symbol *> &eqnFilter,
                                 const QList<Symbol *> &varFilter);
 
-    ValueFilter& currentValueFilter() {
+    ValueFilter& currentValueFilter()
+    {
         return mCurrentValueFilter;
     }
 
-    void setCurrentValueFilter(const ValueFilter& filter) {
+    void setCurrentValueFilter(const ValueFilter& filter)
+    {
         mCurrentValueFilter = filter;
     }
 
@@ -101,12 +125,16 @@ public:
         return mDefaultValueFilter;
     }
 
-    void setDefaultValueFilter(const ValueFilter& filter) {
+    void setDefaultValueFilter(const ValueFilter& filter)
+    {
         mDefaultValueFilter = filter;
     }
 
-    const SectionLabels& sectionLabels() const {
-        return mSectionLabels;
+    const SectionLabels& sectionLabels(Qt::Orientation orientation) const;
+
+    SearchResult& searchResult()
+    {
+        return mSearchResult;
     }
 
 protected:
@@ -116,9 +144,11 @@ protected:
 
 protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
+    SearchResult mSearchResult;
     int mView;
 
-    SectionLabels mSectionLabels;
+    SectionLabels mHorizontalSectionLabels;
+    SectionLabels mVerticalSectionLabels;
 
     LabelFilter mCurrentLabelFilter;
     LabelFilter mDefaultLabelFilter;

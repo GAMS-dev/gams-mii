@@ -275,19 +275,6 @@ void BPCountViewFrame::updateView()
     emit filtersChanged();
 }
 
-void BPCountViewFrame::setIdentifierLabelFilter(const IdentifierState &state, Qt::Orientation orientation)
-{// TODO !!! finalize
-    //if (state.disabled() && mIdentifierFilterModel) {
-    //    setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-    //    //mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter(),
-    //    //                                            mViewConfig->currentAggregation());
-    //} else {
-    //    mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
-    //}
-    //updateView();
-    //emit filtersChanged();
-}
-
 void BPCountViewFrame::setupView()
 {
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,

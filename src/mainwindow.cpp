@@ -145,8 +145,8 @@ void MainWindow::on_action_Search_triggered()
 
 void MainWindow::searchHeaders()
 {
-    auto result = ui->modelInspector->searchHeaders(ui->searchEdit->text(),
-                                                    ui->regexBox->isChecked());
+    const auto& result = ui->modelInspector->searchHeaders(ui->searchEdit->text(),
+                                                           ui->searchRegexBox->isChecked());
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData(result);
     ui->searchResultView->resizeColumnsToContents();
     ui->searchResultView->resizeRowsToContents();
@@ -323,6 +323,12 @@ void MainWindow::viewChanged(int viewType)
         //mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
         //ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
     }
+    const auto& searchResult = ui->modelInspector->searchResult();
+    static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData(searchResult);
+    ui->searchEdit->setText(searchResult.Term);
+    ui->searchRegexBox->setChecked(searchResult.IsRegEx);
+    ui->searchResultView->resizeColumnsToContents();
+    ui->searchResultView->resizeRowsToContents();
 }
 
 void MainWindow::setupConnections()

@@ -77,11 +77,12 @@ public:
 
     virtual QVariant plainHeaderData(Qt::Orientation orientation,
                                      int logicalIndex,
-                                     int dimension ) const
+                                     int dimension) const
     {
-        Q_UNUSED(orientation);
-        Q_UNUSED(logicalIndex);
-        Q_UNUSED(dimension);
+        const auto& labels = mViewConfig->sectionLabels(orientation);
+        if (logicalIndex < labels.size()) {
+            return labels[logicalIndex][dimension];
+        }
         return QVariant();
     }
 
@@ -91,6 +92,15 @@ public:
             return mLogicalSectionMapping[orientation].at(logicalIndex);
         }
         return -1;
+    }
+
+    QVariant sectionLabels(Qt::Orientation orientation, int logicalIndex) const
+    {
+        const auto& labels = mViewConfig->sectionLabels(orientation);
+        if (logicalIndex < labels.size()) {
+            return labels[logicalIndex];
+        }
+        return QStringList();
     }
 
     int columnCount() const
@@ -215,11 +225,6 @@ public:
         mRowCount = mSymbolRowCount + 2; // one row for max and min
         mSymbolColumnCount = mModelInstance.variableCount();
         mColumnCount = mSymbolColumnCount + 2;
-        for (auto var : mModelInstance.variables()) {
-            mHorizontalHeader.append(var->name());
-        }
-        mHorizontalHeader.append("RHS");
-        mHorizontalHeader.append("Equation");
         mDataMatrix = new double*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new double[mColumnCount];
@@ -237,7 +242,6 @@ public:
 
     BPScalingProvider(const BPScalingProvider& other)
         : DataHandler::AbstractDataProvider(other)
-        , mHorizontalHeader(other.mHorizontalHeader)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = new double*[mRowCount];
@@ -250,12 +254,10 @@ public:
 
     BPScalingProvider(BPScalingProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(other)
-        , mHorizontalHeader(other.mHorizontalHeader)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        other.mHorizontalHeader.clear();
     }
 
     ~BPScalingProvider()
@@ -283,18 +285,6 @@ public:
         return mDataMatrix[row][column];
     }
 
-    QVariant plainHeaderData(Qt::Orientation orientation,
-                             int logicalIndex, int dimension) const override
-    {
-        if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
-            return mHorizontalHeader[logicalIndex];
-        }
-        if (orientation == Qt::Vertical && mViewConfig->sectionLabels().contains(logicalIndex) && dimension < 2) {
-            return mViewConfig->sectionLabels()[logicalIndex][dimension];
-        }
-        return QVariant();
-    }
-
     auto& operator=(const BPScalingProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
@@ -306,7 +296,6 @@ public:
             mDataMatrix[r] = new double[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
-        mHorizontalHeader = other.mHorizontalHeader;
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -315,8 +304,6 @@ public:
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        mHorizontalHeader = other.mHorizontalHeader;
-        other.mHorizontalHeader.clear();
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -466,7 +453,6 @@ private:
 
 private:
     double** mDataMatrix;
-    QStringList mHorizontalHeader;
     DataHandler::CoefficientCount& mCoeffCount;
 };
 
@@ -789,17 +775,8 @@ public:
     {
         mSymbolRowCount = mModelInstance.equationCount();
         mRowCount = mSymbolRowCount + 1;
-        for (auto eqn : mModelInstance.equations()) {
-            mVerticalHeader.append(eqn->name());
-        }
-        mVerticalHeader.append("Variable Type");
         mSymbolColumnCount = mModelInstance.variableCount();
         mColumnCount = mSymbolColumnCount + 2;
-        for (auto var : mModelInstance.variables()) {
-            mHorizontalHeader.append(var->name());
-        }
-        mHorizontalHeader.append("Type");
-        mHorizontalHeader.append("RHS");
         mDataMatrix = new char*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new char[mColumnCount];
@@ -809,8 +786,6 @@ public:
 
     BPOverviewDataProvider(const BPOverviewDataProvider& other)
         : DataHandler::AbstractDataProvider(other)
-        , mHorizontalHeader(other.mHorizontalHeader)
-        , mVerticalHeader(other.mVerticalHeader)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = new char*[mRowCount];
@@ -822,14 +797,10 @@ public:
 
     BPOverviewDataProvider(BPOverviewDataProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(other)
-        , mHorizontalHeader(other.mHorizontalHeader)
-        , mVerticalHeader(other.mVerticalHeader)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        other.mHorizontalHeader.clear();
-        other.mVerticalHeader.clear();
     }
 
     ~BPOverviewDataProvider()
@@ -910,17 +881,6 @@ public:
         return mDataMatrix[row][column];
     }
 
-    QVariant plainHeaderData(Qt::Orientation orientation, int logicalIndex, int dimension) const override
-    {
-        Q_UNUSED(dimension);
-        if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
-            return mHorizontalHeader[logicalIndex];
-        } else if (orientation == Qt::Vertical && logicalIndex < mVerticalHeader.size()) {
-            return mVerticalHeader[logicalIndex];
-        }
-        return QString();
-    }
-
     auto& operator=(const BPOverviewDataProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
@@ -932,8 +892,6 @@ public:
             mDataMatrix[r] = new char[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
-        mHorizontalHeader = other.mHorizontalHeader;
-        mVerticalHeader = other.mVerticalHeader;
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -942,18 +900,12 @@ public:
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        mHorizontalHeader = other.mHorizontalHeader;
-        other.mHorizontalHeader.clear();
-        mVerticalHeader = other.mVerticalHeader;
-        other.mVerticalHeader.clear();
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
 
 private:
     char** mDataMatrix;
-    QStringList mHorizontalHeader;
-    QStringList mVerticalHeader;
     DataHandler::CoefficientCount& mCoeffCount;
 };
 
@@ -973,13 +925,6 @@ public:
         mRowCount = mSymbolRowCount + 4;
         mSymbolColumnCount = mModelInstance.variableCount();
         mColumnCount = mSymbolColumnCount + 4;
-        for (auto var : mModelInstance.variables()) {
-            mHorizontalHeader.append(var->name());
-        }
-        mHorizontalHeader.append("Type");
-        mHorizontalHeader.append("RHS");
-        mHorizontalHeader.append("Coeff Cnts");
-        mHorizontalHeader.append("# of Eqns");
         mDataMatrix = new int*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new int[mColumnCount];
@@ -999,7 +944,6 @@ public:
 
     BPCountDataProvider(const BPCountDataProvider& other)
         : DataHandler::AbstractDataProvider(other)
-        , mHorizontalHeader(other.mHorizontalHeader)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = new int*[mRowCount];
@@ -1011,12 +955,10 @@ public:
 
     BPCountDataProvider(BPCountDataProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(other)
-        , mHorizontalHeader(other.mHorizontalHeader)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        other.mHorizontalHeader.clear();
     }
 
     ~BPCountDataProvider()
@@ -1111,17 +1053,6 @@ public:
         return mDataMatrix[row][column];
     }
 
-    QVariant plainHeaderData(Qt::Orientation orientation, int logicalIndex, int dimension) const override
-    {
-        if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
-            return mHorizontalHeader[logicalIndex];
-        }
-        if (orientation == Qt::Vertical && mViewConfig->sectionLabels().contains(logicalIndex) && dimension < 2) {
-            return mViewConfig->sectionLabels()[logicalIndex][dimension];
-        }
-        return QString();
-    }
-
     auto& operator=(const BPCountDataProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
@@ -1133,7 +1064,6 @@ public:
             mDataMatrix[r] = new int[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
-        mHorizontalHeader = other.mHorizontalHeader;
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -1142,15 +1072,12 @@ public:
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        mHorizontalHeader = other.mHorizontalHeader;
-        other.mHorizontalHeader.clear();
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
 
 private:
     int** mDataMatrix;
-    QStringList mHorizontalHeader;
     DataHandler::CoefficientCount& mCoeffCount;
 };
 
@@ -1170,13 +1097,6 @@ public:
         mRowCount = mSymbolRowCount + 4;
         mSymbolColumnCount = mModelInstance.variableCount();
         mColumnCount = mSymbolColumnCount + 4;
-        for (auto var : mModelInstance.variables()) {
-            mHorizontalHeader.append(var->name());
-        }
-        mHorizontalHeader.append("Type");
-        mHorizontalHeader.append("RHS");
-        mHorizontalHeader.append("Cfs PerEqu");
-        mHorizontalHeader.append("# of Eqns");
         mDataMatrix = new double*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new double[mColumnCount];
@@ -1186,7 +1106,6 @@ public:
 
     BPAverageDataProvider(const BPAverageDataProvider& other)
         : DataHandler::AbstractDataProvider(other)
-        , mHorizontalHeader(other.mHorizontalHeader)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = new double*[mRowCount];
@@ -1198,12 +1117,10 @@ public:
 
     BPAverageDataProvider(BPAverageDataProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(other)
-        , mHorizontalHeader(other.mHorizontalHeader)
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        other.mHorizontalHeader.clear();
     }
 
     ~BPAverageDataProvider()
@@ -1314,17 +1231,6 @@ public:
         return mDataMatrix[row][column];
     }
 
-    QVariant plainHeaderData(Qt::Orientation orientation, int logicalIndex, int dimension) const override
-    {
-        if (orientation == Qt::Horizontal && logicalIndex < mHorizontalHeader.size()) {
-            return mHorizontalHeader[logicalIndex];
-        }
-        if (orientation == Qt::Vertical && mViewConfig->sectionLabels().contains(logicalIndex) && dimension < 2) {
-            return mViewConfig->sectionLabels()[logicalIndex][dimension];
-        }
-        return QVariant();
-    }
-
     auto& operator=(const BPAverageDataProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
@@ -1336,7 +1242,6 @@ public:
             mDataMatrix[r] = new double[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
-        mHorizontalHeader = other.mHorizontalHeader;
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
@@ -1345,15 +1250,12 @@ public:
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        mHorizontalHeader = other.mHorizontalHeader;
-        other.mHorizontalHeader.clear();
         mCoeffCount = other.mCoeffCount;
         return *this;
     }
 
 private:
     double** mDataMatrix;
-    QStringList mHorizontalHeader;
     DataHandler::CoefficientCount& mCoeffCount;
 };
 
@@ -1412,6 +1314,12 @@ QVariant DataHandler::plainHeaderData(Qt::Orientation orientation,
 {
     return mDataCache.contains(view) ? mDataCache[view]->plainHeaderData(orientation, logicalIndex, dimension)
                                      : QVariant();
+}
+
+QVariant DataHandler::sectionLabels(Qt::Orientation orientation, int view, int logicalIndex) const
+{
+    return mDataCache.contains(view) ? mDataCache[view]->sectionLabels(orientation, logicalIndex)
+                                     : QStringList();
 }
 
 int DataHandler::rowCount(int view) const

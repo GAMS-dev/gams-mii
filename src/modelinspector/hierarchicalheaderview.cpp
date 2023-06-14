@@ -711,15 +711,12 @@ QStyleOptionHeader HierarchicalHeaderView::styleOptionForCell(int logicalIndex) 
 
         if (previousSelected && nextSelected) {
             option.selectedPosition = QStyleOptionHeader::NextAndPreviousAreSelected;
+        } else if (previousSelected) {
+            option.selectedPosition = QStyleOptionHeader::PreviousIsSelected;
+        } else if (nextSelected) {
+            option.selectedPosition = QStyleOptionHeader::NextIsSelected;
         } else {
-            if (previousSelected) {
-                option.selectedPosition = QStyleOptionHeader::PreviousIsSelected;
-            } else {
-                if (nextSelected)
-                    option.selectedPosition = QStyleOptionHeader::NextIsSelected;
-                else
-                    option.selectedPosition = QStyleOptionHeader::NotAdjacent;
-            }
+            option.selectedPosition = QStyleOptionHeader::NotAdjacent;
         }
     }
 

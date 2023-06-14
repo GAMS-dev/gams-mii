@@ -190,6 +190,8 @@ int ModelInstance::maximumVariableDimension() const
 
 void ModelInstance::loadScratchData()
 {
+    if (mState == Error)
+        return;
     mLogMessages << "Model Workspace: " + mWorkspace;
     QString ctrlFile = mWorkspace + "/" + mScratchDir + "/gamscntr.dat";
     mLogMessages << "CTRL File: " + ctrlFile;
@@ -475,6 +477,9 @@ QVariant ModelInstance::headerData(int logicalIndex,
     }
     if (role == Mi::LabelDataRole) {
         return mDataHandler->plainHeaderData(orientation, view, logicalIndex, 0);
+    }
+    if (role == Mi::SectionLabelRole) {
+        return mDataHandler->sectionLabels(orientation, view, logicalIndex);
     }
     return QVariant();
 }

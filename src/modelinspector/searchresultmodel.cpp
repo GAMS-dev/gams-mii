@@ -21,30 +21,29 @@ QVariant SearchResultModel::data(const QModelIndex &index, int role) const
         return QVariant();
     if (role != Qt::DisplayRole)
         return QVariant();
-    if (index.row() >= mData.size())
+    if (index.row() >= mData.Entries.size())
         return QVariant();
-
     if (index.column() == 0) {
-        return mData[index.row()].Index;
+        return mData.Entries[index.row()].Index;
     }
     if (index.column() == 1) {
-        return mData[index.row()].Orientation == Qt::Horizontal? "Horizontal" : "Vertical";
+        return mData.Entries[index.row()].Orientation == Qt::Horizontal? "Horizontal" : "Vertical";
     }
     return QVariant();
 }
 
-void SearchResultModel::updateData(const QList<SearchResult> &data)
+void SearchResultModel::updateData(const SearchResult &data)
 {
     beginResetModel();
     mData = data;
     endResetModel();
 }
 
-SearchResult SearchResultModel::entry(int index)
+SearchResult::SearchEntry SearchResultModel::entry(int index)
 {
-    if (index >= mData.size())
-        return SearchResult();
-    return mData.at(index);
+    if (index >= mData.Entries.size())
+        return SearchResult::SearchEntry();
+    return mData.Entries.at(index);
 }
 
 QVariant SearchResultModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -64,7 +63,7 @@ int SearchResultModel::columnCount(const QModelIndex &parent) const
 int SearchResultModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mData.size();
+    return mData.Entries.size();
 }
 
 }

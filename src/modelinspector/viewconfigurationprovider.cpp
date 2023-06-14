@@ -1,6 +1,5 @@
 #include "viewconfigurationprovider.h"
 #include "abstractmodelinstance.h"
-#include "labeltreeitem.h"
 
 #include <QAbstractItemModel>
 #include <QDebug>
@@ -131,25 +130,31 @@ private:
     void setSectionLabels()
     {
         int currentRow = 0;
-        mSectionLabels.clear();
+        mVerticalSectionLabels.clear();
         for (auto* equation : mModelInstance->equations()) {
             symbolLabels(equation->name(), currentRow);
-            currentRow = mSectionLabels.size();
+            currentRow = mVerticalSectionLabels.size();
         }
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"Variable", "Max"};
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"", "Min"};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"Variable", "Max"};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"", "Min"};
+        int index = 0;
+        for (auto var : mModelInstance->variables()) {
+            mHorizontalSectionLabels[index++] = QStringList(var->name());
+        }
+        mHorizontalSectionLabels[index++] = QStringList("RHS");
+        mHorizontalSectionLabels[index++] = QStringList("Equation");
     }
 
     void symbolLabels(const QString &symName, int currentRow)
     {
         for (int s=currentRow; s<currentRow+2; ++s) {
-            auto data = mSectionLabels[s];
+            auto data = mVerticalSectionLabels[s];
             if (s % 2) {
                 data << QString() << "Min";
-                mSectionLabels[s] = data;
+                mVerticalSectionLabels[s] = data;
             } else {
                 data << symName << "Max";
-                mSectionLabels[s] = data;
+                mVerticalSectionLabels[s] = data;
             }
         }
     }
@@ -224,6 +229,7 @@ public:
         mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
         mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
+        setSectionLabels();
     }
 
 protected:
@@ -244,6 +250,22 @@ protected:
             symIndex++;
         }
         return states;
+    }
+
+private:
+    void setSectionLabels()
+    {
+        int index = 0;
+        for (auto eqn : mModelInstance->equations()) {
+            mVerticalSectionLabels[index++] = QStringList(eqn->name());
+        }
+        mVerticalSectionLabels[index++] = QStringList("Variable Type");
+        index = 0;
+        for (auto var : mModelInstance->variables()) {
+            mHorizontalSectionLabels[index++] = QStringList(var->name());
+        }
+        mHorizontalSectionLabels[index++] = QStringList("Type");
+        mHorizontalSectionLabels[index++] = QStringList("RHS");
     }
 };
 
@@ -295,27 +317,35 @@ private:
     void setSectionLabels()
     {
         int currentRow = 0;
-        mSectionLabels.clear();
+        mVerticalSectionLabels.clear();
         for (auto* equation : mModelInstance->equations()) {
             symbolLabels(equation->name(), currentRow);
-            currentRow = mSectionLabels.size();
+            currentRow = mVerticalSectionLabels.size();
         }
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"Coeff Cnts", "Pos"};
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"", "Neg"};
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"# of Vars", ""};
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"Variable Type", ""};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"Coeff Cnts", "Pos"};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"", "Neg"};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"# of Vars", ""};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"Variable Type", ""};
+        int index = 0;
+        for (auto var : mModelInstance->variables()) {
+            mHorizontalSectionLabels[index++] = QStringList(var->name());
+        }
+        mHorizontalSectionLabels[index++] = QStringList("Type");
+        mHorizontalSectionLabels[index++] = QStringList("RHS");
+        mHorizontalSectionLabels[index++] = QStringList("Coeff Cnts");
+        mHorizontalSectionLabels[index++] = QStringList("# of Eqns");
     }
 
     void symbolLabels(const QString &symName, int currentRow)
     {
         for (int s=currentRow; s<currentRow+2; ++s) {
-            auto data = mSectionLabels[s];
+            auto data = mVerticalSectionLabels[s];
             if (s % 2) {
                 data << QString() << "Neg";
-                mSectionLabels[s] = data;
+                mVerticalSectionLabels[s] = data;
             } else {
                 data << symName << "Pos";
-                mSectionLabels[s] = data;
+                mVerticalSectionLabels[s] = data;
             }
         }
     }
@@ -369,27 +399,35 @@ private:
     void setSectionLabels()
     {
         int currentRow = 0;
-        mSectionLabels.clear();
+        mVerticalSectionLabels.clear();
         for (auto* equation : mModelInstance->equations()) {
             symbolLabels(equation->name(), currentRow);
-            currentRow = mSectionLabels.size();
+            currentRow = mVerticalSectionLabels.size();
         }
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"Cfs PerVar", "Pos"};
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"", "Neg"};
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"# of Vars", ""};
-        mSectionLabels[mSectionLabels.size()] = QList<QString> {"Variable Type", ""};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"Cfs PerVar", "Pos"};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"", "Neg"};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"# of Vars", ""};
+        mVerticalSectionLabels[mVerticalSectionLabels.size()] = QStringList {"Variable Type", ""};
+        int index = 0;
+        for (auto var : mModelInstance->variables()) {
+            mHorizontalSectionLabels[index++] = QStringList(var->name());
+        }
+        mHorizontalSectionLabels[index++] = QStringList("Type");
+        mHorizontalSectionLabels[index++] = QStringList("RHS");
+        mHorizontalSectionLabels[index++] = QStringList("Cfs PerEqu");
+        mHorizontalSectionLabels[index++] = QStringList("# of Eqns");
     }
 
     void symbolLabels(const QString &symName, int currentRow)
     {
         for (int s=currentRow; s<currentRow+2; ++s) {
-            auto data = mSectionLabels[s];
+            auto data = mVerticalSectionLabels[s];
             if (s % 2) {
                 data << QString() << "Neg";
-                mSectionLabels[s] = data;
+                mVerticalSectionLabels[s] = data;
             } else {
                 data << symName << "Pos";
-                mSectionLabels[s] = data;
+                mVerticalSectionLabels[s] = data;
             }
         }
     }
@@ -434,6 +472,11 @@ void AbstractViewConfiguration::updateIdentifierFilter(const QList<Symbol *> &eq
         }
     }
     mDefaultIdentifierFilter = mCurrentIdentifierFilter;
+}
+
+const SectionLabels &AbstractViewConfiguration::sectionLabels(Qt::Orientation orientation) const
+{
+    return orientation == Qt::Horizontal ? mHorizontalSectionLabels : mVerticalSectionLabels;
 }
 
 void AbstractViewConfiguration::createLabelFilter()

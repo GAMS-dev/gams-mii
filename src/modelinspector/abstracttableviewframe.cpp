@@ -100,7 +100,7 @@ QAbstractItemModel *AbstractTableViewFrame::model() const
     return ui->tableView->model();
 }
 
-void AbstractTableViewFrame::setSearchSelection(const gams::studio::modelinspector::SearchResult &result)
+void AbstractTableViewFrame::setSearchSelection(const gams::studio::modelinspector::SearchResult::SearchEntry &result)
 {
     if (result.Index < 0) return;
     if (result.Orientation == Qt::Horizontal) {
@@ -130,14 +130,21 @@ void AbstractTableViewFrame::setViewConfig(QSharedPointer<AbstractViewConfigurat
     mViewConfig = viewConfig;
 }
 
-QList<SearchResult> AbstractTableViewFrame::search(const QString &term, bool isRegEx)
+SearchResult& AbstractTableViewFrame::search(const QString &term, bool isRegEx)
 {
-    QList<SearchResult> result;
-    if (!term.isEmpty()) {
-        Search search(mModelInstance, mViewConfig, ui->tableView->model(), term, isRegEx);
-        search.run(result);
+    if (!mViewConfig->searchResult().Entries.isEmpty()) {
+        mViewConfig->searchResult().Entries.clear();
     }
-    return result;
+    if (!term.isEmpty()) {
+        Search search(mViewConfig, ui->tableView->model(), term, isRegEx);
+        search.run();
+    }
+    return mViewConfig->searchResult();
+}
+
+SearchResult& AbstractTableViewFrame::searchResult()
+{
+    return mViewConfig->searchResult();
 }
 
 void AbstractTableViewFrame::zoomIn()
@@ -153,6 +160,13 @@ void AbstractTableViewFrame::zoomOut()
 void AbstractTableViewFrame::resetZoom()
 {
     ui->tableView->resetZoom();
+}
+
+void AbstractTableViewFrame::setIdentifierLabelFilter(const IdentifierState &state,
+                                                      Qt::Orientation orientation)
+{
+    Q_UNUSED(state);
+    Q_UNUSED(orientation);
 }
 
 }

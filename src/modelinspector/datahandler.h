@@ -299,6 +299,9 @@ public:
                              int view, int logicalIndex,
                              int dimension) const;
 
+    QVariant sectionLabels(Qt::Orientation orientation,
+                           int view, int logicalIndex) const;
+
     int rowCount(int view) const;
 
     int rowEntries(int row, int view) const;

@@ -61,7 +61,8 @@ public:
 
     void setShowAbsoluteValues(bool absoluteValues);
 
-    QList<SearchResult> searchHeaders(const QString &term, bool isRegEx);
+    SearchResult& searchHeaders(const QString &term, bool isRegEx);
+    SearchResult& searchResult();
 
     ViewActionStates viewActionStates() const;
 
@@ -112,7 +113,7 @@ public slots:
 
     void setCurrentViewIndex(gams::studio::modelinspector::ViewType type);
 
-    void setSearchSelection(const gams::studio::modelinspector::SearchResult &result);
+    void setSearchSelection(const gams::studio::modelinspector::SearchResult::SearchEntry &result);
 
 private:
     void setupConnections();
@@ -128,6 +129,7 @@ private:
     QString mScratchDir;
     QString mWorkspace;
     QString mSystemDir;
+    SearchResult mDefaultSearchResult;
 
     SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<AbstractModelInstance> mModelInstance;

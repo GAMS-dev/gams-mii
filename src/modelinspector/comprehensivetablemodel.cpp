@@ -67,7 +67,7 @@ QVariant ComprehensiveTableModel::headerData(int section,
     }
     if (role == Mi::IndexDataRole) {
         auto realIndex = mModelInstance->headerData(section, orientation,
-                                                    mView, Mi::IndexDataRole).toInt();
+                                                    mView, role).toInt();
         return realIndex < 0 ? QVariant() : realIndex;
     }
     if (role == Mi::LabelDataRole) {
@@ -75,7 +75,11 @@ QVariant ComprehensiveTableModel::headerData(int section,
                                            : mModelInstance->headerData(section,
                                                                         orientation,
                                                                         mView,
-                                                                        Mi::LabelDataRole);
+                                                                        role);
+    }
+    if (role == Mi::SectionLabelRole) {
+        return mModelInstance->headerData(section, orientation,
+                                          mView, role);
     }
     return QAbstractItemModel::headerData(section, orientation, role);
 }
@@ -123,8 +127,8 @@ BPOverviewTableModel::BPOverviewTableModel(QObject *parent)
 }
 
 BPOverviewTableModel::BPOverviewTableModel(int view,
-                                                       QSharedPointer<AbstractModelInstance> modelInstance,
-                                                       QObject *parent)
+                                           QSharedPointer<AbstractModelInstance> modelInstance,
+                                           QObject *parent)
     : ComprehensiveTableModel(view, modelInstance, parent)
 {
 
@@ -142,8 +146,8 @@ QVariant BPOverviewTableModel::data(const QModelIndex &index, int role) const
 }
 
 QVariant BPOverviewTableModel::headerData(int section,
-                                                Qt::Orientation orientation,
-                                                int role) const
+                                          Qt::Orientation orientation,
+                                          int role) const
 {
     if (role == Qt::DisplayRole || role == Mi::LabelDataRole) {
         return mModelInstance->headerData(section, orientation,
@@ -151,7 +155,11 @@ QVariant BPOverviewTableModel::headerData(int section,
     }
     if (role == Mi::IndexDataRole) {
         return mModelInstance->headerData(section, orientation,
-                                          mView, Mi::IndexDataRole);
+                                          mView, role);
+    }
+    if (role == Mi::SectionLabelRole) {
+        return mModelInstance->headerData(section, orientation,
+                                          mView, role);
     }
     return QAbstractItemModel::headerData(section, orientation, role);
 }
@@ -163,8 +171,8 @@ BPCountTableModel::BPCountTableModel(QObject *parent)
 }
 
 BPCountTableModel::BPCountTableModel(int view,
-                                                 QSharedPointer<AbstractModelInstance> modelInstance,
-                                                 QObject *parent)
+                                     QSharedPointer<AbstractModelInstance> modelInstance,
+                                     QObject *parent)
     : ComprehensiveTableModel(view, modelInstance, parent)
 {
 

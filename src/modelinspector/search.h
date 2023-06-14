@@ -18,23 +18,20 @@ struct SearchResult;
 class Search
 {
 public:
-    Search(QSharedPointer<AbstractModelInstance> modelInstance,
-           QSharedPointer<AbstractViewConfiguration> viewConfig,
+    Search(QSharedPointer<AbstractViewConfiguration> viewConfig,
            QAbstractItemModel *dataModel,
            const QString &term,
            bool isRegEx);
 
-    void run(QList<SearchResult> &result);
+    void run();
 
 private:
-    void searchPlainHeader(Qt::Orientation orientation, QList<SearchResult> &result);
-
-    void searchHeaderHierarchy(Qt::Orientation orientation, QList<SearchResult> &result);
+    void searchStaticHeader(Qt::Orientation orientation);
+    void searchHeaderHierarchy(Qt::Orientation orientation);
     void searchHeaderHierarchy(int logicalIndex, int sectionIndex,
-                               Qt::Orientation orientation, QList<SearchResult> &result);
+                               Qt::Orientation orientation);
 
 private:
-    QSharedPointer<AbstractModelInstance> mModelInstance;
     QSharedPointer<AbstractViewConfiguration> mViewConfig;
     QAbstractItemModel *mDataModel;
     std::function<bool(const QString&)> compare;

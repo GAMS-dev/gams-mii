@@ -20,9 +20,9 @@ public:
     QVariant data(const QModelIndex &index,
                   int role = Qt::DisplayRole) const override;
 
-    void updateData(const QList<SearchResult> &data);
+    void updateData(const SearchResult &data);
 
-    SearchResult entry(int index);
+    SearchResult::SearchEntry entry(int index);
 
     QVariant headerData(int section, Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
@@ -33,7 +33,7 @@ public:
 
 private:
     const QStringList mHeaderData { "Index", "Orientation"};
-    QList<SearchResult> mData;
+    SearchResult mData;
 };
 
 }
