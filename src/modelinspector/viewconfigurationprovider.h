@@ -25,8 +25,6 @@ public:
 
     virtual AbstractViewConfiguration* clone() = 0;
 
-    virtual void initialize(QAbstractItemModel *model) = 0;
-
     QSharedPointer<AbstractModelInstance> modelInstance() const
     {
         return mModelInstance;
@@ -172,8 +170,10 @@ private:
     ViewConfigurationProvider() {};
 
 public:
+    static AbstractViewConfiguration* defaultConfiguration();
+
     static AbstractViewConfiguration* configuration(ViewDataType viewType,
-                                                    QSharedPointer<AbstractModelInstance> modelInstance = nullptr);
+                                                    QSharedPointer<AbstractModelInstance> modelInstance);
 };
 
 }

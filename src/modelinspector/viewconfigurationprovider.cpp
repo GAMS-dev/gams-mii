@@ -22,11 +22,6 @@ public:
         return new DefaultViewConfiguration(*this);
     }
 
-    void initialize(QAbstractItemModel *model) override
-    {
-        Q_UNUSED(model);
-    }
-
 protected:
     IdentifierStates createDefaultSymbolFilter(Qt::Orientation orientation) const override
     {
@@ -41,24 +36,18 @@ public:
     JaccobianViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
-
+        createLabelFilter();
+        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(AbstractViewConfiguration::viewType());
+        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(AbstractViewConfiguration::viewType());
+        mCurrentValueFilter = mDefaultValueFilter;
+        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
+        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
+        mCurrentIdentifierFilter = mDefaultIdentifierFilter;
     }
 
     AbstractViewConfiguration* clone() override
     {
         return new JaccobianViewConfiguration(*this);
-    }
-
-    void initialize(QAbstractItemModel *model) override
-    {
-        Q_UNUSED(model);
-        createLabelFilter();
-        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(viewType());
-        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(viewType());
-        mCurrentValueFilter = mDefaultValueFilter;
-        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
-        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
-        mCurrentIdentifierFilter = mDefaultIdentifierFilter;
     }
 
 protected:
@@ -88,22 +77,16 @@ public:
     BPScalingViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
-
-    }
-
-    AbstractViewConfiguration* clone() override
-    {
-        return new BPScalingViewConfiguration(*this);
-    }
-
-    void initialize(QAbstractItemModel *model) override
-    {
-        Q_UNUSED(model);
         createLabelFilter();
         mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
         mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
         setSectionLabels();
+    }
+
+    AbstractViewConfiguration* clone() override
+    {
+        return new BPScalingViewConfiguration(*this);
     }
 
 protected:
@@ -179,11 +162,6 @@ public:
         return new SymbolViewConfiguration(*this);
     }
 
-    void initialize(QAbstractItemModel *model) override
-    {// TODO !!! needed?
-        Q_UNUSED(model);
-    }
-
 protected:
     IdentifierStates createDefaultSymbolFilter(Qt::Orientation orientation) const override
     {
@@ -211,25 +189,19 @@ public:
     BPOverviewViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
-
-    }
-
-    AbstractViewConfiguration* clone() override
-    {
-        return new BPOverviewViewConfiguration(*this);
-    }
-
-    void initialize(QAbstractItemModel *model) override
-    {
-        Q_UNUSED(model);
         createLabelFilter();
-        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(viewType());
-        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(viewType());
+        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(AbstractViewConfiguration::viewType());
+        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(AbstractViewConfiguration::viewType());
         mCurrentValueFilter = mDefaultValueFilter;
         mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
         mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
         setSectionLabels();
+    }
+
+    AbstractViewConfiguration* clone() override
+    {
+        return new BPOverviewViewConfiguration(*this);
     }
 
 protected:
@@ -275,22 +247,16 @@ public:
     BPCountViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
-
-    }
-
-    AbstractViewConfiguration* clone() override
-    {
-        return new BPCountViewConfiguration(*this);
-    }
-
-    void initialize(QAbstractItemModel *model) override
-    {
-        Q_UNUSED(model);
         createLabelFilter();
         mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
         mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
         setSectionLabels();
+    }
+
+    AbstractViewConfiguration* clone() override
+    {
+        return new BPCountViewConfiguration(*this);
     }
 
 protected:
@@ -357,22 +323,16 @@ public:
     BPAverageViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
-
-    }
-
-    AbstractViewConfiguration* clone() override
-    {
-        return new BPAverageViewConfiguration(*this);
-    }
-
-    void initialize(QAbstractItemModel *model) override
-    {
-        Q_UNUSED(model);
         createLabelFilter();
         mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
         mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
         setSectionLabels();
+    }
+
+    AbstractViewConfiguration* clone() override
+    {
+        return new BPAverageViewConfiguration(*this);
     }
 
 protected:
@@ -436,6 +396,7 @@ private:
 AbstractViewConfiguration::AbstractViewConfiguration(ViewDataType viewType,
                                                      QSharedPointer<AbstractModelInstance> modelInstance)
     : mModelInstance(modelInstance)
+    , mView((int)viewType)
     , mViewType(viewType)
 {
 
@@ -487,6 +448,12 @@ void AbstractViewConfiguration::createLabelFilter()
         mCurrentLabelFilter.LabelCheckStates[Qt::Horizontal][label] = Qt::Checked;
         mCurrentLabelFilter.LabelCheckStates[Qt::Vertical][label] = Qt::Checked;
     }
+}
+
+AbstractViewConfiguration *ViewConfigurationProvider::defaultConfiguration()
+{
+    auto modelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
+    return new DefaultViewConfiguration(ViewDataType::Unknown, modelInstance);
 }
 
 AbstractViewConfiguration *ViewConfigurationProvider::configuration(ViewDataType viewType,

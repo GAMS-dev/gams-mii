@@ -154,7 +154,7 @@ void AbstractBPViewFrame::setIdentifierFilterCheckState(int symbolIndex,
 BPOverviewViewFrame::BPOverviewViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractBPViewFrame(new BPOverviewTableModel, parent, f)
 {
-    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type()));
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
 BPOverviewViewFrame::BPOverviewViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
@@ -170,7 +170,7 @@ AbstractTableViewFrame *BPOverviewViewFrame::clone(int view)
 {
     auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
     if (!viewConfig)
-        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::BP_Overview,
+        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
     auto frame = new BPOverviewViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
@@ -182,8 +182,7 @@ AbstractTableViewFrame *BPOverviewViewFrame::clone(int view)
 void BPOverviewViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
-    mViewConfig->setModelInstance(mModelInstance);
-    mViewConfig->initialize(nullptr);
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
     mModelInstance->loadData(mViewConfig);
     setupView();
 }
@@ -191,11 +190,6 @@ void BPOverviewViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelI
 void BPOverviewViewFrame::setValueFilter(const ValueFilter &filter)
 {
     Q_UNUSED(filter);
-}
-
-ViewDataType BPOverviewViewFrame::type() const
-{
-    return ViewDataType::BP_Overview;
 }
 
 void BPOverviewViewFrame::updateView()
@@ -228,7 +222,7 @@ void BPOverviewViewFrame::setupView()
 BPCountViewFrame::BPCountViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractBPViewFrame(new ComprehensiveTableModel, parent, f)
 {
-    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type()));
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
 BPCountViewFrame::BPCountViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
@@ -256,8 +250,7 @@ AbstractTableViewFrame *BPCountViewFrame::clone(int view)
 void BPCountViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
-    mViewConfig->setModelInstance(mModelInstance);
-    mViewConfig->initialize(nullptr);
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
     mModelInstance->loadData(mViewConfig);
     setupView();
 }
@@ -280,7 +273,7 @@ void BPCountViewFrame::setupView()
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
-    mVerticalHeader->setViewType(ViewDataType::BP_Count);
+    mVerticalHeader->setViewType(type());
     mVerticalHeader->setView(mViewConfig->view());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPCountViewFrame::setIdentifierLabelFilter);
@@ -310,7 +303,7 @@ void BPCountViewFrame::setupView()
 BPAverageViewFrame::BPAverageViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractBPViewFrame(new BPAverageTableModel, parent, f)
 {
-    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type()));
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
 BPAverageViewFrame::BPAverageViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
@@ -339,8 +332,7 @@ AbstractTableViewFrame *BPAverageViewFrame::clone(int view)
 void BPAverageViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
-    mViewConfig->setModelInstance(mModelInstance);
-    mViewConfig->initialize(nullptr);
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
     mModelInstance->loadData(mViewConfig);
     setupView();
 }
@@ -363,7 +355,7 @@ void BPAverageViewFrame::setupView()
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
-    mVerticalHeader->setViewType(ViewDataType::BP_Average);
+    mVerticalHeader->setViewType(type());
     mVerticalHeader->setView(mViewConfig->view());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPAverageViewFrame::setIdentifierLabelFilter);
@@ -394,7 +386,7 @@ BPScalingViewFrame::BPScalingViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractBPViewFrame(new ComprehensiveTableModel, parent, f)
 {
     ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
-    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type()));
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
 BPScalingViewFrame::BPScalingViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
@@ -422,8 +414,7 @@ AbstractTableViewFrame* BPScalingViewFrame::clone(int view)
 void BPScalingViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
-    mViewConfig->setModelInstance(mModelInstance);
-    mViewConfig->initialize(nullptr);
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
     mModelInstance->loadData(mViewConfig);
     setupView();
 }
@@ -440,7 +431,7 @@ void BPScalingViewFrame::setupView()
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
-    mVerticalHeader->setViewType(ViewDataType::BP_Scaling);
+    mVerticalHeader->setViewType(type());
     mVerticalHeader->setView(mViewConfig->view());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPScalingViewFrame::setIdentifierLabelFilter);

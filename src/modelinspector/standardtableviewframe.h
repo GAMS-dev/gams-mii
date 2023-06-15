@@ -47,7 +47,6 @@ protected:
     IdentifierFilterModel* mIdentifierFilterModel = nullptr;
     IdentifierLabelFilterModel* mIdentifierLabelFilterModel = nullptr;
     LabelFilterModel* mLabelFilterModel = nullptr;
-    ColumnRowFilterModel* mColumnRowFilterModel = nullptr;
 };
 
 class JaccTableViewFrame final : public AbstractStandardTableViewFrame
@@ -59,7 +58,10 @@ public:
 
     AbstractTableViewFrame* clone(int view) override;
 
-    ViewDataType type() const override;
+    inline ViewDataType type() const override
+    {
+        return ViewDataType::Jaccobian;
+    }
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 

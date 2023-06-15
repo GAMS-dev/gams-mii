@@ -1,7 +1,6 @@
 #include "standardtableviewframe.h"
 #include "ui_standardtableviewframe.h"
 #include "hierarchicalheaderview.h"
-#include "columnrowfiltermodel.h"
 #include "identifierfiltermodel.h"
 #include "labelfiltermodel.h"
 #include "valueformatproxymodel.h"
@@ -29,6 +28,7 @@ void AbstractStandardTableViewFrame::setIdentifierFilter(const IdentifierFilter 
 
 void AbstractStandardTableViewFrame::setAggregation(const Aggregation &aggregation)
 {
+    Q_UNUSED(aggregation);
     //mViewConfig->setCurrentAggregation(aggregation);
     //if (mAggregationModel && mHorizontalHeader && mVerticalHeader) {
     //    const auto& applied = mViewConfig->currentAggregation();
@@ -40,6 +40,7 @@ void AbstractStandardTableViewFrame::setAggregation(const Aggregation &aggregati
 
 void AbstractStandardTableViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
+    Q_UNUSED(absoluteValues);
     //if (mAggregationModel && mAggregationModel->appliedAggregation().isActive() &&
     //        mAggregationModel->appliedAggregation().useAbsoluteValues() != absoluteValues) {
     //    auto aggregation = mAggregationModel->aggregation();
@@ -68,10 +69,8 @@ void AbstractStandardTableViewFrame::reset()
 
 void AbstractStandardTableViewFrame::updateView()
 {
-    if (mColumnRowFilterModel) mColumnRowFilterModel->invalidate();
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();
-    //updateValueFilter(); // TODO VF
     emit filtersChanged();
 }
 
@@ -107,7 +106,7 @@ JaccTableViewFrame::JaccTableViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractStandardTableViewFrame(parent, f)
     , mBaseModel(new JaccobianTableModel)
 {
-    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(ViewDataType::Jaccobian));
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
 AbstractTableViewFrame* JaccTableViewFrame::clone(int view)
@@ -119,15 +118,10 @@ AbstractTableViewFrame* JaccTableViewFrame::clone(int view)
     return frame;
 }
 
-ViewDataType JaccTableViewFrame::type() const
-{
-    return ViewDataType::Jaccobian;
-}
-
 void JaccTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
-    mViewConfig->setModelInstance(mModelInstance);
+    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
     mModelInstance->loadData(mViewConfig);
     setupView();
 }
@@ -156,10 +150,8 @@ void JaccTableViewFrame::setValueFilter(const ValueFilter &filter)
 void JaccTableViewFrame::updateView()
 {
     if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
-    if (mColumnRowFilterModel) mColumnRowFilterModel->invalidate();
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();
-    //updateValueFilter(); // TODO VF
     emit filtersChanged();
 }
 
@@ -185,14 +177,14 @@ void JaccTableViewFrame::setupView()
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                                    mModelInstance,
                                                    ui->tableView);
-    mHorizontalHeader->setViewType(ViewDataType::Jaccobian);
+    mHorizontalHeader->setViewType(type());
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &JaccTableViewFrame::setIdentifierLabelFilter);
 
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
-    mVerticalHeader->setViewType(ViewDataType::Jaccobian);
+    mVerticalHeader->setViewType(type());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &JaccTableViewFrame::setIdentifierLabelFilter);
 
@@ -207,8 +199,6 @@ void JaccTableViewFrame::setupView()
     mIdentifierFilterModel->setSourceModel(mLabelFilterModel);
     mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->tableView);
     mIdentifierLabelFilterModel->setSourceModel(mIdentifierFilterModel);
-    //mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
-    //mColumnRowFilterModel->setSourceModel(mAggregationModel);
 
     ui->tableView->setHorizontalHeader(mHorizontalHeader);
     ui->tableView->setVerticalHeader(mVerticalHeader);
@@ -222,7 +212,6 @@ void JaccTableViewFrame::setupView()
 
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();
-    mViewConfig->initialize(ui->tableView->model());
 }
 
 }

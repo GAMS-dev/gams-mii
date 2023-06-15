@@ -182,7 +182,28 @@ struct SearchResult
     {
         int Index = -1;
         Qt::Orientation Orientation = Qt::Horizontal;
+
+        bool operator==(const SearchEntry& other) const
+        {
+            return Index == other.Index && Orientation == other.Orientation;
+        }
+
+        bool operator!=(const SearchEntry& other) const
+        {
+            return !(*this == other);
+        }
     };
+
+    bool operator==(const SearchResult& other) const
+    {
+        return Term == other.Term && IsRegEx == other.IsRegEx &&
+               Entries == other.Entries;
+    }
+
+    bool operator!=(const SearchResult& other) const
+    {
+        return !(*this == other);
+    }
 
     QString Term;
     bool IsRegEx = false;
@@ -322,6 +343,21 @@ struct ValueFilter
                 !str.compare(constant->P_INF, Qt::CaseInsensitive) ||
                 !str.compare(constant->N_INF, Qt::CaseInsensitive) ||
                 !str.compare(constant->NA, Qt::CaseInsensitive);
+    }
+
+    bool operator==(const ValueFilter& other) const
+    {
+        return MinValue == other.MinValue && MaxValue == other.MaxValue &&
+               ExcludeRange == other.ExcludeRange &&
+               UseAbsoluteValues == other.UseAbsoluteValues &&
+               UseAbsoluteValuesGlobal == other.UseAbsoluteValuesGlobal &&
+               ShowPInf == other.ShowPInf && ShowNInf == other.ShowNInf &&
+               ShowEps == other.ShowEps && mIsUserInput == other.mIsUserInput;
+    }
+
+    bool operator!=(const ValueFilter& other) const
+    {
+        return !(*this == other);
     }
 
 private:

@@ -200,8 +200,8 @@ BPAverageTableModel::BPAverageTableModel(QObject *parent)
 }
 
 BPAverageTableModel::BPAverageTableModel(int view,
-                                                     QSharedPointer<AbstractModelInstance> modelInstance,
-                                                     QObject *parent)
+                                         QSharedPointer<AbstractModelInstance> modelInstance,
+                                         QObject *parent)
     : ComprehensiveTableModel(view, modelInstance, parent)
 {
 

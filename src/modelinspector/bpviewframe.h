@@ -86,7 +86,10 @@ public:
 
     void setValueFilter(const ValueFilter &filter) override;
 
-    ViewDataType type() const override;
+    inline ViewDataType type() const override
+    {
+        return ViewDataType::BP_Overview;
+    }
 
     void updateView() override;
 

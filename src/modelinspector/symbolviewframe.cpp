@@ -50,7 +50,6 @@ AbstractTableViewFrame *SymbolViewFrame::clone(int view)
         frame->mIdentifierLabelFilterModel->setIdentifierState(*iter, Qt::Vertical);
         frame->mVerticalHeader->setIdentifierState(*iter);
     }
-    frame->mColumnRowFilterModel->invalidate();
     return frame;
 }
 
@@ -94,7 +93,6 @@ void SymbolViewFrame::setValueFilter(const ValueFilter &filter)
 
 void SymbolViewFrame::updateView()
 {
-    if (mColumnRowFilterModel) mColumnRowFilterModel->invalidate();
     mModelInstanceModel->setModelInstance(mModelInstance);
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();
@@ -162,11 +160,6 @@ void SymbolViewFrame::setupView()
     mIdentifierFilterModel->setSourceModel(mLabelFilterModel);
     mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->tableView);
     mIdentifierLabelFilterModel->setSourceModel(mIdentifierFilterModel);
-    //mAggregationModel = new AggregationProxyModel(mModelInstance, ui->tableView);
-    //mAggregationModel->setView(mViewConfig->view());
-    //mAggregationModel->setSourceModel(mIdentifierLabelFilterModel);
-    //mColumnRowFilterModel = new ColumnRowFilterModel(ui->tableView);
-    //mColumnRowFilterModel->setSourceModel(mIdentifierLabelFilterModel);
 
     ui->tableView->setHorizontalHeader(mHorizontalHeader);
     ui->tableView->setVerticalHeader(mVerticalHeader);
