@@ -47,7 +47,7 @@ void AggregationDialog::setAggregation(const Aggregation &aggregation,
     ui->aggregationBox->setCurrentText(mAggregation.typeText());
     mAggregationMethod = ui->aggregationBox->currentIndex();
     ui->absoluteBox->setChecked(mAggregation.useAbsoluteValues());
-    if (ViewProperties::isAggregatable(mAggregation.viewType())) {
+    if (Mi::isAggregatable(mAggregation.viewType())) {
         ui->applyButton->setEnabled(true);
         ui->resetButton->setEnabled(true);
     } else {

@@ -24,6 +24,7 @@
 #include "sectiontreeitem.h"
 #include "viewconfigurationprovider.h"
 #include "symbolviewframe.h"
+#include "postopttreeitem.h"
 
 #include <QDir>
 
@@ -105,6 +106,7 @@ void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
     ui->bpScalingFrame->setShowAbsoluteValues(absoluteValues);
     ui->bpAverageFrame->setShowAbsoluteValues(absoluteValues);
     ui->bpCountFrame->setShowAbsoluteValues(absoluteValues);
+    ui->postoptFrame->setShowAbsoluteValues(absoluteValues);
     for (auto view : std::as_const(mCustomViews)) {
         view->setShowAbsoluteValues(absoluteValues);
     }
@@ -349,15 +351,22 @@ void ModelInspector::setCurrentView(int index)
     Q_UNUSED(index);
     int page;
     auto currentIndex = ui->sectionView->currentIndex();
-    if (!currentIndex.isValid()) return;
+    if (!currentIndex.isValid())
+        return;
 
     auto item = static_cast<SectionTreeItem*>(currentIndex.internalPointer());
     if (currentIndex.parent() != ui->sectionView->model()->index((int)ViewType::Custom, 0)) {
-        if (item->page() < 0 || item->page() >= ui->stackedWidget->count()) return;
+        if (item->page() < 0 || item->page() >= ui->stackedWidget->count())
+            return;
+        auto dataTree = mModelInstance->dataTree((int)ViewDataType::Postopt);
+        if (item->page() == ui->stackedWidget->count()-1 && !dataTree) {
+            ui->postoptFrame->setupView(mModelInstance);
+        }
         page = item->page();
     } else {
         auto wgt = mCustomViews[item->page()];
-        if (!wgt) return;
+        if (!wgt)
+            return;
         page = ui->stackedWidget->indexOf(wgt);
     }
     ui->stackedWidget->setCurrentIndex(page);
@@ -403,13 +412,12 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
     clearCustomViews();
     if (loadModel) {
         bool showOutput = mModelInstance->useOutput();
-        mModelInstance = QSharedPointer<AbstractModelInstance>(new ModelInstance(mWorkspace,
+        mModelInstance = QSharedPointer<AbstractModelInstance>(new ModelInstance(showOutput,
+                                                                                 mWorkspace,
                                                                                  mSystemDir,
                                                                                  mScratchDir));
         if (mModelInstance->state() == AbstractModelInstance::Error)
             emit newLogMessage(mModelInstance->logMessages());
-        else
-            mModelInstance->setUseOutput(showOutput);
     }
     if (!loadModel || mModelInstance->state() == AbstractModelInstance::Error) {
         mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
@@ -420,7 +428,11 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
     ui->bpOverviewFrame->setupView(mModelInstance);
     ui->bpCountFrame->setupView(mModelInstance);
     ui->bpAverageFrame->setupView(mModelInstance);
-    setCurrentViewIndex(ViewType::Predefined);
+    //ui->postoptFrame->setupView(mModelInstance);
+
+    auto root = ui->sectionView->model()->index((int)ViewType::Predefined, 0);
+    auto index = ui->sectionView->model()->index((int)ViewDataType::BP_Scaling, 0, root);
+    ui->sectionView->setCurrentIndex(index);
 }
 
 void ModelInspector::clearCustomViews()
@@ -436,7 +448,7 @@ void ModelInspector::clearCustomViews()
     mCustomViews.clear();
 }
 
-AbstractTableViewFrame* ModelInspector::currentView() const
+AbstractViewFrame* ModelInspector::currentView() const
 {
     switch (ui->stackedWidget->currentIndex()) {
     case (int)ViewDataType::Jaccobian:
@@ -449,6 +461,8 @@ AbstractTableViewFrame* ModelInspector::currentView() const
         return ui->bpAverageFrame;
     case (int)ViewDataType::BP_Scaling:
         return ui->bpScalingFrame;
+    case (int)ViewDataType::Postopt:
+        return ui->postoptFrame;
     default:
         if (mCustomViews.contains(ui->stackedWidget->currentIndex()))
             return mCustomViews[ui->stackedWidget->currentIndex()];

@@ -14,6 +14,7 @@ class HierarchicalHeaderView;
 class ComprehensiveTableModel;
 class ValueFormatProxyModel;
 class AbsFormatProxyModel;
+class Symbol;
 
 class AbstractBPViewFrame : public AbstractTableViewFrame
 {

@@ -1,6 +1,5 @@
 #include "abstracttableviewframe.h"
 #include "ui_standardtableviewframe.h"
-#include "abstractmodelinstance.h"
 #include "search.h"
 #include "viewconfigurationprovider.h"
 
@@ -9,7 +8,7 @@ namespace studio{
 namespace modelinspector {
 
 AbstractTableViewFrame::AbstractTableViewFrame(QWidget *parent, Qt::WindowFlags f)
-    : QFrame(parent, f)
+    : AbstractViewFrame(parent, f)
     , ui(new Ui::StandardTableViewFrame)
 {
     ui->setupUi(this);
@@ -20,87 +19,7 @@ AbstractTableViewFrame::~AbstractTableViewFrame()
     delete ui;
 }
 
-const IdentifierFilter &AbstractTableViewFrame::identifierFilter() const
-{
-    return mViewConfig->currentIdentifierFilter();
-}
-
-const IdentifierFilter &AbstractTableViewFrame::defaultIdentifierFilter() const
-{
-    return mViewConfig->defaultIdentifierFilter();
-}
-
-void AbstractTableViewFrame::setDefaultIdentifierFilter(const IdentifierFilter &filter)
-{
-    mViewConfig->setDefaultIdentifierFilter(filter);
-}
-
-const ValueFilter &AbstractTableViewFrame::valueFilter() const
-{
-    return mViewConfig->currentValueFilter();
-}
-
-const ValueFilter &AbstractTableViewFrame::defaultValueFilter() const
-{
-    return mViewConfig->defaultValueFilter();
-}
-
-void AbstractTableViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    mViewConfig->setCurrentValueFilter(filter);
-}
-
-void AbstractTableViewFrame::setDefaultValueFilter(const ValueFilter &filter)
-{
-    return mViewConfig->setDefaultValueFilter(filter);
-}
-
-const LabelFilter &AbstractTableViewFrame::labelFilter() const
-{
-    return mViewConfig->currentLabelFiler();
-}
-
-const LabelFilter &AbstractTableViewFrame::defaultLabelFilter() const
-{
-    return mViewConfig->defaultLabelFilter();
-}
-
-void AbstractTableViewFrame::setLabelFilter(const LabelFilter &filter)
-{
-    mViewConfig->setCurrentLabelFilter(filter);
-}
-
-void AbstractTableViewFrame::setDefaultLabelFilter(const LabelFilter &filter)
-{
-    mViewConfig->setDefaultLabelFilter(filter);
-}
-
-const Aggregation &AbstractTableViewFrame::currentAggregation() const
-{
-    return mViewConfig->currentAggregation();
-}
-
-const Aggregation &AbstractTableViewFrame::defaultAggregation() const
-{
-    return mViewConfig->defaultAggregation();
-}
-
-void AbstractTableViewFrame::setDefaultAggregation(const Aggregation &aggregation)
-{
-    mViewConfig->setDefaultAggregation(aggregation);
-}
-
-ViewDataType AbstractTableViewFrame::type() const
-{
-    return ViewDataType::Unknown;
-}
-
-QAbstractItemModel *AbstractTableViewFrame::model() const
-{
-    return ui->tableView->model();
-}
-
-void AbstractTableViewFrame::setSearchSelection(const gams::studio::modelinspector::SearchResult::SearchEntry &result)
+void AbstractTableViewFrame::setSearchSelection(const SearchResult::SearchEntry &result)
 {
     if (result.Index < 0) return;
     if (result.Orientation == Qt::Horizontal) {
@@ -108,26 +27,6 @@ void AbstractTableViewFrame::setSearchSelection(const gams::studio::modelinspect
     } else {
         ui->tableView->selectRow(result.Index);
     }
-}
-
-int AbstractTableViewFrame::view() const
-{
-    return mViewConfig->view();
-}
-
-void AbstractTableViewFrame::setView(int view)
-{
-    mViewConfig->setView(view);
-}
-
-QSharedPointer<AbstractViewConfiguration> AbstractTableViewFrame::viewConfig() const
-{
-    return mViewConfig;
-}
-
-void AbstractTableViewFrame::setViewConfig(QSharedPointer<AbstractViewConfiguration> viewConfig)
-{
-    mViewConfig = viewConfig;
 }
 
 SearchResult& AbstractTableViewFrame::search(const QString &term, bool isRegEx)
@@ -142,19 +41,14 @@ SearchResult& AbstractTableViewFrame::search(const QString &term, bool isRegEx)
     return mViewConfig->searchResult();
 }
 
-SearchResult& AbstractTableViewFrame::searchResult()
-{
-    return mViewConfig->searchResult();
-}
-
 void AbstractTableViewFrame::zoomIn()
 {
-    ui->tableView->zoomIn(constant->ZoomFactor);
+    ui->tableView->zoomIn(Mi::ZoomFactor);
 }
 
 void AbstractTableViewFrame::zoomOut()
 {
-    ui->tableView->zoomOut(constant->ZoomFactor);
+    ui->tableView->zoomOut(Mi::ZoomFactor);
 }
 
 void AbstractTableViewFrame::resetZoom()

@@ -75,11 +75,13 @@ SOURCES += \
     modelinspector/abstractmodelinstance.cpp \
     modelinspector/abstracttableview.cpp \
     modelinspector/abstracttableviewframe.cpp \
+    modelinspector/abstractviewframe.cpp \
     modelinspector/aggregation.cpp \
     modelinspector/aggregationdialog.cpp \
     modelinspector/bpidentifierfiltermodel.cpp \
     modelinspector/bpviewframe.cpp \
     modelinspector/columnrowfiltermodel.cpp \
+    modelinspector/common.cpp \
     modelinspector/comprehensivetablemodel.cpp \
     modelinspector/datahandler.cpp \
     modelinspector/filterdialog.cpp \
@@ -94,6 +96,10 @@ SOURCES += \
     modelinspector/modelinstance.cpp    \
     modelinspector/modelinspector.cpp \
     modelinspector/modelinstancetableview.cpp \
+    modelinspector/postopttreeitem.cpp \
+    modelinspector/postopttreemodel.cpp \
+    modelinspector/postopttreeview.cpp \
+    modelinspector/postopttreeviewframe.cpp \
     modelinspector/search.cpp \
     modelinspector/searchresultmodel.cpp \
     modelinspector/sectiontreeitem.cpp \
@@ -117,6 +123,7 @@ HEADERS += \
     modelinspector/abstractmodelinstance.h \
     modelinspector/abstracttableview.h \
     modelinspector/abstracttableviewframe.h \
+    modelinspector/abstractviewframe.h \
     modelinspector/aggregation.h \
     modelinspector/aggregationdialog.h \
     modelinspector/bpidentifierfiltermodel.h \
@@ -137,6 +144,10 @@ HEADERS += \
     modelinspector/modelinstance.h  \
     modelinspector/modelinspector.h \
     modelinspector/modelinstancetableview.h \
+    modelinspector/postopttreeitem.h \
+    modelinspector/postopttreemodel.h \
+    modelinspector/postopttreeview.h \
+    modelinspector/postopttreeviewframe.h \
     modelinspector/search.h \
     modelinspector/searchresultmodel.h \
     modelinspector/sectiontreeitem.h \
@@ -156,6 +167,7 @@ FORMS += \
     modelinspector/filterdialog.ui \
     modelinspector/labelfilterwidget.ui \
     modelinspector/modelinspector.ui \
+    modelinspector/postopttreeviewframe.ui \
     modelinspector/standardtableviewframe.ui
 
 RESOURCES += \

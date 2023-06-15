@@ -15,6 +15,8 @@ public:
 
 private slots:
     void test_DataRow();
+    void test_DataRow_value();
+
     void test_DataMatrix();
     void test_DataHandler_empty();
     void test_DataHandler_transport();
@@ -62,6 +64,31 @@ void TestDataHandler::test_DataRow()
     QCOMPARE(dataRow5.entries(), 12);
     QVERIFY(dataRow5.colIdx() != nullptr);
     QVERIFY(dataRow5.data() != nullptr);
+}
+
+void TestDataHandler::test_DataRow_value()
+{
+    DataRow dataRow0;
+    QCOMPARE(dataRow0.value(-1, 10), QVariant());
+    QCOMPARE(dataRow0.value(0, 10), QVariant());
+    QCOMPARE(dataRow0.value(4, 1), QVariant());
+    DataRow dataRow1(4);
+    dataRow1.data()[0] = 0;
+    dataRow1.data()[1] = 1;
+    dataRow1.data()[2] = 2;
+    dataRow1.data()[3] = 3;
+    int* colidx = new int[4];
+    colidx[0] = 0;
+    colidx[1] = 1;
+    colidx[2] = 2;
+    colidx[3] = 3;
+    dataRow1.setColIdx(colidx);
+    QCOMPARE(dataRow1.value(-1, -4), QVariant());
+    QCOMPARE(dataRow1.value(0, 1).toDouble(), dataRow1.data()[0]);
+    QCOMPARE(dataRow1.value(1, 4).toDouble(), dataRow1.data()[1]);
+    QCOMPARE(dataRow1.value(2, 5).toDouble(), dataRow1.data()[2]);
+    QCOMPARE(dataRow1.value(3, 4).toDouble(), dataRow1.data()[3]);
+    QCOMPARE(dataRow1.value(3, -1), QVariant());
 }
 
 void TestDataHandler::test_DataMatrix()

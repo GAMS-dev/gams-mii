@@ -15,4 +15,6 @@ SOURCES +=  tst_testmodelinstance.cpp                               \
             $$SRCPATH/modelinspector/labeltreeitem.cpp              \
             $$SRCPATH/modelinspector/symbol.cpp                     \
             $$SRCPATH/modelinspector/aggregation.cpp                \
-            $$SRCPATH/modelinspector/viewconfigurationprovider.cpp
+            $$SRCPATH/modelinspector/viewconfigurationprovider.cpp  \
+            $$SRCPATH/modelinspector/common.cpp                     \
+            $$SRCPATH/modelinspector/postopttreeitem.cpp

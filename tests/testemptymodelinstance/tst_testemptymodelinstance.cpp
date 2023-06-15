@@ -82,6 +82,9 @@ void TestEmptyModelInstance::test_default()
     QCOMPARE(instance.headerData(2, Qt::Vertical, 42, 128), QVariant());
     QCOMPARE(instance.plainHeaderData(Qt::Horizontal, 2, 0, 12), QVariant());
     QCOMPARE(instance.plainHeaderData(Qt::Vertical, 2, 0, 12), QVariant());
+    QCOMPARE(instance.equationAttribute(QString(), -1, -4, false), QVariant());
+    QCOMPARE(instance.variableAttribute(QString(), -1, -4, false), QVariant());
+    QVERIFY(instance.dataTree(-42) != nullptr);
 }
 
 void TestEmptyModelInstance::test_getSet()

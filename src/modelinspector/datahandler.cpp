@@ -2,6 +2,7 @@
 #include "abstractmodelinstance.h"
 #include "aggregation.h"
 #include "viewconfigurationprovider.h"
+#include "postopttreeitem.h"
 
 #include <algorithm>
 #include <functional>
@@ -1260,6 +1261,199 @@ private:
     DataHandler::CoefficientCount& mCoeffCount;
 };
 
+class PostoptDataProvider final : public DataHandler::AbstractDataProvider
+{
+public:
+    PostoptDataProvider(DataHandler *dataHandler,
+                        AbstractModelInstance& modelInstance,
+                        QSharedPointer<AbstractViewConfiguration> viewConfig)
+        : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
+    {
+        mColumnCount = 5;
+        mRootItem = QSharedPointer<PostoptTreeItem>(new LinePostoptTreeItem());
+        value = std::bind(&PostoptDataProvider::identity, this, std::placeholders::_1);
+    }
+
+    PostoptDataProvider(const PostoptDataProvider& other)
+        : DataHandler::AbstractDataProvider(other)
+        , mRootItem(other.mRootItem)
+    {
+
+    }
+
+    PostoptDataProvider(PostoptDataProvider&& other) noexcept
+        : DataHandler::AbstractDataProvider(other)
+        , mRootItem(other.mRootItem)
+    {
+        other.mRootItem = nullptr;
+    }
+
+    ~PostoptDataProvider()
+    {
+
+    }
+
+    void loadData() override
+    {
+        if (mViewConfig->currentValueFilter().isAbsolute()) {
+            value = std::bind(&PostoptDataProvider::abs, this, std::placeholders::_1);
+        } else {
+            value = std::bind(&PostoptDataProvider::identity, this, std::placeholders::_1);
+        }
+        mRootItem = QSharedPointer<PostoptTreeItem>(new LinePostoptTreeItem());
+        auto equations = new GroupPostoptTreeItem(PostoptTreeItem::EquationHeader, mRootItem.get());
+        mRootItem->append(equations);
+        for (auto equation : mModelInstance.equations()) {
+            auto eqnGroup = new GroupPostoptTreeItem(equation->name(), equations);
+            equations->append(eqnGroup);
+            for (int e=0; e<equation->entries(); ++e) {
+                auto eqnLine = new GroupPostoptTreeItem(symbolName(equation, e), eqnGroup);
+                eqnGroup->append(eqnLine);
+                loadAttributes(equation, e, eqnLine);
+                loadVariables(equation, e, eqnLine);
+            }
+        }
+        auto variables = new GroupPostoptTreeItem(PostoptTreeItem::VariableHeader, mRootItem.get());
+        mRootItem->append(variables);
+        for (auto variable : mModelInstance.variables()) {
+            auto varGroup = new GroupPostoptTreeItem(variable->name(), variables);
+            variables->append(varGroup);
+            for (int e=0; e<variable->entries(); ++e) {
+                auto varLine = new GroupPostoptTreeItem(symbolName(variable, e), varGroup);
+                varGroup->append(varLine);
+                loadAttributes(variable, e, varLine);
+                loadEquations(variable, e, varLine);
+            }
+        }
+    }
+
+    double data(int row, int column) const override
+    {
+        Q_UNUSED(row);
+        Q_UNUSED(column);
+        return 0.0;
+    }
+
+    QSharedPointer<PostoptTreeItem> dataTree() const
+    {
+        return mRootItem;
+    }
+
+    auto& operator=(const PostoptDataProvider& other)
+    {
+        mRootItem = other.mRootItem;
+        return *this;
+    }
+
+    auto& operator=(PostoptDataProvider&& other) noexcept
+    {
+        mRootItem = other.mRootItem;
+        other.mRootItem = nullptr;
+        return *this;
+    }
+
+private:
+    void loadAttributes(Symbol *symbol, int entry, PostoptTreeItem *parent)
+    {
+        bool abs = mViewConfig->currentValueFilter().isAbsolute();
+        auto attributes = new GroupPostoptTreeItem(PostoptTreeItem::AttributeHeader, parent);
+        parent->append(attributes);
+        for (const auto& label : PostoptTreeItem::AttributeRowHeader) {
+            QVariant value;
+            if (symbol->isEquation()) {
+                value = mModelInstance.equationAttribute(label.toString(), symbol->firstSection(), entry, abs);
+            } else if (symbol->isVariable()) {
+                value = mModelInstance.variableAttribute(label.toString(), symbol->firstSection(), entry, abs);
+            }
+            attributes->append(new LinePostoptTreeItem({label, value}, attributes));
+        }
+    }
+
+    void loadEquations(Symbol *variable, int entry, PostoptTreeItem *parent)
+    {
+        bool abs = mViewConfig->currentValueFilter().isAbsolute();
+        auto equations = new LinePostoptTreeItem(PostoptTreeItem::EquationLineHeader, parent);
+        parent->append(equations);
+        for (auto equation : mModelInstance.equations()) {
+            auto eqnGroup = new GroupPostoptTreeItem(equation->name());
+            for (int e=0; e<equation->entries(); ++e) {
+                auto row = dataRow(equation->firstSection()+e);
+                QVariant jaccval;
+                if (row) {
+                    jaccval = row->value(variable->firstSection()+entry, variable->lastSection());
+                }
+                if (jaccval.isValid()) {
+                    auto name = symbolName(equation, e);
+                    double jacc = value(jaccval.toDouble());
+                    double xi = mModelInstance.equationAttribute(Mi::MarginalNum, equation->firstSection(), e, abs).toDouble();
+                    double jaccxi = value(jaccval.toDouble() * xi);
+                    eqnGroup->append(new LinePostoptTreeItem({name, jacc, xi, jaccxi}, eqnGroup));
+                }
+            }
+            if (eqnGroup->rowCount()) {
+                eqnGroup->setParent(equations);
+                equations->append(eqnGroup);
+            } else {
+                delete eqnGroup;
+            }
+        }
+    }
+
+    void loadVariables(Symbol *equation, int entry, PostoptTreeItem *parent)
+    {
+        bool abs = mViewConfig->currentValueFilter().isAbsolute();
+        auto variables = new LinePostoptTreeItem(PostoptTreeItem::VariableLineHeader, parent);
+        parent->append(variables);
+        for (auto variable : mModelInstance.variables()) {
+            auto varGroup = new GroupPostoptTreeItem(variable->name());
+            for (int e=0; e<variable->entries(); ++e) {
+                auto row = dataRow(equation->firstSection()+entry);
+                QVariant jaccval;
+                if (row) {
+                    jaccval = row->value(variable->firstSection()+e, variable->lastSection());
+                }
+                if (jaccval.isValid()) {
+                    auto name = symbolName(variable, e);
+                    double jacc = value(jaccval.toDouble());
+                    double ui = mModelInstance.variableAttribute(Mi::Level, variable->firstSection(), e, abs).toDouble();
+                    double jaccui = value(jacc * ui);
+                    varGroup->append(new LinePostoptTreeItem({name, jacc, ui, jaccui}, varGroup));
+                }
+            }
+            if (varGroup->rowCount()) {
+                varGroup->setParent(variables);
+                variables->append(varGroup);
+            } else {
+                delete varGroup;
+            }
+        }
+    }
+
+    QString symbolName(Symbol *symbol, int entry)
+    {
+        if (symbol->isScalar())
+            return symbol->name();
+        int index = symbol->firstSection()+entry;
+        if (!symbol->sectionLabels().contains(index))
+            return QString("(..)");
+        return QString("%1(%2)").arg(symbol->name(), symbol->sectionLabels()[index].join(", "));
+    }
+
+    double abs(double value)
+    {
+        return std::abs(value);
+    }
+
+    double identity(double value)
+    {
+        return value;
+    }
+
+private:
+    QSharedPointer<PostoptTreeItem> mRootItem;
+    std::function<double(double)> value;
+};
+
 DataHandler::DataHandler(AbstractModelInstance& modelInstance)
     : mModelInstance(modelInstance)
 {
@@ -1299,6 +1493,15 @@ QVariant DataHandler::data(int row, int column, int view) const
         return mDataCache[view]->data(row, column);
     }
     return QVariant();
+}
+
+QSharedPointer<PostoptTreeItem> DataHandler::dataTree(int view) const
+{
+    if (mDataCache.contains(view)) {
+        auto provider = static_cast<PostoptDataProvider*>(mDataCache[view].get());
+        return provider->dataTree();
+    }
+    return nullptr;
 }
 
 int DataHandler::headerData(int logicalIndex,
@@ -1422,6 +1625,11 @@ DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int view)
         auto provider = static_cast<BPAverageDataProvider*>(mDataCache[view].get());
         return new BPAverageDataProvider(*provider);
     }
+    case ViewDataType::Postopt:
+    {
+        auto provider = static_cast<PostoptDataProvider*>(mDataCache[view].get());
+        return new PostoptDataProvider(*provider);
+    }
     default:
     {
         auto provider = static_cast<IdentityDataProvider*>(mDataCache[view].get());
@@ -1461,6 +1669,10 @@ QSharedPointer<DataHandler::AbstractDataProvider> DataHandler::newProvider(QShar
                                                                               mModelInstance,
                                                                               viewConfig,
                                                                               *mCoeffCount));
+    case ViewDataType::Postopt:
+        return QSharedPointer<AbstractDataProvider>(new PostoptDataProvider(this,
+                                                                            mModelInstance,
+                                                                            viewConfig));
     default:
         return QSharedPointer<AbstractDataProvider>(new IdentityDataProvider(this,
                                                                              mModelInstance,

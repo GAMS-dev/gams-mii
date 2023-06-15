@@ -1,4 +1,4 @@
-#include "abstracttableview.h"
+#include "postopttreeview.h"
 #include "common.h"
 
 #include <QEvent>
@@ -8,13 +8,13 @@ namespace gams {
 namespace studio{
 namespace modelinspector {
 
-AbstractTableView::AbstractTableView(QWidget *parent)
-    : QTableView(parent)
+PostoptTreeView::PostoptTreeView(QWidget *parent)
+    : QTreeView(parent)
 {
 
 }
 
-bool AbstractTableView::eventFilter(QObject *watched, QEvent *event)
+bool PostoptTreeView::eventFilter(QObject *watched, QEvent *event)
 {
     if (event->type() == QEvent::Wheel) {
         QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
@@ -26,31 +26,28 @@ bool AbstractTableView::eventFilter(QObject *watched, QEvent *event)
             return true;
         }
     }
-    return QTableView::eventFilter(watched, event);
+    return QTreeView::eventFilter(watched, event);
 }
 
-void AbstractTableView::zoomIn(int range)
+void PostoptTreeView::zoomIn(int range)
 {
     zoom(range);
-    resizeColumnsToContents();
-    resizeRowsToContents();
+    resizeColumns();
 }
 
-void AbstractTableView::zoomOut(int range)
+void PostoptTreeView::zoomOut(int range)
 {
     zoom(-range);
-    resizeColumnsToContents();
-    resizeRowsToContents();
+    resizeColumns();
 }
 
-void AbstractTableView::resetZoom()
+void PostoptTreeView::resetZoom()
 {
     setFont(mBaseFont);
-    resizeColumnsToContents();
-    resizeRowsToContents();
+    resizeColumns();
 }
 
-void AbstractTableView::zoom(int range)
+void PostoptTreeView::zoom(int range)
 {
     if (range == 0.f)
         return;
@@ -60,8 +57,14 @@ void AbstractTableView::zoom(int range)
         return;
     f.setPointSize(newSize);
     setFont(f);
-    resizeColumnsToContents();
-    resizeRowsToContents();
+    resizeColumns();
+}
+
+void PostoptTreeView::resizeColumns()
+{
+    for (int i=0; i<model()->columnCount(); ++i) {
+        resizeColumnToContents(i);
+    }
 }
 
 }

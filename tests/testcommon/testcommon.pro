@@ -7,4 +7,5 @@ TEMPLATE = app
 
 INCLUDEPATH += $$SRCPATH/modelinspector
 
-SOURCES += tst_testcommon.cpp
+SOURCES += tst_testcommon.cpp                   \
+           $$SRCPATH/modelinspector/common.cpp

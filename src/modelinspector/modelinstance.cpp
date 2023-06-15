@@ -30,12 +30,14 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-ModelInstance::ModelInstance(const QString &workspace,
+ModelInstance::ModelInstance(bool useOutput,
+                             const QString &workspace,
                              const QString &systemDir,
                              const QString &scratchDir)
     : AbstractModelInstance(workspace, systemDir, scratchDir)
     , mDataHandler(new DataHandler(*this))
 {
+    setUseOutput(useOutput);
     initialize();
     loadScratchData();
 }
@@ -478,6 +480,11 @@ QVariant ModelInstance::data(int row, int column, int view) const
     return mDataHandler->data(row, column, view);
 }
 
+QSharedPointer<PostoptTreeItem> ModelInstance::dataTree(int view) const
+{
+    return mDataHandler->dataTree(view);
+}
+
 QVariant ModelInstance::headerData(int logicalIndex,
                                    Qt::Orientation orientation,
                                    int view, int role) const
@@ -534,17 +541,21 @@ void ModelInstance::initialize()
     }
 
     if (gmoHaveBasis(mGMO)){
-        specialMarginalEquValuePtr = std::bind(&ModelInstance::specialMarginalVarValueBasis,
+        specialMarginalEquValuePtr = std::bind(&ModelInstance::specialMarginalEquValueBasis,
                                                this, std::placeholders::_1,
-                                               std::placeholders::_2);
+                                               std::placeholders::_2,
+                                               std::placeholders::_3);
         specialMarginalVarValuePtr = std::bind(&ModelInstance::specialMarginalVarValueBasis,
                                                this, std::placeholders::_1,
-                                               std::placeholders::_2);
+                                               std::placeholders::_2,
+                                               std::placeholders::_3);
     } else {
-        specialMarginalEquValuePtr = std::bind(&ModelInstance::specialMarginalValue,
-                                               this, std::placeholders::_1);
-        specialMarginalVarValuePtr = std::bind(&ModelInstance::specialMarginalValue,
-                                               this, std::placeholders::_1);
+        specialMarginalEquValuePtr = std::bind(&ModelInstance::specialValuePostopt,
+                                               this, std::placeholders::_1,
+                                               std::placeholders::_2);
+        specialMarginalVarValuePtr = std::bind(&ModelInstance::specialValuePostopt,
+                                               this, std::placeholders::_1,
+                                               std::placeholders::_2);
     }
 
 
@@ -579,51 +590,239 @@ void ModelInstance::jaccobianData(DataMatrix& dataMatrix)
     delete [] nlflag;
 }
 
-//double ModelInstance::horizontalAttribute(const QString &header, int column)
-//{// TODO !!!
-//    double value = 0.0;
-//    if (!header.compare(constant->Level, Qt::CaseInsensitive)) {
-//        value = gmoGetVarLOne(mGMO, column);
-//    } else if (!header.compare(constant->Lower, Qt::CaseInsensitive)) {
-//        value = gmoGetVarLowerOne(mGMO, column);
-//    } else if (!header.compare(constant->Marginal, Qt::CaseInsensitive)) {
-//        value = gmoGetVarMOne(mGMO, column);
-//        //return specialMarginalVarValuePtr(value, column);
-//    } else if (!header.compare(constant->Scale, Qt::CaseInsensitive)) {
-//        value = gmoGetVarScaleOne(mGMO, column);
-//    } else if (!header.compare(constant->Upper, Qt::CaseInsensitive)) {
-//        value = gmoGetVarUpperOne(mGMO, column);
-//    }
-//    mModelAttributeMinimumH = ValueFilter::minValue(mModelAttributeMinimumH, value);
-//    mModelAttributeMaximumH = ValueFilter::maxValue(mModelAttributeMaximumH, value);
-//    return value;
-//    //return specialValueMinMax(value, Qt::Horizontal);
-//}
-//
-//double ModelInstance::verticalAttribute(const QString &header, int row)
-//{// TODO !!!
-//    double value = 0.0;
-//    if (!header.compare(constant->Level, Qt::CaseInsensitive)) {
-//        value = gmoGetEquLOne(mGMO, row);
-//    } else if (!header.compare(constant->Lower, Qt::CaseInsensitive)) {
-//        auto bounds = equationBounds(row);
-//        value = bounds.first;
-//    } else if (!header.compare(constant->Marginal, Qt::CaseInsensitive)) {
-//        value = gmoGetEquMOne(mGMO, row);
-//        //return specialMarginalEquValuePtr(value, row);
-//    } else if (!header.compare(constant->Scale, Qt::CaseInsensitive)) {
-//        value = gmoGetEquScaleOne(mGMO, row);
-//    } else if (!header.compare(constant->Upper, Qt::CaseInsensitive)) {
-//        auto bounds = equationBounds(row);
-//        value = bounds.second;
-//    }
-//    mModelAttributeMinimumV = ValueFilter::minValue(mModelAttributeMinimumV, value);
-//    mModelAttributeMaximumV = ValueFilter::maxValue(mModelAttributeMaximumV, value);
-//    return value;
-//    //return specialValueMinMax(value, Qt::Vertical);
-//}
+QVariant ModelInstance::equationAttribute(const QString &header, int index, int entry, bool abs) const
+{
+    double value = 0.0;
+    int absoluteIndex = index + entry;
+    if (!header.compare(Mi::Level, Qt::CaseInsensitive)) {
+        value = gmoGetEquLOne(mGMO, absoluteIndex);
+    } else if (!header.compare(Mi::Lower, Qt::CaseInsensitive)) {
+        auto bounds = equationBounds(absoluteIndex);
+        value = bounds.first;
+    } else if (!header.compare(Mi::Marginal, Qt::CaseInsensitive)) {
+        value = gmoGetEquMOne(mGMO, absoluteIndex);
+        return specialMarginalEquValuePtr(value, absoluteIndex, abs);
+    } else if (!header.compare(Mi::MarginalNum, Qt::CaseInsensitive)) {
+        return specialValue(gmoGetEquMOne(mGMO, absoluteIndex));
+    } else if (!header.compare(Mi::Scale, Qt::CaseInsensitive)) {
+        value = gmoGetEquScaleOne(mGMO, absoluteIndex);
+    } else if (!header.compare(Mi::Upper, Qt::CaseInsensitive)) {
+        auto bounds = equationBounds(absoluteIndex);
+        value = bounds.second;
+    } else if (!header.compare(Mi::Infeasibility, Qt::CaseInsensitive)) {
+        double a = specialValue(equationBounds(absoluteIndex).first);
+        double b = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
+        double v1 = 0.0, v2 = 0.0;
+        if (isInf(b)) {
+            v1 = -b;
+        } else if (isInf(a)) {
+            v1 = a;
+        } else {
+            v1 = a - b;
+        }
+        a = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
+        b = specialValue(equationBounds(absoluteIndex).second);
+        if (isInf(b)) {
+            v2 = -b;
+        } else if (isInf(a)) {
+            v2 = a;
+        } else {
+            v2 = a - b;
+        }
+        value = std::max(0.0, std::max(v1, v2));
+        value = abs ? std::abs(value) : value;
+        return isInf(value) ? specialValuePostopt(value, abs) : value;
+    } else if (!header.compare(Mi::Range, Qt::CaseInsensitive)) {
+        double a = specialValue(equationBounds(absoluteIndex).second);
+        double b = specialValue(equationBounds(absoluteIndex).first);
+        if (isInf(b)) {
+            value = -b;
+        } else if (isInf(a)) {
+            value = a;
+        } else {
+            value = a - b;
+        }
+    } else if (!header.compare(Mi::Slack, Qt::CaseInsensitive)) {
+        double v1, v2;
+        double a = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
+        double b = specialValue(equationBounds(absoluteIndex).first);
+        if (isInf(b)) {
+            v1 = -b;
+        } else if (isInf(a)) {
+            v1 = a;
+        } else {
+            v1 = a - b;
+        }
+        v1 = std::max(0.0, v1);
+        v1 = abs ? std::abs(v1) : v1;
+        a = specialValue(equationBounds(absoluteIndex).second);
+        b = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
+        if (isInf(b)) {
+            v2 = -b;
+        } else if (isInf(a)) {
+            v2 = a;
+        } else {
+            v2 = a - b;
+        }
+        v2 = std::max(0.0, v2);
+        v2 = abs ? std::abs(v2) : v2;
+        value = std::min(v1, v2);
+        return isInf(value) ? specialValuePostopt(value, abs) : value;
+    } else if (!header.compare(Mi::SlackLB, Qt::CaseInsensitive)) {
+        double a = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
+        double b = specialValue(equationBounds(absoluteIndex).first);
+        if (isInf(b)) {
+            value = -b;
+        } else if (isInf(a)) {
+            value = a;
+        } else {
+            value = a - b;
+        }
+        value = std::max(0.0, value);
+        value = abs ? std::abs(value) : value;
+        return isInf(value) ? specialValuePostopt(value, abs) : value;
+    } else if (!header.compare(Mi::SlackUB, Qt::CaseInsensitive)) {
+        double a = specialValue(equationBounds(absoluteIndex).second);
+        double b = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
+        if (isInf(b)) {
+            value = -b;
+        } else if (isInf(a)) {
+            value = a;
+        } else {
+            value = a - b;
+        }
+        value = std::max(0.0, value);
+        value = abs ? std::abs(value) : value;
+        return isInf(value) ? specialValuePostopt(value, abs) : value;
+    } else if (!header.compare(Mi::Type, Qt::CaseInsensitive)) {
+        return QChar(equationType(index));
+    } else {
+        return "## Undefined ##";
+    }
+    value = abs ? std::abs(value) : value;
+    return specialValuePostopt(value, abs);
+}
 
-QPair<double, double> ModelInstance::equationBounds(int row)
+QVariant ModelInstance::variableAttribute(const QString &header, int index, int entry, bool abs) const
+{
+    double value = 0.0;
+    int absoluteIndex = index + entry;
+    if (!header.compare(Mi::Level, Qt::CaseInsensitive)) {
+        value = gmoGetVarLOne(mGMO, absoluteIndex);
+    } else if (!header.compare(Mi::Lower, Qt::CaseInsensitive)) {
+        value = gmoGetVarLowerOne(mGMO, absoluteIndex);
+    } else if (!header.compare(Mi::Marginal, Qt::CaseInsensitive)) {
+        value = gmoGetVarMOne(mGMO, absoluteIndex);
+        return specialMarginalVarValuePtr(value, absoluteIndex, abs);
+    } else if (!header.compare(Mi::Scale, Qt::CaseInsensitive)) {
+        value = gmoGetVarScaleOne(mGMO, absoluteIndex);
+    } else if (!header.compare(Mi::Upper, Qt::CaseInsensitive)) {
+        value = gmoGetVarUpperOne(mGMO, absoluteIndex);
+    } else if (!header.compare(Mi::Infeasibility, Qt::CaseInsensitive)) {
+        double a = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
+        double b = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
+        double v1 = 0.0, v2 = 0.0;
+        if (isInf(b)) {
+            v1 = -b;
+        } else if (isInf(a)) {
+            v1 = a;
+        } else {
+            v1 = a - b;
+        }
+        a = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
+        b = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
+        if (isInf(b)) {
+            v2 = -b;
+        } else if (isInf(a)) {
+            v2 = a;
+        } else {
+            v2 = a - b;
+        }
+        value = std::max(0.0, std::max(v1, v2));
+        value = abs ? std::abs(value) : value;
+        return isInf(value) ? specialValuePostopt(value, abs) : value;
+    } else if (!header.compare(Mi::Range, Qt::CaseInsensitive)) {
+        double a = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
+        double b = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
+        if (isInf(b)) {
+            value = -b;
+        } else if (isInf(a)) {
+            value = a;
+        } else {
+            value = a - b;
+        }
+    } else if (!header.compare(Mi::Slack, Qt::CaseInsensitive)) {
+        double v1, v2;
+        double a = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
+        double b = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
+        if (isInf(b)) {
+            v1 = -b;
+        } else if (isInf(a)) {
+            v1 = a;
+        } else {
+            v1 = a - b;
+        }
+        v1 = std::max(0.0, v1);
+        v1 = abs ? std::abs(v1) : v1;
+        a = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
+        b = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
+        if (isInf(b)) {
+            v2 = -b;
+        } else if (isInf(a)) {
+            v2 = a;
+        } else {
+            v2 = a - b;
+        }
+        v2 = std::max(0.0, v2);
+        v2 = abs ? std::abs(v2) : v2;
+        value = std::min(v1, v2);
+        return isInf(value) ? specialValuePostopt(value, abs) : value;
+    } else if (!header.compare(Mi::SlackLB, Qt::CaseInsensitive)) {
+        double a = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
+        double b = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
+        if (isInf(b)) {
+            value = -b;
+        } else if (isInf(a)) {
+            value = a;
+        } else {
+            value = a - b;
+        }
+        value = std::max(0.0, value);
+        value = abs ? std::abs(value) : value;
+        return isInf(value) ? specialValuePostopt(value, abs) : value;
+    } else if (!header.compare(Mi::SlackUB, Qt::CaseInsensitive)) {
+        double a = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
+        double b = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
+        if (isInf(b)) {
+            value = -b;
+        } else if (isInf(a)) {
+            value = a;
+        } else {
+            value = a - b;
+        }
+        value = std::max(0.0, value);
+        value = abs ? std::abs(value) : value;
+        return isInf(value) ? specialValuePostopt(value, abs) : value;
+    } else if (!header.compare(Mi::Type, Qt::CaseInsensitive)) {
+        auto type = QChar(variableType(index));
+        if (type == 'x') { // x = continuous
+            if (gmoGetVarLowerOne(mGMO, absoluteIndex) >= 0 && gmoGetVarUpperOne(mGMO, absoluteIndex) >= 0) {
+                return QChar('+');
+            } else if (gmoGetVarLowerOne(mGMO, absoluteIndex) <= 0 && gmoGetVarUpperOne(mGMO, absoluteIndex) <= 0) {
+                return QChar('-');
+            } else {
+                return QChar('u');
+            }
+        }
+        return QChar(variableType(index));
+    } else {
+        return "## Undefined ##";
+    }
+    value = abs ? std::abs(value) : value;
+    return specialValuePostopt(value, abs);
+}
+
+QPair<double, double> ModelInstance::equationBounds(int row) const
 {
     QPair<double, double> bounds;
     switch (gmoGetEquTypeOne(mGMO, row)) {
@@ -653,49 +852,44 @@ QPair<double, double> ModelInstance::equationBounds(int row)
     return bounds;
 }
 
-QVariant ModelInstance::specialValue(double value)
+bool ModelInstance::isInf(double value) const
 {
-    if (value == 0.0)
-        return QVariant();
-    else if (gmoPinf(mGMO) == value)
-        return constant->P_INF;
+    return gmoPinf(mGMO) == value || gmoMinf(mGMO) == value;
+}
+
+double ModelInstance::specialValue(double value) const
+{
+    return GMS_SV_EPS == value ? 0.0 : value;
+}
+
+QVariant ModelInstance::specialValuePostopt(double value, bool abs) const
+{
+    if (gmoPinf(mGMO) == value)
+        return Mi::SV_PINF;
     else if (gmoMinf(mGMO) == value)
-        return constant->N_INF;
+        return Mi::SV_NINF;
     else if (GMS_SV_EPS == value)
-        return constant->EPS;
-    return value;
+        return Mi::SV_EPS;
+    return abs ? std::abs(value) : value;
 }
 
-QVariant ModelInstance::specialValueMinMax(double value)
+bool ModelInstance::isSpecialValue(double value) const
 {
-    if (value == 0.0)
-        return QVariant();
-    else if (gmoPinf(mGMO) == value)
-        return constant->P_INF;
-    else if (gmoMinf(mGMO) == value)
-        return constant->N_INF;
-    else if (GMS_SV_EPS == value)
-        return constant->EPS;
-    return value;
+    return gmoPinf(mGMO) == value || gmoMinf(mGMO) == value || GMS_SV_EPS == value;
 }
 
-QVariant ModelInstance::specialMarginalValue(double value)
-{
-    return specialValue(value);
-}
-
-QVariant ModelInstance::specialMarginalEquValueBasis(double value, int rIndex)
+QVariant ModelInstance::specialMarginalEquValueBasis(double value, int rIndex, bool abs)
 {
     if (gmoGetEquStatOne(mGMO, rIndex) != gmoBstat_Basic && value == 0.0)
-        return constant->EPS;
-    return specialValue(value);
+        return Mi::SV_EPS;
+    return specialValuePostopt(value, abs);
 }
 
-QVariant ModelInstance::specialMarginalVarValueBasis(double value, int cIndex)
+QVariant ModelInstance::specialMarginalVarValueBasis(double value, int cIndex, bool abs)
 {
     if (gmoGetVarStatOne(mGMO, cIndex) != gmoBstat_Basic && value == 0.0)
-        return constant->EPS;
-    return specialValue(value);
+        return Mi::SV_EPS;
+    return specialValuePostopt(value, abs);
 }
 
 int ModelInstance::errorCallback(int count, const char *message)

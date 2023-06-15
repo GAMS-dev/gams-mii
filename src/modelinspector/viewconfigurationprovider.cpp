@@ -393,6 +393,29 @@ private:
     }
 };
 
+class PostoptViewConfiguration final : public AbstractViewConfiguration
+{
+public:
+    PostoptViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+        : AbstractViewConfiguration(viewType, modelInstance)
+    {
+
+    }
+
+    AbstractViewConfiguration* clone() override
+    {
+        return new PostoptViewConfiguration(*this);
+    }
+
+protected:
+    IdentifierStates createDefaultSymbolFilter(Qt::Orientation orientation) const override
+    {
+        Q_UNUSED(orientation);
+        return IdentifierStates();
+    }
+};
+
+
 AbstractViewConfiguration::AbstractViewConfiguration(ViewDataType viewType,
                                                      QSharedPointer<AbstractModelInstance> modelInstance)
     : mModelInstance(modelInstance)
@@ -472,6 +495,8 @@ AbstractViewConfiguration *ViewConfigurationProvider::configuration(ViewDataType
         return new BPCountViewConfiguration(viewType, modelInstance);
     case ViewDataType::BP_Average:
         return new BPAverageViewConfiguration(viewType, modelInstance);
+    case ViewDataType::Postopt:
+        return new PostoptViewConfiguration(viewType, modelInstance);
     default:
         return new DefaultViewConfiguration(viewType, modelInstance);
     }

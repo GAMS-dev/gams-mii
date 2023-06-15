@@ -7,7 +7,6 @@ TEMPLATE = app
 
 INCLUDEPATH += $$SRCPATH/modelinspector
 
-SOURCES +=                   \
-            $$SRCPATH/modelinspector/symbol.cpp \
+SOURCES +=  $$SRCPATH/modelinspector/symbol.cpp \
             $$SRCPATH/modelinspector/labeltreeitem.cpp \
             tst_testsymbol.cpp

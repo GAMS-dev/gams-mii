@@ -75,7 +75,6 @@ bool SectionTreeModel::setHeaderData(int section, Qt::Orientation orientation,
         mRoot->setName(value.toString());
         return true;
     }
-
     return false;
 }
 
@@ -151,32 +150,37 @@ void SectionTreeModel::loadModelData()
     mRoot->append(viewItem);
 
     SectionTreeItem *mainItem = nullptr;
-    for (int i=0; i<constant->PredefinedViewTexts.size(); ++i) {
-        if (constant->PredefinedViewTexts.at(i) == constant->Jaccobian)  {
-            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
+    for (int i=0; i<Mi::PredefinedViewTexts.size(); ++i) {
+        if (Mi::PredefinedViewTexts.at(i) == Mi::Jaccobian)  {
+            mainItem = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
                                            (int)ViewDataType::Jaccobian,
                                            viewItem);
-            mainItem->setType(constant->PredefinedViewTexts.at(i));
-        } else if (constant->PredefinedViewTexts.at(i) == constant->BPScaling) {
-            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
+            mainItem->setType(Mi::PredefinedViewTexts.at(i));
+        } else if (Mi::PredefinedViewTexts.at(i) == Mi::BPScaling) {
+            mainItem = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
                                            (int)ViewDataType::BP_Scaling,
                                            viewItem);
-            mainItem->setType(constant->PredefinedViewTexts.at(i));
-        } else if (constant->PredefinedViewTexts.at(i) == constant->BPOverview) {
-            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
+            mainItem->setType(Mi::PredefinedViewTexts.at(i));
+        } else if (Mi::PredefinedViewTexts.at(i) == Mi::BPOverview) {
+            mainItem = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
                                            (int)ViewDataType::BP_Overview,
                                            viewItem);
-            mainItem->setType(constant->PredefinedViewTexts.at(i));
-        } else if (constant->PredefinedViewTexts.at(i) == constant->BPCount) {
-            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
+            mainItem->setType(Mi::PredefinedViewTexts.at(i));
+        } else if (Mi::PredefinedViewTexts.at(i) == Mi::BPCount) {
+            mainItem = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
                                            (int)ViewDataType::BP_Count,
                                            viewItem);
-            mainItem->setType(constant->PredefinedViewTexts.at(i));
-        } else if (constant->PredefinedViewTexts.at(i) == constant->BPAverage) {
-            mainItem = new SectionTreeItem(constant->PredefinedViewTexts.at(i),
+            mainItem->setType(Mi::PredefinedViewTexts.at(i));
+        } else if (Mi::PredefinedViewTexts.at(i) == Mi::BPAverage) {
+            mainItem = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
                                            (int)ViewDataType::BP_Average,
                                            viewItem);
-            mainItem->setType(constant->PredefinedViewTexts.at(i));
+            mainItem->setType(Mi::PredefinedViewTexts.at(i));
+        } else if (Mi::PredefinedViewTexts.at(i) == Mi::Postopt) {
+            mainItem = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
+                                           (int)ViewDataType::Postopt,
+                                           viewItem);
+            mainItem->setType(Mi::PredefinedViewTexts.at(i));
         }
         if (mainItem) viewItem->append(mainItem);
     }

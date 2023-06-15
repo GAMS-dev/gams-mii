@@ -7,6 +7,6 @@ TEMPLATE = app
 
 INCLUDEPATH += $$SRCPATH/modelinspector
 
-SOURCES +=  tst_testsectiontreeitem.cpp                     \
+SOURCES +=  tst_testpostopttreeitem.cpp                     \
             $$SRCPATH/modelinspector/common.cpp             \
-            $$SRCPATH/modelinspector/sectiontreeitem.cpp
+            $$SRCPATH/modelinspector/postopttreeitem.cpp

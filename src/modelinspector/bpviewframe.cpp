@@ -6,6 +6,7 @@
 #include "hierarchicalheaderview.h"
 #include "bpidentifierfiltermodel.h"
 #include "valueformatproxymodel.h"
+#include "symbol.h"
 
 #include <QAction>
 #include <QMenu>

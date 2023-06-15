@@ -28,6 +28,7 @@ SUBDIRS +=              \
     testfiltertreeitem  \
     testlabeltreeitem \
     testmodelinstance   \
+    testpostopttreeitem \
     testsectiontreeitem \
     testsymbol \
     testviewconfigurationprovider

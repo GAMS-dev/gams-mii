@@ -38,7 +38,8 @@ class DataMatrix;
 class ModelInstance : public AbstractModelInstance
 {
 public:
-    ModelInstance(const QString &workspace = ".",
+    ModelInstance(bool useOutput,
+                  const QString &workspace = ".",
                   const QString &systemDir = QString(),
                   const QString &scratchDir = QString());
 
@@ -110,6 +111,8 @@ public:
 
     QVariant data(int row, int column, int view) const override;
 
+    QSharedPointer<PostoptTreeItem> dataTree(int view) const override;
+
     QVariant headerData(int logicalIndex,
                         Qt::Orientation orientation,
                         int view, int role) const override;
@@ -118,6 +121,10 @@ public:
                              int view, int logicalIndex, int dimension) const override;
 
     void jaccobianData(DataMatrix& dataMatrix) override;
+
+    QVariant equationAttribute(const QString &header, int index, int entry, bool abs) const override;
+
+    QVariant variableAttribute(const QString &header, int index, int entry, bool abs) const override;
 
 private:
     void initialize();
@@ -132,13 +139,14 @@ private:
     void loadVariableDimensions(Symbol *symbol);
     void loadLabels();
 
-    QPair<double, double> equationBounds(int row);
+    QPair<double, double> equationBounds(int row) const;
 
-    QVariant specialValue(double value);
-    QVariant specialValueMinMax(double value);
-    QVariant specialMarginalValue(double value);
-    QVariant specialMarginalEquValueBasis(double value, int rIndex);
-    QVariant specialMarginalVarValueBasis(double value, int cIndex);
+    bool isInf(double value) const;
+    double specialValue(double value) const;
+    bool isSpecialValue(double value) const;
+    QVariant specialValuePostopt(double value, bool abs) const;
+    QVariant specialMarginalEquValueBasis(double value, int rIndex, bool abs);
+    QVariant specialMarginalVarValueBasis(double value, int cIndex, bool abs);
 
     static int errorCallback(int count, const char *message);
 
@@ -148,8 +156,8 @@ private:
     gevHandle_t mGEV = nullptr;
     gmoHandle_t mGMO = nullptr;
     dctHandle_t mDCT = nullptr;
-    std::function<QVariant(double, int)> specialMarginalEquValuePtr;
-    std::function<QVariant(double, int)> specialMarginalVarValuePtr;
+    std::function<QVariant(double, int, bool)> specialMarginalEquValuePtr;
+    std::function<QVariant(double, int, bool)> specialMarginalVarValuePtr;
 
     int mMaxEquationDimension = 0;
     int mMaxVariableDimension = 0;

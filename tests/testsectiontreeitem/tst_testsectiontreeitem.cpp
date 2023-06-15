@@ -88,9 +88,9 @@ void TestSectionTreeItem::test_getSet()
 void TestSectionTreeItem::test_setTypeText()
 {
     SectionTreeItem item("default");
-    item.setType(constant->Jaccobian);
+    item.setType(Mi::Jaccobian);
     QCOMPARE(item.type(), ViewDataType::Jaccobian);
-    item.setType(constant->BPScaling);
+    item.setType(Mi::BPScaling);
     QCOMPARE(item.type(), ViewDataType::BP_Scaling);
     item.setType("lala");
     QCOMPARE(item.type(), ViewDataType::Unknown);

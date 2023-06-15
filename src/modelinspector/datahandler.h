@@ -11,6 +11,7 @@ namespace modelinspector {
 class Aggregation;
 class AbstractModelInstance;
 class AbstractViewConfiguration;
+class PostoptTreeItem;
 
 typedef QMap<Qt::Orientation, QList<int>> SectionMapping;
 
@@ -83,6 +84,17 @@ public:
     void setData(double* data)
     {
         mData = data;
+    }
+
+    QVariant value(int index, int lastSymIndex)
+    {
+        int entries = lastSymIndex < mEntries ? lastSymIndex+1 : mEntries;
+        for (int i=0; i<entries; ++i) {
+            if (mColIdx[i] == index) {
+                return mData[i];
+            }
+        }
+        return QVariant();
     }
 
     auto& operator=(const DataRow& other)
@@ -292,6 +304,8 @@ public:
     void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig);
 
     QVariant data(int row, int column, int view) const;
+
+    QSharedPointer<PostoptTreeItem> dataTree(int view) const;
 
     int headerData(int logicalIndex, Qt::Orientation orientation, int view) const;
 

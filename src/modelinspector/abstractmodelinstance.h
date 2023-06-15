@@ -13,6 +13,7 @@ namespace modelinspector {
 
 class AbstractViewConfiguration;
 class DataMatrix;
+class PostoptTreeItem;
 
 class AbstractModelInstance
 {
@@ -157,6 +158,8 @@ public:
 
     virtual QVariant data(int row, int column, int view) const = 0;
 
+    virtual QSharedPointer<PostoptTreeItem> dataTree(int view) const = 0;
+
     virtual QVariant plainHeaderData(Qt::Orientation orientation,
                                      int view, int logicalIndex,
                                      int dimension = 0) const = 0;
@@ -166,6 +169,10 @@ public:
                                 int view, int role) const = 0;
 
     virtual void jaccobianData(DataMatrix& dataMatrix) = 0;
+
+    virtual QVariant equationAttribute(const QString &header, int index, int entry, bool abs) const;
+
+    virtual QVariant variableAttribute(const QString &header, int index, int entry, bool abs) const;
 
     State state() const;
 
@@ -183,12 +190,14 @@ protected:
     QStringList mLabels;
 };
 
-class EmptyModelInstance : public AbstractModelInstance
+class EmptyModelInstance final : public AbstractModelInstance
 {
 public:
     EmptyModelInstance(const QString &workspace = ".",
                        const QString &systemDir = QString(),
                        const QString &scratchDir = QString());
+
+    ~EmptyModelInstance();
 
     const QVector<Symbol*>& equations() const override;
 
@@ -238,6 +247,8 @@ public:
 
     QVariant data(int row, int column, int view) const override;
 
+    QSharedPointer<PostoptTreeItem> dataTree(int view) const override;
+
     QVariant headerData(int logicalIndex,
                         Qt::Orientation orientation,
                         int view, int role) const override;
@@ -250,6 +261,7 @@ public:
 
 private:
     QVector<Symbol*> mSymbols;
+    QSharedPointer<PostoptTreeItem> mRootItem;
 };
 
 }

@@ -1,4 +1,5 @@
 #include "abstractmodelinstance.h"
+#include "postopttreeitem.h"
 
 #include <QDir>
 
@@ -121,6 +122,30 @@ const QStringList &AbstractModelInstance::labels() const
     return mLabels;
 }
 
+QVariant AbstractModelInstance::equationAttribute(const QString &header,
+                                                  int index,
+                                                  int entry,
+                                                  bool abs) const
+{
+    Q_UNUSED(header);
+    Q_UNUSED(index);
+    Q_UNUSED(entry);
+    Q_UNUSED(abs);
+    return QVariant();
+}
+
+QVariant AbstractModelInstance::variableAttribute(const QString &header,
+                                                  int index,
+                                                  int entry,
+                                                  bool abs) const
+{
+    Q_UNUSED(header);
+    Q_UNUSED(index);
+    Q_UNUSED(entry);
+    Q_UNUSED(abs);
+    return QVariant();
+}
+
 AbstractModelInstance::State AbstractModelInstance::state() const
 {
     return mState;
@@ -130,6 +155,12 @@ EmptyModelInstance::EmptyModelInstance(const QString &workspace,
                                        const QString &systemDir,
                                        const QString &scratchDir)
     : AbstractModelInstance(workspace, systemDir, scratchDir)
+    , mRootItem(new LinePostoptTreeItem)
+{
+
+}
+
+EmptyModelInstance::~EmptyModelInstance()
 {
 
 }
@@ -270,6 +301,13 @@ QVariant EmptyModelInstance::data(int row, int column, int view) const
     Q_UNUSED(view);
     return QVariant();
 }
+
+QSharedPointer<PostoptTreeItem> EmptyModelInstance::dataTree(int view) const
+{
+    Q_UNUSED(view);
+    return mRootItem;
+}
+
 
 QVariant EmptyModelInstance::headerData(int logicalIndex,
                                         Qt::Orientation orientation,

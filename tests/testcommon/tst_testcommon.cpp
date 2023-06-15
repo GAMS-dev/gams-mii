@@ -13,8 +13,11 @@ public:
     ~TestCommon();
 
 private slots:
-    void test_specialValues();
-    void test_predefinedHeader();
+    void test_Mi_specialValues();
+    void test_Mi_isSpecialValue();
+    void test_Mi_roleNames();
+    void test_Mi_isAggregatable();
+    void test_Mi_isStandardView();
 
     void test_searchResult();
     void test_searchOperators();
@@ -27,9 +30,6 @@ private slots:
 
     void test_default_valueFilter();
     void test_getSet_valueFilter();
-    void test_minValue_valueFilter();
-    void test_maxValue_valueFilter();
-    void test_isSpecialValue_valueFilter();
 };
 
 TestCommon::TestCommon()
@@ -42,24 +42,69 @@ TestCommon::~TestCommon()
 
 }
 
-void TestCommon::test_specialValues()
+void TestCommon::test_Mi_specialValues()
 {
-    QCOMPARE(constant->NA, "NA");
-    QCOMPARE(constant->EPS, "EPS");
-    QCOMPARE(constant->INF, "INF");
-    QCOMPARE(constant->P_INF, "+INF");
-    QCOMPARE(constant->N_INF, "-INF");
+    QCOMPARE(Mi::SV_NA, "NA");
+    QCOMPARE(Mi::SV_EPS, "EPS");
+    QCOMPARE(Mi::SV_INF, "INF");
+    QCOMPARE(Mi::SV_PINF, "+INF");
+    QCOMPARE(Mi::SV_NINF, "-INF");
 }
 
-void TestCommon::test_predefinedHeader()
+void TestCommon::test_Mi_isSpecialValue()
 {
-    QCOMPARE(constant->PredefinedHeader.size(), constant->PredefinedHeaderLength);
-    QCOMPARE(constant->PredefinedHeaderLength, 5);
-    QCOMPARE(constant->PredefinedHeader.at(0), "level");
-    QCOMPARE(constant->PredefinedHeader.at(1), "lower");
-    QCOMPARE(constant->PredefinedHeader.at(2), "marginal");
-    QCOMPARE(constant->PredefinedHeader.at(3), "scale");
-    QCOMPARE(constant->PredefinedHeader.at(4), "upper");
+    QCOMPARE(Mi::isSpecialValue(Mi::SV_NA), true);
+    QCOMPARE(Mi::isSpecialValue(Mi::SV_EPS), true);
+    QCOMPARE(Mi::isSpecialValue(Mi::SV_INF), true);
+    QCOMPARE(Mi::isSpecialValue(Mi::SV_PINF), true);
+    QCOMPARE(Mi::isSpecialValue(Mi::SV_NINF), true);
+    QCOMPARE(Mi::isSpecialValue(QString()), false);
+    QCOMPARE(Mi::isSpecialValue("stuff"), false);
+    QCOMPARE(Mi::isSpecialValue(QString::number(0.1)), false);
+}
+
+void TestCommon::test_Mi_roleNames()
+{
+    auto names = Mi::roleNames();
+    QCOMPARE(names.size(), 7);
+    QVERIFY(names.contains(Mi::IndexDataRole));
+    QVERIFY(names.contains(Mi::LabelDataRole));
+    QVERIFY(names.contains(Mi::RowEntryRole));
+    QVERIFY(names.contains(Mi::ColumnEntryRole));
+    QVERIFY(names.contains(Mi::HorizontalDimensionRole));
+    QVERIFY(names.contains(Mi::VerticalDimensionRole));
+    QVERIFY(names.contains(Mi::SectionLabelRole));
+    QCOMPARE(names[Mi::IndexDataRole], "indexdata");
+    QCOMPARE(names[Mi::LabelDataRole], "labeldata");
+    QCOMPARE(names[Mi::RowEntryRole], "rowentry");
+    QCOMPARE(names[Mi::ColumnEntryRole], "columnentry");
+    QCOMPARE(names[Mi::HorizontalDimensionRole], "horizontaldimension");
+    QCOMPARE(names[Mi::VerticalDimensionRole], "verticaldimension");
+    QCOMPARE(names[Mi::SectionLabelRole], "sectionlabel");
+}
+
+void TestCommon::test_Mi_isAggregatable()
+{
+    QCOMPARE(Mi::isAggregatable(ViewDataType::Jaccobian), true);
+    QCOMPARE(Mi::isAggregatable(ViewDataType::BP_Overview), false);
+    QCOMPARE(Mi::isAggregatable(ViewDataType::BP_Count), false);
+    QCOMPARE(Mi::isAggregatable(ViewDataType::BP_Average), false);
+    QCOMPARE(Mi::isAggregatable(ViewDataType::BP_Scaling), false);
+    QCOMPARE(Mi::isAggregatable(ViewDataType::Postopt), false);
+    QCOMPARE(Mi::isAggregatable(ViewDataType::Symbols), true);
+    QCOMPARE(Mi::isAggregatable(ViewDataType::Unknown), false);
+}
+
+void TestCommon::test_Mi_isStandardView()
+{
+    QCOMPARE(Mi::isStandardView(ViewDataType::Jaccobian), true);
+    QCOMPARE(Mi::isStandardView(ViewDataType::BP_Overview), true);
+    QCOMPARE(Mi::isStandardView(ViewDataType::BP_Count), false);
+    QCOMPARE(Mi::isStandardView(ViewDataType::BP_Average), false);
+    QCOMPARE(Mi::isStandardView(ViewDataType::BP_Scaling), false);
+    QCOMPARE(Mi::isStandardView(ViewDataType::Postopt), true);
+    QCOMPARE(Mi::isStandardView(ViewDataType::Symbols), true);
+    QCOMPARE(Mi::isStandardView(ViewDataType::Unknown), true);
 }
 
 void TestCommon::test_searchResult()
@@ -193,11 +238,11 @@ void TestCommon::test_default_valueFilter()
     QCOMPARE(filter.ShowPInf, true);
     QCOMPARE(filter.ShowNInf, true);
     QCOMPARE(filter.ShowEps, true);
-    //QVERIFY(filter.accepts(constant->EPS));
-    //QVERIFY(filter.accepts(constant->N_INF));
-    //QVERIFY(filter.accepts(constant->P_INF));
-    //QVERIFY(filter.accepts(std::numeric_limits<double>::min()));
-    //QVERIFY(filter.accepts(std::numeric_limits<double>::max()));
+    QVERIFY(filter.accepts(Mi::SV_EPS));
+    QVERIFY(filter.accepts(Mi::SV_NINF));
+    QVERIFY(filter.accepts(Mi::SV_PINF));
+    QVERIFY(filter.accepts(std::numeric_limits<double>::min()));
+    QVERIFY(filter.accepts(std::numeric_limits<double>::max()));
 }
 
 void TestCommon::test_getSet_valueFilter()
@@ -225,41 +270,11 @@ void TestCommon::test_getSet_valueFilter()
     filter.ShowEps = false;
     QCOMPARE(filter.ShowEps, false);
 
-    //QVERIFY(!filter.accepts(constant->EPS));
-    //QVERIFY(!filter.accepts(constant->N_INF));
-    //QVERIFY(!filter.accepts(constant->P_INF));
-    //QVERIFY(filter.accepts(1001.2));
-    //QVERIFY(!filter.accepts(-42));
-}
-
-void TestCommon::test_minValue_valueFilter()
-{
-    QCOMPARE(ValueFilter::minValue(0.0, 1.0), 1.0);
-    QCOMPARE(ValueFilter::minValue(1.0, 0.0), 1.0);
-    QCOMPARE(ValueFilter::minValue(1.0, 0.1), 0.1);
-    QCOMPARE(ValueFilter::minValue(1.0, 1.0), 1.0);
-    QCOMPARE(ValueFilter::minValue(1.0, 2.0), 1.0);
-}
-
-void TestCommon::test_maxValue_valueFilter()
-{
-    QCOMPARE(ValueFilter::maxValue(0.0, -1.0), -1.0);
-    QCOMPARE(ValueFilter::maxValue(-1.0, 0.0), -1.0);
-    QCOMPARE(ValueFilter::maxValue(1.0, 0.1), 1.0);
-    QCOMPARE(ValueFilter::maxValue(1.0, 1.0), 1.0);
-    QCOMPARE(ValueFilter::maxValue(1.0, 2.0), 2.0);
-}
-
-void TestCommon::test_isSpecialValue_valueFilter()
-{
-    QCOMPARE(ValueFilter::isSpecialValue(constant->NA), true);
-    QCOMPARE(ValueFilter::isSpecialValue(constant->EPS), true);
-    QCOMPARE(ValueFilter::isSpecialValue(constant->INF), true);
-    QCOMPARE(ValueFilter::isSpecialValue(constant->P_INF), true);
-    QCOMPARE(ValueFilter::isSpecialValue(constant->N_INF), true);
-    QCOMPARE(ValueFilter::isSpecialValue(QString()), false);
-    QCOMPARE(ValueFilter::isSpecialValue("stuff"), false);
-    QCOMPARE(ValueFilter::isSpecialValue(QString::number(0.1)), false);
+    QVERIFY(!filter.accepts(Mi::SV_EPS));
+    QVERIFY(!filter.accepts(Mi::SV_NINF));
+    QVERIFY(!filter.accepts(Mi::SV_PINF));
+    QVERIFY(filter.accepts(1001.2));
+    QVERIFY(!filter.accepts(-42));
 }
 
 QTEST_APPLESS_MAIN(TestCommon)

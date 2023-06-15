@@ -53,17 +53,17 @@ QVariant GeneralValueFormatProxyModel::data(const QModelIndex &index, int role) 
 
 QVariant GeneralValueFormatProxyModel::applyFilter(const QVariant &data) const
 {
-    if (!data.toString().compare(constant->EPS, Qt::CaseInsensitive)) {
+    if (!data.toString().compare(Mi::SV_EPS, Qt::CaseInsensitive)) {
         if  (mValueFilter.ShowEps)
             return data;
         return QVariant();
     }
-    if (!data.toString().compare(constant->P_INF, Qt::CaseInsensitive)) {
+    if (!data.toString().compare(Mi::SV_PINF, Qt::CaseInsensitive)) {
         if (mValueFilter.ShowPInf)
             return data;
         return QVariant();
     }
-    if (!data.toString().compare(constant->N_INF, Qt::CaseInsensitive)) {
+    if (!data.toString().compare(Mi::SV_NINF, Qt::CaseInsensitive)) {
         if (mValueFilter.ShowNInf)
             return data;
         return QVariant();

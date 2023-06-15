@@ -86,7 +86,7 @@ public:
 
     int verticalSectionDimension(int sectionIndex)
     {
-        if (!ViewProperties::isStandardView(mHeaderView->viewType()))
+        if (!Mi::isStandardView(mHeaderView->viewType()))
             return 1;
         return symbol(sectionIndex)->dimension();
     }
@@ -110,7 +110,7 @@ public:
         paintHorizontalCell(painter, rect, styleOption, currentTop,
                             label(sectionIndex, -1, mHeaderView->orientation()),
                             logicalIndex, sectionIndex, -1, true);
-        if (ViewProperties::isStandardView(mHeaderView->viewType())) {
+        if (Mi::isStandardView(mHeaderView->viewType())) {
             for (int d=0; d<horizontalSectionDimension(sectionIndex); ++d) {
                 paintHorizontalCell(painter, rect, styleOption, currentTop,
                                     label(sectionIndex, d, mHeaderView->orientation()),
@@ -139,7 +139,7 @@ public:
         styleOption.text = horizontalCellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
 
         painter->save();
-        if (isSymbol && ViewProperties::isStandardView(mHeaderView->viewType())) { // TODO !!! ptr stuff?
+        if (isSymbol && Mi::isStandardView(mHeaderView->viewType())) {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
             styleOption.rect = QRect(rect.x()+mFilterIconSize.width(), currentTop, rect.width(), size.height());
             mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
@@ -149,7 +149,7 @@ public:
             } else if (!styleOption.text.isEmpty()) {
                 painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
                                     mFilterIconSize.height(),
-                                    ViewProperties::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
+                                    Mi::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
             }
         } else {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
@@ -221,7 +221,7 @@ public:
         styleOption.text = verticalCellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
 
         painter->save();
-        if (isSymbol && ViewProperties::isStandardView(mHeaderView->viewType())) {
+        if (isSymbol && Mi::isStandardView(mHeaderView->viewType())) {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
             styleOption.rect = QRect(currentLeft+mFilterIconSize.width(), rect.y(), size.width(), rect.height());
             mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
@@ -231,7 +231,7 @@ public:
             } else if (!styleOption.text.isEmpty()) {
                 painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
                                     mFilterIconSize.height(),
-                                    ViewProperties::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
+                                    Mi::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
             }
         } else {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
@@ -281,7 +281,7 @@ public:
                              bool isSymbol, const Symbol *symbol,
                              const QString &text)
     {// TODO header drawing rules... simplify and no on the fly stuff
-        if (!ViewProperties::isStandardView(mHeaderView->viewType())) {
+        if (!Mi::isStandardView(mHeaderView->viewType())) {
             return mHeaderView->modelInstance()->plainHeaderData(mHeaderView->orientation(),
                                                                  mHeaderView->view(),
                                                                  sectionIndex,
@@ -352,7 +352,7 @@ public:
 
     int maxSymbolDimension(Qt::Orientation orientation)
     {
-        if (!ViewProperties::isStandardView(mHeaderView->viewType())) {
+        if (!Mi::isStandardView(mHeaderView->viewType())) {
             // show 1 dim for eqns and non for vars
             return orientation == Qt::Vertical ? 1 : 0;
         }
@@ -411,7 +411,7 @@ public:
 private:
     int symbolDimension() const
     {
-        if (!ViewProperties::isStandardView(mHeaderView->viewType()) && mHeaderView->orientation() == Qt::Vertical) {
+        if (!Mi::isStandardView(mHeaderView->viewType()) && mHeaderView->orientation() == Qt::Vertical) {
             return 1; // non standard views have always diminsion 1
         }
         return mHeaderView->orientation() == Qt::Horizontal ? mHeaderView->modelInstance()->maximumVariableDimension() :
@@ -422,7 +422,7 @@ private:
     {
         QFontMetrics fm(mHeaderView->font());
         auto flags = Qt::TextSingleLine | Qt::TextDontClip;
-        if (ViewProperties::isStandardView(mHeaderView->viewType())) {
+        if (Mi::isStandardView(mHeaderView->viewType())) {
             if (mHeaderView->orientation() == Qt::Horizontal)
                 return fm.size(flags, mHeaderView->mModelInstance->longestVariableText());
             else

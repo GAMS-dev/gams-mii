@@ -16,9 +16,9 @@ bool LogView::eventFilter(QObject *watched, QEvent *event)
         QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
         if (wheel->modifiers() == Qt::ControlModifier) {
             if (wheel->angleDelta().y() > 0)
-                zoomIn(gams::studio::modelinspector::constant->ZoomFactor);
+                zoomIn(gams::studio::modelinspector::Mi::ZoomFactor);
             else
-                zoomOut(gams::studio::modelinspector::constant->ZoomFactor);
+                zoomOut(gams::studio::modelinspector::Mi::ZoomFactor);
             return true;
         }
     }

@@ -9,7 +9,7 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-// TODO consolidate filters, aggregation, row/column data source... struct/class?
+// TODO (AF) consolidate filters, aggregation, row/column data source... struct/class?
 
 FilterDialog::FilterDialog(QWidget *parent)
     : QDialog(parent)

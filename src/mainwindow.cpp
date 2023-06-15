@@ -106,6 +106,7 @@ void MainWindow::on_actionRun_triggered()
     if (!dir.mkpath(path))
         ui->logEdit->append("Error: Could not create workspace " + path);
 
+    ui->modelInspector->setShowOutput(ui->actionShow_Output->isChecked());
     if (ui->modelEdit->text().endsWith(".dat")) {
         QFileInfo fi(ui->modelEdit->text());
         auto dir = fi.dir().dirName();

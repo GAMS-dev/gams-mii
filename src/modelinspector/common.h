@@ -12,39 +12,23 @@ namespace gams {
 namespace studio {
 namespace modelinspector {
 
-struct Constant
+enum class ViewType
 {
-    const int ZoomFactor = 2;
-
-    const QString NA = "NA";
-    const QString EPS = "EPS";
-    const QString INF = "INF";
-    const QString P_INF = "+INF";
-    const QString N_INF = "-INF";
-
-    const QString Level = "level";
-    const QString Lower = "lower";
-    const QString Marginal = "marginal";
-    const QString Scale = "scale";
-    const QString Upper = "upper";
-
-    const QStringList PredefinedHeader { Level, Lower, Marginal, Scale, Upper };
-    const int PredefinedHeaderLength = PredefinedHeader.size();
-
-    const QString Jaccobian = "Jaccobian";
-    const QString BPScaling = "Blockpic Scaling";
-    const QString BPOverview = "Blockpic Overview";
-    const QString BPCount    = "Blockpic Count";
-    const QString BPAverage  = "Blockpic Average";
-    const QStringList PredefinedViewTexts = { Jaccobian,
-                                              BPOverview,
-                                              BPCount,
-                                              BPAverage,
-                                              BPScaling
-                                              };
+    Predefined  = 0,
+    Custom      = 1
 };
 
-Q_GLOBAL_STATIC(Constant, constant);
+enum class ViewDataType
+{
+    Jaccobian           = 0,
+    BP_Overview         = 1,
+    BP_Count            = 2,
+    BP_Average          = 3,
+    BP_Scaling          = 4,
+    Postopt             = 5,
+    Symbols             = 6,
+    Unknown             = 127
+};
 
 struct Mi
 {
@@ -72,28 +56,17 @@ struct Mi
         };
         return mapping;
     }
-};
 
-enum class ViewType
-{
-    Predefined  = 0,
-    Custom      = 1
-};
+    static bool isSpecialValue(const QVariant &value)
+    {
+        auto str = value.toString();
+        return !str.compare(Mi::SV_EPS, Qt::CaseInsensitive) ||
+               !str.compare(Mi::SV_INF, Qt::CaseInsensitive) ||
+               !str.compare(Mi::SV_PINF, Qt::CaseInsensitive) ||
+               !str.compare(Mi::SV_NINF, Qt::CaseInsensitive) ||
+               !str.compare(Mi::SV_NA, Qt::CaseInsensitive);
+    }
 
-enum class ViewDataType
-{
-    Jaccobian           = 0,
-    BP_Scaling          = 1,
-    BP_Overview         = 2,
-    BP_Count            = 3,
-    BP_Average          = 4,
-    Symbols             = 5,
-    Unknown             = 127
-};
-
-class ViewProperties
-{// TODO add enums ViewDataType/ViewType?
-public:
     static bool isAggregatable(ViewDataType type)
     {
         switch (type) {
@@ -101,6 +74,8 @@ public:
         case ViewDataType::BP_Count:
         case ViewDataType::BP_Average:
         case ViewDataType::BP_Scaling:
+        case ViewDataType::Postopt:
+        case ViewDataType::Unknown:
             return false;
         default:
             return true;
@@ -118,6 +93,35 @@ public:
             return true;
         }
     }
+
+    static const int ZoomFactor = 2;
+
+    static const QString SV_NA;
+    static const QString SV_EPS;
+    static const QString SV_INF;
+    static const QString SV_PINF;
+    static const QString SV_NINF;
+
+    static const QString Infeasibility;
+    static const QString Level;
+    static const QString Lower;
+    static const QString Marginal;
+    static const QString MarginalNum;
+    static const QString Range;
+    static const QString Scale;
+    static const QString Slack;
+    static const QString SlackLB;
+    static const QString SlackUB;
+    static const QString Upper;
+    static const QString Type;
+
+    static const QString Jaccobian;
+    static const QString BPScaling;
+    static const QString BPOverview;
+    static const QString BPCount;
+    static const QString BPAverage;
+    static const QString Postopt;
+    static const QStringList PredefinedViewTexts;
 };
 
 enum class EquationType
@@ -288,61 +292,31 @@ struct ValueFilter
         mIsUserInput = userInput;
     }
 
-    //bool accepts(const QVariant &value) const
-    //{// only needed for attributes?
-    //    if (!value.isValid())
-    //        return false;
-    //    auto str = value.toString();
-    //    if (!str.compare(constant->P_INF, Qt::CaseInsensitive)) {
-    //        return ShowPInf ? true : false;
-    //    }
-    //    if (!str.compare(constant->N_INF, Qt::CaseInsensitive)) {
-    //        return ShowNInf ? true : false;
-    //    }
-    //    if (!str.compare(constant->EPS, Qt::CaseInsensitive)) {
-    //        return ShowEps ? true : false;
-    //    }
-    //    bool ok;
-    //    double val = UseAbsoluteValues ? abs(value.toDouble(&ok))
-    //                                   : value.toDouble(&ok);
-    //    if (!ok)
-    //        return false;
-    //    if (ExcludeRange) {
-    //        return val < MinValue || val > MaxValue;
-    //    } else {
-    //        return val >= MinValue && val <= MaxValue;
-    //    }
-    //    return false;
-    //}
-
-    static double minValue(double value, double newValue)
-    {// TODO !!! remove or improve for attributes
-        if (value == 0.0) {
-            return newValue;
-        } else if (newValue == 0.0) {
-            return value;
-        }
-        return std::min(value, newValue);
-    }
-
-    static double maxValue(double value, double newValue)
-    {// TODO !!! remove or improve for attributes
-        if (value == 0.0) {
-            return newValue;
-        } else if (newValue == 0.0) {
-            return value;
-        }
-        return std::max(value, newValue);
-    }
-
-    static bool isSpecialValue(const QVariant &value)
+    bool accepts(const QVariant &value) const
     {
+        if (!value.isValid())
+            return false;
         auto str = value.toString();
-        return !str.compare(constant->EPS, Qt::CaseInsensitive) ||
-                !str.compare(constant->INF, Qt::CaseInsensitive) ||
-                !str.compare(constant->P_INF, Qt::CaseInsensitive) ||
-                !str.compare(constant->N_INF, Qt::CaseInsensitive) ||
-                !str.compare(constant->NA, Qt::CaseInsensitive);
+        if (!str.compare(Mi::SV_PINF, Qt::CaseInsensitive)) {
+            return ShowPInf ? true : false;
+        }
+        if (!str.compare(Mi::SV_NINF, Qt::CaseInsensitive)) {
+            return ShowNInf ? true : false;
+        }
+        if (!str.compare(Mi::SV_EPS, Qt::CaseInsensitive)) {
+            return ShowEps ? true : false;
+        }
+        bool ok;
+        double val = UseAbsoluteValues ? abs(value.toDouble(&ok))
+                                       : value.toDouble(&ok);
+        if (!ok)
+            return false;
+        if (ExcludeRange) {
+            return val < MinValue || val > MaxValue;
+        } else {
+            return val >= MinValue && val <= MaxValue;
+        }
+        return false;
     }
 
     bool operator==(const ValueFilter& other) const

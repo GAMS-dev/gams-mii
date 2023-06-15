@@ -9,4 +9,6 @@ INCLUDEPATH += $$SRCPATH/modelinspector
 
 SOURCES +=  tst_testemptymodelinstance.cpp                      \
             $$SRCPATH/modelinspector/abstractmodelinstance.cpp  \
-            $$SRCPATH/modelinspector/symbol.cpp
+            $$SRCPATH/modelinspector/symbol.cpp                 \
+            $$SRCPATH/modelinspector/common.cpp                 \
+            $$SRCPATH/modelinspector/postopttreeitem.cpp
