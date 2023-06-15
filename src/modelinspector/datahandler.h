@@ -314,6 +314,12 @@ public:
 
     int symbolColumnCount(int view) const;
 
+    double modelMinimum() const;
+    void setModelMinimum(double minimum);
+
+    double modelMaximum() const;
+    void setModelMaximum(double maximum);
+
     QSharedPointer<AbstractViewConfiguration> clone(int view, int newView);
 
     void loadJaccobian();
@@ -324,6 +330,8 @@ private:
 
 private:
     AbstractModelInstance& mModelInstance;
+    double mModelMinimum = std::numeric_limits<double>::max();
+    double mModelMaximum = std::numeric_limits<double>::lowest();
 
     DataMatrix mDataMatrix;
     CoefficientCount *mCoeffCount = nullptr;

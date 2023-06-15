@@ -47,11 +47,8 @@ public:
 
     void setUseOutput(bool useOutput);
 
-    // TODO model min/max still needed... currently two locations (datahandler)
-    double modelMinimum(ViewDataType type) const;
-    void setModelMinimum(double value, ViewDataType type);
-    double modelMaximum(ViewDataType type) const;
-    void setModelMaximum(double value, ViewDataType type);
+    virtual double modelMinimum() const = 0;
+    virtual double modelMaximum() const = 0;
 
     QString logMessages();
 
@@ -181,9 +178,6 @@ protected:
 
     bool mUseOutput = false;
 
-    double mModelJaccMinimum = std::numeric_limits<double>::max();
-    double mModelJaccMaximum = std::numeric_limits<double>::lowest();
-
     QStringList mLogMessages;
 
     QStringList mLabels;
@@ -213,6 +207,10 @@ public:
     int maximumEquationDimension() const override;
 
     int maximumVariableDimension() const override;
+
+    double modelMinimum() const override;
+
+    double modelMaximum() const override;
 
     const QVector<Symbol*>& symbols(Symbol::Type type) const override;
 

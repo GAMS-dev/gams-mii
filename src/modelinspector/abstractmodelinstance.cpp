@@ -61,48 +61,6 @@ void AbstractModelInstance::setUseOutput(bool useOutput)
     mUseOutput = useOutput;
 }
 
-double AbstractModelInstance::modelMinimum(ViewDataType type) const
-{
-    switch (type) {
-    case ViewDataType::Jaccobian:
-        return mModelJaccMinimum;
-    default:
-        return std::numeric_limits<double>::lowest();
-    }
-}
-
-void AbstractModelInstance::setModelMinimum(double value, ViewDataType type)
-{
-    switch (type) {
-    case ViewDataType::Jaccobian:
-        mModelJaccMinimum = value;
-        break;
-    default:
-        return;
-    }
-}
-
-double AbstractModelInstance::modelMaximum(ViewDataType type) const
-{
-    switch (type) {
-    case ViewDataType::Jaccobian:
-        return mModelJaccMaximum;
-    default:
-        return std::numeric_limits<double>::max();
-    }
-}
-
-void AbstractModelInstance::setModelMaximum(double value, ViewDataType type)
-{
-    switch (type) {
-    case ViewDataType::Jaccobian:
-        mModelJaccMaximum = value;
-        break;
-    default:
-        return;
-    }
-}
-
 QString AbstractModelInstance::logMessages() {
     auto messages = mLogMessages.join("\n");
     mLogMessages.clear();
@@ -222,6 +180,16 @@ int EmptyModelInstance::maximumVariableDimension() const
     return 0;
 }
 
+double EmptyModelInstance::modelMinimum() const
+{
+    return std::numeric_limits<double>::lowest();
+}
+
+double EmptyModelInstance::modelMaximum() const
+{
+    return std::numeric_limits<double>::max();
+}
+
 const QVector<Symbol*> &EmptyModelInstance::symbols(Symbol::Type type) const
 {
     Q_UNUSED(type);
@@ -311,7 +279,7 @@ QVariant EmptyModelInstance::headerData(int logicalIndex,
     Q_UNUSED(orientation);
     Q_UNUSED(view);
     Q_UNUSED(role);
-    return 0;
+    return QVariant();
 }
 
 QVariant EmptyModelInstance::plainHeaderData(Qt::Orientation orientation,

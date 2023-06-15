@@ -29,33 +29,11 @@ void AbstractStandardTableViewFrame::setIdentifierFilter(const IdentifierFilter 
 void AbstractStandardTableViewFrame::setAggregation(const Aggregation &aggregation)
 {
     Q_UNUSED(aggregation);
-    //mViewConfig->setCurrentAggregation(aggregation);
-    //if (mAggregationModel && mHorizontalHeader && mVerticalHeader) {
-    //    const auto& applied = mViewConfig->currentAggregation();
-    //    mHorizontalHeader->setAppliedAggregation(applied);
-    //    mVerticalHeader->setAppliedAggregation(applied);
-    //    mAggregationModel->setAggregation(mViewConfig->currentAggregation(), applied);
-    //}
 }
 
 void AbstractStandardTableViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
     Q_UNUSED(absoluteValues);
-    //if (mAggregationModel && mAggregationModel->appliedAggregation().isActive() &&
-    //        mAggregationModel->appliedAggregation().useAbsoluteValues() != absoluteValues) {
-    //    auto aggregation = mAggregationModel->aggregation();
-    //    aggregation.setUseAbsoluteValues(absoluteValues);
-    //    auto appliedAggregation = mAggregationModel->appliedAggregation();
-    //    appliedAggregation.setUseAbsoluteValues(absoluteValues);
-    //    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-    //    mAggregationModel->setAggregation(aggregation, appliedAggregation);
-    //} else {
-    //    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-    //}
-    //mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-    //mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal = absoluteValues;
-    //mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-    //updateValueFilter(); TODO VF
 }
 
 void AbstractStandardTableViewFrame::reset()
@@ -88,20 +66,6 @@ void AbstractStandardTableViewFrame::setIdentifierFilterCheckState(int symbolInd
     mViewConfig->currentIdentifierFilter()[orientation] = symbols;
 }
 
-void AbstractStandardTableViewFrame::cloneFilterAndAggregation(AbstractStandardTableViewFrame *clone, int newView)
-{// TODO !!! remove, like MinMax/Symbol view?
-    if (!clone) return;
-    clone->mViewConfig->setView(newView);
-    clone->setValueFilter(mViewConfig->currentValueFilter());
-    clone->setDefaultValueFilter(mViewConfig->defaultValueFilter());
-    clone->setLabelFilter(mViewConfig->currentLabelFiler());
-    clone->setDefaultLabelFilter(mViewConfig->defaultLabelFilter());
-    clone->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
-    clone->setDefaultIdentifierFilter(mViewConfig->defaultIdentifierFilter());
-    clone->setAggregation(mViewConfig->currentAggregation());
-    clone->setDefaultAggregation(mViewConfig->defaultAggregation());
-}
-
 JaccTableViewFrame::JaccTableViewFrame(QWidget *parent, Qt::WindowFlags f)
     : AbstractStandardTableViewFrame(parent, f)
     , mBaseModel(new JaccobianTableModel)
@@ -109,12 +73,27 @@ JaccTableViewFrame::JaccTableViewFrame(QWidget *parent, Qt::WindowFlags f)
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
+JaccTableViewFrame::JaccTableViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
+                                       QSharedPointer<AbstractViewConfiguration> viewConfig,
+                                       QWidget *parent,
+                                       Qt::WindowFlags f)
+    : AbstractStandardTableViewFrame(parent, f)
+    , mBaseModel(new JaccobianTableModel)
+{
+    mModelInstance = modelInstance;
+    mViewConfig = viewConfig;
+}
+
 AbstractTableViewFrame* JaccTableViewFrame::clone(int view)
 {
-    auto frame = new JaccTableViewFrame;
-    frame->setView(view);
-    frame->setupView(mModelInstance);
-    cloneFilterAndAggregation(frame, view);
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
+    if (!viewConfig)
+        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
+                                                                                                        mModelInstance));
+    auto frame = new JaccTableViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
+    frame->setupView();
+    frame->setValueFilter(frame->viewConfig()->currentValueFilter());
+    frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
     return frame;
 }
 

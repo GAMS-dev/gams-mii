@@ -16,11 +16,6 @@ private slots:
     void test_constructor_initialize();
     void test_default();
     void test_getSet();
-
-    void test_modelMinimum_default();
-    void test_setModelMinimum();
-    void test_modelMaximum_default();
-    void test_setModelMaximum();
 };
 
 TestEmptyModelInstance::TestEmptyModelInstance()
@@ -52,8 +47,8 @@ void TestEmptyModelInstance::test_default()
     QCOMPARE(instance.systemDirectory(), QString());
     QCOMPARE(instance.scratchDirectory(), QString());
     QCOMPARE(instance.useOutput(), false);
-    QCOMPARE(instance.modelMinimum(ViewDataType::Unknown), std::numeric_limits<double>::lowest());
-    QCOMPARE(instance.modelMaximum(ViewDataType::Unknown), std::numeric_limits<double>::max());
+    QCOMPARE(instance.modelMinimum(), std::numeric_limits<double>::lowest());
+    QCOMPARE(instance.modelMaximum(), std::numeric_limits<double>::max());
     QCOMPARE(instance.logMessages(), QString());
     QCOMPARE(instance.modelName(), QString());
     QCOMPARE(instance.equationCount(EquationType::E), 0);
@@ -64,7 +59,7 @@ void TestEmptyModelInstance::test_default()
     QCOMPARE(instance.equationCount(EquationType::C), 0);
     QCOMPARE(instance.equationCount(EquationType::B), 0);
     QCOMPARE(instance.equationRowCount(), 0);
-    //QCOMPARE(instance.equation(0), Symbol());
+    QCOMPARE(instance.equation(0), nullptr);
     QVERIFY(instance.equations().isEmpty());
     QCOMPARE(instance.variableCount(VariableType::X), 0);
     QCOMPARE(instance.variableCount(VariableType::B), 0);
@@ -74,17 +69,19 @@ void TestEmptyModelInstance::test_default()
     QCOMPARE(instance.variableCount(VariableType::SC), 0);
     QCOMPARE(instance.variableCount(VariableType::SI), 0);
     QCOMPARE(instance.variableRowCount(), 0);
-    //QCOMPARE(instance.variable(0), Symbol());
+    QCOMPARE(instance.variable(0), nullptr);
     QVERIFY(instance.variables().isEmpty());
     QCOMPARE(instance.longestEquationText(), QString());
     QCOMPARE(instance.longestVariableText(), QString());
     QCOMPARE(instance.maximumEquationDimension(), 0);
     QCOMPARE(instance.maximumVariableDimension(), 0);
-    //QCOMPARE(instance.symbols(Symbol::Equation), QVector<Symbol>());
-    //QCOMPARE(instance.symbols(Symbol::Variable), QVector<Symbol>());
-    //QCOMPARE(instance.data(0, 1, 4), QVariant());
-    //QCOMPARE(instance.headerData(0, Qt::Horizontal, 2), 0);
-    //QCOMPARE(instance.headerData(1, Qt::Vertical, 2), 0);
+    QCOMPARE(instance.symbols(Symbol::Equation), QVector<Symbol*>());
+    QCOMPARE(instance.symbols(Symbol::Variable), QVector<Symbol*>());
+    QCOMPARE(instance.data(0, 1, 4), QVariant());
+    QCOMPARE(instance.headerData(2, Qt::Horizontal, 42, Mi::IndexDataRole), QVariant());
+    QCOMPARE(instance.headerData(2, Qt::Vertical, 42, 128), QVariant());
+    QCOMPARE(instance.plainHeaderData(Qt::Horizontal, 2, 0, 12), QVariant());
+    QCOMPARE(instance.plainHeaderData(Qt::Vertical, 2, 0, 12), QVariant());
 }
 
 void TestEmptyModelInstance::test_getSet()
@@ -98,54 +95,6 @@ void TestEmptyModelInstance::test_getSet()
     QCOMPARE(instance.scratchDirectory(), "my_scratch_dir");
     instance.setUseOutput(true);
     QCOMPARE(instance.useOutput(), true);
-}
-
-void TestEmptyModelInstance::test_modelMinimum_default()
-{
-    EmptyModelInstance instance;
-    QCOMPARE(instance.modelMinimum(ViewDataType::Jaccobian), std::numeric_limits<double>::max());
-    QCOMPARE(instance.modelMinimum(ViewDataType::BP_Scaling), std::numeric_limits<double>::lowest());
-    QCOMPARE(instance.modelMinimum(ViewDataType::Symbols), std::numeric_limits<double>::lowest());
-    QCOMPARE(instance.modelMinimum(ViewDataType::Unknown), std::numeric_limits<double>::lowest());
-}
-
-void TestEmptyModelInstance::test_setModelMinimum()
-{// TODO test
-    //EmptyModelInstance instance;
-    //instance.setModelMinimum(3, ViewDataType::Jaccobian);
-    //QCOMPARE(instance.modelMinimum(ViewDataType::Jaccobian), 3);
-    //instance.setModelMinimum(5, ViewDataType::MinMax);
-    //QCOMPARE(instance.modelMinimum(ViewDataType::MinMax), 5);
-    //instance.setModelMinimum(6, ViewDataType::Statistic);
-    //QCOMPARE(instance.modelMinimum(ViewDataType::Statistic), 0);
-    //instance.setModelMinimum(9, ViewDataType::SymbolView);
-    //QCOMPARE(instance.modelMinimum(ViewDataType::SymbolView), 0.0);
-    //instance.setModelMinimum(10, ViewDataType::Unknown);
-    //QCOMPARE(instance.modelMinimum(ViewDataType::Unknown), 0.0);
-}
-
-void TestEmptyModelInstance::test_modelMaximum_default()
-{
-    EmptyModelInstance instance;
-    QCOMPARE(instance.modelMaximum(ViewDataType::Jaccobian), std::numeric_limits<double>::lowest());
-    QCOMPARE(instance.modelMaximum(ViewDataType::BP_Scaling), std::numeric_limits<double>::max());
-    QCOMPARE(instance.modelMaximum(ViewDataType::Symbols), std::numeric_limits<double>::max());
-    QCOMPARE(instance.modelMaximum(ViewDataType::Unknown), std::numeric_limits<double>::max());
-}
-
-void TestEmptyModelInstance::test_setModelMaximum()
-{// TODO test
-    //EmptyModelInstance instance;
-    //instance.setModelMaximum(3, ViewDataType::Jaccobian);
-    //QCOMPARE(instance.modelMaximum(ViewDataType::Jaccobian), 3);
-    //instance.setModelMaximum(5, ViewDataType::MinMax);
-    //QCOMPARE(instance.modelMaximum(ViewDataType::MinMax), 5);
-    //instance.setModelMaximum(6, ViewDataType::Statistic);
-    //QCOMPARE(instance.modelMaximum(ViewDataType::Statistic), 0.0);
-    //instance.setModelMaximum(9, ViewDataType::SymbolView);
-    //QCOMPARE(instance.modelMaximum(ViewDataType::SymbolView), 0.0);
-    //instance.setModelMaximum(10, ViewDataType::Unknown);
-    //QCOMPARE(instance.modelMaximum(ViewDataType::Unknown), 0.0);
 }
 
 QTEST_APPLESS_MAIN(TestEmptyModelInstance)

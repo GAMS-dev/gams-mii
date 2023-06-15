@@ -37,8 +37,8 @@ public:
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
-        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(AbstractViewConfiguration::viewType());
-        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(AbstractViewConfiguration::viewType());
+        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum();
+        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum();
         mCurrentValueFilter = mDefaultValueFilter;
         mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
         mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
@@ -190,8 +190,8 @@ public:
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
-        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum(AbstractViewConfiguration::viewType());
-        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum(AbstractViewConfiguration::viewType());
+        mDefaultValueFilter.MinValue = mModelInstance->modelMinimum();
+        mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum();
         mCurrentValueFilter = mDefaultValueFilter;
         mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
         mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);

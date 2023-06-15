@@ -188,6 +188,16 @@ int ModelInstance::maximumVariableDimension() const
     return mMaxVariableDimension;
 }
 
+double ModelInstance::modelMinimum() const
+{
+    return mDataHandler->modelMinimum();
+}
+
+double ModelInstance::modelMaximum() const
+{
+    return mDataHandler->modelMaximum();
+}
+
 void ModelInstance::loadScratchData()
 {
     if (mState == Error)

@@ -17,6 +17,7 @@ private slots:
     void test_predefinedHeader();
 
     void test_searchResult();
+    void test_searchOperators();
 
     void test_default_identifierState();
     void test_getSet_identifierState();
@@ -83,6 +84,32 @@ void TestCommon::test_searchResult()
     entry.Orientation = Qt::Vertical;
     QCOMPARE(entry.Index, 42);
     QCOMPARE(entry.Orientation, Qt::Vertical);
+}
+
+void TestCommon::test_searchOperators()
+{
+    SearchResult result1 { "topeka", true, {} };
+    QCOMPARE(result1, result1);
+    SearchResult result2 { "topeka", true, {} };
+    QCOMPARE(result1, result2);
+    SearchResult result3 { "seatle", false, {} };
+    QVERIFY(result2 != result3);
+
+    SearchResult::SearchEntry entry1 { 0, Qt::Horizontal };
+    QCOMPARE(entry1, entry1);
+    SearchResult::SearchEntry entry2 { 0, Qt::Horizontal };
+    QCOMPARE(entry1, entry2);
+    SearchResult::SearchEntry entry3 { 1, Qt::Vertical};
+    QVERIFY(entry1 != entry3);
+
+    result1.Entries.append(entry1);
+    QCOMPARE(result1, result1);
+    result2.Entries.append(entry2);
+    QCOMPARE(result1, result2);
+    QVERIFY(result2 != result3);
+    result3.Entries.append(entry2);
+    result3.Entries.append(entry3);
+    QVERIFY(result1 != result3);
 }
 
 void TestCommon::test_default_identifierState()

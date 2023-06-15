@@ -311,17 +311,12 @@ void MainWindow::viewChanged(int viewType)
         ui->action_Search->setEnabled(false);
         ui->searchEdit->setEnabled(false);
         ui->actionFilters->setEnabled(false);
-        //ui->actionAggregation->setEnabled(false);
-    } else { // TODO !!! activate and fix crashes
+    } else {
         ui->action_Search->setEnabled(true);
         ui->searchEdit->setEnabled(true);
         ui->actionFilters->setEnabled(true);
-        //ui->actionAggregation->setEnabled(false);
         static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
         setGlobalFiltersData();
-        //setAggregationData();
-        //mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
-        //ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
     }
     const auto& searchResult = ui->modelInspector->searchResult();
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData(searchResult);

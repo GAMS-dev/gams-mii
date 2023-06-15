@@ -189,8 +189,9 @@ class IdentityDataProvider : public DataHandler::AbstractDataProvider
 {
 public:
     IdentityDataProvider(DataHandler *dataHandler,
-                         AbstractModelInstance& modelInstance)
-        : DataHandler::AbstractDataProvider(dataHandler, modelInstance, nullptr)
+                         AbstractModelInstance& modelInstance,
+                         QSharedPointer<AbstractViewConfiguration> viewConfig)
+        : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
     {
         mRowCount = mModelInstance.equationRowCount();
         mSymbolRowCount = mRowCount;
@@ -372,8 +373,8 @@ private:
         mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
         mViewConfig->currentValueFilter().MinValue = mDataMinimum;
         mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
-        mModelInstance.setModelMinimum(mDataMinimum, ViewDataType::Jaccobian);
-        mModelInstance.setModelMaximum(mDataMaximum, ViewDataType::Jaccobian);
+        mDataHandler->setModelMinimum(mDataMinimum);
+        mDataHandler->setModelMaximum(mDataMaximum);
     }
 
     void aggregateAbs()
@@ -439,8 +440,8 @@ private:
         mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
         mViewConfig->currentValueFilter().MinValue = mDataMinimum;
         mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
-        mModelInstance.setModelMinimum(mDataMinimum, ViewDataType::Jaccobian);
-        mModelInstance.setModelMaximum(mDataMaximum, ViewDataType::Jaccobian);
+        mDataHandler->setModelMinimum(mDataMinimum);
+        mDataHandler->setModelMaximum(mDataMaximum);
     }
 
     void setEmtpyCell(int row, int column)
@@ -1358,6 +1359,26 @@ int DataHandler::symbolColumnCount(int view) const
     return mDataCache.contains(view) ? mDataCache[view]->symbolColumnCount() : 0;
 }
 
+double DataHandler::modelMinimum() const
+{
+    return mModelMinimum;
+}
+
+void DataHandler::setModelMinimum(double minimum)
+{
+    mModelMinimum = minimum;
+}
+
+double DataHandler::modelMaximum() const
+{
+    return mModelMaximum;
+}
+
+void DataHandler::setModelMaximum(double maximum)
+{
+    mModelMaximum = maximum;
+}
+
 QSharedPointer<AbstractViewConfiguration> DataHandler::clone(int view, int newView)
 {
     if (!mDataCache.contains(view))
@@ -1402,7 +1423,10 @@ DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int view)
         return new BPAverageDataProvider(*provider);
     }
     default:
-        return new IdentityDataProvider(this, mModelInstance);
+    {
+        auto provider = static_cast<IdentityDataProvider*>(mDataCache[view].get());
+        return new IdentityDataProvider(*provider);
+    }
     }
 }
 
@@ -1438,7 +1462,9 @@ QSharedPointer<DataHandler::AbstractDataProvider> DataHandler::newProvider(QShar
                                                                               viewConfig,
                                                                               *mCoeffCount));
     default:
-        return QSharedPointer<AbstractDataProvider>(new IdentityDataProvider(this, mModelInstance));
+        return QSharedPointer<AbstractDataProvider>(new IdentityDataProvider(this,
+                                                                             mModelInstance,
+                                                                             viewConfig));
     }
 }
 

@@ -40,8 +40,6 @@ protected:
     void setIdentifierFilterCheckState(int symbolIndex, Qt::CheckState state,
                                        Qt::Orientation orientation);
 
-    void cloneFilterAndAggregation(AbstractStandardTableViewFrame *clone, int newView);
-
 protected:
     ValueFormatProxyModel* mValueFormatModel = nullptr;
     IdentifierFilterModel* mIdentifierFilterModel = nullptr;
@@ -55,6 +53,11 @@ class JaccTableViewFrame final : public AbstractStandardTableViewFrame
 
 public:
     JaccTableViewFrame(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+
+    JaccTableViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
+                       QSharedPointer<AbstractViewConfiguration> viewConfig,
+                       QWidget *parent = nullptr,
+                       Qt::WindowFlags f = Qt::WindowFlags());
 
     AbstractTableViewFrame* clone(int view) override;
 

@@ -84,6 +84,10 @@ public:
 
     int maximumVariableDimension() const override;
 
+    double modelMinimum() const override;
+
+    double modelMaximum() const override;
+
     const QVector<Symbol*>& symbols(Symbol::Type type) const override;
 
     void loadData() override;
