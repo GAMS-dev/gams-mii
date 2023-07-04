@@ -12,9 +12,9 @@ pack-dac:
     - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/modelinspector.entitlements.plist "modelinspector.app"
     - hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"  
     - codesign --verify --verbose modelinspector.app
-    - mv "modelinspector.dmg" "$WORKSPACE/model-inspector-dac-x86_64.dmg"
+    - mv "modelinspector.dmg" "$WORKSPACE/GAMS-MII-dac-x86_64.dmg"
     - cd ${WORKSPACE}
-    - DMG_NAME=model-inspector-dac-x86_64.dmg
+    - DMG_NAME=GAMS-MII-dac-x86_64.dmg
     # leave pipeline if it is not a Release, Release Tag or RC build
     - |+
       if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
@@ -42,9 +42,9 @@ pack-dac:
         exit 1
       fi
   artifacts:
-    name: "model-inspector-dac-x86_64"
-    paths: ['model-inspector-dac-x86_64.dmg']
-    expose_as: 'model-inspector-dac-x86_64'
+    name: "GAMS-MIIr-dac-x86_64"
+    paths: ['GAMS-MII-dac-x86_64.dmg']
+    expose_as: 'GAMS-MII-dac-x86_64'
     expire_in: 1 days
 
 pack-deg:
@@ -61,9 +61,9 @@ pack-deg:
     - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/modelinspector.entitlements.plist "modelinspector.app"
     - hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"  
     - codesign --verify --verbose modelinspector.app
-    - mv "modelinspector.dmg" "$WORKSPACE/model-inspector-deg-x86_64.dmg"
+    - mv "modelinspector.dmg" "$WORKSPACE/GAMS-MII-deg-x86_64.dmg"
     - cd ${WORKSPACE}
-    - DMG_NAME=model-inspector-deg-x86_64.dmg
+    - DMG_NAME=GAMS-MII-deg-x86_64.dmg
     # leave pipeline if it is not a Release, Release Tag or RC build
     - |+
       if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
@@ -91,9 +91,9 @@ pack-deg:
         exit 1
       fi
   artifacts:
-    name: "model-inspector-deg-x86_64"
-    paths: ['model-inspector-deg-x86_64.dmg']
-    expose_as: 'model-inspector-deg-x86_64'
+    name: "GAMS-MII-deg-x86_64"
+    paths: ['GAMS-MII-deg-x86_64.dmg']
+    expose_as: 'GAMS-MII-deg-x86_64'
     expire_in: 1 days
 
 pack-leg:
@@ -119,11 +119,11 @@ pack-leg:
     # build the AppImage
     - export VERSION=""
     - /opt/linuxdeploy/linuxdeploy-x86_64.AppImage --appdir=appdir --plugin=qt --output=appimage --desktop-file=appdir/usr/share/modelinspector.desktop
-    - mv Model_Inspector--x86_64.AppImage model-inspector-leg-x86_64.AppImage
+    - mv Model_Inspector--x86_64.AppImage GAMS-MII-leg-x86_64.AppImage
   artifacts:
-    name: "model-inspector-leg-x86_64"
-    paths: ['model-inspector-leg-x86_64.AppImage']
-    expose_as: 'model-inspector-leg-x86_64'
+    name: "GAMS-MII-leg-x86_64"
+    paths: ['GAMS-MII-leg-x86_64.AppImage']
+    expose_as: 'GAMS-MII-leg-x86_64'
     expire_in: 1 days
 
 pack-wei:
@@ -157,9 +157,9 @@ pack-wei:
     - rm comodo_code.dat
     - rm comodo_cert.p12
     - cd ..
-    - Compress-Archive -Path model-inspector -DestinationPath model-inspector-wei-x86_64.zip
+    - Compress-Archive -Path model-inspector -DestinationPath GAMS-MII-wei-x86_64.zip
   artifacts:
-    name: "model-inspector-wei-x86_64"
-    paths: ['model-inspector-wei-x86_64.zip']
-    expose_as: 'model-inspector-wei-x86_64'
+    name: "GAMS-MII-wei-x86_64"
+    paths: ['GAMS-MII-wei-x86_64.zip']
+    expose_as: 'GAMS-MII-wei-x86_64'
     expire_in: 1 days
