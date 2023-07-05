@@ -1,8 +1,8 @@
-/*
- * This file is part of the GAMS Studio project.
+/**
+ * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2017-2019 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2017-2019 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
  */
 #include "modelinspector.h"
 #include "ui_modelinspector.h"
@@ -40,7 +41,6 @@ ModelInspector::ModelInspector(QWidget *parent)
     , mSectionModel(new SectionTreeModel(this))
 {
     ui->setupUi(this);
-    ui->jaccFrame->setView((int)ViewDataType::Jaccobian);
     ui->bpScalingFrame->setView((int)ViewDataType::BP_Scaling);
     ui->bpOverviewFrame->setView((int)ViewDataType::BP_Overview);
     ui->bpCountFrame->setView((int)ViewDataType::BP_Count);
@@ -258,8 +258,6 @@ void ModelInspector::resetZoom()
 
 void ModelInspector::resetDefaultViews()
 {
-    ui->jaccFrame->reset();
-    ui->jaccFrame->resetZoom();
     ui->bpScalingFrame->reset();
     ui->bpScalingFrame->resetZoom();
     Q_FOREACH(auto view, mCustomViews) {
@@ -423,7 +421,6 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
         mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
     }
     mModelInstance->loadData();
-    ui->jaccFrame->setupView(mModelInstance);
     ui->bpScalingFrame->setupView(mModelInstance);
     ui->bpOverviewFrame->setupView(mModelInstance);
     ui->bpCountFrame->setupView(mModelInstance);
@@ -451,8 +448,6 @@ void ModelInspector::clearCustomViews()
 AbstractViewFrame* ModelInspector::currentView() const
 {
     switch (ui->stackedWidget->currentIndex()) {
-    case (int)ViewDataType::Jaccobian:
-        return ui->jaccFrame;
     case (int)ViewDataType::BP_Overview:
         return ui->bpOverviewFrame;
     case (int)ViewDataType::BP_Count:

@@ -1,10 +1,29 @@
+/**
+ * GAMS Model Instance Inspector (MII)
+ *
+ * Copyright (c) 2023 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023 GAMS Development Corp. <support@gams.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
 #include "standardtableviewframe.h"
 #include "ui_standardtableviewframe.h"
 #include "hierarchicalheaderview.h"
 #include "identifierfiltermodel.h"
 #include "labelfiltermodel.h"
 #include "valueformatproxymodel.h"
-#include "jaccobiantablemodel.h"
 #include "abstractmodelinstance.h"
 #include "viewconfigurationprovider.h"
 
@@ -64,133 +83,6 @@ void AbstractStandardTableViewFrame::setIdentifierFilterCheckState(int symbolInd
         }
     }
     mViewConfig->currentIdentifierFilter()[orientation] = symbols;
-}
-
-JaccTableViewFrame::JaccTableViewFrame(QWidget *parent, Qt::WindowFlags f)
-    : AbstractStandardTableViewFrame(parent, f)
-    , mBaseModel(new JaccobianTableModel)
-{
-    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
-}
-
-JaccTableViewFrame::JaccTableViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                                       QSharedPointer<AbstractViewConfiguration> viewConfig,
-                                       QWidget *parent,
-                                       Qt::WindowFlags f)
-    : AbstractStandardTableViewFrame(parent, f)
-    , mBaseModel(new JaccobianTableModel)
-{
-    mModelInstance = modelInstance;
-    mViewConfig = viewConfig;
-}
-
-AbstractTableViewFrame* JaccTableViewFrame::clone(int view)
-{
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
-    if (!viewConfig)
-        viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
-                                                                                                        mModelInstance));
-    auto frame = new JaccTableViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
-    frame->setupView();
-    frame->setValueFilter(frame->viewConfig()->currentValueFilter());
-    frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
-    return frame;
-}
-
-void JaccTableViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
-{
-    mModelInstance = modelInstance;
-    mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
-    mModelInstance->loadData(mViewConfig);
-    setupView();
-}
-
-void JaccTableViewFrame::setLabelFilter(const LabelFilter &filter)
-{
-    AbstractStandardTableViewFrame::setLabelFilter(filter);
-    if (mLabelFilterModel)
-        mLabelFilterModel->setLabelFilter(filter);
-    if (mHorizontalHeader)
-        mHorizontalHeader->resetSymbolLabelFilters();
-    if (mVerticalHeader)
-        mVerticalHeader->resetSymbolLabelFilters();
-    if (mIdentifierLabelFilterModel) {
-        mIdentifierLabelFilterModel->clearIdentifierFilter();
-        mIdentifierLabelFilterModel->invalidate();
-    }
-}
-
-void JaccTableViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    AbstractStandardTableViewFrame::setValueFilter(filter);
-    if (mValueFormatModel) mValueFormatModel->setValueFilter(filter);
-}
-
-void JaccTableViewFrame::updateView()
-{
-    if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
-    //ui->tableView->resizeColumnsToContents();
-    //ui->tableView->resizeRowsToContents();
-    emit filtersChanged();
-}
-
-void JaccTableViewFrame::setIdentifierLabelFilter(const gams::studio::modelinspector::IdentifierState &state,
-                                                  Qt::Orientation orientation)
-{
-    if (!mIdentifierLabelFilterModel) {
-        return;
-    }
-    if (state.disabled() && mIdentifierFilterModel) {
-        setIdentifierFilterCheckState(state.SymbolIndex, Qt::Unchecked, orientation);
-        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
-    } else {
-        mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
-        mIdentifierLabelFilterModel->setIdentifierState(state, orientation);
-    }
-    updateView();
-    emit filtersChanged();
-}
-
-void JaccTableViewFrame::setupView()
-{
-    mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
-                                                   mModelInstance,
-                                                   ui->tableView);
-    mHorizontalHeader->setViewType(type());
-    connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &JaccTableViewFrame::setIdentifierLabelFilter);
-
-    mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
-                                                 mModelInstance,
-                                                 ui->tableView);
-    mVerticalHeader->setViewType(type());
-    connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
-            this, &JaccTableViewFrame::setIdentifierLabelFilter);
-
-    auto baseModel = new JaccobianTableModel(ui->tableView);
-    baseModel->setModelInstance(mModelInstance);
-    baseModel->setView(mViewConfig->view());
-    mValueFormatModel = new JaccobianValueFormatProxyModel(ui->tableView);
-    mValueFormatModel->setSourceModel(baseModel);
-    mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);
-    mLabelFilterModel->setSourceModel(mValueFormatModel);
-    mIdentifierFilterModel = new IdentifierFilterModel(mModelInstance, ui->tableView);
-    mIdentifierFilterModel->setSourceModel(mLabelFilterModel);
-    mIdentifierLabelFilterModel = new IdentifierLabelFilterModel(mModelInstance, ui->tableView);
-    mIdentifierLabelFilterModel->setSourceModel(mIdentifierFilterModel);
-
-    ui->tableView->setHorizontalHeader(mHorizontalHeader);
-    ui->tableView->setVerticalHeader(mVerticalHeader);
-    auto oldSelectionModel = ui->tableView->selectionModel();
-    ui->tableView->setModel(mIdentifierLabelFilterModel);
-    delete oldSelectionModel;
-    mHorizontalHeader->setVisible(true);
-    mVerticalHeader->setVisible(true);
-
-    mBaseModel = QSharedPointer<JaccobianTableModel>(baseModel);
-
-    //ui->tableView->resizeColumnsToContents();
-    //ui->tableView->resizeRowsToContents();
 }
 
 }

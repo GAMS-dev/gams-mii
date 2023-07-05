@@ -49,22 +49,6 @@
      <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QLineEdit" name="viewSearchEdit">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>t.b.d.</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="SectionTreeView" name="sectionView">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -93,46 +77,8 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>3</number>
       </property>
-      <widget class="QWidget" name="jaccPage">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="gams::studio::modelinspector::JaccTableViewFrame" name="jaccFrame">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="bpOverview">
        <layout class="QVBoxLayout" name="verticalLayout_5">
         <property name="leftMargin">
@@ -276,12 +222,6 @@
    <class>SectionTreeView</class>
    <extends>QTreeView</extends>
    <header>modelinspector/sectiontreeview.h</header>
-  </customwidget>
-  <customwidget>
-   <class>gams::studio::modelinspector::JaccTableViewFrame</class>
-   <extends>QFrame</extends>
-   <header>modelinspector/standardtableviewframe.h</header>
-   <container>1</container>
   </customwidget>
   <customwidget>
    <class>gams::studio::modelinspector::BPScalingViewFrame</class>

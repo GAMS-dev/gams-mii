@@ -1,8 +1,8 @@
-/*
- * This file is part of the GAMS Studio project.
+/**
+ * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2017-2018 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2017-2018 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
  */
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -380,8 +381,8 @@ QString MainWindow::aboutModelInspector() const
     QString about = "Release: GAMS Model Inspector " + QApplication::applicationVersion() + " ";
     about += QString(sizeof(void*)==8 ? "64" : "32") + " bit<br/>";
     about += "Build Date: " __DATE__ " " __TIME__ "<br/><br/>";
-    about += "Copyright (c) 2017-2022 GAMS Software GmbH <support@gams.com><br/>";
-    about += "Copyright (c) 2017-2022 GAMS Development Corp. <support@gams.com><br/><br/>";
+    about += "Copyright (c) 2023 GAMS Software GmbH <support@gams.com><br/>";
+    about += "Copyright (c) 2023 GAMS Development Corp. <support@gams.com><br/><br/>";
     about += "This program is free software: you can redistribute it and/or modify ";
     about += "it under the terms of the GNU General Public License as published by ";
     about += "the Free Software Foundation, either version 3 of the License, or ";
@@ -393,8 +394,8 @@ QString MainWindow::aboutModelInspector() const
     about += "You should have received a copy of the GNU General Public License ";
     about += "along with this program. If not, see ";
     about += "<a href=\"http://www.gnu.org/licenses/\">http://www.gnu.org/licenses/</a>.<br/><br/>";
-    about += "The source code of the program can be accessed at <b>T.B.D.</b>";
-    //about += "<a href=\"https://github.com/GAMS-dev/studio\">https://github.com/GAMS-dev/studio/</a></p>.";
+    about += "The source code of the program can be accessed at ";
+    about += "<a href=\"https://github.com/GAMS-dev/model-inspector\">https://github.com/GAMS-dev/model-inspector</a></p>.";
     return about;
 }
 
