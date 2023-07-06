@@ -12,9 +12,9 @@ pack-dac:
     - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/modelinspector.entitlements.plist "modelinspector.app"
     - hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"  
     - codesign --verify --verbose modelinspector.app
-    - mv "modelinspector.dmg" "$WORKSPACE/GAMS-MII-dac-x86_64.dmg"
+    - mv "modelinspector.dmg" "$WORKSPACE/GAMS-MII-dac-arm_64.dmg"
     - cd ${WORKSPACE}
-    - DMG_NAME=GAMS-MII-dac-x86_64.dmg
+    - DMG_NAME=GAMS-MII-dac-arm_64.dmg
     # leave pipeline if it is not a Release, Release Tag or RC build
     - |+
       if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
@@ -42,9 +42,9 @@ pack-dac:
         exit 1
       fi
   artifacts:
-    name: "GAMS-MIIr-dac-x86_64"
-    paths: ['GAMS-MII-dac-x86_64.dmg']
-    expose_as: 'GAMS-MII-dac-x86_64'
+    name: "GAMS-MII-dac-arm_64"
+    paths: ['GAMS-MII-dac-arm_64.dmg']
+    expose_as: 'GAMS-MII-dac-arm_64'
     expire_in: 1 days
 
 pack-deg:
@@ -139,11 +139,11 @@ pack-wei:
     - $env:VCINSTALLDIR = "$vcinsdir"
     - $env:Path = "C:\Qt\6.4.2\msvc2019_64\bin;" + $env:Path
     - '& $cmd_vcvars'
-    - mkdir model-inspector
-    - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/x64/Microsoft.VC142.CRT/*" "model-inspector"
-    - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/vc_redist.x64.exe" "model-inspector"
-    - cp build/src/bin/* model-inspector
-    - cd model-inspector
+    - mkdir mii
+    - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/x64/Microsoft.VC142.CRT/*" "mii"
+    - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/vc_redist.x64.exe" "mii"
+    - cp build/src/bin/* mii
+    - cd mii
     - 'windeployqt --release --compiler-runtime --force modelinspector.exe'
     - echo $GAMS_COMODO_CERT | out-file -encoding ascii comodo_code.dat
     - $data = (
@@ -157,7 +157,7 @@ pack-wei:
     - rm comodo_code.dat
     - rm comodo_cert.p12
     - cd ..
-    - Compress-Archive -Path model-inspector -DestinationPath GAMS-MII-wei-x86_64.zip
+    - Compress-Archive -Path mii -DestinationPath GAMS-MII-wei-x86_64.zip
   artifacts:
     name: "GAMS-MII-wei-x86_64"
     paths: ['GAMS-MII-wei-x86_64.zip']
