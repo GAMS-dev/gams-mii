@@ -18,6 +18,7 @@ pack-dac:
     # leave pipeline if it is not a Release, Release Tag or RC build
     - |+
       if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
+        echo "CI COMMIT REF NAME: ${CI_COMMIT_REF_NAME}"
         echo "Notarization skipped!" > upload.log
         echo "Notarization skipped!" > report.xml
         cat upload.log
