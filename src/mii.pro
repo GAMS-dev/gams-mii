@@ -171,8 +171,15 @@ FORMS += \
 RESOURCES += \
     ../icons/icons.qrc
 
-OTHER_FILES +=          \
-    ../platform/macos/gams-mii.entitlements.plist \
-    ../platform/linux/gams-mii.desktop            \
-    ../jenkinsfile-ci                             \
+OTHER_FILES +=                                      \
+    ../platform/macos/gams-mii.entitlements.plist   \
+    ../platform/linux/gams-mii.desktop              \
+    ../ci/cloudfront-deploy.sh                      \
+    ../ci/github-deploy.sh                          \
+    ../ci/.gitlab-ci-06-gams.yml                    \
+    ../ci/.gitlab-ci-09-build.yml                   \
+    ../ci/.gitlab-ci-12-test.yml                    \
+    ../ci/.gitlab-ci-15-pack.yml                    \
+    ../ci/.gitlab-ci-24-deploy.yml                  \
+    ../.gitlab-ci.yml                               \
     ../version
