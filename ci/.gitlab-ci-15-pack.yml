@@ -17,8 +17,7 @@ pack-dac:
     - DMG_NAME=GAMS-MII-dac-arm_64.dmg
     # leave pipeline if it is not a Release, Release Tag or RC build
     - |+
-      if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
-        echo "CI COMMIT REF NAME: ${CI_COMMIT_REF_NAME}"
+      if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
         echo "Notarization skipped!" > upload.log
         echo "Notarization skipped!" > report.xml
         cat upload.log
@@ -69,7 +68,7 @@ pack-deg:
     - DMG_NAME=GAMS-MII-deg-x86_64.dmg
     # leave pipeline if it is not a Release, Release Tag or RC build
     - |+
-      if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
+      if [[ ! ${CI_COMMIT_REF_NAME} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-release$ ]] && [[ ! ${CI_COMMIT_REF_NAME} =~ .*-rc$ ]]; then
         echo "Notarization skipped!" > upload.log
         echo "Notarization skipped!" > report.xml
         cat upload.log
