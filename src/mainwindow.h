@@ -36,7 +36,7 @@ class GAMSProcess;
 
 namespace gams {
 namespace studio {
-namespace modelinspector {
+namespace mii {
 class AggregationDialog;
 class FilterDialog;
 }
@@ -110,8 +110,8 @@ private:
     Ui::MainWindow *ui;
     GAMSLibProcess *mLibProcess;
     QSharedPointer<GAMSProcess> mProcess;
-    gams::studio::modelinspector::AggregationDialog *mAggregationDialog;
-    gams::studio::modelinspector::FilterDialog *mFilterDialog;
+    gams::studio::mii::AggregationDialog *mAggregationDialog;
+    gams::studio::mii::FilterDialog *mFilterDialog;
     QLabel *mAggregationStatusLabel;
 };
 

@@ -23,7 +23,7 @@
 #include "sectiontreeitem.h"
 #include "common.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 Q_DECLARE_METATYPE(SectionTreeItem*);
 

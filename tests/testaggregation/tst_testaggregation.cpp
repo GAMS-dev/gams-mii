@@ -23,7 +23,7 @@
 #include "aggregation.h"
 #include "labeltreeitem.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 //Q_DECLARE_METATYPE(Aggregation)
 //Q_DECLARE_METATYPE(AggregationItem)

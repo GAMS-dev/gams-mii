@@ -8,11 +8,11 @@ pack-dac:
     - WORKSPACE=$(pwd)
     - PATH="${qtpath}:${PATH}"
     - cd build/src/bin
-    - macdeployqt "modelinspector.app" -always-overwrite
-    - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/modelinspector.entitlements.plist "modelinspector.app"
-    - hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"  
-    - codesign --verify --verbose modelinspector.app
-    - mv "modelinspector.dmg" "$WORKSPACE/GAMS-MII-dac-arm_64.dmg"
+    - macdeployqt "mii.app" -always-overwrite
+    - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/gams-mii.entitlements.plist "mii.app"
+    - hdiutil create -volname "mii" -srcfolder "mii.app" -ov -fs HFS+ -format UDZO "mii.dmg"  
+    - codesign --verify --verbose mii.app
+    - mv "mii.dmg" "$WORKSPACE/GAMS-MII-dac-arm_64.dmg"
     - cd ${WORKSPACE}
     - DMG_NAME=GAMS-MII-dac-arm_64.dmg
     # leave pipeline if it is not a Release, Release Tag or RC build
@@ -57,11 +57,13 @@ pack-deg:
     - WORKSPACE=$(pwd)
     - PATH="${qtpath}:${PATH}"
     - cd build/src/bin
-    - macdeployqt "modelinspector.app" -always-overwrite
-    - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/modelinspector.entitlements.plist "modelinspector.app"
-    - hdiutil create -volname "modelinspector" -srcfolder "modelinspector.app" -ov -fs HFS+ -format UDZO "modelinspector.dmg"  
-    - codesign --verify --verbose modelinspector.app
-    - mv "modelinspector.dmg" "$WORKSPACE/GAMS-MII-deg-x86_64.dmg"
+    - ls -al
+    - macdeployqt "mii.app" -always-overwrite
+    - ls -al
+    - codesign --sign ${GAMS_CODESIGN_IDENTITY} --options runtime --force --deep --timestamp --entitlements $WORKSPACE/platform/macos/gams-mii.entitlements.plist "mii.app"
+    - hdiutil create -volname "mii" -srcfolder "mii.app" -ov -fs HFS+ -format UDZO "mii.dmg"  
+    - codesign --verify --verbose mii.app
+    - mv "mii.dmg" "$WORKSPACE/GAMS-MII-deg-x86_64.dmg"
     - cd ${WORKSPACE}
     - DMG_NAME=GAMS-MII-deg-x86_64.dmg
     # leave pipeline if it is not a Release, Release Tag or RC build
@@ -113,13 +115,13 @@ pack-leg:
     - mkdir -p appdir/usr/share/pixmaps
     - mkdir -p appdir/usr/resources
     # collect files
-    - cp build/src/bin/modelinspector appdir/usr/bin/
+    - cp build/src/bin/mii appdir/usr/bin/
     - cp -r icons/* appdir/usr/share/pixmaps
-    - cp platform/linux/modelinspector.desktop appdir/usr/share/modelinspector.desktop
+    - cp platform/linux/gams-mii.desktop appdir/usr/share/gams-mii.desktop
     # build the AppImage
     - export VERSION=""
-    - /opt/linuxdeploy/linuxdeploy-x86_64.AppImage --appdir=appdir --plugin=qt --output=appimage --desktop-file=appdir/usr/share/modelinspector.desktop
-    - mv Model_Inspector--x86_64.AppImage GAMS-MII-leg-x86_64.AppImage
+    - /opt/linuxdeploy/linuxdeploy-x86_64.AppImage --appdir=appdir --plugin=qt --output=appimage --desktop-file=appdir/usr/share/gams-mii.desktop
+    - mv GAMS_MII--x86_64.AppImage GAMS-MII-leg-x86_64.AppImage
   artifacts:
     name: "GAMS-MII-leg-x86_64"
     paths: ['GAMS-MII-leg-x86_64.AppImage']
@@ -144,7 +146,7 @@ pack-wei:
     - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/vc_redist.x64.exe" "mii"
     - cp build/src/bin/* mii
     - cd mii
-    - 'windeployqt --release --compiler-runtime --force modelinspector.exe'
+    - 'windeployqt --release --compiler-runtime --force mii.exe'
     - echo $GAMS_COMODO_CERT | out-file -encoding ascii comodo_code.dat
     - $data = (
       'import base64;',
@@ -153,7 +155,7 @@ pack-wei:
       )
     - $data | out-file -encoding ascii test.py
     - python test.py comodo_code.dat comodo_cert.p12
-    - signtool sign /v /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com modelinspector.exe
+    - signtool sign /v /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
     - rm comodo_code.dat
     - rm comodo_cert.p12
     - cd ..

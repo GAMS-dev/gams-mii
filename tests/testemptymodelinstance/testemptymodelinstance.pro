@@ -5,10 +5,10 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-INCLUDEPATH += $$SRCPATH/modelinspector
+INCLUDEPATH += $$SRCPATH/mii
 
 SOURCES +=  tst_testemptymodelinstance.cpp                      \
-            $$SRCPATH/modelinspector/abstractmodelinstance.cpp  \
-            $$SRCPATH/modelinspector/symbol.cpp                 \
-            $$SRCPATH/modelinspector/common.cpp                 \
-            $$SRCPATH/modelinspector/postopttreeitem.cpp
+            $$SRCPATH/mii/abstractmodelinstance.cpp  \
+            $$SRCPATH/mii/symbol.cpp                 \
+            $$SRCPATH/mii/common.cpp                 \
+            $$SRCPATH/mii/postopttreeitem.cpp

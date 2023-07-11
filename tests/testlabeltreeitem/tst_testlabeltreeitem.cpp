@@ -22,7 +22,7 @@
 
 #include "labeltreeitem.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 class TestLabelTreeItem : public QObject
 {

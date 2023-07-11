@@ -20,15 +20,15 @@
 
 TEMPLATE = subdirs
 
-SUBDIRS +=              \
-    testaggregation     \
-    testcommon          \
-    testdatahandler \
-    testemptymodelinstance \
-    testfiltertreeitem  \
-    testlabeltreeitem \
-    testmodelinstance   \
-    testpostopttreeitem \
-    testsectiontreeitem \
-    testsymbol \
+SUBDIRS +=                          \
+    testaggregation                 \
+    testcommon                      \
+    testdatahandler                 \
+    testemptymodelinstance          \
+    testfiltertreeitem              \
+    testlabeltreeitem               \
+    testmodelinstance               \
+    testpostopttreeitem             \
+    testsectiontreeitem             \
+    testsymbol                      \
     testviewconfigurationprovider

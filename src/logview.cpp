@@ -19,7 +19,7 @@
  *
  */
 #include "logview.h"
-#include "modelinspector/common.h"
+#include "mii/common.h"
 
 #include <QEvent>
 #include <QWheelEvent>
@@ -36,9 +36,9 @@ bool LogView::eventFilter(QObject *watched, QEvent *event)
         QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
         if (wheel->modifiers() == Qt::ControlModifier) {
             if (wheel->angleDelta().y() > 0)
-                zoomIn(gams::studio::modelinspector::Mi::ZoomFactor);
+                zoomIn(gams::studio::mii::Mi::ZoomFactor);
             else
-                zoomOut(gams::studio::modelinspector::Mi::ZoomFactor);
+                zoomOut(gams::studio::mii::Mi::ZoomFactor);
             return true;
         }
     }

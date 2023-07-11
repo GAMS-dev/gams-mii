@@ -3,15 +3,15 @@
 <plist version="1.0">
     <dict>
         <key>CFBundleExecutable</key>
-        <string>modelinspector</string>
+        <string>mii</string>
         <key>CFBundleName</key>
-        <string>modelinspector</string>
+        <string>gams-mii</string>
         <key>CFBundleDisplayName</key>
-        <string>Model Inspector</string>
+        <string>GAMS MII</string>
         <key>CFBundleGetInfoString</key>
         <string>Created by GAMS</string>
         <key>CFBundleIdentifier</key>
-        <string>com.gams.modelinspector</string>
+        <string>com.gams.mii</string>
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>CFBundleSignature</key>

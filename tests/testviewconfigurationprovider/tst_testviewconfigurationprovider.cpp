@@ -23,7 +23,7 @@
 #include "abstractmodelinstance.h"
 #include "viewconfigurationprovider.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 class TestViewConfigurationProvider : public QObject
 {

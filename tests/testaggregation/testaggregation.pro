@@ -5,9 +5,9 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-INCLUDEPATH += $$SRCPATH/modelinspector
+INCLUDEPATH += $$SRCPATH/mii
 
-SOURCES +=  tst_testaggregation.cpp                     \
-            $$SRCPATH/modelinspector/aggregation.cpp    \
-            $$SRCPATH/modelinspector/symbol.cpp     \
-            $$SRCPATH/modelinspector/labeltreeitem.cpp
+SOURCES +=  tst_testaggregation.cpp             \
+            $$SRCPATH/mii/aggregation.cpp       \
+            $$SRCPATH/mii/symbol.cpp            \
+            $$SRCPATH/mii/labeltreeitem.cpp

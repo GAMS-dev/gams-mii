@@ -5,7 +5,7 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-INCLUDEPATH += $$SRCPATH/modelinspector
+INCLUDEPATH += $$SRCPATH/mii
 
 SOURCES +=  tst_testlabeltreeitem.cpp                       \
-            $$$$SRCPATH/modelinspector/labeltreeitem.cpp
+            $$$$SRCPATH/mii/labeltreeitem.cpp
