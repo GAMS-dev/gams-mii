@@ -23,7 +23,7 @@
 #include "datahandler.h"
 #include "abstractmodelinstance.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 class TestDataHandler : public QObject
 {
@@ -97,12 +97,10 @@ void TestDataHandler::test_DataRow_value()
     dataRow1.data()[1] = 1;
     dataRow1.data()[2] = 2;
     dataRow1.data()[3] = 3;
-    int* colidx = new int[4];
-    colidx[0] = 0;
-    colidx[1] = 1;
-    colidx[2] = 2;
-    colidx[3] = 3;
-    dataRow1.setColIdx(colidx);
+    dataRow1.colIdx()[0] = 0;
+    dataRow1.colIdx()[1] = 1;
+    dataRow1.colIdx()[2] = 2;
+    dataRow1.colIdx()[3] = 3;
     QCOMPARE(dataRow1.value(-1, -4), QVariant());
     QCOMPARE(dataRow1.value(0, 1).toDouble(), dataRow1.data()[0]);
     QCOMPARE(dataRow1.value(1, 4).toDouble(), dataRow1.data()[1]);

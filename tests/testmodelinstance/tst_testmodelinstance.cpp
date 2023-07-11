@@ -22,7 +22,7 @@
 
 #include "modelinstance.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 class TestModelInstance : public QObject
 {// TODO tests... also mind error state/messages

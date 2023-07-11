@@ -22,7 +22,7 @@
 
 #include "filtertreeitem.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 Q_DECLARE_METATYPE(FilterTreeItem)
 Q_DECLARE_METATYPE(FilterTreeItem*)

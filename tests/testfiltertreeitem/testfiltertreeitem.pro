@@ -5,7 +5,7 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-INCLUDEPATH += $$SRCPATH/modelinspector
+INCLUDEPATH += $$SRCPATH/mii
 
 SOURCES +=  tst_testfiltertreeitem.cpp                  \
-            $$SRCPATH/modelinspector/filtertreeitem.cpp
+            $$SRCPATH/mii/filtertreeitem.cpp

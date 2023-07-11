@@ -10,10 +10,10 @@ build-dac:
     - mkdir build && cd build
     - GAMS_CORE_PATH="${GAMS_FOR_MACOS}"
     - PATH="${qtpath}:${GAMS_FOR_MACOS}:${PATH}"
-    - qmake ../model-inspector.pro CONFIG+=release && make -j4
+    - qmake ../gams-mii.pro CONFIG+=release && make -j4
   needs: [install-gams-dac]
   artifacts:
-    name: model-inspector-dac
+    name: mii-dac
     expire_in: 2 hours
     paths: [build]
 
@@ -29,10 +29,10 @@ build-deg:
     - mkdir build && cd build
     - GAMS_CORE_PATH="${GAMS_FOR_MACOS}"
     - PATH="${qtpath}:${GAMS_FOR_MACOS}:${PATH}"
-    - qmake ../model-inspector.pro CONFIG+=release && make -j4
+    - qmake ../gams-mii.pro CONFIG+=release && make -j4
   needs: [install-gams-deg]
   artifacts:
-    name: model-inspector-deg
+    name: mii-deg
     expire_in: 2 hours
     paths: [build]
 
@@ -52,9 +52,9 @@ build-leg:
     - echo "GAMS_DISTRIB_CPP_API=$DOLLAR_GAMS/apifiles/C++/api" >> gamsinclude.pri
     - PATH="${qtpath}:${GAMS_FOR_LINUX}:${PATH}"
     - mkdir build && cd build
-    - qmake ../model-inspector.pro CONFIG+=release && make -j4
+    - qmake ../gams-mii.pro CONFIG+=release && make -j4
   artifacts:
-    name: model-inspector-leg
+    name: mii-leg
     expire_in: 2 hours
     paths: [build]
 
@@ -77,9 +77,9 @@ build-wei:
     - $data | out-file -encoding ascii gamsinclude.pri
     - mkdir build
     - cd build
-    - qmake ..\model-inspector.pro "CONFIG+=release"
+    - qmake ..\gams-mii.pro "CONFIG+=release"
     - nmake
   artifacts:
-    name: model-inspector-wei
+    name: mii-wei
     expire_in: 2 hours
     paths: [build]

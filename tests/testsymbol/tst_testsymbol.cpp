@@ -23,7 +23,7 @@
 #include "symbol.h"
 #include "labeltreeitem.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 Q_DECLARE_METATYPE(LabelTreeItem)
 Q_DECLARE_METATYPE(Symbol)

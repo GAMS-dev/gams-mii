@@ -22,7 +22,7 @@
 
 #include "common.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 class TestCommon : public QObject
 {

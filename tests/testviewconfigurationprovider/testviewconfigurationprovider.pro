@@ -8,15 +8,15 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-INCLUDEPATH += $$SRCPATH/modelinspector
+INCLUDEPATH += $$SRCPATH/mii
 
 SOURCES +=  tst_testviewconfigurationprovider.cpp                   \
-            $$SRCPATH/modelinspector/abstractmodelinstance.cpp      \
-            $$SRCPATH/modelinspector/modelinstance.cpp              \
-            $$SRCPATH/modelinspector/datahandler.cpp                \
-            $$SRCPATH/modelinspector/labeltreeitem.cpp              \
-            $$SRCPATH/modelinspector/symbol.cpp                     \
-            $$SRCPATH/modelinspector/aggregation.cpp                \
-            $$SRCPATH/modelinspector/viewconfigurationprovider.cpp  \
-            $$SRCPATH/modelinspector/common.cpp                     \
-            $$SRCPATH/modelinspector/postopttreeitem.cpp
+            $$SRCPATH/mii/abstractmodelinstance.cpp      \
+            $$SRCPATH/mii/modelinstance.cpp              \
+            $$SRCPATH/mii/datahandler.cpp                \
+            $$SRCPATH/mii/labeltreeitem.cpp              \
+            $$SRCPATH/mii/symbol.cpp                     \
+            $$SRCPATH/mii/aggregation.cpp                \
+            $$SRCPATH/mii/viewconfigurationprovider.cpp  \
+            $$SRCPATH/mii/common.cpp                     \
+            $$SRCPATH/mii/postopttreeitem.cpp

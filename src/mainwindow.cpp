@@ -23,10 +23,10 @@
 #include "commonpaths.h"
 #include "gamsprocess.h"
 #include "gamslibprocess.h"
-#include "modelinspector/aggregationdialog.h"
-#include "modelinspector/filterdialog.h"
-#include "modelinspector/modelinspector.h"
-#include "modelinspector/searchresultmodel.h"
+#include "mii/aggregationdialog.h"
+#include "mii/filterdialog.h"
+#include "mii/modelinspector.h"
+#include "mii/searchresultmodel.h"
 
 #include <QDir>
 #include <QFileDialog>
@@ -36,11 +36,11 @@
 #include <QDebug>
 
 using namespace gams::studio;
-using gams::studio::modelinspector::AggregationDialog;
-using gams::studio::modelinspector::FilterDialog;
-using gams::studio::modelinspector::ModelInspector;
-using gams::studio::modelinspector::SearchResultModel;
-using gams::studio::modelinspector::ViewDataType;
+using gams::studio::mii::AggregationDialog;
+using gams::studio::mii::FilterDialog;
+using gams::studio::mii::ModelInspector;
+using gams::studio::mii::SearchResultModel;
+using gams::studio::mii::ViewDataType;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

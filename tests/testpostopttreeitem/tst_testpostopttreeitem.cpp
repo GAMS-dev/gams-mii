@@ -22,7 +22,7 @@
 
 #include "postopttreeitem.h"
 
-using namespace gams::studio::modelinspector;
+using namespace gams::studio::mii;
 
 class TestPostoptTreeItem : public QObject
 {

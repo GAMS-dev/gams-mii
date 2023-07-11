@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=GAMS MII
+TryExec=studio
+Exec=mii %F
+Icon=gamslogo
+Terminal=false
+Categories=Development;IDE;
