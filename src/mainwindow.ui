@@ -81,7 +81,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>lo=3 keep=1 curdir=. scrdir=scratch</string>
+         <string>MIIMode=singleMI scrdir=scratch</string>
         </property>
         <property name="readOnly">
          <bool>false</bool>
@@ -159,7 +159,7 @@
      <x>0</x>
      <y>0</y>
      <width>1446</width>
-     <height>22</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
