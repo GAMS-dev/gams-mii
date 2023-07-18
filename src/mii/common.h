@@ -76,6 +76,22 @@ struct Mi
         return mapping;
     }
 
+    static double attributeValue(double a, double b, bool aInf = false, bool bInf = false)
+    {
+        if (aInf || bInf) {
+            if (aInf && !bInf) {
+                return a;
+            } else if (!aInf && bInf) {
+                return b;
+            } else if ((a < 0 && b < 0) || (a > 0 && b > 0)) {
+                return a;
+            } else {
+                return a + b;
+            }
+        }
+        return a - b;
+    }
+
     static bool isSpecialValue(const QVariant &value)
     {
         auto str = value.toString();

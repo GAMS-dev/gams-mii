@@ -50,6 +50,8 @@ private slots:
 
     void test_default_valueFilter();
     void test_getSet_valueFilter();
+
+    void testAttributeValue();
 };
 
 TestCommon::TestCommon()
@@ -293,6 +295,22 @@ void TestCommon::test_getSet_valueFilter()
     QVERIFY(!filter.accepts(Mi::SV_PINF));
     QVERIFY(filter.accepts(1001.2));
     QVERIFY(!filter.accepts(-42));
+}
+
+void TestCommon::testAttributeValue()
+{
+    double pInf =  1e+299;
+    double nInf = -1e+299;
+    QCOMPARE(Mi::attributeValue(pInf, nInf, true, true), 0.0);
+    QCOMPARE(Mi::attributeValue(nInf, pInf, true, true), 0.0);
+    QCOMPARE(Mi::attributeValue(nInf, nInf, true, true), nInf);
+    QCOMPARE(Mi::attributeValue(pInf, pInf, true, true), pInf);
+    QCOMPARE(Mi::attributeValue(pInf, 42, true, false), pInf);
+    QCOMPARE(Mi::attributeValue(42, pInf, false, true), pInf);
+    QCOMPARE(Mi::attributeValue(38, nInf, false, true), nInf);
+    QCOMPARE(Mi::attributeValue(nInf, 38, true, false), nInf);
+    QCOMPARE(Mi::attributeValue(8, 8), 0.0);
+    QCOMPARE(Mi::attributeValue(4, 8), -4);
 }
 
 QTEST_APPLESS_MAIN(TestCommon)

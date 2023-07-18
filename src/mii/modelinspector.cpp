@@ -102,7 +102,7 @@ void ModelInspector::setShowOutput(bool showOutput)
 }
 
 void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
-{// TOOD PERF check performance... when all views get an update
+{
     ui->bpScalingFrame->setShowAbsoluteValues(absoluteValues);
     ui->bpAverageFrame->setShowAbsoluteValues(absoluteValues);
     ui->bpCountFrame->setShowAbsoluteValues(absoluteValues);
@@ -356,10 +356,6 @@ void ModelInspector::setCurrentView(int index)
     if (currentIndex.parent() != ui->sectionView->model()->index((int)ViewType::Custom, 0)) {
         if (item->page() < 0 || item->page() >= ui->stackedWidget->count())
             return;
-        auto dataTree = mModelInstance->dataTree((int)ViewDataType::Postopt);
-        if (item->page() == ui->stackedWidget->count()-1 && !dataTree) {
-            ui->postoptFrame->setupView(mModelInstance);
-        }
         page = item->page();
     } else {
         auto wgt = mCustomViews[item->page()];
@@ -425,7 +421,7 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
     ui->bpOverviewFrame->setupView(mModelInstance);
     ui->bpCountFrame->setupView(mModelInstance);
     ui->bpAverageFrame->setupView(mModelInstance);
-    //ui->postoptFrame->setupView(mModelInstance);
+    ui->postoptFrame->setupView(mModelInstance);
 
     auto root = ui->sectionView->model()->index((int)ViewType::Predefined, 0);
     auto index = ui->sectionView->model()->index((int)ViewDataType::BP_Scaling, 0, root);

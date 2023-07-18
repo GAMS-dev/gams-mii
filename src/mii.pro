@@ -32,8 +32,8 @@ include(../gamsdependency.pri)
 macx {
 # ! The icns-file is created from a folder named gams.iconset containing images in multiple sizes.
 # ! On mac osX type the command: iconutil -c icns [base-folder]/gams.iconset to create gams.icns
-#    ICON = studio.icns
-#    QMAKE_INFO_PLIST=Info.plist
+    ICON = ../icons/mii.icns
+
     HEADERS += macoscocoabridge.h \
                macospathfinder.h
 
@@ -41,15 +41,15 @@ macx {
 
     OBJECTIVE_SOURCES += macoscocoabridge.mm
 
-    QMAKE_INFO_PLIST = ../platform/macos/info.plist
-
     LIBS += -framework AppKit
+
+    QMAKE_INFO_PLIST = ../platform/macos/info.plist
 }
 unix {
     LIBS += -ldl
 }
 win32 {
-#    RC_FILE += studio.rc
+    RC_ICONS = ../icons/mii.ico
     LIBS += -luser32
 }
 

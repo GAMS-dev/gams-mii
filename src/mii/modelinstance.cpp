@@ -613,58 +613,26 @@ QVariant ModelInstance::equationAttribute(const QString &header, int index, int 
     } else if (!header.compare(Mi::Infeasibility, Qt::CaseInsensitive)) {
         double a = specialValue(equationBounds(absoluteIndex).first);
         double b = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
-        double v1 = 0.0, v2 = 0.0;
-        if (isInf(b)) {
-            v1 = -b;
-        } else if (isInf(a)) {
-            v1 = a;
-        } else {
-            v1 = a - b;
-        }
+        double v1 = Mi::attributeValue(a, b, isInf(a), isInf(b));
         a = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
         b = specialValue(equationBounds(absoluteIndex).second);
-        if (isInf(b)) {
-            v2 = -b;
-        } else if (isInf(a)) {
-            v2 = a;
-        } else {
-            v2 = a - b;
-        }
+        double v2 = Mi::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, std::max(v1, v2));
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
     } else if (!header.compare(Mi::Range, Qt::CaseInsensitive)) {
         double a = specialValue(equationBounds(absoluteIndex).second);
         double b = specialValue(equationBounds(absoluteIndex).first);
-        if (isInf(b)) {
-            value = -b;
-        } else if (isInf(a)) {
-            value = a;
-        } else {
-            value = a - b;
-        }
+        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
     } else if (!header.compare(Mi::Slack, Qt::CaseInsensitive)) {
-        double v1, v2;
         double a = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
         double b = specialValue(equationBounds(absoluteIndex).first);
-        if (isInf(b)) {
-            v1 = -b;
-        } else if (isInf(a)) {
-            v1 = a;
-        } else {
-            v1 = a - b;
-        }
+        double v1 = Mi::attributeValue(a, b, isInf(a), isInf(b));
         v1 = std::max(0.0, v1);
         v1 = abs ? std::abs(v1) : v1;
         a = specialValue(equationBounds(absoluteIndex).second);
         b = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
-        if (isInf(b)) {
-            v2 = -b;
-        } else if (isInf(a)) {
-            v2 = a;
-        } else {
-            v2 = a - b;
-        }
+        double v2 = Mi::attributeValue(a, b, isInf(a), isInf(b));
         v2 = std::max(0.0, v2);
         v2 = abs ? std::abs(v2) : v2;
         value = std::min(v1, v2);
@@ -672,26 +640,14 @@ QVariant ModelInstance::equationAttribute(const QString &header, int index, int 
     } else if (!header.compare(Mi::SlackLB, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
         double b = specialValue(equationBounds(absoluteIndex).first);
-        if (isInf(b)) {
-            value = -b;
-        } else if (isInf(a)) {
-            value = a;
-        } else {
-            value = a - b;
-        }
+        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, value);
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
     } else if (!header.compare(Mi::SlackUB, Qt::CaseInsensitive)) {
         double a = specialValue(equationBounds(absoluteIndex).second);
         double b = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
-        if (isInf(b)) {
-            value = -b;
-        } else if (isInf(a)) {
-            value = a;
-        } else {
-            value = a - b;
-        }
+        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, value);
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
@@ -722,58 +678,26 @@ QVariant ModelInstance::variableAttribute(const QString &header, int index, int 
     } else if (!header.compare(Mi::Infeasibility, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
-        double v1 = 0.0, v2 = 0.0;
-        if (isInf(b)) {
-            v1 = -b;
-        } else if (isInf(a)) {
-            v1 = a;
-        } else {
-            v1 = a - b;
-        }
+        double v1 = Mi::attributeValue(a, b, isInf(a), isInf(b));
         a = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
         b = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
-        if (isInf(b)) {
-            v2 = -b;
-        } else if (isInf(a)) {
-            v2 = a;
-        } else {
-            v2 = a - b;
-        }
+        double v2 = Mi::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, std::max(v1, v2));
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
     } else if (!header.compare(Mi::Range, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
-        if (isInf(b)) {
-            value = -b;
-        } else if (isInf(a)) {
-            value = a;
-        } else {
-            value = a - b;
-        }
+        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
     } else if (!header.compare(Mi::Slack, Qt::CaseInsensitive)) {
-        double v1, v2;
         double a = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
-        if (isInf(b)) {
-            v1 = -b;
-        } else if (isInf(a)) {
-            v1 = a;
-        } else {
-            v1 = a - b;
-        }
+        double v1 = Mi::attributeValue(a, b, isInf(a), isInf(b));
         v1 = std::max(0.0, v1);
         v1 = abs ? std::abs(v1) : v1;
         a = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
         b = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
-        if (isInf(b)) {
-            v2 = -b;
-        } else if (isInf(a)) {
-            v2 = a;
-        } else {
-            v2 = a - b;
-        }
+        double v2 = Mi::attributeValue(a, b, isInf(a), isInf(b));
         v2 = std::max(0.0, v2);
         v2 = abs ? std::abs(v2) : v2;
         value = std::min(v1, v2);
@@ -781,26 +705,14 @@ QVariant ModelInstance::variableAttribute(const QString &header, int index, int 
     } else if (!header.compare(Mi::SlackLB, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
-        if (isInf(b)) {
-            value = -b;
-        } else if (isInf(a)) {
-            value = a;
-        } else {
-            value = a - b;
-        }
+        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, value);
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
     } else if (!header.compare(Mi::SlackUB, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
-        if (isInf(b)) {
-            value = -b;
-        } else if (isInf(a)) {
-            value = a;
-        } else {
-            value = a - b;
-        }
+        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, value);
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;

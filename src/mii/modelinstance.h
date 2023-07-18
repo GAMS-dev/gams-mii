@@ -39,7 +39,7 @@ class DataMatrix;
 class ModelInstance : public AbstractModelInstance
 {
 public:
-    ModelInstance(bool useOutput,
+    ModelInstance(bool useOutput = false,
                   const QString &workspace = ".",
                   const QString &systemDir = QString(),
                   const QString &scratchDir = QString());

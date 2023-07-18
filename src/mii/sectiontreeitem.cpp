@@ -122,6 +122,8 @@ void SectionTreeItem::setType(const QString &text)
         mType = ViewDataType::BP_Count;
     else if (text == Mi::BPAverage)
         mType = ViewDataType::BP_Average;
+    else if (text == Mi::Postopt)
+        mType = ViewDataType::Postopt;
     else
         mType = ViewDataType::Unknown;
 }

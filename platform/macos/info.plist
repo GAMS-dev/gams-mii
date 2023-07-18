@@ -10,6 +10,8 @@
         <string>GAMS MII</string>
         <key>CFBundleGetInfoString</key>
         <string>Created by GAMS</string>
+        <key>CFBundleIconFile</key>
+        <string>mii.icns</string>
         <key>CFBundleIdentifier</key>
         <string>com.gams.mii</string>
         <key>CFBundlePackageType</key>
