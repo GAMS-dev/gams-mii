@@ -66,7 +66,6 @@ INCLUDEPATH += $$GAMS_DISTRIB_C_API     \
 
 SOURCES += \
     $$GAMS_DISTRIB_C_API/c4umcc.c   \
-    $$GAMS_DISTRIB_C_API/gclgms.c   \
     $$GAMS_DISTRIB_C_API/gevmcc.c   \
     $$GAMS_DISTRIB_C_API/gmomcc.c   \
     $$GAMS_DISTRIB_C_API/dctmcc.c   \
@@ -74,6 +73,5 @@ SOURCES += \
     $$GAMS_DISTRIB_C_API/gdxcc.c    \
     $$GAMS_DISTRIB_C_API/optcc.c    \
     $$GAMS_DISTRIB_C_API/cfgmcc.c   \
-    $$GAMS_DISTRIB_C_API/gcmt.c     \
     $$GAMS_DISTRIB_C_API/guccc.c    \
     $$GAMS_DISTRIB_C_API/gucapi.c

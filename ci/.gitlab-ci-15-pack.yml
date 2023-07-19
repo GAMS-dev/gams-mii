@@ -2,7 +2,7 @@ pack-dac:
   stage: pack
   tags: [macos-arm64]
   variables:
-    qtpath: /Users/gitlab/Qt/6.4.3/macos/bin
+    qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   needs: [build-dac]
   script:
     - WORKSPACE=$(pwd)
@@ -51,7 +51,7 @@ pack-deg:
   stage: pack
   tags: [macos]
   variables:
-    qtpath: /Users/gitlab/Qt/6.4.3/macos/bin
+    qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   needs: [build-deg]
   script:
     - WORKSPACE=$(pwd)
@@ -102,11 +102,11 @@ pack-leg:
   stage: pack
   tags: [linux]
   image:
-    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6.5:latest
     entrypoint: [""]   # prevent startup.sh
   needs: [build-leg]
   variables:
-    qtpath: /opt/Qt/6.4.2/bin
+    qtpath: /opt/Qt/6.5.1/bin
   script:
     # setup environment
     - PATH="${qtpath}:${PATH}"
@@ -132,14 +132,14 @@ pack-wei:
   stage: pack
   tags: [windows]
   image:
-    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6.5:latest
   needs: [build-wei]
   variables:
     vcinsdir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC
     cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
   script:
     - $env:VCINSTALLDIR = "$vcinsdir"
-    - $env:Path = "C:\Qt\6.4.2\msvc2019_64\bin;" + $env:Path
+    - $env:Path = "C:\Qt\6.5.1\msvc2019_64\bin;" + $env:Path
     - '& $cmd_vcvars'
     - mkdir mii
     - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/x64/Microsoft.VC142.CRT/*" "mii"

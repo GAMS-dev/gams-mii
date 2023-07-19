@@ -2,7 +2,7 @@ build-dac:
   stage: build
   tags: [macos-arm64]
   variables:
-    qtpath: /Users/gitlab/Qt/6.4.3/macos/bin
+    qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
     - printf "GAMS_DISTRIB=$(pwd)/gamsdist\n" > gamsinclude.pri
     - printf "GAMS_DISTRIB_C_API=\$\$GAMS_DISTRIB/apifiles/C/api\n" >> gamsinclude.pri
@@ -21,7 +21,7 @@ build-deg:
   stage: build
   tags: [macos]
   variables:
-    qtpath: /Users/gitlab/Qt/6.4.3/macos/bin
+    qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
     - printf "GAMS_DISTRIB=$(pwd)/gamsdist\n" > gamsinclude.pri
     - printf "GAMS_DISTRIB_C_API=\$\$GAMS_DISTRIB/apifiles/C/api\n" >> gamsinclude.pri
@@ -40,16 +40,17 @@ build-leg:
   stage: build
   tags: [linux]
   image:
-    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6.5:latest
     entrypoint: [""]   # prevent startup.sh
   needs: [install-gams-leg]
   variables:
-    qtpath: /opt/Qt/6.4.2/bin
+    qtpath: /opt/Qt/6.5.1/bin
     DOLLAR_GAMS: $$$$GAMS_DISTRIB
   script:
     - echo "GAMS_DISTRIB=$(pwd)/gamsdist" > gamsinclude.pri
     - echo "GAMS_DISTRIB_C_API=$DOLLAR_GAMS/apifiles/C/api" >> gamsinclude.pri
     - echo "GAMS_DISTRIB_CPP_API=$DOLLAR_GAMS/apifiles/C++/api" >> gamsinclude.pri
+    - ls -al $(pwd)/gamsdist/apifiles/C/api
     - PATH="${qtpath}:${GAMS_FOR_LINUX}:${PATH}"
     - mkdir build && cd build
     - qmake ../gams-mii.pro CONFIG+=release && make -j4
@@ -63,10 +64,10 @@ build-wei:
   tags: [windows]
   needs: [install-gams-wei]
   variables:
-     qtpath: C:\Qt\6.4.2\msvc2019_64\bin
+     qtpath: C:\Qt\6.5.1\msvc2019_64\bin
      cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
   image:
-    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6.5:latest
   script:
     - $env:Path = "$qtpath;" + $env:Path
     - '& $cmd_vcvars'

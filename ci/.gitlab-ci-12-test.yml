@@ -4,7 +4,7 @@ test-dac:
   allow_failure: true
   dependencies: [install-gams-dac,build-dac]
   variables:
-    qtpath: /Users/gitlab/Qt/6.4.3/macos/bin
+    qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
     - GAMS_PATH=$(pwd)/gamsdist
     - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
@@ -32,7 +32,7 @@ test-deg:
   allow_failure: true
   dependencies: [install-gams-deg,build-deg]
   variables:
-    qtpath: /Users/gitlab/Qt/6.4.3/macos/bin
+    qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
     - GAMS_PATH=$(pwd)/gamsdist
     - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
@@ -59,11 +59,11 @@ test-leg:
   tags: [linux]
   allow_failure: true
   image:
-    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6.5:latest
     entrypoint: [""]   # prevent startup.sh
   dependencies: [install-gams-leg,build-leg]
   variables:
-    qtpath: /opt/Qt/6.4.2/bin
+    qtpath: /opt/Qt/6.5.1/bin
   script:
     - GAMS_PATH=$(pwd)/gamsdist
     - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
@@ -89,10 +89,10 @@ test-wei:
   tags: [windows]
   allow_failure: true
   image:
-    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6.5:latest
   dependencies: [install-gams-wei,build-wei]
   variables:
-    qtpath: C:\Qt\6.4.2\msvc2019_64\bin
+    qtpath: C:\Qt\6.5.1\msvc2019_64\bin
   script:
     - $GAMS_PATH = ($(pwd), '\gamsdist') -join ""
     - Out-File -FilePath $GAMS_PATH\gamslice.txt -InputObject $PF_GAMS_LICENSE -Encoding ASCII
