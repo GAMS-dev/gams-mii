@@ -50,7 +50,6 @@ build-leg:
     - echo "GAMS_DISTRIB=$(pwd)/gamsdist" > gamsinclude.pri
     - echo "GAMS_DISTRIB_C_API=$DOLLAR_GAMS/apifiles/C/api" >> gamsinclude.pri
     - echo "GAMS_DISTRIB_CPP_API=$DOLLAR_GAMS/apifiles/C++/api" >> gamsinclude.pri
-    - ls -al $(pwd)/gamsdist/apifiles/C/api
     - PATH="${qtpath}:${GAMS_FOR_LINUX}:${PATH}"
     - mkdir build && cd build
     - qmake ../gams-mii.pro CONFIG+=release && make -j4
