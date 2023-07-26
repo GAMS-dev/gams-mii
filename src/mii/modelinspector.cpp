@@ -25,7 +25,6 @@
 #include "sectiontreeitem.h"
 #include "viewconfigurationprovider.h"
 #include "symbolviewframe.h"
-#include "postopttreeitem.h"
 
 #include <QDir>
 

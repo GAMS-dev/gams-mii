@@ -27,7 +27,7 @@ mv *.dmg *.AppImage *.zip $FOLDER_NAME
 URL=${S3_URL}/mii/
 
 ## S3 upload to gams.com
-s3cmd sync --no-check-certificate --acl-public ./ $URL --access_key=${S3_ACCESS_KEY} --secret_key=${S3_SECRET_KEY}
+s3cmd sync --acl-public ./ $URL --access_key=${S3_ACCESS_KEY} --secret_key=${S3_SECRET_KEY}
 
 ## S3 content listing
-s3cmd ls --no-check-certificate -r $URL --access_key=${S3_ACCESS_KEY} --secret_key=${S3_SECRET_KEY}
+s3cmd ls -r $URL --access_key=${S3_ACCESS_KEY} --secret_key=${S3_SECRET_KEY}

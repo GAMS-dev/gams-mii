@@ -45,7 +45,7 @@ if [[ ${TAG_NAME} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 --description "${CHANGELOG}
 
 This version of GAMS Model Instance Inspector requires GAMS ${GAMS_DISTRIB_MAJOR_VERSION}. To download GAMS, please visit https://www.gams.com/latest/. To learn more about GAMS Model Instance Inspector, please visit https://www.gams.com/latest/docs/T_MAIN.html"
-elif [[ ${TAG_NAME} =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+-rc\\.[0-9]+$ ]]; then
+elif [[ ${TAG_NAME} =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.?[0-9]*$ ]]; then
     github-release release --user $GITHUB_ORGA --repo $GITHUB_REPO --tag ${TAG_NAME} --pre-release \
 --description "${CHANGELOG}
 

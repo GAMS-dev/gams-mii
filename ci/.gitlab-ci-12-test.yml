@@ -62,11 +62,9 @@ test-leg:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6.5:latest
     entrypoint: [""]   # prevent startup.sh
   dependencies: [install-gams-leg,build-leg]
-  variables:
-    qtpath: /opt/Qt/6.5.1/bin
   script:
     - GAMS_PATH=$(pwd)/gamsdist
-    - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
+    - PATH="${GAMS_PATH}:${PATH}"
     - cd build && mkdir reports
     - REPORTS_DIR=$(pwd)/reports
     - |+

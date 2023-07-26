@@ -44,13 +44,11 @@ build-leg:
     entrypoint: [""]   # prevent startup.sh
   needs: [install-gams-leg]
   variables:
-    qtpath: /opt/Qt/6.5.1/bin
     DOLLAR_GAMS: $$$$GAMS_DISTRIB
   script:
     - echo "GAMS_DISTRIB=$(pwd)/gamsdist" > gamsinclude.pri
     - echo "GAMS_DISTRIB_C_API=$DOLLAR_GAMS/apifiles/C/api" >> gamsinclude.pri
     - echo "GAMS_DISTRIB_CPP_API=$DOLLAR_GAMS/apifiles/C++/api" >> gamsinclude.pri
-    - PATH="${qtpath}:${GAMS_FOR_LINUX}:${PATH}"
     - mkdir build && cd build
     - qmake ../gams-mii.pro CONFIG+=release && make -j4
   artifacts:
