@@ -4,14 +4,14 @@ build-dac:
   variables:
     qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
-    - printf "GAMS_DISTRIB=$(pwd)/gamsdist\n" > gamsinclude.pri
+    - printf "GAMS_DISTRIB=$HOME/cache/gams-installs/`python3 ci/fetch_gams.py version`\n" > gamsinclude.pri
     - printf "GAMS_DISTRIB_C_API=\$\$GAMS_DISTRIB/apifiles/C/api\n" >> gamsinclude.pri
     - printf "GAMS_DISTRIB_CPP_API=\$\$GAMS_DISTRIB/apifiles/C++/api\n" >> gamsinclude.pri
     - mkdir build && cd build
     - GAMS_CORE_PATH="${GAMS_FOR_MACOS}"
     - PATH="${qtpath}:${GAMS_FOR_MACOS}:${PATH}"
     - qmake ../gams-mii.pro CONFIG+=release && make -j4
-  needs: [install-gams-dac]
+  needs: [fetch-prerequisites,install-gams-dac]
   artifacts:
     name: mii-dac
     expire_in: 2 hours
@@ -23,14 +23,14 @@ build-deg:
   variables:
     qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
-    - printf "GAMS_DISTRIB=$(pwd)/gamsdist\n" > gamsinclude.pri
+    - printf "GAMS_DISTRIB=$HOME/cache/gams-installs/`python3 ci/fetch_gams.py version`\n" > gamsinclude.pri
     - printf "GAMS_DISTRIB_C_API=\$\$GAMS_DISTRIB/apifiles/C/api\n" >> gamsinclude.pri
     - printf "GAMS_DISTRIB_CPP_API=\$\$GAMS_DISTRIB/apifiles/C++/api\n" >> gamsinclude.pri
     - mkdir build && cd build
     - GAMS_CORE_PATH="${GAMS_FOR_MACOS}"
     - PATH="${qtpath}:${GAMS_FOR_MACOS}:${PATH}"
     - qmake ../gams-mii.pro CONFIG+=release && make -j4
-  needs: [install-gams-deg]
+  needs: [fetch-prerequisites,install-gams-deg]
   artifacts:
     name: mii-deg
     expire_in: 2 hours
@@ -42,11 +42,11 @@ build-leg:
   image:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6.5:latest
     entrypoint: [""]   # prevent startup.sh
-  needs: [install-gams-leg]
+  needs: [fetch-prerequisites,install-gams-leg]
   variables:
     DOLLAR_GAMS: $$$$GAMS_DISTRIB
   script:
-    - echo "GAMS_DISTRIB=$(pwd)/gamsdist" > gamsinclude.pri
+    - echo "GAMS_DISTRIB=/cache/gams-installs/`python3 ci/fetch_gams.py version`" > gamsinclude.pri
     - echo "GAMS_DISTRIB_C_API=$DOLLAR_GAMS/apifiles/C/api" >> gamsinclude.pri
     - echo "GAMS_DISTRIB_CPP_API=$DOLLAR_GAMS/apifiles/C++/api" >> gamsinclude.pri
     - mkdir build && cd build
@@ -69,7 +69,7 @@ build-wei:
     - $env:Path = "$qtpath;" + $env:Path
     - '& $cmd_vcvars'
     - $data = 
-      ('GAMS_DISTRIB=', $(Get-Location).ToString().Replace('\','/'), '/gamsdist' -join ""),
+      "GAMS_DISTRIB=C:/Cache/gams-installs/$(Get-Content mygmsdir.tmp -Raw)",
       'GAMS_DISTRIB_C_API=$$GAMS_DISTRIB/apifiles/C/api',
       'GAMS_DISTRIB_CPP_API=$$GAMS_DISTRIB/apifiles/C++/api'
     - $data | out-file -encoding ascii gamsinclude.pri
