@@ -135,7 +135,6 @@ pack-wei:
     cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
   script:
     - $env:VCINSTALLDIR = "$vcinsdir"
-    - $env:Path = "C:\Qt\6.5.1\msvc2019_64\bin;" + $env:Path
     - '& $cmd_vcvars'
     - mkdir mii
     - cp "/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Redist/MSVC/14.29.30133/x64/Microsoft.VC142.CRT/*" "mii"

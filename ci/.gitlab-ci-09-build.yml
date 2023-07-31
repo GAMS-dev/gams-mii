@@ -61,12 +61,10 @@ build-wei:
   tags: [windows]
   needs: [install-gams-wei]
   variables:
-     qtpath: C:\Qt\6.5.1\msvc2019_64\bin
      cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
   image:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6.5:latest
   script:
-    - $env:Path = "$qtpath;" + $env:Path
     - '& $cmd_vcvars'
     - $data = 
       "GAMS_DISTRIB=C:/Cache/gams-installs/$(Get-Content mygmsdir.tmp -Raw)",

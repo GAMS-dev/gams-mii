@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-unset LD_PRELOAD
-
 qmake gams-mii.pro CONFIG+=release
 
 # Log your project.
