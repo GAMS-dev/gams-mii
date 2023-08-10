@@ -165,9 +165,9 @@ void MainWindow::on_actionAggregation_triggered()
     showDialog(mAggregationDialog);
 }
 
-void MainWindow::on_actionReset_default_views_triggered()
+void MainWindow::on_actionResetZoomAllViews_triggered()
 {
-    ui->modelInspector->resetDefaultViews();
+    ui->modelInspector->resetZoomAllViews();
     ui->searchResultView->resetZoom();
     ui->logEdit->resetZoom();
 }

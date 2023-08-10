@@ -255,11 +255,11 @@ void ModelInspector::resetZoom()
     if (frame) frame->resetZoom();
 }
 
-void ModelInspector::resetDefaultViews()
+void ModelInspector::resetZoomAllViews()
 {
     ui->bpScalingFrame->reset();
     ui->bpScalingFrame->resetZoom();
-    Q_FOREACH(auto view, mCustomViews) {
+    for (auto view : qAsConst(mCustomViews)) {
         view->resetZoom();
     }
 }
