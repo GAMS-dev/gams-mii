@@ -600,6 +600,8 @@ void HierarchicalHeaderView::setView(int view)
 
 void HierarchicalHeaderView::customMenuRequested(const QPoint &position)
 {
+    if (mViewType != ViewDataType::Symbols)
+        return;
     bool ok;
     int logicalIndex = logicalIndexAt(position);
     int sectionIndex = model()->headerData(logicalIndex, orientation()).toInt(&ok);

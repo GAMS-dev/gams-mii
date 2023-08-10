@@ -21,9 +21,52 @@
 #ifndef LOGVIEW_H
 #define LOGVIEW_H
 
-#include <QTextEdit>
+#include <QRegularExpression>
+#include <QPlainTextEdit>
+#include <QSyntaxHighlighter>
 
-class LogView : public QTextEdit
+class HighlightingRule
+{
+public:
+    HighlightingRule();
+
+    QRegularExpression pattern() const
+    {
+        return mRegEx;
+    }
+
+    void setPattern(const QRegularExpression &regex)
+    {
+        mRegEx = regex;
+    }
+
+    QTextCharFormat format() const
+    {
+        return mFormat;
+    }
+
+protected:
+    QRegularExpression mRegEx;
+    QTextCharFormat mFormat;
+    static const QString timestampRegex;
+};
+
+class LogHighlighter
+    : public QSyntaxHighlighter
+{
+    Q_OBJECT
+
+public:
+    LogHighlighter(QObject *parent = nullptr);
+
+protected:
+    void highlightBlock(const QString &text) override;
+
+private:
+    QVector<HighlightingRule> mHighlightingRules;
+};
+
+class LogView : public QPlainTextEdit
 {
     Q_OBJECT
 
@@ -36,6 +79,7 @@ public:
 
 private:
     QFont mBaseFont;
+    LogHighlighter mHighlighter;
 };
 
 #endif // LOGVIEW_H

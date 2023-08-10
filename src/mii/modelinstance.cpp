@@ -243,7 +243,7 @@ void ModelInstance::loadScratchData()
         return;
     }
 
-    mLogMessages << "Absolute Scrach Path: " + mScratchDir;
+    mLogMessages << "Absolute Scratch Path: " + mScratchDir;
 }
 
 void ModelInstance::loadSymbols()

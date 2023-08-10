@@ -74,11 +74,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::appendLogMessage(const QString &message)
 {
-    if (message.contains("ERROR:", Qt::CaseSensitive)) {
-        ui->logEdit->setTextColor(QColor("red"));
-        ui->logEdit->append(message);
-    }
-    ui->logEdit->append(message);
+    ui->logEdit->appendPlainText(message);
 }
 
 void MainWindow::on_actionOpen_triggered()
@@ -92,12 +88,7 @@ void MainWindow::on_actionOpen_triggered()
     ui->modelEdit->setText(fileName);
     ui->gamslibCheckBox->setChecked(false);
     QFileInfo fi(ui->modelEdit->text());
-    ui->logEdit->append("Loading scatch data from: " + fi.dir().path());
-}
-
-void MainWindow::on_actionOpen_Project_triggered()
-{
-    QMessageBox::information(this, "T.B.D.", "T.B.D.");
+    ui->logEdit->appendPlainText("Loading scratch data from: " + fi.dir().path());
 }
 
 void MainWindow::on_actionRun_triggered()
@@ -105,7 +96,7 @@ void MainWindow::on_actionRun_triggered()
     auto path = workspace();
     QDir dir(path);
     if (!dir.mkpath(path))
-        ui->logEdit->append("Error: Could not create workspace " + path);
+        ui->logEdit->appendPlainText("Error: Could not create workspace " + path);
 
     ui->modelInspector->setShowOutput(ui->actionShow_Output->isChecked());
     if (ui->modelEdit->text().endsWith(".dat")) {
@@ -373,7 +364,7 @@ void MainWindow::createProjectDirectory()
     auto path = projectDirectory();
     QDir dir(path);
     if (!dir.mkpath(path))
-        ui->logEdit->append("Error: Could not create project directory " + path);
+        ui->logEdit->appendPlainText("Error: Could not create project directory " + path);
 }
 
 QString MainWindow::aboutModelInspector() const

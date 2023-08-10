@@ -56,7 +56,6 @@ private slots:
 
     // File
     void on_actionOpen_triggered();
-    void on_actionOpen_Project_triggered();
     void on_actionRun_triggered();
     void on_action_Quit_triggered();
 

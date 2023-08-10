@@ -23,11 +23,38 @@
 
 #include <QEvent>
 #include <QWheelEvent>
+#include <iostream>
+
+HighlightingRule::HighlightingRule()
+{
+    mFormat.setForeground(QBrush(Qt::red));
+    mFormat.setFontWeight(QFont::Bold);
+}
+
+LogHighlighter::LogHighlighter(QObject *parent)
+    : QSyntaxHighlighter(parent)
+{
+    HighlightingRule errorRule;
+    errorRule.setPattern(QRegularExpression(".*error.*", QRegularExpression::CaseInsensitiveOption));
+    mHighlightingRules.push_back(errorRule);
+}
+
+void LogHighlighter::highlightBlock(const QString &text)
+{
+    for (const HighlightingRule &rule : qAsConst(mHighlightingRules)) {
+        QRegularExpressionMatchIterator matchIterator = rule.pattern().globalMatch(text);
+        while (matchIterator.hasNext()) {
+            QRegularExpressionMatch match = matchIterator.next();
+            setFormat(match.capturedStart(), match.capturedLength(), rule.format());
+        }
+    }
+}
 
 LogView::LogView(QWidget *parent)
-    : QTextEdit(parent)
+    : QPlainTextEdit(parent)
     , mBaseFont(font())
 {
+    mHighlighter.setDocument(document());
 }
 
 bool LogView::eventFilter(QObject *watched, QEvent *event)
@@ -42,7 +69,7 @@ bool LogView::eventFilter(QObject *watched, QEvent *event)
             return true;
         }
     }
-    return QTextEdit::eventFilter(watched, event);
+    return QPlainTextEdit::eventFilter(watched, event);
 }
 
 void LogView::resetZoom()
