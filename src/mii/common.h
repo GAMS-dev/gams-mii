@@ -311,20 +311,11 @@ struct ValueFilter
     bool ShowPInf = true;
     bool ShowNInf = true;
     bool ShowEps = true;
-
-    bool isUserInput() const
-    {
-        return mIsUserInput;
-    }
+    bool Reset = false;
 
     bool isAbsolute() const
     {
         return UseAbsoluteValues || UseAbsoluteValuesGlobal;
-    }
-
-    void setIsUserInput(bool userInput)
-    {
-        mIsUserInput = userInput;
     }
 
     bool accepts(const QVariant &value) const
@@ -361,16 +352,13 @@ struct ValueFilter
                UseAbsoluteValues == other.UseAbsoluteValues &&
                UseAbsoluteValuesGlobal == other.UseAbsoluteValuesGlobal &&
                ShowPInf == other.ShowPInf && ShowNInf == other.ShowNInf &&
-               ShowEps == other.ShowEps && mIsUserInput == other.mIsUserInput;
+               ShowEps == other.ShowEps;
     }
 
     bool operator!=(const ValueFilter& other) const
     {
         return !(*this == other);
     }
-
-private:
-    bool mIsUserInput = false;
 };
 
 }

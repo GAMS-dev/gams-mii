@@ -86,19 +86,13 @@ void AbstractBPViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
 
 void AbstractBPViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
-    if (mBaseModel && mViewConfig->currentValueFilter().isAbsolute() != absoluteValues) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-        mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-        mModelInstance->loadData(mViewConfig);
-        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-    }
-}
-
-void AbstractBPViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    mViewConfig->setCurrentValueFilter(filter);
-    mValueFormatModel->setValueFilter(filter);
+    if (!mBaseModel)
+        return;
+    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
+    mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
+    mModelInstance->loadData(mViewConfig);
+    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void AbstractBPViewFrame::reset()
@@ -276,6 +270,13 @@ void BPCountViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInst
     setupView();
 }
 
+void BPCountViewFrame::setValueFilter(const ValueFilter &filter)
+{
+    mViewConfig->setCurrentValueFilter(filter);
+    setShowAbsoluteValues(mViewConfig->currentValueFilter().UseAbsoluteValues);
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+}
+
 void BPCountViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
     if (mAbsFormatModel)
@@ -358,6 +359,13 @@ void BPAverageViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     setupView();
 }
 
+void BPAverageViewFrame::setValueFilter(const ValueFilter &filter)
+{
+    mViewConfig->setCurrentValueFilter(filter);
+    setShowAbsoluteValues(mViewConfig->currentValueFilter().UseAbsoluteValues);
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+}
+
 void BPAverageViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
     if (mAbsFormatModel)
@@ -430,6 +438,24 @@ AbstractTableViewFrame* BPScalingViewFrame::clone(int view)
     frame->setValueFilter(frame->viewConfig()->currentValueFilter());
     frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
     return frame;
+}
+
+void BPScalingViewFrame::setValueFilter(const ValueFilter &filter)
+{
+    if (!mBaseModel)
+        return;
+    if (filter.Reset) {
+        mViewConfig->setCurrentValueFilter(filter);
+        mModelInstance->loadData(mViewConfig);
+    } else if (mViewConfig->currentValueFilter().UseAbsoluteValues != filter.UseAbsoluteValues) {
+        mViewConfig->currentValueFilter().UseAbsoluteValues = filter.UseAbsoluteValues;
+        mModelInstance->loadData(mViewConfig);
+    }
+    if (!filter.Reset) {
+        mViewConfig->setCurrentValueFilter(filter);
+    }
+    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void BPScalingViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)

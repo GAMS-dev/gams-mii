@@ -49,12 +49,10 @@ FilterDialog::FilterDialog(QWidget *parent)
     });
     connect(ui->minEdit, &QLineEdit::textEdited,
             this, [this](const QString &text) {
-        mValueFilter.setIsUserInput(true);
         updateRangeEdit(ui->minEdit, text);
     });
     connect(ui->maxEdit, &QLineEdit::textEdited,
             this, [this](const QString &text) {
-        mValueFilter.setIsUserInput(true);
         updateRangeEdit(ui->maxEdit, text);
     });
 }
@@ -90,9 +88,9 @@ void FilterDialog::setValueFilter(const ValueFilter &filter)
 {
     mValueFilter = filter;
     ui->minEdit->setText(QString::number(mValueFilter.MinValue));
-    updateRangeEdit(ui->minEdit, QString::number(mValueFilter.MinValue));
+    updateRangeEdit(ui->minEdit, ui->minEdit->text());
     ui->maxEdit->setText(QString::number(mValueFilter.MaxValue));
-    updateRangeEdit(ui->maxEdit, QString::number(mValueFilter.MinValue));
+    updateRangeEdit(ui->maxEdit, ui->maxEdit->text());
     ui->excludeBox->setChecked(mValueFilter.ExcludeRange);
     ui->absoluteBox->setChecked(mValueFilter.UseAbsoluteValues);
     if (mValueFilter.UseAbsoluteValuesGlobal)
@@ -143,6 +141,7 @@ void FilterDialog::on_applyButton_clicked()
     mLabelFilter.LabelCheckStates[variableOrientation()] = applyLabelFilter(variableOrientation(), mLabelFilterModel);
     mLabelFilter.LabelCheckStates[equationOrientation()] = applyLabelFilter(equationOrientation(), mLabelFilterModel);
     mLabelFilter.Any = ui->labelBox->currentIndex();
+    mValueFilter.Reset = false;
     emit filterUpdated();
 }
 
@@ -157,7 +156,14 @@ void FilterDialog::on_resetButton_clicked()
     ui->labelEdit->setText("");
     ui->labelBox->setCurrentIndex(0);
 
-    on_applyButton_clicked();
+    mIdentifierFilter[variableOrientation()] = applyHeaderFilter(mVarFilterModel);
+    mIdentifierFilter[equationOrientation()] = applyHeaderFilter(mEqnFilterModel);
+    applyValueFilter();
+    mLabelFilter.LabelCheckStates[variableOrientation()] = applyLabelFilter(variableOrientation(), mLabelFilterModel);
+    mLabelFilter.LabelCheckStates[equationOrientation()] = applyLabelFilter(equationOrientation(), mLabelFilterModel);
+    mLabelFilter.Any = ui->labelBox->currentIndex();
+    mValueFilter.Reset = true;
+    emit filterUpdated();
 }
 
 void FilterDialog::on_cancelButton_clicked()
@@ -379,13 +385,8 @@ IdentifierStates FilterDialog::applyHeaderFilter(QSortFilterProxyModel *model)
 
 void FilterDialog::applyValueFilter()
 {
-    if (mValueFilter.isUserInput()) {
-        mValueFilter.MinValue = ui->minEdit->text().toDouble();
-        mValueFilter.MaxValue = ui->maxEdit->text().toDouble();
-    } else {
-        mValueFilter.MinValue = mDefaultValueFilter.MinValue;
-        mValueFilter.MaxValue = mDefaultValueFilter.MaxValue;
-    }
+    mValueFilter.MinValue = ui->minEdit->text().toDouble();
+    mValueFilter.MaxValue = ui->maxEdit->text().toDouble();
     mValueFilter.ExcludeRange = ui->excludeBox->isChecked();
     mValueFilter.UseAbsoluteValues = ui->absoluteBox->isChecked();
     mValueFilter.ShowPInf = ui->pInfBox->isChecked();
@@ -424,11 +425,13 @@ LabelCheckStates FilterDialog::applyLabelFilter(Qt::Orientation orientation,
 
 void FilterDialog::updateRangeEdit(QLineEdit *edit, const QString &text)
 {
+    QPalette palette;
     if (ui->absoluteBox->isChecked() && text.startsWith("-")) {
-        edit->setStyleSheet("color: red");
+        palette.setColor(QPalette::Text, Qt::red);
     } else {
-        edit->setStyleSheet("color: "+QApplication::palette().text().color().name());
+        palette.setColor(QPalette::Text, QApplication::palette().text().color());
     }
+    edit->setPalette(palette);
 }
 
 void FilterDialog::resetValueFilter()

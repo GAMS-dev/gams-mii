@@ -258,6 +258,7 @@ void TestCommon::test_default_valueFilter()
     QCOMPARE(filter.ShowPInf, true);
     QCOMPARE(filter.ShowNInf, true);
     QCOMPARE(filter.ShowEps, true);
+    QCOMPARE(filter.Reset, false);
     QVERIFY(filter.accepts(Mi::SV_EPS));
     QVERIFY(filter.accepts(Mi::SV_NINF));
     QVERIFY(filter.accepts(Mi::SV_PINF));
@@ -289,6 +290,9 @@ void TestCommon::test_getSet_valueFilter()
 
     filter.ShowEps = false;
     QCOMPARE(filter.ShowEps, false);
+
+    filter.Reset = true;
+    QCOMPARE(filter.Reset, true);
 
     QVERIFY(!filter.accepts(Mi::SV_EPS));
     QVERIFY(!filter.accepts(Mi::SV_NINF));

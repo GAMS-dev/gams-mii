@@ -56,8 +56,6 @@ public:
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    void setValueFilter(const ValueFilter &filter) override;
-
     void reset() override;
 
 signals:
@@ -134,6 +132,8 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
+    void setValueFilter(const ValueFilter &filter) override;
+
     void setShowAbsoluteValues(bool absoluteValues) override;
 
     inline ViewDataType type() const override
@@ -166,6 +166,8 @@ public:
     AbstractTableViewFrame *clone(int view) override;
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
+
+    void setValueFilter(const ValueFilter &filter) override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
@@ -201,6 +203,8 @@ public:
     {
         return ViewDataType::BP_Scaling;
     }
+
+    void setValueFilter(const ValueFilter &filter) override;
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 

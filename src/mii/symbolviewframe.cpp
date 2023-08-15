@@ -19,7 +19,6 @@
  *
  */
 #include "symbolviewframe.h"
-#include "mii/columnrowfiltermodel.h"
 #include "mii/identifierfiltermodel.h"
 #include "mii/labelfiltermodel.h"
 #include "viewconfigurationprovider.h"
@@ -103,12 +102,20 @@ void SymbolViewFrame::setLabelFilter(const LabelFilter &filter)
 
 void SymbolViewFrame::setValueFilter(const ValueFilter &filter)
 {
-    mViewConfig->setCurrentValueFilter(filter);
-    if (mViewConfig->currentAggregation().useAbsoluteValues() != mViewConfig->currentValueFilter().UseAbsoluteValues) {
-        setShowAbsoluteValues(mViewConfig->currentValueFilter().UseAbsoluteValues);
-    } else if (mValueFormatModel) {
-        mValueFormatModel->setValueFilter(filter);
+    if (!mModelInstanceModel)
+        return;
+    if (filter.Reset) {
+        mViewConfig->setCurrentValueFilter(filter);
+        mModelInstance->loadData(mViewConfig);
+    } else if (mViewConfig->currentValueFilter().UseAbsoluteValues != filter.UseAbsoluteValues) {
+        mViewConfig->currentValueFilter().UseAbsoluteValues = filter.UseAbsoluteValues;
+        mModelInstance->loadData(mViewConfig);
     }
+    if (!filter.Reset) {
+        mViewConfig->setCurrentValueFilter(filter);
+    }
+    emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void SymbolViewFrame::updateView()
@@ -121,13 +128,13 @@ void SymbolViewFrame::updateView()
 
 void SymbolViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
-    if (mModelInstanceModel && mViewConfig->currentValueFilter().UseAbsoluteValues != absoluteValues) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-        mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-        mModelInstance->loadData(mViewConfig);
-        emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-    }
+    if (!mModelInstanceModel)
+        return;
+    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
+    mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
+    mModelInstance->loadData(mViewConfig);
+    emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void SymbolViewFrame::setView(int view)

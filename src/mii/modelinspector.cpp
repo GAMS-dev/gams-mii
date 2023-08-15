@@ -313,7 +313,7 @@ void ModelInspector::createNewSymbolView()
     mSectionModel->appendCustomView(pageName, ViewDataType::Symbols, page);
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Custom);
-    connect(view, &BPScalingViewFrame::filtersChanged,
+    connect(view, &SymbolViewFrame::filtersChanged,
             this, &ModelInspector::filtersChanged);
     view->updateView();
 }
