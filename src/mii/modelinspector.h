@@ -100,11 +100,9 @@ signals:
 
     void viewChanged(int);
 
-    void newLogMessage(const QString&); // TODO (AF) use message types when integrated into studio
+    void newLogMessage(const QString&);
 
 public slots:
-    void resetZoomAllViews();
-
     void saveModelView();
     void createNewSymbolView();
 

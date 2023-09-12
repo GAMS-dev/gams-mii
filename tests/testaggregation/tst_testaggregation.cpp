@@ -33,7 +33,7 @@ using namespace gams::studio::mii;
 //Q_DECLARE_METATYPE(ValueFilter)
 
 class TestAggregation : public QObject
-{// TODO tests
+{
     Q_OBJECT
 
 public:
@@ -158,7 +158,7 @@ void TestAggregation::test_getSet_aggregation()
     QCOMPARE(aggregation.type(), Aggregation::Count);
     QCOMPARE(aggregation.typeText(), "Count");
 
-    // TODO rest...
+    // rest...
 }
 
 void TestAggregation::test_default_aggregator()

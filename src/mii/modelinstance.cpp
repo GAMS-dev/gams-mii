@@ -206,7 +206,7 @@ void ModelInstance::loadScratchData()
     if (mState == Error)
         return;
     mLogMessages << "Model Workspace: " + mWorkspace;
-    QString ctrlFile = mWorkspace + "/" + mScratchDir + "/gamscntr.dat";
+    QString ctrlFile = mScratchDir + "/" + Mi::GamsCntr;
     mLogMessages << "CTRL File: " + ctrlFile;
     if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str())) {
         mLogMessages << "ERROR: Could not initialize model instance";
@@ -223,7 +223,7 @@ void ModelInstance::loadScratchData()
     }
 
     if (mUseOutput) {
-        QString solFile = mWorkspace + "/" + mScratchDir + "/gamssolu.dat";
+        QString solFile = mScratchDir + "/" + Mi::GamsSolu;
         mLogMessages << "Solution File: " + solFile;
         gmoNameSolFileSet(mGMO, solFile.toStdString().c_str());
         if (gmoLoadSolutionLegacy(mGMO)) {
@@ -232,9 +232,6 @@ void ModelInstance::loadScratchData()
             return;
         }
     }
-
-    // TODO (AF/LW) specifc error message that model insp. needs the dct... because it
-    //      can be switched off by the user
 
     mDCT = (dctHandle_t)gmoDict(mGMO);
     if (!mDCT) {
@@ -392,7 +389,12 @@ void ModelInstance::loadData()
 {
     loadSymbols();
     loadLabels();
-    mDataHandler->loadJaccobian();
+    mDataHandler->loadJacobian();
+}
+
+void ModelInstance::loadJacobian()
+{
+    mDataHandler->loadJacobian();
 }
 
 void ModelInstance::variableLowerBounds(double *bounds)
@@ -455,7 +457,7 @@ void ModelInstance::loadData(QSharedPointer<AbstractViewConfiguration> viewConfi
 }
 
 void ModelInstance::loadLabels()
-{// TODO (LW/AF) A dct call only giving real labels would be nice... to improve the efficency
+{
     char q;
     char label[GMS_SSSIZE];
     for (int i=1; i<=dctNUels(mDCT); ++i) {
@@ -574,7 +576,7 @@ void ModelInstance::initialize()
     }
 }
 
-void ModelInstance::jaccobianData(DataMatrix& dataMatrix)
+void ModelInstance::jacobianData(DataMatrix& dataMatrix)
 {
     int nz, unused1, unused2;
     int *nlflag = new int[variableRowCount()];
@@ -806,7 +808,7 @@ QVariant ModelInstance::specialMarginalVarValueBasis(double value, int cIndex, b
 }
 
 int ModelInstance::errorCallback(int count, const char *message)
-{// TODO (AF) use system logger when integrated into studio
+{
     Q_UNUSED(count)
     qDebug()<< message;
     return 0;

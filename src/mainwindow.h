@@ -21,8 +21,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QProcess>
+#include <QFileSystemWatcher>
 #include <QMainWindow>
+#include <QProcess>
+#include <QRegularExpression>
 #include <QSharedPointer>
 
 class QLabel;
@@ -67,13 +69,12 @@ private slots:
     // View
     void on_actionFilters_triggered();
     void on_actionAggregation_triggered();
-    void on_actionResetZoomAllViews_triggered();
     void on_actionShow_search_result_triggered();
     void showAbsoluteValues();
     void on_actionShow_Output_triggered();
     void on_actionZoom_In_triggered();
     void on_actionZoom_Out_triggered();
-    void on_action_Actual_Size_triggered();
+    void on_actionZoom_Reset_triggered();
 
     // Help
     void on_actionAbout_Model_Inspector_triggered();
@@ -87,6 +88,8 @@ private slots:
     void searchResultSelectionChanged(const QModelIndex &index);
     void updateModelInstance();
     void viewChanged(int viewType);
+    void scrDirectoryChanged();
+    void scrFileChanged();
 
 private:
     void setupConnections();
@@ -105,6 +108,8 @@ private:
 
     QString projectDirectory() const;
 
+    void updateScratchDataWatcher(const QString& scrdir);
+
 private:
     Ui::MainWindow *ui;
     GAMSLibProcess *mLibProcess;
@@ -112,6 +117,11 @@ private:
     gams::studio::mii::AggregationDialog *mAggregationDialog;
     gams::studio::mii::FilterDialog *mFilterDialog;
     QLabel *mAggregationStatusLabel;
+    QFileSystemWatcher mScrWatcher;
+    const QString mScrUpdateWarning = "Warning: It looks like the scratch data has not been updated.";
+    bool mScrFilesUpdated = false;
+    bool mLoadScrFiles = false;
+    QRegularExpression mRegEx;
 };
 
 #endif // MAINWINDOW_H

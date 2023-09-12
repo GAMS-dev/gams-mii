@@ -32,7 +32,7 @@ include(../gamsdependency.pri)
 macx {
 # ! The icns-file is created from a folder named gams.iconset containing images in multiple sizes.
 # ! On mac osX type the command: iconutil -c icns [base-folder]/gams.iconset to create gams.icns
-    ICON = ../icons/mii.icns
+    ICON = ../icons/miilogo.icns
 
     HEADERS += macoscocoabridge.h \
                macospathfinder.h
@@ -49,7 +49,7 @@ unix {
     LIBS += -ldl
 }
 win32 {
-    RC_ICONS = ../icons/mii.ico
+    RC_ICONS = ../icons/miilogo.ico
     LIBS += -luser32
 }
 
@@ -172,8 +172,8 @@ RESOURCES += \
     ../icons/icons.qrc
 
 OTHER_FILES +=                                      \
+    ../platform/linux/mii.desktop                   \
     ../platform/macos/gams-mii.entitlements.plist   \
-    ../platform/linux/gams-mii.desktop              \
     ../ci/cloudfront-deploy.sh                      \
     ../ci/github-deploy.sh                          \
     ../ci/codechecker.sh                            \

@@ -252,6 +252,11 @@ void EmptyModelInstance::loadData()
 
 }
 
+void EmptyModelInstance::loadJacobian()
+{
+
+}
+
 char EmptyModelInstance::equationType(int row) const
 {
     Q_UNUSED(row);
@@ -351,7 +356,7 @@ QVariant EmptyModelInstance::plainHeaderData(Qt::Orientation orientation,
     return QVariant();
 }
 
-void EmptyModelInstance::jaccobianData(DataMatrix &dataMatrix)
+void EmptyModelInstance::jacobianData(DataMatrix &dataMatrix)
 {
     Q_UNUSED(dataMatrix);
 }

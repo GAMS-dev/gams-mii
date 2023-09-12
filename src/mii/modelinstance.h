@@ -94,6 +94,11 @@ public:
 
     void loadData() override;
 
+    // TODO !!! find better name
+    void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
+
+    void loadJacobian() override;
+
     int rowCount(int view) const override;
 
     int rowEntries(int row, int view) const override;
@@ -108,8 +113,6 @@ public:
 
     QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) override;
 
-    void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
-
     QVariant data(int row, int column, int view) const override;
 
     QSharedPointer<PostoptTreeItem> dataTree(int view) const override;
@@ -120,8 +123,8 @@ public:
 
     QVariant plainHeaderData(Qt::Orientation orientation,
                              int view, int logicalIndex, int dimension) const override;
-
-    void jaccobianData(DataMatrix& dataMatrix) override;
+    
+    void jacobianData(DataMatrix& dataMatrix) override;
 
     QVariant equationAttribute(const QString &header, int index, int entry, bool abs) const override;
 

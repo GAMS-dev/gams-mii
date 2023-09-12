@@ -27,6 +27,7 @@
 #include "mii/filterdialog.h"
 #include "mii/modelinspector.h"
 #include "mii/searchresultmodel.h"
+#include "mii/common.h"
 
 #include <QDir>
 #include <QFileDialog>
@@ -50,10 +51,13 @@ MainWindow::MainWindow(QWidget *parent)
     , mAggregationDialog(new AggregationDialog(this))
     , mFilterDialog(new FilterDialog(this))
     , mAggregationStatusLabel(new QLabel(QString(), this))
+    , mScrWatcher(this)
+    , mRegEx("(\\w+=)", QRegularExpression::CaseInsensitiveOption)
 {
     ui->setupUi(this);
     ui->modelInspector->setWorkspace(workspace());
     ui->modelInspector->setSystemDirectory(CommonPaths::systemDir());
+    ui->paramsEdit->setText(QString("MIIMode=singleMI scrdir=%1/scratch").arg(workspace()));
     ui->searchResultView->setModel(new SearchResultModel(ui->searchResultView));
     ui->statusBar->addPermanentWidget(mAggregationStatusLabel);
     ui->actionAggregation->setEnabled(false);
@@ -79,9 +83,16 @@ void MainWindow::appendLogMessage(const QString &message)
 
 void MainWindow::on_actionOpen_triggered()
 {
+    QString workingDir = workspace();
+    QFileInfo current(ui->modelEdit->text());
+    if (ui->modelEdit->text() != current.fileName()) {
+        auto dir = current.absoluteDir();
+        if (dir.exists())
+            workingDir = dir.cleanPath(dir.absolutePath());
+    }
     auto fileName = QFileDialog::getOpenFileName(this,
                                                  tr("Open Model File"),
-                                                 workspace(),
+                                                 workingDir,
                                                  tr("GAMS source (*.gms *.dmp *.dat)"));
     if (fileName.isEmpty())
         return;
@@ -89,36 +100,63 @@ void MainWindow::on_actionOpen_triggered()
     ui->gamslibCheckBox->setChecked(false);
     QFileInfo fi(ui->modelEdit->text());
     ui->logEdit->appendPlainText("Loading scratch data from: " + fi.dir().path());
+    if (ui->modelEdit->text().endsWith(".dat")) {
+        auto dir = fi.dir().path();
+        ui->paramsEdit->setText(QString("MIIMode=singleMI scrdir=%1").arg(dir));
+    }
 }
 
 void MainWindow::on_actionRun_triggered()
 {
     auto path = workspace();
     QDir dir(path);
-    if (!dir.mkpath(path))
+    if (!dir.mkpath(path)) {
         ui->logEdit->appendPlainText("Error: Could not create workspace " + path);
-
+        return;
+    }
+    mLoadScrFiles = false;
+    mScrFilesUpdated = false;
     ui->modelInspector->setShowOutput(ui->actionShow_Output->isChecked());
     if (ui->modelEdit->text().endsWith(".dat")) {
+        mLoadScrFiles = true;
         QFileInfo fi(ui->modelEdit->text());
-        auto dir = fi.dir().dirName();
-        ui->modelInspector->setWorkspace(fi.dir().path()+"/..");
+        auto dir = fi.dir().path();
+        ui->modelInspector->setWorkspace(dir + "/..");
         ui->modelInspector->setScratchDir(dir);
         loadModelInstance(0, QProcess::NormalExit);
     } else {
-        QStringList params = ui->paramsEdit->text().split(" ",
-                                                          Qt::SkipEmptyParts,
-                                                          Qt::CaseInsensitive);
-        auto index = params.indexOf(QRegularExpression("scrdir.*"));
-        if (index >= 0) {
-            auto scrdir = params.at(index);
-            scrdir = scrdir.replace("scrdir=", "").trimmed();
-            ui->modelInspector->setScratchDir(scrdir);
+        QStringList keys;
+        int index = -1, count = 0;
+        for (const auto& match : mRegEx.globalMatch(ui->paramsEdit->text())) {
+            keys << match.captured();
+            if (match.captured() == "scrdir=")
+                index = count;
+            ++count;
         }
-
-        if (ui->gamslibCheckBox->isChecked())
+        QStringList values = ui->paramsEdit->text().split(mRegEx, Qt::SkipEmptyParts);
+        if (index >= 0) {
+            auto scrdir = values.at(index).trimmed();
+            QDir dir(scrdir);
+            if (!dir.exists()) {
+                dir.mkdir(dir.absolutePath());
+            }
+            ui->modelInspector->setScratchDir(scrdir);
+            updateScratchDataWatcher(scrdir);
+        } else {
+            ui->logEdit->appendPlainText("Error: No scrach direcetory specified.");
+            return;
+        }
+        if (ui->gamslibCheckBox->isChecked()) {
             loadGAMSModel(path);
-
+        }
+        QStringList params;
+        for (int i=0; i<count; ++i) {
+            if (keys[i] == "scrdir=") {
+                params << keys[i].trimmed() + "\"" + values[i].trimmed() + "\"";
+            } else {
+                params << keys[i].trimmed() + values[i].trimmed();
+            }
+        }
         mProcess->setModel(ui->modelEdit->text());
         mProcess->setParameters(params);
         mProcess->setWorkingDir(path);
@@ -165,13 +203,6 @@ void MainWindow::on_actionAggregation_triggered()
     showDialog(mAggregationDialog);
 }
 
-void MainWindow::on_actionResetZoomAllViews_triggered()
-{
-    ui->modelInspector->resetZoomAllViews();
-    ui->searchResultView->resetZoom();
-    ui->logEdit->resetZoom();
-}
-
 void MainWindow::on_actionShow_search_result_triggered()
 {
     ui->dockWidget->show();
@@ -202,38 +233,23 @@ void MainWindow::on_actionShow_Output_triggered()
 
 void MainWindow::on_actionZoom_In_triggered()
 {
-    auto widget = qApp->focusWidget();
-    if (widget == ui->logEdit) {
-        ui->logEdit->zoomIn(2);
-    } else if (widget == ui->searchResultView) {
-        ui->searchResultView->zoomIn(2);
-    } else {
-        ui->modelInspector->zoomIn();
-    }
+    ui->logEdit->zoomIn(2);
+    ui->searchResultView->zoomIn(2);
+    ui->modelInspector->zoomIn();
 }
 
 void MainWindow::on_actionZoom_Out_triggered()
 {
-    auto widget = qApp->focusWidget();
-    if (widget == ui->logEdit) {
-        ui->logEdit->zoomOut(2);
-    } else if (widget == ui->searchResultView) {
-        ui->searchResultView->zoomOut(2);
-    } else {
-        ui->modelInspector->zoomOut();
-    }
+    ui->logEdit->zoomOut(2);
+    ui->searchResultView->zoomOut(2);
+    ui->modelInspector->zoomOut();
 }
 
-void MainWindow::on_action_Actual_Size_triggered()
+void MainWindow::on_actionZoom_Reset_triggered()
 {
-    auto widget = qApp->focusWidget();
-    if (widget == ui->logEdit) {
-        ui->logEdit->resetZoom();
-    } else if (widget == ui->searchResultView) {
-        ui->searchResultView->resetZoom();
-    } else {
-        ui->modelInspector->resetZoom();
-    }
+    ui->modelInspector->resetZoom();
+    ui->searchResultView->resetZoom();
+    ui->logEdit->resetZoom();
 }
 
 void MainWindow::on_actionAbout_Model_Inspector_triggered()
@@ -243,7 +259,7 @@ void MainWindow::on_actionAbout_Model_Inspector_triggered()
     about.setTextFormat(Qt::RichText);
     about.setText("<b><big>GAMS Model Inspector " + QApplication::applicationVersion() + "</big></b>");
     about.setInformativeText(aboutModelInspector());
-    about.setIconPixmap(QIcon(":/img/gams-w24").pixmap(QSize(64, 64)));
+    about.setIconPixmap(QIcon(":/img/miilogo").pixmap(QSize(64, 64)));
     about.addButton(QMessageBox::Ok);
     about.exec();
 }
@@ -261,7 +277,33 @@ void MainWindow::loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus
                          QString().number(exitCode));
         return;
     }
-
+    if (!mLoadScrFiles) {
+        if (mScrFilesUpdated) {
+            ui->logEdit->appendPlainText("The scratch directory files have been updated.");
+        } else {
+            ui->logEdit->appendPlainText(mScrUpdateWarning);
+        }
+    }
+    QDir scrdir(ui->modelInspector->scratchDir());
+    if (scrdir.count() == 0) {
+        ui->logEdit->appendPlainText("Error: No scratch files found at " + ui->modelInspector->scratchDir());
+        return;
+    }
+    int datFileCount = 0;
+    for (const auto& file : scrdir.entryList()) {
+        if (file.endsWith(mii::Mi::GamsCntr, Qt::CaseInsensitive) ||
+            file.endsWith(mii::Mi::GamsDict, Qt::CaseInsensitive) ||
+            file.endsWith(mii::Mi::Gamsmatr, Qt::CaseInsensitive) ||
+            file.endsWith(mii::Mi::GamsSolu, Qt::CaseInsensitive) ||
+            file.endsWith(mii::Mi::GamsStat, Qt::CaseInsensitive)) {
+            ++datFileCount;
+        }
+    }
+    if (datFileCount != 5) {
+        ui->logEdit->appendPlainText("Error: It looks like the scratch files are incomplete. Loading scratch files aborted. Please check your model and " +
+                                     ui->modelInspector->scratchDir());
+        return;
+    }
     ui->modelInspector->loadModelInstance();
     setGlobalFiltersData();
     setAggregationData();
@@ -319,6 +361,16 @@ void MainWindow::viewChanged(int viewType)
     ui->searchResultView->resizeRowsToContents();
 }
 
+void MainWindow::scrDirectoryChanged()
+{
+    mScrFilesUpdated = true;
+}
+
+void MainWindow::scrFileChanged()
+{
+    mScrFilesUpdated = true;
+}
+
 void MainWindow::setupConnections()
 {
     connect(mProcess->process(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
@@ -357,6 +409,14 @@ void MainWindow::setupConnections()
             this, &MainWindow::editMenuAboutToShow);
     connect(ui->actionShow_Absolute, &QAction::triggered,
             this, &MainWindow::showAbsoluteValues);
+    connect(ui->paramsEdit, &QLineEdit::returnPressed,
+            this, &MainWindow::on_actionRun_triggered);
+    connect(ui->modelEdit, &QLineEdit::returnPressed,
+            this, &MainWindow::on_actionRun_triggered);
+    connect(&mScrWatcher, &QFileSystemWatcher::directoryChanged,
+            this, &MainWindow::scrDirectoryChanged);
+    connect(&mScrWatcher, &QFileSystemWatcher::fileChanged,
+            this, &MainWindow::scrFileChanged);
 }
 
 void MainWindow::createProjectDirectory()
@@ -392,6 +452,14 @@ QString MainWindow::aboutModelInspector() const
 
 void MainWindow::loadGAMSModel(const QString &path)
 {
+    QFileInfo fi(path + "/" + ui->modelEdit->text());
+    if (fi.exists()) {
+        auto result = QMessageBox::question(this, "Existing Model File",
+                                            QString("The model (%1) already exists. Do you want to replace it?")
+                                                .arg(fi.absoluteFilePath()));
+        if (result == QMessageBox::No)
+            return;
+    }
     mLibProcess->setTargetDir(path);
     QString model = ui->modelEdit->text();
     mLibProcess->setModelName(model.replace(".gms", "").trimmed());
@@ -446,4 +514,22 @@ QString MainWindow::projectDirectory() const
     auto path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) +
             "/GAMS/ModelInspector/projects";
     return path;
+}
+
+void MainWindow::updateScratchDataWatcher(const QString& scrdir)
+{
+    if (!mScrWatcher.files().isEmpty()) {
+        mScrWatcher.removePaths(mScrWatcher.files());
+    }
+    if (!mScrWatcher.directories().isEmpty()) {
+        mScrWatcher.removePaths(mScrWatcher.directories());
+    }
+    mScrWatcher.addPath(scrdir + "/" + mii::Mi::GamsCntr);
+    mScrWatcher.addPath(scrdir + "/" + mii::Mi::GamsDict);
+    mScrWatcher.addPath(scrdir + "/" + mii::Mi::Gamsmatr);
+    mScrWatcher.addPath(scrdir + "/" + mii::Mi::GamsSolu);
+    mScrWatcher.addPath(scrdir + "/" + mii::Mi::GamsStat);
+    if (mScrWatcher.files().count() < 5) {
+        mScrWatcher.addPath(scrdir);
+    }
 }

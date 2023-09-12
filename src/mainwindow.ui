@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>GAMS Model Instance Inspector</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../icons/icons.qrc">
+    <normaloff>:/img/miilogo</normaloff>:/img/miilogo</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
@@ -81,7 +85,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>MIIMode=singleMI scrdir=scratch</string>
+         <string/>
         </property>
         <property name="readOnly">
          <bool>false</bool>
@@ -199,9 +203,7 @@
      <addaction name="actionZoom_In"/>
      <addaction name="actionZoom_Out"/>
      <addaction name="separator"/>
-     <addaction name="action_Actual_Size"/>
-     <addaction name="separator"/>
-     <addaction name="actionResetZoomAllViews"/>
+     <addaction name="actionZoom_Reset"/>
     </widget>
     <addaction name="actionFilters"/>
     <addaction name="actionAggregation"/>
@@ -301,7 +303,7 @@
     <string>&amp;Run</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+R</string>
+    <string>F9</string>
    </property>
   </action>
   <action name="actionPrint_DBG_Stuff">
@@ -401,7 +403,7 @@
     <string>Zoom &amp;Out</string>
    </property>
   </action>
-  <action name="action_Actual_Size">
+  <action name="actionZoom_Reset">
    <property name="text">
     <string>&amp;Reset Zoom</string>
    </property>
@@ -429,6 +431,8 @@
    <header>mii/searchresultview.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../icons/icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

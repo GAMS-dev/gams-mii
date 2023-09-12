@@ -38,6 +38,7 @@ ModelInspector::ModelInspector(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::ModelInspector)
     , mSectionModel(new SectionTreeModel(this))
+    , mModelInstance(new EmptyModelInstance)
 {
     ui->setupUi(this);
     ui->bpScalingFrame->setView((int)ViewDataType::BP_Scaling);
@@ -65,9 +66,6 @@ QString ModelInspector::scratchDir() const
 void ModelInspector::setScratchDir(const QString &scratchDir)
 {
     mScratchDir = scratchDir;
-    QDir dir(mWorkspace + "/" + mScratchDir);
-    if (!dir.exists())
-        dir.mkdir(dir.absolutePath());
 }
 
 QString ModelInspector::workspace() const
@@ -130,13 +128,25 @@ ViewActionStates ModelInspector::viewActionStates() const
 
 void ModelInspector::loadModelInstance(bool loadModel)
 {
+    clearCustomViews();
     setupModelInstanceView(loadModel);
     emit newLogMessage(mModelInstance->logMessages());
 }
 
 void ModelInspector::reloadModelInstance()
 {
-    loadModelInstance();
+    setupModelInstanceView(true);
+    // TODO !!! circle.gms diffenrences?
+    //ui->bpScalingFrame->setupView(mModelInstance);
+    //ui->bpOverviewFrame->setupView(mModelInstance);
+    //ui->bpCountFrame->setupView(mModelInstance);
+    //ui->bpAverageFrame->setupView(mModelInstance);
+    //ui->postoptFrame->setupView(mModelInstance);
+    //for (auto view : qAsConst(mCustomViews)) {
+    //    qDebug() << "lalala";
+    //    view->setupView(mModelInstance);
+    //}
+    emit newLogMessage(mModelInstance->logMessages());
 }
 
 QSharedPointer<AbstractModelInstance> ModelInspector::modelInstance() const
@@ -239,26 +249,35 @@ void ModelInspector::resetColumnRowFilter()
 
 void ModelInspector::zoomIn()
 {
-    auto frame = currentView();
-    if (frame) frame->zoomIn();
+    ui->bpOverviewFrame->zoomIn();
+    ui->bpCountFrame->zoomIn();
+    ui->bpAverageFrame->zoomIn();
+    ui->bpScalingFrame->zoomIn();
+    ui->postoptFrame->zoomIn();
+    for (auto view : qAsConst(mCustomViews)) {
+        view->zoomIn();
+    }
 }
 
 void ModelInspector::zoomOut()
 {
-    auto frame = currentView();
-    if (frame) frame->zoomOut();
+    ui->bpOverviewFrame->zoomOut();
+    ui->bpCountFrame->zoomOut();
+    ui->bpAverageFrame->zoomOut();
+    ui->bpScalingFrame->zoomOut();
+    ui->postoptFrame->zoomOut();
+    for (auto view : qAsConst(mCustomViews)) {
+        view->zoomOut();
+    }
 }
 
 void ModelInspector::resetZoom()
 {
-    auto frame = currentView();
-    if (frame) frame->resetZoom();
-}
-
-void ModelInspector::resetZoomAllViews()
-{
-    ui->bpScalingFrame->reset();
+    ui->bpOverviewFrame->resetZoom();
+    ui->bpCountFrame->resetZoom();
+    ui->bpAverageFrame->resetZoom();
     ui->bpScalingFrame->resetZoom();
+    ui->postoptFrame->resetZoom();
     for (auto view : qAsConst(mCustomViews)) {
         view->resetZoom();
     }
@@ -402,18 +421,18 @@ void ModelInspector::setupConnections()
 
 void ModelInspector::setupModelInstanceView(bool loadModel)
 {
-    clearCustomViews();
+    bool useOutput = mModelInstance->useOutput();
     if (loadModel) {
-        bool showOutput = mModelInstance->useOutput();
-        mModelInstance = QSharedPointer<AbstractModelInstance>(new ModelInstance(showOutput,
+        mModelInstance = QSharedPointer<AbstractModelInstance>(new ModelInstance(useOutput,
                                                                                  mWorkspace,
                                                                                  mSystemDir,
                                                                                  mScratchDir));
         if (mModelInstance->state() == AbstractModelInstance::Error)
             emit newLogMessage(mModelInstance->logMessages());
     }
-    if (!loadModel || mModelInstance->state() == AbstractModelInstance::Error) {
+    if (mModelInstance->state() == AbstractModelInstance::Error) {
         mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
+        mModelInstance->setUseOutput(useOutput);
     }
     mModelInstance->loadData();
     ui->bpScalingFrame->setupView(mModelInstance);

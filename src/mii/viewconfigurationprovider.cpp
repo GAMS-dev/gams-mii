@@ -50,10 +50,10 @@ protected:
     }
 };
 
-class JaccobianViewConfiguration final : public AbstractViewConfiguration
+class JacobianViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    JaccobianViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    JacobianViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
@@ -67,7 +67,7 @@ public:
 
     AbstractViewConfiguration* clone() override
     {
-        return new JaccobianViewConfiguration(*this);
+        return new JacobianViewConfiguration(*this);
     }
 
 protected:

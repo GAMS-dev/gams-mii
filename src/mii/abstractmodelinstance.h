@@ -160,6 +160,8 @@ public:
 
     virtual void loadData() = 0;
 
+    virtual void loadJacobian() = 0;
+
     virtual int rowCount(int view) const = 0;
 
     virtual int rowEntries(int row, int view) const = 0;
@@ -188,7 +190,7 @@ public:
                                 Qt::Orientation orientation,
                                 int view, int role) const = 0;
 
-    virtual void jaccobianData(DataMatrix& dataMatrix) = 0;
+    virtual void jacobianData(DataMatrix& dataMatrix) = 0;
 
     virtual QVariant equationAttribute(const QString &header, int index, int entry, bool abs) const;
 
@@ -245,6 +247,8 @@ public:
 
     void loadData() override;
 
+    void loadJacobian() override;
+
     char equationType(int row) const override;
 
     char variableType(int column) const override;
@@ -277,7 +281,7 @@ public:
                              int view, int logicalIndex,
                              int dimension) const override;
 
-    void jaccobianData(DataMatrix& dataMatrix) override;
+    void jacobianData(DataMatrix& dataMatrix) override;
 
 private:
     QVector<Symbol*> mSymbols;

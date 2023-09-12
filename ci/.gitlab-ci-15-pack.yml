@@ -113,10 +113,10 @@ pack-leg:
     # collect files
     - cp build/src/bin/mii appdir/usr/bin/
     - cp -r icons/* appdir/usr/share/pixmaps
-    - cp platform/linux/gams-mii.desktop appdir/usr/share/gams-mii.desktop
+    - cp platform/linux/mii.desktop appdir/usr/share/mii.desktop
     # build the AppImage
     - export VERSION=""
-    - /opt/linuxdeploy/linuxdeploy-x86_64.AppImage --appdir=appdir --plugin=qt --output=appimage --desktop-file=appdir/usr/share/gams-mii.desktop
+    - /opt/linuxdeploy/linuxdeploy-x86_64.AppImage --appdir=appdir --plugin=qt --output=appimage --desktop-file=appdir/usr/share/mii.desktop
     - mv GAMS_MII--x86_64.AppImage GAMS-MII-leg-x86_64.AppImage
   artifacts:
     name: "GAMS-MII-leg-x86_64"

@@ -2,7 +2,7 @@
     <qresource prefix="/img">
         <file alias="filter">filter.svg</file>
         <file alias="filter-off">filter-off.svg</file>
+        <file alias="miilogo">miilogo-256.png</file>
         <file alias="gams">gamslogo.svg</file>
-        <file>gams-w24.svg</file>
     </qresource>
 </RCC>

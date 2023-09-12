@@ -35,7 +35,7 @@ class IdentifierLabelFilterModel;
 class ValueFormatProxyModel;
 class LabelFilterModel;
 class HierarchicalHeaderView;
-class JaccobianTableModel;
+class JacobianTableModel;
 
 class AbstractStandardTableViewFrame : public AbstractTableViewFrame
 {

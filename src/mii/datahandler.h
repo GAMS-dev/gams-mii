@@ -355,8 +355,8 @@ public:
     void setModelMaximum(double maximum);
 
     QSharedPointer<AbstractViewConfiguration> clone(int view, int newView);
-
-    void loadJaccobian();
+    
+    void loadJacobian();
 
 private:
     AbstractDataProvider *cloneProvider(int view);

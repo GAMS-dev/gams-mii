@@ -43,14 +43,14 @@ const QString Mi::SlackUB       = "Slack upper bound";
 const QString Mi::Upper         = "Upper";
 const QString Mi::Type          = "Type";
 
-const QString Mi::Jaccobian     = "Jaccobian";
+const QString Mi::Jacobian     = "Jacobian";
 const QString Mi::BPScaling     = "Blockpic Scaling";
 const QString Mi::BPOverview    = "Blockpic Overview";
 const QString Mi::BPCount       = "Blockpic Count";
 const QString Mi::BPAverage     = "Blockpic Average";
 const QString Mi::Postopt       = "Postopt";
 const QStringList Mi::PredefinedViewTexts = {
-                                                Jaccobian,
+                                                Jacobian,
                                                 BPOverview,
                                                 BPCount,
                                                 BPAverage,
@@ -58,6 +58,11 @@ const QStringList Mi::PredefinedViewTexts = {
                                                 Postopt
                                             };
 
+const QString Mi::GamsCntr = "gamscntr.dat";
+const QString Mi::GamsDict = "gamsdict.dat";
+const QString Mi::Gamsmatr = "gamsmatr.dat";
+const QString Mi::GamsSolu = "gamssolu.dat";
+const QString Mi::GamsStat = "gamsstat.dat";
 }
 }
 }

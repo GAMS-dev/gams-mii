@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
 Name=GAMS MII
-TryExec=studio
+TryExec=mii
 Exec=mii %F
-Icon=gamslogo
+Icon=miilogo-256
 Terminal=false
 Categories=Development;IDE;

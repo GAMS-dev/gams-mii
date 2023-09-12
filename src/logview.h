@@ -28,11 +28,24 @@
 class HighlightingRule
 {
 public:
-    HighlightingRule();
+    HighlightingRule()
+    {
+
+    }
 
     QRegularExpression pattern() const
     {
         return mRegEx;
+    }
+
+    void setBold(int weight)
+    {
+        mFormat.setFontWeight(weight);
+    }
+
+    void setColor(const QBrush& brush)
+    {
+        mFormat.setForeground(brush);
     }
 
     void setPattern(const QRegularExpression &regex)

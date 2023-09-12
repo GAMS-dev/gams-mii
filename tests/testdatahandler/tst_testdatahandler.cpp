@@ -163,7 +163,7 @@ void TestDataHandler::test_DataHandler_empty()
     QCOMPARE(dataHandler.columnCount(0), 0);
     QCOMPARE(dataHandler.columnEntries(-1, -1), 0);
     QCOMPARE(dataHandler.columnEntries(0, 0), 0);
-    dataHandler.loadJaccobian();
+    dataHandler.loadJacobian();
 }
 
 void TestDataHandler::test_DataHandler_transport()

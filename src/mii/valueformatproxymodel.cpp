@@ -99,7 +99,7 @@ QVariant GeneralValueFormatProxyModel::applyFilter(const QVariant &data) const
     return QVariant();
 }
 
-JaccobianValueFormatProxyModel::JaccobianValueFormatProxyModel(QObject *parent)
+JacobianValueFormatProxyModel::JacobianValueFormatProxyModel(QObject *parent)
     : ValueFormatProxyModel(parent)
 {
     getValue = [](const QVariant &variant, bool *ok) {
@@ -108,7 +108,7 @@ JaccobianValueFormatProxyModel::JaccobianValueFormatProxyModel(QObject *parent)
     };
 }
 
-void JaccobianValueFormatProxyModel::setValueFilter(const ValueFilter &valueFilter)
+void JacobianValueFormatProxyModel::setValueFilter(const ValueFilter &valueFilter)
 {
     beginResetModel();
     mValueFilter = valueFilter;
@@ -124,7 +124,7 @@ void JaccobianValueFormatProxyModel::setValueFilter(const ValueFilter &valueFilt
     endResetModel();
 }
 
-QVariant JaccobianValueFormatProxyModel::data(const QModelIndex &index, int role) const
+QVariant JacobianValueFormatProxyModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();

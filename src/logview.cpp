@@ -25,18 +25,19 @@
 #include <QWheelEvent>
 #include <iostream>
 
-HighlightingRule::HighlightingRule()
-{
-    mFormat.setForeground(QBrush(Qt::red));
-    mFormat.setFontWeight(QFont::Bold);
-}
-
 LogHighlighter::LogHighlighter(QObject *parent)
     : QSyntaxHighlighter(parent)
 {
     HighlightingRule errorRule;
+    errorRule.setBold(QFont::Bold);
+    errorRule.setColor(QBrush(Qt::red));
     errorRule.setPattern(QRegularExpression(".*error.*", QRegularExpression::CaseInsensitiveOption));
     mHighlightingRules.push_back(errorRule);
+    HighlightingRule warningRule;
+    warningRule.setBold(QFont::Bold);
+    warningRule.setColor(QBrush(QColor(255, 165, 0))); // orange
+    warningRule.setPattern(QRegularExpression(".*warning.*", QRegularExpression::CaseInsensitiveOption));
+    mHighlightingRules.push_back(warningRule);
 }
 
 void LogHighlighter::highlightBlock(const QString &text)

@@ -43,7 +43,7 @@ void GAMSProcess::execute()
 {
     mProcess.setWorkingDirectory(mWorkingDir);
 
-    QStringList args { mModel };
+    QStringList args { "\""+mModel+"\"" };
     args << mParameters;
 #if defined(__unix__) || defined(__APPLE__)
     mProcess.start(nativeAppPath(), args);

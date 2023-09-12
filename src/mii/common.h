@@ -150,13 +150,19 @@ struct Mi
     static const QString Upper;
     static const QString Type;
 
-    static const QString Jaccobian;
+    static const QString Jacobian;
     static const QString BPScaling;
     static const QString BPOverview;
     static const QString BPCount;
     static const QString BPAverage;
     static const QString Postopt;
     static const QStringList PredefinedViewTexts;
+
+    static const QString GamsCntr;
+    static const QString GamsDict;
+    static const QString Gamsmatr;
+    static const QString GamsSolu;
+    static const QString GamsStat;
 };
 
 enum class EquationType

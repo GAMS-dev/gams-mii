@@ -179,7 +179,7 @@ void SymbolViewFrame::setupView()
 
     auto baseModel = new SymbolModelInstanceTableModel(mModelInstance, ui->tableView);
     baseModel->setView(mViewConfig->view());
-    mValueFormatModel = new JaccobianValueFormatProxyModel(ui->tableView);
+    mValueFormatModel = new JacobianValueFormatProxyModel(ui->tableView);
     mValueFormatModel->setSourceModel(baseModel);
     mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);
     mLabelFilterModel->setSourceModel(mValueFormatModel);

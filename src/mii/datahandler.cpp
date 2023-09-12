@@ -1398,16 +1398,16 @@ private:
             auto eqnGroup = new GroupPostoptTreeItem(equation->name());
             for (int e=0; e<equation->entries(); ++e) {
                 auto row = dataRow(equation->firstSection()+e);
-                QVariant jaccval;
+                QVariant jacval;
                 if (row) {
-                    jaccval = row->value(variable->firstSection()+entry, variable->lastSection());
+                    jacval = row->value(variable->firstSection()+entry, variable->lastSection());
                 }
-                if (jaccval.isValid()) {
+                if (jacval.isValid()) {
                     auto name = symbolName(equation, e);
-                    double jacc = value(jaccval.toDouble());
+                    double jac = value(jacval.toDouble());
                     double xi = mModelInstance.equationAttribute(Mi::MarginalNum, equation->firstSection(), e, abs).toDouble();
-                    double jaccxi = value(jaccval.toDouble() * xi);
-                    eqnGroup->append(new LinePostoptTreeItem({name, jacc, xi, jaccxi}, eqnGroup));
+                    double jacxi = value(jacval.toDouble() * xi);
+                    eqnGroup->append(new LinePostoptTreeItem({name, jac, xi, jacxi}, eqnGroup));
                 }
             }
             if (eqnGroup->rowCount()) {
@@ -1428,16 +1428,16 @@ private:
             auto varGroup = new GroupPostoptTreeItem(variable->name());
             for (int e=0; e<variable->entries(); ++e) {
                 auto row = dataRow(equation->firstSection()+entry);
-                QVariant jaccval;
+                QVariant jacval;
                 if (row) {
-                    jaccval = row->value(variable->firstSection()+e, variable->lastSection());
+                    jacval = row->value(variable->firstSection()+e, variable->lastSection());
                 }
-                if (jaccval.isValid()) {
+                if (jacval.isValid()) {
                     auto name = symbolName(variable, e);
-                    double jacc = value(jaccval.toDouble());
+                    double jac = value(jacval.toDouble());
                     double ui = mModelInstance.variableAttribute(Mi::Level, variable->firstSection(), e, abs).toDouble();
-                    double jaccui = value(jacc * ui);
-                    varGroup->append(new LinePostoptTreeItem({name, jacc, ui, jaccui}, varGroup));
+                    double jacui = value(jac * ui);
+                    varGroup->append(new LinePostoptTreeItem({name, jac, ui, jacui}, varGroup));
                 }
             }
             if (varGroup->rowCount()) {
@@ -1611,10 +1611,10 @@ QSharedPointer<AbstractViewConfiguration> DataHandler::clone(int view, int newVi
     return mDataCache[newView]->viewConfig();
 }
 
-void DataHandler::loadJaccobian()
+void DataHandler::loadJacobian()
 {
     mDataMatrix = DataMatrix(mModelInstance.equationRowCount());
-    mModelInstance.jaccobianData(mDataMatrix);
+    mModelInstance.jacobianData(mDataMatrix);
 }
 
 DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int view)

@@ -70,8 +70,7 @@ void TestModelInstance::test_default()
     QCOMPARE(instance.systemDirectory(), QString());
     QCOMPARE(instance.scratchDirectory(), QString());
     QCOMPARE(instance.useOutput(), false);
-    // Needed because of the GAMS Windows registry magic
-    // and build machine setup
+    // Needed because of the GAMS Windows registry magic and build machine setup
     QVERIFY(!instance.modelName().compare(QString()) ||
             !instance.modelName().compare("GAMS Model"));
 }

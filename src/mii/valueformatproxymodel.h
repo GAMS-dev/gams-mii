@@ -62,12 +62,12 @@ private:
     std::function<double(const QVariant &variant, bool *ok)> getValue;
 };
 
-class JaccobianValueFormatProxyModel final : public ValueFormatProxyModel
+class JacobianValueFormatProxyModel final : public ValueFormatProxyModel
 {
     Q_OBJECT
 
 public:
-    JaccobianValueFormatProxyModel(QObject *parent = nullptr);
+    JacobianValueFormatProxyModel(QObject *parent = nullptr);
 
     void setValueFilter(const ValueFilter &valueFilter) override;
 
