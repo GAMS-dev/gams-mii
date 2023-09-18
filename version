@@ -21,7 +21,7 @@
 # Current GAMS Model Inspector version.
 MI_MAJOR_VERSION=0
 MI_MINOR_VERSION=3
-MI_PATCH_LEVEL= 8
+MI_PATCH_LEVEL= 9
 VERSION='$$MI_MAJOR_VERSION'.'$$MI_MINOR_VERSION'.'$$MI_PATCH_LEVEL'
 
 # Minimum required GAMS Distribution version, which

@@ -4,11 +4,11 @@ GAMS Model Instance Inspector (MII) is a system to examine the structure and pro
 
 ## How To Get Started
 
-Before the MII is downloaded and installed please make sure that GAMS is installed. Details on how to install GAMS can be found on the [download page](https://www.gams.com/download/).
+Before the MII is downloaded and installed please make sure that GAMS is installed. Details on how to install GAMS can be found on the [download page](https://www.gams.com/download/). Please make sure that the `PATH` variable is set during the GAMS installation. If this is not done on your system you have to copy the MII to the GAMS system directory.
 
 First download the latest version from the release page at [GitHub](https://github.com/GAMS-dev/gams-mii/releases).
 
-Secondly install the MII on your system. Our recommendations are...
+Secondly install the MII on your system. If you did not add GAMS to the `PATH` please copy/move the MII to the GAMS system directory; otherwise our recommendations are...
 
 - **Windows**
   - Extract the archive and move the MII directory to your prefered location.

@@ -78,7 +78,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::appendLogMessage(const QString &message)
 {
-    ui->logEdit->appendPlainText(message);
+    ui->logEdit->appendPlainText(message.trimmed());
 }
 
 void MainWindow::on_actionOpen_triggered()

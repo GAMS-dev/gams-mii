@@ -63,9 +63,10 @@ QVariant SectionTreeModel::data(const QModelIndex &index, int role) const
 
 bool SectionTreeModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (index.isValid() && role == Qt::EditRole) {
+    auto text = value.toString().trimmed();
+    if (index.isValid() && role == Qt::EditRole && !text.isEmpty()) {
         auto item = static_cast<SectionTreeItem*>(index.internalPointer());
-        item->setName(value.toString());
+        item->setName(text);
         emit dataChanged(index, index);
         return true;
     }
