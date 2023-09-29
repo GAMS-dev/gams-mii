@@ -134,12 +134,17 @@ void PostoptTreeViewFrame::resetZoom()
     ui->treeView->resetZoom();
 }
 
+bool PostoptTreeViewFrame::hasData() const
+{
+    return mBaseModel && mBaseModel->rowCount();
+}
+
 void PostoptTreeViewFrame::setupView()
 {
-    auto baseModel = new PostoptTreeModel(mViewConfig->view(),
-                                          mModelInstance,
-                                          ui->treeView);
-    ui->treeView->setModel(baseModel);
+    mBaseModel = new PostoptTreeModel(mViewConfig->view(),
+                                      mModelInstance,
+                                      ui->treeView);
+    ui->treeView->setModel(mBaseModel);
 
     //auto oldSelectionModel = ui->treeView->selectionModel();
     //ui->treeView->setModel(baseModel);

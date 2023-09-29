@@ -76,6 +76,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    ui->modelInspector->cancelRun();
+    QMainWindow::closeEvent(event);
+}
+
 void MainWindow::appendLogMessage(const QString &message)
 {
     ui->logEdit->appendPlainText(message.trimmed());
@@ -108,6 +114,8 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionRun_triggered()
 {
+    ui->actionRun->setEnabled(false);
+    ui->runButton->setEnabled(false);
     auto path = workspace();
     QDir dir(path);
     if (!dir.mkpath(path)) {
@@ -417,6 +425,11 @@ void MainWindow::setupConnections()
             this, &MainWindow::scrDirectoryChanged);
     connect(&mScrWatcher, &QFileSystemWatcher::fileChanged,
             this, &MainWindow::scrFileChanged);
+    connect(ui->modelInspector, &ModelInspector::dataLoaded,
+            this, [this]{
+        ui->runButton->setEnabled(true);
+        ui->actionRun->setEnabled(true);
+    });
 }
 
 void MainWindow::createProjectDirectory()

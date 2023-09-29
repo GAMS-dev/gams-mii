@@ -19,6 +19,7 @@
  *
  */
 #include "abstractviewframe.h"
+#include "abstractmodelinstance.h"
 #include "viewconfigurationprovider.h"
 
 namespace gams {
@@ -27,6 +28,7 @@ namespace mii {
 
 AbstractViewFrame::AbstractViewFrame(QWidget *parent, Qt::WindowFlags f)
     : QFrame(parent, f)
+    , mModelInstance(new EmptyModelInstance)
 {
 
 }

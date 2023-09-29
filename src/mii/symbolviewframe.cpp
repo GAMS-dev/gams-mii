@@ -102,7 +102,7 @@ void SymbolViewFrame::setLabelFilter(const LabelFilter &filter)
 
 void SymbolViewFrame::setValueFilter(const ValueFilter &filter)
 {
-    if (!mModelInstanceModel)
+    if (!mBaseModel)
         return;
     if (filter.Reset) {
         mViewConfig->setCurrentValueFilter(filter);
@@ -114,33 +114,38 @@ void SymbolViewFrame::setValueFilter(const ValueFilter &filter)
     if (!filter.Reset) {
         mViewConfig->setCurrentValueFilter(filter);
     }
-    emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
     mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void SymbolViewFrame::updateView()
 {
-    mModelInstanceModel->setModelInstance(mModelInstance);
+    mBaseModel->setModelInstance(mModelInstance);
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();
     emit filtersChanged();
 }
 
+bool SymbolViewFrame::hasData() const
+{
+    return mBaseModel && mBaseModel->rowCount() && mBaseModel->columnCount();
+}
+
 void SymbolViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
-    if (!mModelInstanceModel)
+    if (!mBaseModel)
         return;
     mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
     mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
     mModelInstance->loadData(mViewConfig);
-    emit mModelInstanceModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
     mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void SymbolViewFrame::setView(int view)
 {
     mViewConfig->setView(view);
-    mModelInstanceModel->setView(view);
+    mBaseModel->setView(view);
 }
 
 void SymbolViewFrame::setIdentifierLabelFilter(const IdentifierState &state,
@@ -196,7 +201,7 @@ void SymbolViewFrame::setupView()
     mHorizontalHeader->setVisible(true);
     mVerticalHeader->setVisible(true);
 
-    mModelInstanceModel = QSharedPointer<SymbolModelInstanceTableModel>(baseModel);
+    mBaseModel = QSharedPointer<SymbolModelInstanceTableModel>(baseModel);
 
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();

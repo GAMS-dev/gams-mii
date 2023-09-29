@@ -50,13 +50,11 @@ public:
     const QList<Symbol*>& selectedEquations() const;
     const QList<Symbol*>& selectedVariables() const;
 
-    void setAggregation(const Aggregation &aggregation) override;
-
     void setIdentifierFilter(const IdentifierFilter &filter) override;
 
-    void setShowAbsoluteValues(bool absoluteValues) override;
-
     void reset() override;
+
+    bool hasData() const override;
 
 signals:
     void newSymbolViewRequested();
@@ -77,7 +75,6 @@ protected:
 
 protected:
     QSharedPointer<ComprehensiveTableModel> mBaseModel;
-    ValueFormatProxyModel* mValueFormatModel = nullptr; // TODO !!! not needed for overview view
     BPIdentifierFilterModel* mIdentifierFilterModel = nullptr;
 
     QMenu *mSelectionMenu;
@@ -103,7 +100,11 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
+    void setAggregation(const Aggregation &aggregation) override;
+
     void setValueFilter(const ValueFilter &filter) override;
+
+    void setShowAbsoluteValues(bool absoluteValues) override;
 
     inline ViewDataType type() const override
     {
@@ -132,6 +133,8 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
+    void setAggregation(const Aggregation &aggregation) override;
+
     void setValueFilter(const ValueFilter &filter) override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
@@ -148,6 +151,7 @@ private:
 
 private:
     AbsFormatProxyModel* mAbsFormatModel = nullptr;
+    ValueFormatProxyModel* mValueFormatModel = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
 
@@ -167,6 +171,8 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
+    void setAggregation(const Aggregation &aggregation) override;
+
     void setValueFilter(const ValueFilter &filter) override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
@@ -183,6 +189,7 @@ private:
 
 private:
     AbsFormatProxyModel* mAbsFormatModel = nullptr;
+    ValueFormatProxyModel* mValueFormatModel = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
 
@@ -206,6 +213,10 @@ public:
 
     void setValueFilter(const ValueFilter &filter) override;
 
+    void setAggregation(const Aggregation &aggregation) override;
+
+    void setShowAbsoluteValues(bool absoluteValues) override;
+
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
     void updateView() override;
@@ -214,6 +225,7 @@ private:
     void setupView();
 
 private:
+    ValueFormatProxyModel* mValueFormatModel = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
 

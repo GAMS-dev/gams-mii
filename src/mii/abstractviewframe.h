@@ -107,6 +107,8 @@ public:
 
     void setViewConfig(QSharedPointer<AbstractViewConfiguration> viewConfig);
 
+    virtual bool hasData() const = 0;
+
 protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     QSharedPointer<AbstractViewConfiguration> mViewConfig;

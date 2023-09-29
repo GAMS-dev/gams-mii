@@ -21,6 +21,7 @@
 #ifndef MODELINSPECTOR_H
 #define MODELINSPECTOR_H
 
+#include <QFuture>
 #include <QSharedPointer>
 #include <QWidget>
 
@@ -91,6 +92,8 @@ public:
 
     void resetColumnRowFilter();
 
+    void cancelRun();
+
     void zoomIn();
     void zoomOut();
     void resetZoom();
@@ -101,6 +104,8 @@ signals:
     void viewChanged(int);
 
     void newLogMessage(const QString&);
+
+    void dataLoaded();
 
 public slots:
     void saveModelView();
@@ -113,6 +118,9 @@ public slots:
     void setCurrentViewIndex(gams::studio::mii::ViewType type);
 
     void setSearchSelection(const gams::studio::mii::SearchResult::SearchEntry &result);
+
+private slots:
+    void updateView();
 
 private:
     void setupConnections();
@@ -133,6 +141,7 @@ private:
     SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<AbstractModelInstance> mModelInstance;
     QMap<int, AbstractViewFrame*> mCustomViews;
+    QFuture<void> mFutureData;
 };
 
 }

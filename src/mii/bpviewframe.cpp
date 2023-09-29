@@ -65,34 +65,11 @@ const QList<Symbol*>& AbstractBPViewFrame::selectedVariables() const
     return mSelectedVariables;
 }
 
-void AbstractBPViewFrame::setAggregation(const Aggregation &aggregation)
-{
-    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadData(mViewConfig);
-        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
-        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-        emit filtersChanged();
-    }
-}
-
 void AbstractBPViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
 {
     mViewConfig->setCurrentIdentifierFilter(filter);
     if (mIdentifierFilterModel)
         mIdentifierFilterModel->setIdentifierFilter(filter);
-}
-
-void AbstractBPViewFrame::setShowAbsoluteValues(bool absoluteValues)
-{
-    if (!mBaseModel)
-        return;
-    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-    mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-    mModelInstance->loadData(mViewConfig);
-    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void AbstractBPViewFrame::reset()
@@ -101,6 +78,11 @@ void AbstractBPViewFrame::reset()
     setValueFilter(mViewConfig->defaultValueFilter());
     setLabelFilter(mViewConfig->defaultLabelFilter());
     updateView();
+}
+
+bool AbstractBPViewFrame::hasData() const
+{
+    return mBaseModel && mBaseModel->rowCount() && mBaseModel->columnCount();
 }
 
 void AbstractBPViewFrame::customMenuRequested(const QPoint &pos)
@@ -202,9 +184,30 @@ void BPOverviewViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelI
     setupView();
 }
 
+void BPOverviewViewFrame::setAggregation(const Aggregation &aggregation)
+{
+    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
+        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
+        mModelInstance->loadData(mViewConfig);
+        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
+        emit filtersChanged();
+    }
+}
+
 void BPOverviewViewFrame::setValueFilter(const ValueFilter &filter)
 {
     Q_UNUSED(filter);
+}
+
+void BPOverviewViewFrame::setShowAbsoluteValues(bool absoluteValues)
+{
+    if (!mBaseModel)
+        return;
+    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
+    mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
+    mModelInstance->loadData(mViewConfig);
+    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
 }
 
 void BPOverviewViewFrame::updateView()
@@ -268,6 +271,18 @@ void BPCountViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInst
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
     mModelInstance->loadData(mViewConfig);
     setupView();
+}
+
+void BPCountViewFrame::setAggregation(const Aggregation &aggregation)
+{
+    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
+        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
+        mModelInstance->loadData(mViewConfig);
+        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
+        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+        emit filtersChanged();
+    }
 }
 
 void BPCountViewFrame::setValueFilter(const ValueFilter &filter)
@@ -357,6 +372,18 @@ void BPAverageViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
     mModelInstance->loadData(mViewConfig);
     setupView();
+}
+
+void BPAverageViewFrame::setAggregation(const Aggregation &aggregation)
+{
+    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
+        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
+        mModelInstance->loadData(mViewConfig);
+        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
+        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+        emit filtersChanged();
+    }
 }
 
 void BPAverageViewFrame::setValueFilter(const ValueFilter &filter)
@@ -454,6 +481,29 @@ void BPScalingViewFrame::setValueFilter(const ValueFilter &filter)
     if (!filter.Reset) {
         mViewConfig->setCurrentValueFilter(filter);
     }
+    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+}
+
+void BPScalingViewFrame::setAggregation(const Aggregation &aggregation)
+{
+    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
+        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
+        mModelInstance->loadData(mViewConfig);
+        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
+        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+        emit filtersChanged();
+    }
+}
+
+void BPScalingViewFrame::setShowAbsoluteValues(bool absoluteValues)
+{
+    if (!mBaseModel)
+        return;
+    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
+    mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
+    mModelInstance->loadData(mViewConfig);
     emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
     mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }

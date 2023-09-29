@@ -27,6 +27,7 @@ namespace mii {
 
 ComprehensiveTableModel::ComprehensiveTableModel(QObject *parent)
     : QAbstractTableModel(parent)
+    , mModelInstance(new EmptyModelInstance)
 {
 
 }

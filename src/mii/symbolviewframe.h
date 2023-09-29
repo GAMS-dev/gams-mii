@@ -57,6 +57,8 @@ public:
 
     void updateView() override;
 
+    bool hasData() const override;
+
 protected slots:
     void setIdentifierLabelFilter(const gams::studio::mii::IdentifierState &state,
                                   Qt::Orientation orientation) override;
@@ -65,7 +67,7 @@ private:
     void setupView();
 
 private:
-    QSharedPointer<SymbolModelInstanceTableModel> mModelInstanceModel;
+    QSharedPointer<SymbolModelInstanceTableModel> mBaseModel;
     HierarchicalHeaderView* mHorizontalHeader = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
 };

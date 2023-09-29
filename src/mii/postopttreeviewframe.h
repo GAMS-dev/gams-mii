@@ -30,6 +30,7 @@ namespace mii {
 namespace Ui {
 class PostoptTreeViewFrame;
 }
+class PostoptTreeModel;
 
 
 class PostoptTreeViewFrame final : public AbstractViewFrame
@@ -73,11 +74,14 @@ public:
 
     void resetZoom() override;
 
+    bool hasData() const override;
+
 private:
     void setupView();
 
 protected:
     Ui::PostoptTreeViewFrame* ui;
+    PostoptTreeModel *mBaseModel;
 };
 
 }

@@ -26,6 +26,7 @@
 #include "viewconfigurationprovider.h"
 #include "symbolviewframe.h"
 
+#include <QtConcurrent>
 #include <QDir>
 
 #include <QDebug>
@@ -247,6 +248,14 @@ void ModelInspector::resetColumnRowFilter()
     if (frame) frame->updateView();
 }
 
+void ModelInspector::cancelRun()
+{
+    if (mFutureData.isRunning()) {
+        mFutureData.cancel();
+        mFutureData.waitForFinished();
+    }
+}
+
 void ModelInspector::zoomIn()
 {
     ui->bpOverviewFrame->zoomIn();
@@ -382,6 +391,9 @@ void ModelInspector::setCurrentView(int index)
         page = ui->stackedWidget->indexOf(wgt);
     }
     ui->stackedWidget->setCurrentIndex(page);
+    if (!currentView()->hasData() && mFutureData.isFinished()) {
+        currentView()->setupView(mModelInstance);
+    }
     emit viewChanged((int)item->type());
 }
 
@@ -417,30 +429,40 @@ void ModelInspector::setupConnections()
             this, &ModelInspector::createNewSymbolView);
     connect(ui->sectionView, &SectionTreeView::removeViewTriggered,
             this, &ModelInspector::removeModelView);
+    connect(this, &ModelInspector::dataLoaded,
+            this, &ModelInspector::updateView);
 }
 
 void ModelInspector::setupModelInstanceView(bool loadModel)
 {
-    bool useOutput = mModelInstance->useOutput();
-    if (loadModel) {
-        mModelInstance = QSharedPointer<AbstractModelInstance>(new ModelInstance(useOutput,
-                                                                                 mWorkspace,
-                                                                                 mSystemDir,
-                                                                                 mScratchDir));
-        if (mModelInstance->state() == AbstractModelInstance::Error)
-            emit newLogMessage(mModelInstance->logMessages());
-    }
-    if (mModelInstance->state() == AbstractModelInstance::Error) {
-        mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
-        mModelInstance->setUseOutput(useOutput);
-    }
-    mModelInstance->loadData();
-    ui->bpScalingFrame->setupView(mModelInstance);
-    ui->bpOverviewFrame->setupView(mModelInstance);
-    ui->bpCountFrame->setupView(mModelInstance);
-    ui->bpAverageFrame->setupView(mModelInstance);
-    ui->postoptFrame->setupView(mModelInstance);
+    ui->bpOverviewFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    ui->bpCountFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    ui->bpAverageFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    ui->postoptFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    auto loadData = [this, loadModel]{
+        bool useOutput = mModelInstance->useOutput();
+        if (loadModel) {
+            mModelInstance = QSharedPointer<AbstractModelInstance>(new ModelInstance(useOutput,
+                                                                                     mWorkspace,
+                                                                                     mSystemDir,
+                                                                                     mScratchDir));
+            if (mModelInstance->state() == AbstractModelInstance::Error)
+                emit newLogMessage(mModelInstance->logMessages());
+        }
+        if (mModelInstance->state() == AbstractModelInstance::Error) {
+            mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
+            mModelInstance->setUseOutput(useOutput);
+        }
 
+        mModelInstance->loadData();
+        emit dataLoaded();
+    };
+    mFutureData = QtConcurrent::run(loadData);
+}
+
+void ModelInspector::updateView()
+{
+    ui->bpScalingFrame->setupView(mModelInstance);
     auto root = ui->sectionView->model()->index((int)ViewType::Predefined, 0);
     auto index = ui->sectionView->model()->index((int)ViewDataType::BP_Scaling, 0, root);
     ui->sectionView->setCurrentIndex(index);
