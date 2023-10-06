@@ -6,7 +6,7 @@ test-dac:
   variables:
     qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
-    - GAMS_PATH=$HOME/cache/gams-installs/`python3 ci/fetch_gams.py version`
+    - GAMS_PATH=$HOME/cache/gams-installs/`python3 ci/fetch_gams.py version $PF_CUSTOM_BRANCH $SSH_KEY_PORTING`
     - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
     - echo $PF_GAMS_LICENSE > $GAMS_PATH/gamslice.txt
     - cd build && mkdir reports
@@ -34,7 +34,7 @@ test-deg:
   variables:
     qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
-    - GAMS_PATH=$HOME/cache/gams-installs/`python3 ci/fetch_gams.py version`
+    - GAMS_PATH=$HOME/cache/gams-installs/`python3 ci/fetch_gams.py version $PF_CUSTOM_BRANCH $SSH_KEY_PORTING`
     - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
     - echo $PF_GAMS_LICENSE > $GAMS_PATH/gamslice.txt
     - cd build && mkdir reports
@@ -63,7 +63,7 @@ test-leg:
     entrypoint: [""]   # prevent startup.sh
   dependencies: [fetch-prerequisites,install-gams-leg,build-leg]
   script:
-    - GAMS_PATH=/cache/gams-installs/`python3 ci/fetch_gams.py version`
+    - GAMS_PATH=/cache/gams-installs/`python3 ci/fetch_gams.py version $PF_CUSTOM_BRANCH $SSH_KEY_PORTING`
     - cd build && mkdir reports
     - REPORTS_DIR=$(pwd)/reports
     - |+
