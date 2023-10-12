@@ -51,7 +51,7 @@ install-gams-wei:
   tags: [windows]
   needs: [fetch-prerequisites]
   image:
-    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6.5:latest
   script:
     - echo "Installing GAMS to gamsdist..."
     - python ci/fetch_gams.py fetch_and_install $PF_CUSTOM_BRANCH $SSH_KEY_PORTING
