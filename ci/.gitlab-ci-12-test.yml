@@ -2,11 +2,11 @@ test-dac:
   stage: test
   tags: [macos-arm64]
   allow_failure: true
-  dependencies: [fetch-prerequisites,install-gams-dac,build-dac]
+  dependencies: [install-gams-dac,build-dac]
   variables:
     qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
-    - GAMS_PATH=$HOME/cache/gams-installs/`python3 ci/fetch_gams.py version $PF_CUSTOM_BRANCH $SSH_KEY_PORTING`
+    - GAMS_PATH=$HOME/cache/gams-installs/`cat gams_folder_dac.txt`
     - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
     - cd build && mkdir reports
     - REPORTS_DIR=$(pwd)/reports
@@ -29,11 +29,11 @@ test-deg:
   stage: test
   tags: [macos]
   allow_failure: true
-  dependencies: [fetch-prerequisites,install-gams-deg,build-deg]
+  dependencies: [install-gams-deg,build-deg]
   variables:
     qtpath: /Users/gitlab/Qt/6.5.1/macos/bin
   script:
-    - GAMS_PATH=$HOME/cache/gams-installs/`python3 ci/fetch_gams.py version $PF_CUSTOM_BRANCH $SSH_KEY_PORTING`
+    - GAMS_PATH=$HOME/cache/gams-installs/`cat gams_folder_deg.txt`
     - PATH="${qtpath}:${GAMS_PATH}:${PATH}"
     - cd build && mkdir reports
     - REPORTS_DIR=$(pwd)/reports
@@ -59,9 +59,9 @@ test-leg:
   image:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-qt6.5:latest
     entrypoint: [""]   # prevent startup.sh
-  dependencies: [fetch-prerequisites,install-gams-leg,build-leg]
+  dependencies: [install-gams-leg,build-leg]
   script:
-    - GAMS_PATH=/cache/gams-installs/`python3 ci/fetch_gams.py version $PF_CUSTOM_BRANCH $SSH_KEY_PORTING`
+    - GAMS_PATH=/cache/gams-installs/`cat gams_folder_leg.txt`
     - cd build && mkdir reports
     - REPORTS_DIR=$(pwd)/reports
     - |+
@@ -85,7 +85,7 @@ test-wei:
   allow_failure: true
   image:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6.5:latest
-  dependencies: [fetch-prerequisites,install-gams-wei,build-wei]
+  dependencies: [install-gams-wei,build-wei]
   script:
     - $gmsdirname = Get-Content mygmsdir.tmp -Raw
     - $GAMS_PATH = "C:\Cache\gams-installs\$gmsdirname"
