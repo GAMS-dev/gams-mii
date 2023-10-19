@@ -36,6 +36,10 @@ class SectionTreeModel : public QAbstractItemModel
     Q_OBJECT
 
 public:
+    enum ItemRole {
+        ItemDataTypeRole = Qt::UserRole
+    };
+
     explicit SectionTreeModel(QObject *parent = nullptr);
     virtual ~SectionTreeModel();
 
@@ -59,6 +63,8 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
+    QHash<int, QByteArray> roleNames() const override;
+
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
 
     void loadModelData();
@@ -66,6 +72,9 @@ public:
 private:
     SectionTreeItem *mRoot;
     SectionTreeItem *mCustomRoot;
+    SectionTreeItem *mCustomBlockpic = nullptr;
+    SectionTreeItem *mCustomPostopt = nullptr;
+    SectionTreeItem *mCustomSymbolView = nullptr;
 };
 
 }

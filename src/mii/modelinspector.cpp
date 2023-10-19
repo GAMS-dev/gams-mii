@@ -301,22 +301,25 @@ void ModelInspector::saveModelView()
     clone->setParent(ui->stackedWidget, view->windowFlags());
     int page = ui->stackedWidget->addWidget(clone);
     mCustomViews[page] = clone;
+    ViewDataType dataType = ViewDataType::Unknown;
     switch (clone->type()) {
     case ViewDataType::BP_Overview:
     case ViewDataType::BP_Count:
     case ViewDataType::BP_Average:
     case ViewDataType::BP_Scaling:
+        dataType = ViewDataType::Blockpic;
         connect(static_cast<AbstractBPViewFrame*>(clone), &AbstractBPViewFrame::filtersChanged,
                 this, &ModelInspector::filtersChanged);
         connect(static_cast<AbstractBPViewFrame*>(clone), &AbstractBPViewFrame::newSymbolViewRequested,
                 this, &ModelInspector::createNewSymbolView);
         break;
     default:
+        dataType = clone->type();
         break;
     }
     mSectionModel->appendCustomView(text, view->type(), page);
     ui->sectionView->expandAll();
-    setCurrentViewIndex(ViewType::Custom);
+    setCurrentViewIndex(ViewType::Custom, dataType);
 }
 
 void ModelInspector::createNewSymbolView()
@@ -333,14 +336,14 @@ void ModelInspector::createNewSymbolView()
     view->setupView(mModelInstance);
     int page = ui->stackedWidget->addWidget(view);
     mCustomViews[page] = view;
-    QString pageName = "Symbol View";
+    QString pageName = Mi::SymbolView;
     if (!currentMinMax->selectedEquations().isEmpty() && !currentMinMax->selectedVariables().isEmpty()) {
         pageName = currentMinMax->selectedEquations().constFirst()->name() + " + " +
                    currentMinMax->selectedVariables().constFirst()->name();
     }
     mSectionModel->appendCustomView(pageName, ViewDataType::Symbols, page);
     ui->sectionView->expandAll();
-    setCurrentViewIndex(ViewType::Custom);
+    setCurrentViewIndex(ViewType::Custom, ViewDataType::Symbols);
     connect(view, &SymbolViewFrame::filtersChanged,
             this, &ModelInspector::filtersChanged);
     view->updateView();
@@ -348,27 +351,56 @@ void ModelInspector::createNewSymbolView()
 
 void ModelInspector::removeModelView()
 {
-    auto customViewIndex = ui->sectionView->model()->index((int)ViewType::Custom, 0);
     auto currentIndex = ui->sectionView->currentIndex();
-    if (customViewIndex != currentIndex.parent()) return;
     auto item = static_cast<SectionTreeItem*>(currentIndex.internalPointer());
-
-    ui->sectionView->model()->removeRows(currentIndex.row(), 1, customViewIndex);
-    if (mCustomViews.contains(item->page())) {
-        auto page = mCustomViews.take(item->page());
-        if (page) {
-            ui->stackedWidget->removeWidget(page);
-            page->setParent(nullptr);
-            delete page;
+    auto page = item->page();
+    auto parent = item->parent();
+    auto parentIndex = currentIndex.parent();
+    if (item->parent()->parent() == nullptr) {
+        do {
+            if (!currentIndex.model()->rowCount(currentIndex))
+                return;
+            auto subgroup = currentIndex.model()->index(0, 0, currentIndex);
+            ui->sectionView->model()->removeRows(subgroup.row(), 1, currentIndex);
+            if (mCustomViews.contains(page)) {
+                auto p = mCustomViews.take(page);
+                if (p) {
+                    ui->stackedWidget->removeWidget(p);
+                    p->setParent(nullptr);
+                    delete p;
+                }
+            }
+            if (!parent->childCount()) {
+                ui->sectionView->model()->removeRows(subgroup.row(), 1, subgroup.parent());
+            }
+        } while (currentIndex.model()->rowCount(currentIndex));
+    } else {
+        ui->sectionView->model()->removeRows(currentIndex.row(), 1, parentIndex);
+        if (mCustomViews.contains(page)) {
+            auto p = mCustomViews.take(page);
+            if (p) {
+                ui->stackedWidget->removeWidget(p);
+                p->setParent(nullptr);
+                delete p;
+            }
+        }
+        if (!parent->childCount()) {
+            ui->sectionView->model()->removeRows(parentIndex.row(), 1, parentIndex.parent());
         }
     }
 
+    auto customViewIndex = ui->sectionView->model()->index((int)ViewType::Custom, 0);
     if (!ui->sectionView->model()->rowCount(customViewIndex)) {
-        setCurrentViewIndex(ViewType::Predefined);
-    } else if (ui->sectionView->model()->rowCount(customViewIndex) == 1) {
-        auto lastIndex = ui->sectionView->model()->index(0, 0, customViewIndex);
+        auto predefinedViewIndex = ui->sectionView->model()->index((int)ViewType::Predefined, 0);
+        int pos = ui->sectionView->model()->rowCount(predefinedViewIndex) - 1;
+        auto index = ui->sectionView->model()->index(pos, 0, predefinedViewIndex);
+        ui->sectionView->setCurrentIndex(index);
+    } else if (ui->sectionView->model()->rowCount(customViewIndex) > 0) {
+        auto group = ui->sectionView->model()->index(ui->sectionView->model()->rowCount(customViewIndex)-1, 0, customViewIndex);
+        auto lastIndex = ui->sectionView->model()->index(ui->sectionView->model()->rowCount(group)-1, 0, group);
         ui->sectionView->setCurrentIndex(lastIndex);
     }
+    ui->sectionView->expandAll();
 }
 
 void ModelInspector::setCurrentView(int index)
@@ -378,14 +410,13 @@ void ModelInspector::setCurrentView(int index)
     auto currentIndex = ui->sectionView->currentIndex();
     if (!currentIndex.isValid())
         return;
-
     auto item = static_cast<SectionTreeItem*>(currentIndex.internalPointer());
     if (currentIndex.parent() != ui->sectionView->model()->index((int)ViewType::Custom, 0)) {
         if (item->page() < 0 || item->page() >= ui->stackedWidget->count())
             return;
         page = item->page();
     } else {
-        auto wgt = mCustomViews[item->page()];
+        auto wgt = mCustomViews.value(item->page());
         if (!wgt)
             return;
         page = ui->stackedWidget->indexOf(wgt);
@@ -397,12 +428,26 @@ void ModelInspector::setCurrentView(int index)
     emit viewChanged((int)item->type());
 }
 
-void ModelInspector::setCurrentViewIndex(gams::studio::mii::ViewType type)
+void ModelInspector::setCurrentViewIndex(ViewType viewType, ViewDataType viewDataType)
 {
-    auto customViewIndex = ui->sectionView->model()->index((int)type, 0);
+    if (viewType != ViewType::Custom)
+        return;
+    auto customViewIndex = ui->sectionView->model()->index((int)viewType, 0);
     int pos = ui->sectionView->model()->rowCount(customViewIndex) - 1;
-    auto index = ui->sectionView->model()->index(pos, 0, customViewIndex);
-    ui->sectionView->setCurrentIndex(index);
+    if (pos < 0)
+        return;
+    QModelIndex index;
+    auto groupParent = ui->sectionView->model()->index(pos, 0, customViewIndex).parent();
+    for (int r=0; r<groupParent.model()->rowCount(groupParent); ++r) {
+        auto groupIndex = ui->sectionView->model()->index(r, 0, groupParent);
+        if (groupIndex.data(SectionTreeModel::ItemDataTypeRole).toInt() == (int)viewDataType) {
+            int last = groupIndex.model()->rowCount(groupIndex)-1;
+            index = ui->sectionView->model()->index(last, 0, groupIndex);
+            break;
+        }
+    }
+    if (index.isValid())
+        ui->sectionView->setCurrentIndex(index);
 }
 
 void ModelInspector::setSearchSelection(const gams::studio::mii::SearchResult::SearchEntry &result)
@@ -430,7 +475,7 @@ void ModelInspector::setupConnections()
     connect(ui->sectionView, &SectionTreeView::removeViewTriggered,
             this, &ModelInspector::removeModelView);
     connect(this, &ModelInspector::dataLoaded,
-            this, &ModelInspector::updateView);
+            this, &ModelInspector::selectScalingView);
 }
 
 void ModelInspector::setupModelInstanceView(bool loadModel)
@@ -460,11 +505,12 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
     mFutureData = QtConcurrent::run(loadData);
 }
 
-void ModelInspector::updateView()
+void ModelInspector::selectScalingView()
 {
     ui->bpScalingFrame->setupView(mModelInstance);
     auto root = ui->sectionView->model()->index((int)ViewType::Predefined, 0);
-    auto index = ui->sectionView->model()->index((int)ViewDataType::BP_Scaling, 0, root);
+    auto group = ui->sectionView->model()->index(0, 0, root);
+    auto index = ui->sectionView->model()->index((int)ViewDataType::BP_Scaling, 0, group);
     ui->sectionView->setCurrentIndex(index);
 }
 

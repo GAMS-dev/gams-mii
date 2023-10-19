@@ -124,13 +124,42 @@ void SectionTreeItem::setType(const QString &text)
         mType = ViewDataType::BP_Average;
     else if (text == Mi::Postopt)
         mType = ViewDataType::Postopt;
+    else if (text == Mi::SymbolView)
+        mType = ViewDataType::Symbols;
+    else if (text == Mi::Blockpic)
+        mType = ViewDataType::Blockpic;
     else
         mType = ViewDataType::Unknown;
 }
 
-SectionTreeItem *SectionTreeItem::parent()
+bool SectionTreeItem::isCustom() const
+{
+    return mCustom;
+}
+
+void SectionTreeItem::setCustom(bool custom)
+{
+    mCustom = custom;
+}
+
+bool SectionTreeItem::isGroup() const
+{
+    return mGroup;
+}
+
+void SectionTreeItem::setGroup(bool group)
+{
+    mGroup = group;
+}
+
+SectionTreeItem *SectionTreeItem::parent() const
 {
     return mParent;
+}
+
+void SectionTreeItem::setParent(SectionTreeItem *parent)
+{
+    mParent = parent;
 }
 
 }

@@ -46,6 +46,7 @@ enum class ViewDataType
     BP_Scaling          = 3,
     Postopt             = 4,
     Symbols             = 5,
+    Blockpic            = 126,
     Unknown             = 127
 };
 
@@ -149,6 +150,12 @@ struct Mi
     static const QString SlackUB;
     static const QString Upper;
     static const QString Type;
+
+    static const QString ModelInstance;
+    static const QString PredefinedViews;
+    static const QString CustomViews;
+    static const QString Blockpic;
+    static const QString SymbolView;
 
     static const QString Jacobian;
     static const QString BPScaling;

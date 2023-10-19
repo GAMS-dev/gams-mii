@@ -66,7 +66,17 @@ public:
 
     void setType(const QString &text);
 
-    SectionTreeItem *parent();
+    bool isCustom() const;
+
+    void setCustom(bool custom);
+
+    bool isGroup() const;
+
+    void setGroup(bool group);
+
+    SectionTreeItem *parent() const;
+
+    void setParent(SectionTreeItem *parent);
 
 private:
     QString mName;
@@ -74,6 +84,8 @@ private:
     int mPage = -1;
     ViewDataType mType = ViewDataType::Unknown;
     QVector<SectionTreeItem*> mChilds;
+    bool mCustom = false;
+    bool mGroup = false;
 };
 
 }

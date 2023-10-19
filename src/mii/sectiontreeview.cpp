@@ -75,15 +75,22 @@ ViewActionStates SectionTreeView::viewActionStates(const QModelIndex &index) con
     ViewActionStates states;
     if (index.isValid()) {
         auto *item = static_cast<SectionTreeItem*>(index.internalPointer());
-        if (index.parent() == model()->index((int)ViewType::Custom, 0)) {
-            states.SaveEnabled = true;
-            states.RemoveEnabled = true;
-        } else if (item->type() == ViewDataType::Unknown) {
-            states.SaveEnabled = false;
-            states.RemoveEnabled = false;
-        } else if (item->type() < ViewDataType::Unknown) {
-            states.SaveEnabled = true;
-            states.RemoveEnabled =false;
+        if (item->isCustom()) {
+            if (item->isGroup()) {
+                states.SaveEnabled = false;
+                states.RemoveEnabled = true;
+            } else {
+                states.SaveEnabled = true;
+                states.RemoveEnabled = true;
+            }
+        } else {
+            if (item->isGroup()) {
+                states.SaveEnabled = false;
+                states.RemoveEnabled = false;
+            } else {
+                states.SaveEnabled = true;
+                states.RemoveEnabled = false;
+            }
         }
     }
     return states;

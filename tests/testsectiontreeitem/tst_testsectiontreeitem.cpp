@@ -66,6 +66,8 @@ void TestSectionTreeItem::test_default()
     QCOMPARE(item.row(), 0);
     QCOMPARE(item.type(), ViewDataType::Unknown);
     QCOMPARE(item.parent(), nullptr);
+    QCOMPARE(item.isCustom(), false);
+    QCOMPARE(item.isGroup(), false);
 }
 
 void TestSectionTreeItem::test_constructor()
@@ -98,8 +100,23 @@ void TestSectionTreeItem::test_getSet()
     item.setName("some entry");
     QCOMPARE(item.name(), "some entry");
 
+    QCOMPARE(item.type(), ViewDataType::Unknown);
+    item.setType(ViewDataType::Symbols);
+    QCOMPARE(item.type(), ViewDataType::Symbols);
+
     item.setPage(42);
     QCOMPARE(item.page(), 42);
+
+    item.setCustom(true);
+    QCOMPARE(item.isCustom(), true);
+
+    item.setGroup(true);
+    QCOMPARE(item.isGroup(), true);
+
+    item.setParent(c1);
+    QCOMPARE(item.parent(), c1);
+    item.setParent(nullptr);
+    QCOMPARE(item.parent(), nullptr);
 }
 
 void TestSectionTreeItem::test_setTypeText()
@@ -107,6 +124,18 @@ void TestSectionTreeItem::test_setTypeText()
     SectionTreeItem item("default");
     item.setType(Mi::BPScaling);
     QCOMPARE(item.type(), ViewDataType::BP_Scaling);
+    item.setType(Mi::BPOverview);
+    QCOMPARE(item.type(), ViewDataType::BP_Overview);
+    item.setType(Mi::BPCount);
+    QCOMPARE(item.type(), ViewDataType::BP_Count);
+    item.setType(Mi::BPAverage);
+    QCOMPARE(item.type(), ViewDataType::BP_Average);
+    item.setType(Mi::Postopt);
+    QCOMPARE(item.type(), ViewDataType::Postopt);
+    item.setType(Mi::SymbolView);
+    QCOMPARE(item.type(), ViewDataType::Symbols);
+    item.setType(Mi::Blockpic);
+    QCOMPARE(item.type(), ViewDataType::Blockpic);
     item.setType("lala");
     QCOMPARE(item.type(), ViewDataType::Unknown);
 }

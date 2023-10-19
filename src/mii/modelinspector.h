@@ -109,18 +109,17 @@ signals:
 
 public slots:
     void saveModelView();
+
     void createNewSymbolView();
 
     void removeModelView();
 
     void setCurrentView(int index);
 
-    void setCurrentViewIndex(gams::studio::mii::ViewType type);
-
     void setSearchSelection(const gams::studio::mii::SearchResult::SearchEntry &result);
 
 private slots:
-    void updateView();
+    void selectScalingView();
 
 private:
     void setupConnections();
@@ -128,6 +127,8 @@ private:
     void setupModelInstanceView(bool loadModel);
 
     void clearCustomViews();
+
+    void setCurrentViewIndex(ViewType viewType, ViewDataType viewDataType);
 
     AbstractViewFrame* currentView() const;
 
