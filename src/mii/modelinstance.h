@@ -92,43 +92,47 @@ public:
 
     const QVector<Symbol*>& symbols(Symbol::Type type) const override;
 
-    void loadData() override;
+    void loadBaseData() override;
 
-    // TODO !!! find better name
-    void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
+    void loadViewData(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
 
-    void loadJacobian() override;
+    int rowCount(int viewId) const override;
 
-    int rowCount(int view) const override;
+    int rowEntries(int row, int viewId) const override;
 
-    int rowEntries(int row, int view) const override;
+    int columnCount(int viewId) const override;
 
-    int columnCount(int view) const override;
+    int columnEntries(int column, int viewId) const override;
 
-    int columnEntries(int column, int view) const override;
+    int symbolRowCount(int viewId) const override;
 
-    int symbolRowCount(int view) const override;
+    int symbolColumnCount(int viewId) const override;
 
-    int symbolColumnCount(int view) const override;
+    QSharedPointer<AbstractViewConfiguration> clone(int viewId, int newViewId) override;
 
-    QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) override;
+    QVariant data(int row, int column, int viewId) const override;
 
-    QVariant data(int row, int column, int view) const override;
-
-    QSharedPointer<PostoptTreeItem> dataTree(int view) const override;
+    QSharedPointer<PostoptTreeItem> dataTree(int viewId) const override;
 
     QVariant headerData(int logicalIndex,
                         Qt::Orientation orientation,
-                        int view, int role) const override;
+                        int viewId,
+                        int role) const override;
 
     QVariant plainHeaderData(Qt::Orientation orientation,
-                             int view, int logicalIndex, int dimension) const override;
+                             int viewId,
+                             int logicalIndex,
+                             int dimension) const override;
     
     void jacobianData(DataMatrix& dataMatrix) override;
 
-    QVariant equationAttribute(const QString &header, int index, int entry, bool abs) const override;
+    QVariant equationAttribute(const QString &header,
+                               int index, int entry, bool abs) const override;
 
-    QVariant variableAttribute(const QString &header, int index, int entry, bool abs) const override;
+    QVariant variableAttribute(const QString &header,
+                               int index, int entry, bool abs) const override;
+
+    void remove(int viewId) override;
 
 private:
     void initialize();

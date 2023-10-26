@@ -30,17 +30,24 @@ namespace gams {
 namespace studio {
 namespace mii {
 
+class AbstractViewFrame;
+
 class SectionTreeItem
 {
 public:
     explicit SectionTreeItem(const QString &name,
                              SectionTreeItem *parent = nullptr);
 
-    explicit SectionTreeItem(const QString &name, int page,
+    explicit SectionTreeItem(const QString &name,
+                             AbstractViewFrame* widget,
                              SectionTreeItem *parent = nullptr);
     ~SectionTreeItem();
 
     void append(SectionTreeItem *child);
+
+    QList<AbstractViewFrame*> removeChilds();
+
+    void remove(SectionTreeItem *child);
 
     void remove(int index, int count);
 
@@ -54,9 +61,11 @@ public:
 
     void setName(const QString &name);
 
-    int page() const;
+    AbstractViewFrame* widget() const;
 
-    void setPage(int page);
+    QList<AbstractViewFrame*> widgets() const;
+
+    void setWidget(AbstractViewFrame* page);
 
     int row() const;
 
@@ -81,7 +90,14 @@ public:
 private:
     QString mName;
     SectionTreeItem *mParent;
-    int mPage = -1;
+
+    ///
+    /// \brief Target widget.
+    ///
+    /// \remark Do not delete. Owned by QStackedWidget.
+    ///
+    AbstractViewFrame* mWidget = nullptr;
+
     ViewDataType mType = ViewDataType::Unknown;
     QVector<SectionTreeItem*> mChilds;
     bool mCustom = false;

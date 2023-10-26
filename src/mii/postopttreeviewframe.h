@@ -48,7 +48,7 @@ public:
 
     ~PostoptTreeViewFrame();
 
-    AbstractViewFrame* clone(int view) override;
+    AbstractViewFrame* clone(int viewId) override;
 
     void setIdentifierFilter(const IdentifierFilter &filter) override;
 

@@ -113,14 +113,14 @@ SearchResult &AbstractViewFrame::searchResult()
     return mViewConfig->searchResult();
 }
 
-int AbstractViewFrame::view() const
+int AbstractViewFrame::viewId() const
 {
-    return mViewConfig->view();
+    return mViewConfig->viewId();
 }
 
-void AbstractViewFrame::setView(int view)
+void AbstractViewFrame::setViewId(int viewId)
 {
-    mViewConfig->setView(view);
+    mViewConfig->setViewId(viewId);
 }
 
 QSharedPointer<AbstractViewConfiguration> AbstractViewFrame::viewConfig() const

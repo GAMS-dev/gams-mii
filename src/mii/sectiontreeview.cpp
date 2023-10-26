@@ -61,12 +61,12 @@ void SectionTreeView::showCustomContextMenu(const QPoint &pos)
     mMenu->popup(viewport()->mapToGlobal(pos));
 }
 
-void SectionTreeView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
+void SectionTreeView::currentChanged(const QModelIndex &current,
+                                     const QModelIndex &previous)
 {
     if (!current.isValid())
         return;
-    auto *item = static_cast<SectionTreeItem*>(current.internalPointer());
-    emit currentItemChanged(item->page());
+    emit currentItemChanged();
     QTreeView::currentChanged(current, previous);
 }
 

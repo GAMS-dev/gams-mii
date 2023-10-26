@@ -114,7 +114,7 @@ public slots:
 
     void removeModelView();
 
-    void setCurrentView(int index);
+    void setCurrentView();
 
     void setSearchSelection(const gams::studio::mii::SearchResult::SearchEntry &result);
 
@@ -132,6 +132,8 @@ private:
 
     AbstractViewFrame* currentView() const;
 
+    int currentViewIndex(AbstractViewFrame* view) const;
+
 private:
     Ui::ModelInspector* ui;
     QString mScratchDir;
@@ -141,7 +143,6 @@ private:
 
     SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<AbstractModelInstance> mModelInstance;
-    QMap<int, AbstractViewFrame*> mCustomViews;
     QFuture<void> mFutureData;
 };
 

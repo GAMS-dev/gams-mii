@@ -89,7 +89,7 @@ void AbstractBPViewFrame::customMenuRequested(const QPoint &pos)
 {
     if (ui->tableView->selectionModel()->selectedIndexes().empty())
         return;
-    auto view = mViewConfig->view();
+    auto view = mViewConfig->viewId();
     if (ui->tableView->selectionModel()->selectedIndexes().first().row() < mModelInstance->symbolRowCount(view) &&
         ui->tableView->selectionModel()->selectedIndexes().first().column() < mModelInstance->symbolColumnCount(view)) {
         mSymbolAction->setEnabled(true);
@@ -163,9 +163,9 @@ BPOverviewViewFrame::BPOverviewViewFrame(QSharedPointer<AbstractModelInstance> m
     mViewConfig = viewConfig;
 }
 
-AbstractTableViewFrame *BPOverviewViewFrame::clone(int view)
+AbstractTableViewFrame *BPOverviewViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
@@ -180,7 +180,7 @@ void BPOverviewViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelI
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
-    mModelInstance->loadData(mViewConfig);
+    mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
@@ -188,7 +188,7 @@ void BPOverviewViewFrame::setAggregation(const Aggregation &aggregation)
 {
     if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
         mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadData(mViewConfig);
+        mModelInstance->loadViewData(mViewConfig);
         emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
         mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
         emit filtersChanged();
@@ -206,7 +206,7 @@ void BPOverviewViewFrame::setShowAbsoluteValues(bool absoluteValues)
         return;
     mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
     mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-    mModelInstance->loadData(mViewConfig);
+    mModelInstance->loadViewData(mViewConfig);
     emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
 }
 
@@ -219,7 +219,7 @@ void BPOverviewViewFrame::updateView()
 
 void BPOverviewViewFrame::setupView()
 {
-    auto baseModel = new BPOverviewTableModel(mViewConfig->view(),
+    auto baseModel = new BPOverviewTableModel(mViewConfig->viewId(),
                                               mModelInstance,
                                               ui->tableView);
     mIdentifierFilterModel = new BPIdentifierFilterModel(mModelInstance, ui->tableView);
@@ -252,9 +252,9 @@ BPCountViewFrame::BPCountViewFrame(QSharedPointer<AbstractModelInstance> modelIn
     mViewConfig = viewConfig;
 }
 
-AbstractTableViewFrame *BPCountViewFrame::clone(int view)
+AbstractTableViewFrame *BPCountViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
@@ -269,7 +269,7 @@ void BPCountViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInst
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
-    mModelInstance->loadData(mViewConfig);
+    mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
@@ -277,7 +277,7 @@ void BPCountViewFrame::setAggregation(const Aggregation &aggregation)
 {
     if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
         mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadData(mViewConfig);
+        mModelInstance->loadViewData(mViewConfig);
         emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
         mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
         mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
@@ -311,11 +311,11 @@ void BPCountViewFrame::setupView()
                                                  mModelInstance,
                                                  ui->tableView);
     mVerticalHeader->setViewType(type());
-    mVerticalHeader->setView(mViewConfig->view());
+    mVerticalHeader->setView(mViewConfig->viewId());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPCountViewFrame::setIdentifierLabelFilter);
     
-    auto baseModel = new BPCountTableModel(mViewConfig->view(),
+    auto baseModel = new BPCountTableModel(mViewConfig->viewId(),
                                            mModelInstance,
                                            ui->tableView);
     mValueFormatModel = new BPValueFormatTypeProxyModel(ui->tableView);
@@ -353,9 +353,9 @@ BPAverageViewFrame::BPAverageViewFrame(QSharedPointer<AbstractModelInstance> mod
     mViewConfig = viewConfig;
 }
 
-AbstractTableViewFrame *BPAverageViewFrame::clone(int view)
+AbstractTableViewFrame *BPAverageViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
@@ -370,7 +370,7 @@ void BPAverageViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
-    mModelInstance->loadData(mViewConfig);
+    mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
@@ -378,7 +378,7 @@ void BPAverageViewFrame::setAggregation(const Aggregation &aggregation)
 {
     if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
         mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadData(mViewConfig);
+        mModelInstance->loadViewData(mViewConfig);
         emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
         mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
         mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
@@ -412,11 +412,11 @@ void BPAverageViewFrame::setupView()
                                                  mModelInstance,
                                                  ui->tableView);
     mVerticalHeader->setViewType(type());
-    mVerticalHeader->setView(mViewConfig->view());
+    mVerticalHeader->setView(mViewConfig->viewId());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPAverageViewFrame::setIdentifierLabelFilter);
     
-    auto baseModel = new BPAverageTableModel(mViewConfig->view(),
+    auto baseModel = new BPAverageTableModel(mViewConfig->viewId(),
                                              mModelInstance,
                                              ui->tableView);
     mValueFormatModel = new BPValueFormatTypeProxyModel(ui->tableView);
@@ -454,9 +454,9 @@ BPScalingViewFrame::BPScalingViewFrame(QSharedPointer<AbstractModelInstance> mod
     mViewConfig = viewConfig;
 }
 
-AbstractTableViewFrame* BPScalingViewFrame::clone(int view)
+AbstractTableViewFrame* BPScalingViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
@@ -473,10 +473,10 @@ void BPScalingViewFrame::setValueFilter(const ValueFilter &filter)
         return;
     if (filter.Reset) {
         mViewConfig->setCurrentValueFilter(filter);
-        mModelInstance->loadData(mViewConfig);
+        mModelInstance->loadViewData(mViewConfig);
     } else if (mViewConfig->currentValueFilter().UseAbsoluteValues != filter.UseAbsoluteValues) {
         mViewConfig->currentValueFilter().UseAbsoluteValues = filter.UseAbsoluteValues;
-        mModelInstance->loadData(mViewConfig);
+        mModelInstance->loadViewData(mViewConfig);
     }
     if (!filter.Reset) {
         mViewConfig->setCurrentValueFilter(filter);
@@ -489,7 +489,7 @@ void BPScalingViewFrame::setAggregation(const Aggregation &aggregation)
 {
     if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
         mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadData(mViewConfig);
+        mModelInstance->loadViewData(mViewConfig);
         emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
         mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
         mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
@@ -503,7 +503,7 @@ void BPScalingViewFrame::setShowAbsoluteValues(bool absoluteValues)
         return;
     mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
     mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-    mModelInstance->loadData(mViewConfig);
+    mModelInstance->loadViewData(mViewConfig);
     emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
     mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
@@ -512,7 +512,7 @@ void BPScalingViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
-    mModelInstance->loadData(mViewConfig);
+    mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
@@ -529,11 +529,11 @@ void BPScalingViewFrame::setupView()
                                                  mModelInstance,
                                                  ui->tableView);
     mVerticalHeader->setViewType(type());
-    mVerticalHeader->setView(mViewConfig->view());
+    mVerticalHeader->setView(mViewConfig->viewId());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPScalingViewFrame::setIdentifierLabelFilter);
 
-    auto baseModel = new ComprehensiveTableModel(mViewConfig->view(),
+    auto baseModel = new ComprehensiveTableModel(mViewConfig->viewId(),
                                                  mModelInstance,
                                                  ui->tableView);
     mValueFormatModel = new BPValueFormatProxyModel(ui->tableView);

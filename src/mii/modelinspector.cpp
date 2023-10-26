@@ -42,11 +42,11 @@ ModelInspector::ModelInspector(QWidget *parent)
     , mModelInstance(new EmptyModelInstance)
 {
     ui->setupUi(this);
-    ui->bpScalingFrame->setView((int)ViewDataType::BP_Scaling);
-    ui->bpOverviewFrame->setView((int)ViewDataType::BP_Overview);
-    ui->bpCountFrame->setView((int)ViewDataType::BP_Count);
-    ui->bpAverageFrame->setView((int)ViewDataType::BP_Average);
-    mSectionModel->loadModelData();
+    ui->bpScalingFrame->setViewId((int)ViewDataType::BP_Scaling);
+    ui->bpOverviewFrame->setViewId((int)ViewDataType::BP_Overview);
+    ui->bpCountFrame->setViewId((int)ViewDataType::BP_Count);
+    ui->bpAverageFrame->setViewId((int)ViewDataType::BP_Average);
+    mSectionModel->loadModelData(ui->stackedWidget);
     ui->sectionView->setModel(mSectionModel);
     loadModelInstance(false);
     setupConnections();
@@ -101,12 +101,8 @@ void ModelInspector::setShowOutput(bool showOutput)
 
 void ModelInspector::setShowAbsoluteValues(bool absoluteValues)
 {
-    ui->bpScalingFrame->setShowAbsoluteValues(absoluteValues);
-    ui->bpAverageFrame->setShowAbsoluteValues(absoluteValues);
-    ui->bpCountFrame->setShowAbsoluteValues(absoluteValues);
-    ui->postoptFrame->setShowAbsoluteValues(absoluteValues);
-    for (auto view : std::as_const(mCustomViews)) {
-        view->setShowAbsoluteValues(absoluteValues);
+    for (auto widget : mSectionModel->data()->widgets()) {
+        widget->setShowAbsoluteValues(absoluteValues);
     }
 }
 
@@ -258,49 +254,35 @@ void ModelInspector::cancelRun()
 
 void ModelInspector::zoomIn()
 {
-    ui->bpOverviewFrame->zoomIn();
-    ui->bpCountFrame->zoomIn();
-    ui->bpAverageFrame->zoomIn();
-    ui->bpScalingFrame->zoomIn();
-    ui->postoptFrame->zoomIn();
-    for (auto view : qAsConst(mCustomViews)) {
-        view->zoomIn();
+    for (auto widget : mSectionModel->data()->widgets()) {
+        widget->zoomIn();
     }
 }
 
 void ModelInspector::zoomOut()
 {
-    ui->bpOverviewFrame->zoomOut();
-    ui->bpCountFrame->zoomOut();
-    ui->bpAverageFrame->zoomOut();
-    ui->bpScalingFrame->zoomOut();
-    ui->postoptFrame->zoomOut();
-    for (auto view : qAsConst(mCustomViews)) {
-        view->zoomOut();
+    for (auto widget : mSectionModel->data()->widgets()) {
+        widget->zoomOut();
     }
 }
 
 void ModelInspector::resetZoom()
 {
-    ui->bpOverviewFrame->resetZoom();
-    ui->bpCountFrame->resetZoom();
-    ui->bpAverageFrame->resetZoom();
-    ui->bpScalingFrame->resetZoom();
-    ui->postoptFrame->resetZoom();
-    for (auto view : qAsConst(mCustomViews)) {
-        view->resetZoom();
+    for (auto widget : mSectionModel->data()->widgets()) {
+        widget->resetZoom();
     }
 }
 
 void ModelInspector::saveModelView()
 {
     auto view = currentView();
-    if (!view) return;
+    if (!view) {
+        emit newLogMessage("ERROR: ModelInspector::saveModelView() widget nullptr!");
+        return;
+    }
     auto text = ui->sectionView->currentIndex().data().toString();
-    auto clone = view->clone(ui->stackedWidget->count());
-    clone->setParent(ui->stackedWidget, view->windowFlags());
-    int page = ui->stackedWidget->addWidget(clone);
-    mCustomViews[page] = clone;
+    auto clone = view->clone(ViewConfigurationProvider::nextViewId());
+    ui->stackedWidget->addWidget(clone);
     ViewDataType dataType = ViewDataType::Unknown;
     switch (clone->type()) {
     case ViewDataType::BP_Overview:
@@ -317,31 +299,36 @@ void ModelInspector::saveModelView()
         dataType = clone->type();
         break;
     }
-    mSectionModel->appendCustomView(text, view->type(), page);
+    mSectionModel->appendCustomView(text, view->type(), clone);
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Custom, dataType);
 }
 
 void ModelInspector::createNewSymbolView()
 {
-    auto currentMinMax = static_cast<BPScalingViewFrame*>(currentView());
-    auto view = new SymbolViewFrame(ui->stackedWidget->count(), mModelInstance,
-                                    ui->stackedWidget, currentMinMax->windowFlags());
-    view->viewConfig()->currentValueFilter().UseAbsoluteValues =
-            currentMinMax->viewConfig()->currentValueFilter().UseAbsoluteValues;
-    view->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal =
-            currentMinMax->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal;
-    view->viewConfig()->updateIdentifierFilter(currentMinMax->selectedEquations(),
-                                               currentMinMax->selectedVariables());
-    view->setupView(mModelInstance);
-    int page = ui->stackedWidget->addWidget(view);
-    mCustomViews[page] = view;
-    QString pageName = Mi::SymbolView;
-    if (!currentMinMax->selectedEquations().isEmpty() && !currentMinMax->selectedVariables().isEmpty()) {
-        pageName = currentMinMax->selectedEquations().constFirst()->name() + " + " +
-                   currentMinMax->selectedVariables().constFirst()->name();
+    auto currentBPView = static_cast<BPScalingViewFrame*>(currentView());
+    if (!currentBPView) {
+        emit newLogMessage("ERROR: ModelInspector::createNewSymbolView() widget nullptr!");
+        return;
     }
-    mSectionModel->appendCustomView(pageName, ViewDataType::Symbols, page);
+    auto view = new SymbolViewFrame(ViewConfigurationProvider::nextViewId(),
+                                    mModelInstance,
+                                    ui->stackedWidget,
+                                    currentBPView->windowFlags());
+    view->viewConfig()->currentValueFilter().UseAbsoluteValues =
+            currentBPView->viewConfig()->currentValueFilter().UseAbsoluteValues;
+    view->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal =
+            currentBPView->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal;
+    view->viewConfig()->updateIdentifierFilter(currentBPView->selectedEquations(),
+                                               currentBPView->selectedVariables());
+    view->setupView(mModelInstance);
+    ui->stackedWidget->addWidget(view);
+    QString pageName = Mi::SymbolView;
+    if (!currentBPView->selectedEquations().isEmpty() && !currentBPView->selectedVariables().isEmpty()) {
+        pageName = currentBPView->selectedEquations().constFirst()->name() + " + " +
+                   currentBPView->selectedVariables().constFirst()->name();
+    }
+    mSectionModel->appendCustomView(pageName, ViewDataType::Symbols, view);
     ui->sectionView->expandAll();
     setCurrentViewIndex(ViewType::Custom, ViewDataType::Symbols);
     connect(view, &SymbolViewFrame::filtersChanged,
@@ -353,42 +340,16 @@ void ModelInspector::removeModelView()
 {
     auto currentIndex = ui->sectionView->currentIndex();
     auto item = static_cast<SectionTreeItem*>(currentIndex.internalPointer());
-    auto page = item->page();
     auto parent = item->parent();
-    auto parentIndex = currentIndex.parent();
-    if (item->parent()->parent() == nullptr) {
-        do {
-            if (!currentIndex.model()->rowCount(currentIndex))
-                return;
-            auto subgroup = currentIndex.model()->index(0, 0, currentIndex);
-            ui->sectionView->model()->removeRows(subgroup.row(), 1, currentIndex);
-            if (mCustomViews.contains(page)) {
-                auto p = mCustomViews.take(page);
-                if (p) {
-                    ui->stackedWidget->removeWidget(p);
-                    p->setParent(nullptr);
-                    delete p;
-                }
-            }
-            if (!parent->childCount()) {
-                ui->sectionView->model()->removeRows(subgroup.row(), 1, subgroup.parent());
-            }
-        } while (currentIndex.model()->rowCount(currentIndex));
-    } else {
-        ui->sectionView->model()->removeRows(currentIndex.row(), 1, parentIndex);
-        if (mCustomViews.contains(page)) {
-            auto p = mCustomViews.take(page);
-            if (p) {
-                ui->stackedWidget->removeWidget(p);
-                p->setParent(nullptr);
-                delete p;
-            }
-        }
-        if (!parent->childCount()) {
-            ui->sectionView->model()->removeRows(parentIndex.row(), 1, parentIndex.parent());
-        }
+    for (auto widget : mSectionModel->removeItem(item))
+    {
+        ui->stackedWidget->removeWidget(widget);
+        mModelInstance->remove(widget->viewId());
+        delete widget;
     }
-
+    if (!parent->childCount()) {
+        mSectionModel->removeItem(parent);
+    }
     auto customViewIndex = ui->sectionView->model()->index((int)ViewType::Custom, 0);
     if (!ui->sectionView->model()->rowCount(customViewIndex)) {
         auto predefinedViewIndex = ui->sectionView->model()->index((int)ViewType::Predefined, 0);
@@ -403,29 +364,17 @@ void ModelInspector::removeModelView()
     ui->sectionView->expandAll();
 }
 
-void ModelInspector::setCurrentView(int index)
+void ModelInspector::setCurrentView()
 {
-    Q_UNUSED(index);
-    int page;
-    auto currentIndex = ui->sectionView->currentIndex();
-    if (!currentIndex.isValid())
+    auto view = currentView();
+    if (!view)
         return;
-    auto item = static_cast<SectionTreeItem*>(currentIndex.internalPointer());
-    if (currentIndex.parent() != ui->sectionView->model()->index((int)ViewType::Custom, 0)) {
-        if (item->page() < 0 || item->page() >= ui->stackedWidget->count())
-            return;
-        page = item->page();
-    } else {
-        auto wgt = mCustomViews.value(item->page());
-        if (!wgt)
-            return;
-        page = ui->stackedWidget->indexOf(wgt);
+    int index = currentViewIndex(view);
+    ui->stackedWidget->setCurrentIndex(index);
+    if (!view->hasData() && mFutureData.isFinished()) {
+        view->setupView(mModelInstance);
     }
-    ui->stackedWidget->setCurrentIndex(page);
-    if (!currentView()->hasData() && mFutureData.isFinished()) {
-        currentView()->setupView(mModelInstance);
-    }
-    emit viewChanged((int)item->type());
+    emit viewChanged((int)view->type());
 }
 
 void ModelInspector::setCurrentViewIndex(ViewType viewType, ViewDataType viewDataType)
@@ -499,7 +448,7 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
             mModelInstance->setUseOutput(useOutput);
         }
 
-        mModelInstance->loadData();
+        mModelInstance->loadBaseData();
         emit dataLoaded();
     };
     mFutureData = QtConcurrent::run(loadData);
@@ -519,32 +468,29 @@ void ModelInspector::clearCustomViews()
     auto customViewIndex = ui->sectionView->model()->index((int)ViewType::Custom, 0);
     int rows = ui->sectionView->model()->rowCount(customViewIndex);
     ui->sectionView->model()->removeRows(0, rows, customViewIndex);
-    for (auto wgt : qAsConst(mCustomViews)) {
-        ui->stackedWidget->removeWidget(wgt);
-        wgt->setParent(nullptr);
-        delete wgt;
+    for (auto widget : mSectionModel->removeCustomRows()) {
+        ui->stackedWidget->removeWidget(widget);
+        widget->setParent(nullptr);
+        mModelInstance->remove(widget->viewId());
+        delete widget;
     }
-    mCustomViews.clear();
 }
 
 AbstractViewFrame* ModelInspector::currentView() const
-{
-    switch (ui->stackedWidget->currentIndex()) {
-    case (int)ViewDataType::BP_Overview:
-        return ui->bpOverviewFrame;
-    case (int)ViewDataType::BP_Count:
-        return ui->bpCountFrame;
-    case (int)ViewDataType::BP_Average:
-        return ui->bpAverageFrame;
-    case (int)ViewDataType::BP_Scaling:
-        return ui->bpScalingFrame;
-    case (int)ViewDataType::Postopt:
-        return ui->postoptFrame;
-    default:
-        if (mCustomViews.contains(ui->stackedWidget->currentIndex()))
-            return mCustomViews[ui->stackedWidget->currentIndex()];
+{// TODO !!! template for different frame types?
+    auto currentIndex = ui->sectionView->currentIndex();
+    if (!currentIndex.isValid())
         return nullptr;
+    auto item = static_cast<SectionTreeItem*>(currentIndex.internalPointer());
+    return item ? item->widget() : nullptr;
+}
+
+int ModelInspector::currentViewIndex(AbstractViewFrame* view) const
+{
+    if (view->parentWidget() == ui->stackedWidget) {
+        return ui->stackedWidget->indexOf(view);
     }
+    return ui->stackedWidget->indexOf(view->parentWidget());
 }
 
 }

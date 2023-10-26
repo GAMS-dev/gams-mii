@@ -1489,97 +1489,102 @@ void DataHandler::aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig
 {
     if (!viewConfig) return;
     auto provider = newProvider(viewConfig);
-    mDataCache.remove(viewConfig->view());
+    mDataCache.remove(viewConfig->viewId());
     if (viewConfig->currentAggregation().type() != Aggregation::None) {
         provider->loadData();
     } else {
         return;
     }
-    mDataCache[viewConfig->view()] = provider;
+    mDataCache[viewConfig->viewId()] = provider;
 }
 
 void DataHandler::loadData(QSharedPointer<AbstractViewConfiguration> viewConfig)
 {
     if (!viewConfig) return;
     auto provider = newProvider(viewConfig);
-    mDataCache.remove(viewConfig->view());
+    mDataCache.remove(viewConfig->viewId());
     provider->loadData();
-    mDataCache[viewConfig->view()] = provider;
+    mDataCache[viewConfig->viewId()] = provider;
 }
 
-QVariant DataHandler::data(int row, int column, int view) const
+QVariant DataHandler::data(int row, int column, int viewId) const
 {
-    if (mDataCache.contains(view) && mDataCache[view]->data(row, column) != 0.0) {
-        return mDataCache[view]->data(row, column);
+    if (mDataCache.contains(viewId) && mDataCache[viewId]->data(row, column) != 0.0) {
+        return mDataCache[viewId]->data(row, column);
     }
     return QVariant();
 }
 
-QSharedPointer<PostoptTreeItem> DataHandler::dataTree(int view) const
+QSharedPointer<PostoptTreeItem> DataHandler::dataTree(int viewId) const
 {
-    if (mDataCache.contains(view)) {
-        auto provider = static_cast<PostoptDataProvider*>(mDataCache[view].get());
+    if (mDataCache.contains(viewId)) {
+        auto provider = static_cast<PostoptDataProvider*>(mDataCache[viewId].get());
         return provider->dataTree();
     }
     return nullptr;
 }
 
+void DataHandler::remove(int viewId)
+{
+    mDataCache.remove(viewId);
+}
+
 int DataHandler::headerData(int logicalIndex,
                             Qt::Orientation orientation,
-                            int view) const
+                            int viewId) const
 {
-    return mDataCache.contains(view) ? mDataCache[view]->headerData(orientation, logicalIndex)
-                                     : -1;
+    return mDataCache.contains(viewId) ? mDataCache[viewId]->headerData(orientation, logicalIndex)
+                                       : -1;
 }
 
 QVariant DataHandler::plainHeaderData(Qt::Orientation orientation,
-                                      int view, int logicalIndex,
+                                      int viewId, int logicalIndex,
                                       int dimension) const
 {
-    return mDataCache.contains(view) ? mDataCache[view]->plainHeaderData(orientation, logicalIndex, dimension)
-                                     : QVariant();
+    return mDataCache.contains(viewId) ? mDataCache[viewId]->plainHeaderData(orientation, logicalIndex, dimension)
+                                       : QVariant();
 }
 
-QVariant DataHandler::sectionLabels(Qt::Orientation orientation, int view, int logicalIndex) const
+QVariant DataHandler::sectionLabels(Qt::Orientation orientation, int viewId, int logicalIndex) const
 {
-    return mDataCache.contains(view) ? mDataCache[view]->sectionLabels(orientation, logicalIndex)
-                                     : QStringList();
+    return mDataCache.contains(viewId) ? mDataCache[viewId]->sectionLabels(orientation, logicalIndex)
+                                       : QStringList();
 }
 
-int DataHandler::rowCount(int view) const
+int DataHandler::rowCount(int viewId) const
 {
-    if (mDataCache.contains(view)) {
-        return mDataCache[view]->rowCount();
+    if (mDataCache.contains(viewId)) {
+        return mDataCache[viewId]->rowCount();
     }
     return 0;
 }
 
-int DataHandler::rowEntries(int row, int view) const
+int DataHandler::rowEntries(int row, int viewId) const
 {
-    return mDataCache.contains(view) ? mDataCache[view]->rowEntries(row) : 0;
+    return mDataCache.contains(viewId) ? mDataCache[viewId]->rowEntries(row) : 0;
 }
 
-int DataHandler::columnCount(int view) const
+int DataHandler::columnCount(int viewId) const
 {
-    if (mDataCache.contains(view)) {
-        return mDataCache[view]->columnCount();
+    if (mDataCache.contains(viewId)) {
+        return mDataCache[viewId]->columnCount();
     }
     return 0;
 }
 
-int DataHandler::columnEntries(int column, int view) const
+int DataHandler::columnEntries(int column, int viewId) const
 {
-    return mDataCache.contains(view) ? mDataCache[view]->columnEntries(column) : 0;
+    return mDataCache.contains(viewId) ? mDataCache[viewId]->columnEntries(column) : 0;
 }
 
-int DataHandler::symbolRowCount(int view) const
+int DataHandler::symbolRowCount(int viewId) const
 {
-    return mDataCache.contains(view) ? mDataCache[view]->symbolRowCount() : 0;
+    return mDataCache.contains(viewId) ? mDataCache[viewId]->symbolRowCount() : 0;
 }
 
-int DataHandler::symbolColumnCount(int view) const
+int DataHandler::symbolColumnCount(int viewId) const
 {
-    return mDataCache.contains(view) ? mDataCache[view]->symbolColumnCount() : 0;
+    return mDataCache.contains(viewId) ? mDataCache[viewId]->symbolColumnCount() : 0;
 }
 
 double DataHandler::modelMinimum() const
@@ -1602,12 +1607,12 @@ void DataHandler::setModelMaximum(double maximum)
     mModelMaximum = maximum;
 }
 
-QSharedPointer<AbstractViewConfiguration> DataHandler::clone(int view, int newView)
+QSharedPointer<AbstractViewConfiguration> DataHandler::clone(int viewId, int newView)
 {
-    if (!mDataCache.contains(view))
+    if (!mDataCache.contains(viewId))
         return nullptr;
-    mDataCache[newView] = QSharedPointer<AbstractDataProvider>(cloneProvider(view));
-    mDataCache[newView]->viewConfig()->setView(newView);
+    mDataCache[newView] = QSharedPointer<AbstractDataProvider>(cloneProvider(viewId));
+    mDataCache[newView]->viewConfig()->setViewId(newView);
     return mDataCache[newView]->viewConfig();
 }
 
@@ -1617,42 +1622,42 @@ void DataHandler::loadJacobian()
     mModelInstance.jacobianData(mDataMatrix);
 }
 
-DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int view)
+DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int viewId)
 {
-    switch (mDataCache[view]->viewConfig()->viewType()) {
+    switch (mDataCache[viewId]->viewConfig()->viewType()) {
     case ViewDataType::BP_Scaling:
     {
-        auto provider = static_cast<BPScalingProvider*>(mDataCache[view].get());
+        auto provider = static_cast<BPScalingProvider*>(mDataCache[viewId].get());
         return new BPScalingProvider(*provider);
     }
     case ViewDataType::Symbols:
     {
-        auto provider = static_cast<SymbolsDataProvider*>(mDataCache[view].get());
+        auto provider = static_cast<SymbolsDataProvider*>(mDataCache[viewId].get());
         return new SymbolsDataProvider(*provider);
     }
     case ViewDataType::BP_Overview:
     {
-        auto provider = static_cast<BPOverviewDataProvider*>(mDataCache[view].get());
+        auto provider = static_cast<BPOverviewDataProvider*>(mDataCache[viewId].get());
         return new BPOverviewDataProvider(*provider);
     }
     case ViewDataType::BP_Count:
     {
-        auto provider = static_cast<BPCountDataProvider*>(mDataCache[view].get());
+        auto provider = static_cast<BPCountDataProvider*>(mDataCache[viewId].get());
         return new BPCountDataProvider(*provider);
     }
     case ViewDataType::BP_Average:
     {
-        auto provider = static_cast<BPAverageDataProvider*>(mDataCache[view].get());
+        auto provider = static_cast<BPAverageDataProvider*>(mDataCache[viewId].get());
         return new BPAverageDataProvider(*provider);
     }
     case ViewDataType::Postopt:
     {
-        auto provider = static_cast<PostoptDataProvider*>(mDataCache[view].get());
+        auto provider = static_cast<PostoptDataProvider*>(mDataCache[viewId].get());
         return new PostoptDataProvider(*provider);
     }
     default:
     {
-        auto provider = static_cast<IdentityDataProvider*>(mDataCache[view].get());
+        auto provider = static_cast<IdentityDataProvider*>(mDataCache[viewId].get());
         return new IdentityDataProvider(*provider);
     }
     }

@@ -42,7 +42,7 @@ public:
     ViewActionStates viewActionStates() const;
 
 signals:
-    void currentItemChanged(int);
+    void currentItemChanged();
 
     void saveViewTriggered();
     void removeViewTriggered();

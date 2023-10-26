@@ -43,7 +43,7 @@ public:
 
     virtual ~AbstractViewFrame();
 
-    virtual AbstractViewFrame* clone(int view) = 0;
+    virtual AbstractViewFrame* clone(int viewId) = 0;
 
     const IdentifierFilter& identifierFilter() const;
 
@@ -97,9 +97,9 @@ public:
 
     virtual void setSearchSelection(const SearchResult::SearchEntry &result) = 0;
 
-    int view() const;
+    int viewId() const;
 
-    virtual void setView(int view);
+    virtual void setViewId(int viewId);
 
     virtual void setupView(QSharedPointer<AbstractModelInstance> modelInstance) = 0;
 

@@ -39,7 +39,7 @@ SymbolViewFrame::SymbolViewFrame(int view,
     : AbstractStandardTableViewFrame(parent, f)
 {
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), modelInstance));
-    mViewConfig->setView(view);
+    mViewConfig->setViewId(view);
 }
 
 SymbolViewFrame::SymbolViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
@@ -51,9 +51,9 @@ SymbolViewFrame::SymbolViewFrame(QSharedPointer<AbstractModelInstance> modelInst
     mViewConfig = viewConfig;
 }
 
-AbstractTableViewFrame *SymbolViewFrame::clone(int view)
+AbstractTableViewFrame *SymbolViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
     auto frame = new SymbolViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
     frame->setValueFilter(frame->viewConfig()->currentValueFilter());
@@ -76,7 +76,7 @@ void SymbolViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInsta
 {
     mModelInstance = modelInstance;
     mViewConfig->setModelInstance(mModelInstance);
-    mModelInstance->loadData(mViewConfig);
+    mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
@@ -106,10 +106,10 @@ void SymbolViewFrame::setValueFilter(const ValueFilter &filter)
         return;
     if (filter.Reset) {
         mViewConfig->setCurrentValueFilter(filter);
-        mModelInstance->loadData(mViewConfig);
+        mModelInstance->loadViewData(mViewConfig);
     } else if (mViewConfig->currentValueFilter().UseAbsoluteValues != filter.UseAbsoluteValues) {
         mViewConfig->currentValueFilter().UseAbsoluteValues = filter.UseAbsoluteValues;
-        mModelInstance->loadData(mViewConfig);
+        mModelInstance->loadViewData(mViewConfig);
     }
     if (!filter.Reset) {
         mViewConfig->setCurrentValueFilter(filter);
@@ -137,14 +137,14 @@ void SymbolViewFrame::setShowAbsoluteValues(bool absoluteValues)
         return;
     mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
     mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-    mModelInstance->loadData(mViewConfig);
+    mModelInstance->loadViewData(mViewConfig);
     emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
     mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
-void SymbolViewFrame::setView(int view)
+void SymbolViewFrame::setViewId(int view)
 {
-    mViewConfig->setView(view);
+    mViewConfig->setViewId(view);
     mBaseModel->setView(view);
 }
 
@@ -171,19 +171,19 @@ void SymbolViewFrame::setupView()
                                                    mModelInstance,
                                                    ui->tableView);
     mHorizontalHeader->setViewType(type());
-    mHorizontalHeader->setView(mViewConfig->view());
+    mHorizontalHeader->setView(mViewConfig->viewId());
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &SymbolViewFrame::setIdentifierLabelFilter);
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
                                                  ui->tableView);
     mVerticalHeader->setViewType(type());
-    mVerticalHeader->setView(mViewConfig->view());
+    mVerticalHeader->setView(mViewConfig->viewId());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &SymbolViewFrame::setIdentifierLabelFilter);
 
     auto baseModel = new SymbolModelInstanceTableModel(mModelInstance, ui->tableView);
-    baseModel->setView(mViewConfig->view());
+    baseModel->setView(mViewConfig->viewId());
     mValueFormatModel = new JacobianValueFormatProxyModel(ui->tableView);
     mValueFormatModel->setSourceModel(baseModel);
     mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);

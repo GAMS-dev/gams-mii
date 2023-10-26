@@ -158,9 +158,7 @@ public:
 
     virtual const QVector<Symbol*>& symbols(Symbol::Type type) const = 0;
 
-    virtual void loadData() = 0;
-
-    virtual void loadJacobian() = 0;
+    virtual void loadBaseData() = 0;
 
     virtual int rowCount(int view) const = 0;
 
@@ -176,7 +174,7 @@ public:
 
     virtual QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) = 0;
 
-    virtual void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) = 0;
+    virtual void loadViewData(QSharedPointer<AbstractViewConfiguration> viewConfig) = 0;
 
     virtual QVariant data(int row, int column, int view) const = 0;
 
@@ -195,6 +193,8 @@ public:
     virtual QVariant equationAttribute(const QString &header, int index, int entry, bool abs) const;
 
     virtual QVariant variableAttribute(const QString &header, int index, int entry, bool abs) const;
+
+    virtual void remove(int viewId) = 0;
 
     State state() const;
 
@@ -245,9 +245,7 @@ public:
 
     const QVector<Symbol*>& symbols(Symbol::Type type) const override;
 
-    void loadData() override;
-
-    void loadJacobian() override;
+    void loadBaseData() override;
 
     char equationType(int row) const override;
 
@@ -267,7 +265,7 @@ public:
 
     QSharedPointer<AbstractViewConfiguration> clone(int view, int newView) override;
 
-    void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
+    void loadViewData(QSharedPointer<AbstractViewConfiguration> viewConfig) override;
 
     QVariant data(int row, int column, int view) const override;
 
@@ -282,6 +280,8 @@ public:
                              int dimension) const override;
 
     void jacobianData(DataMatrix& dataMatrix) override;
+
+    void remove(int viewId) override;
 
 private:
     QVector<Symbol*> mSymbols;

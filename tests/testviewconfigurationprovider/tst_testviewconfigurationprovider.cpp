@@ -104,7 +104,7 @@ void TestViewConfigurationProvider::test_viewConfiguration(AbstractViewConfigura
     }
     QVERIFY(viewConfig->modelInstance() != nullptr);
     QCOMPARE(viewConfig->viewType(), type);
-    QCOMPARE(viewConfig->view(), (int)type);
+    QCOMPARE(viewConfig->viewId(), (int)type);
 
     //QCOMPARE(viewConfig->currentValueFilter(), ValueFilter());
     //QCOMPARE(viewConfig->defaultValueFilter(), ValueFilter());

@@ -25,10 +25,13 @@
 
 #include "common.h"
 
+class QStackedWidget;
+
 namespace gams {
 namespace studio {
 namespace mii {
 
+class AbstractViewFrame;
 class SectionTreeItem;
 
 class SectionTreeModel : public QAbstractItemModel
@@ -41,11 +44,17 @@ public:
     };
 
     explicit SectionTreeModel(QObject *parent = nullptr);
+
     virtual ~SectionTreeModel();
 
-    void appendCustomView(const QString &text, ViewDataType type, int page);
+    void appendCustomView(const QString &text, ViewDataType type, AbstractViewFrame* widget);
+
+    SectionTreeItem* data() const;
+
+    SectionTreeItem* customData() const;
 
     QVariant data(const QModelIndex &index, int role) const override;
+
     bool setData(const QModelIndex &index, const QVariant &value,
                  int role = Qt::EditRole) override;
 
@@ -59,15 +68,22 @@ public:
 
     QModelIndex index(int row, int column,
                       const QModelIndex &parent = QModelIndex()) const override;
+
     QModelIndex parent(const QModelIndex &index) const override;
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
     QHash<int, QByteArray> roleNames() const override;
 
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
 
-    void loadModelData();
+    QList<AbstractViewFrame*> removeItem(SectionTreeItem* item);
+
+    QList<AbstractViewFrame*> removeCustomRows();
+
+    void loadModelData(QStackedWidget* stackedWidget);
 
 private:
     SectionTreeItem *mRoot;

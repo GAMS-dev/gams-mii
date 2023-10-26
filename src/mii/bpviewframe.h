@@ -96,7 +96,7 @@ public:
                         QWidget *parent = nullptr,
                         Qt::WindowFlags f = Qt::WindowFlags());
 
-    AbstractTableViewFrame *clone(int view) override;
+    AbstractTableViewFrame *clone(int viewId) override;
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
@@ -129,7 +129,7 @@ public:
                      QWidget *parent = nullptr,
                      Qt::WindowFlags f = Qt::WindowFlags());
 
-    AbstractTableViewFrame *clone(int view) override;
+    AbstractTableViewFrame *clone(int viewId) override;
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
@@ -167,7 +167,7 @@ public:
                        QWidget *parent = nullptr,
                        Qt::WindowFlags f = Qt::WindowFlags());
 
-    AbstractTableViewFrame *clone(int view) override;
+    AbstractTableViewFrame *clone(int viewId) override;
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
@@ -204,7 +204,7 @@ public:
                        QSharedPointer<AbstractViewConfiguration> viewConfig,
                        QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    AbstractTableViewFrame* clone(int view) override;
+    AbstractTableViewFrame* clone(int viewId) override;
 
     ViewDataType type() const override
     {

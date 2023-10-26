@@ -323,30 +323,32 @@ public:
 
     void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig);
 
-    QVariant data(int row, int column, int view) const;
+    QVariant data(int row, int column, int viewId) const;
 
-    QSharedPointer<PostoptTreeItem> dataTree(int view) const;
+    QSharedPointer<PostoptTreeItem> dataTree(int viewId) const;
 
-    int headerData(int logicalIndex, Qt::Orientation orientation, int view) const;
+    void remove(int viewId);
+
+    int headerData(int logicalIndex, Qt::Orientation orientation, int viewId) const;
 
     QVariant plainHeaderData(Qt::Orientation orientation,
-                             int view, int logicalIndex,
+                             int viewId, int logicalIndex,
                              int dimension) const;
 
     QVariant sectionLabels(Qt::Orientation orientation,
-                           int view, int logicalIndex) const;
+                           int viewId, int logicalIndex) const;
 
-    int rowCount(int view) const;
+    int rowCount(int viewId) const;
 
-    int rowEntries(int row, int view) const;
+    int rowEntries(int row, int viewId) const;
 
-    int columnCount(int view) const;
+    int columnCount(int viewId) const;
 
-    int columnEntries(int column, int view) const;
+    int columnEntries(int column, int viewId) const;
 
-    int symbolRowCount(int view) const;
+    int symbolRowCount(int viewId) const;
 
-    int symbolColumnCount(int view) const;
+    int symbolColumnCount(int viewId) const;
 
     double modelMinimum() const;
     void setModelMinimum(double minimum);
@@ -354,12 +356,12 @@ public:
     double modelMaximum() const;
     void setModelMaximum(double maximum);
 
-    QSharedPointer<AbstractViewConfiguration> clone(int view, int newView);
+    QSharedPointer<AbstractViewConfiguration> clone(int viewId, int newView);
     
     void loadJacobian();
 
 private:
-    AbstractDataProvider *cloneProvider(int view);
+    AbstractDataProvider *cloneProvider(int viewId);
     QSharedPointer<AbstractDataProvider> newProvider(QSharedPointer<AbstractViewConfiguration> viewConfig);
 
 private:
@@ -369,6 +371,10 @@ private:
 
     DataMatrix mDataMatrix;
     CoefficientCount *mCoeffCount = nullptr;
+
+    ///
+    /// \brief Abstract data provider cache, where key is the view ID.
+    ///
     QMap<int, QSharedPointer<AbstractDataProvider>> mDataCache;
 };
 

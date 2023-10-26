@@ -51,9 +51,9 @@ PostoptTreeViewFrame::~PostoptTreeViewFrame()
 
 }
 
-AbstractViewFrame *PostoptTreeViewFrame::clone(int view)
+AbstractViewFrame *PostoptTreeViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->view(), view));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
@@ -79,7 +79,7 @@ void PostoptTreeViewFrame::setShowAbsoluteValues(bool absoluteValues)
     if (mViewConfig->currentValueFilter().isAbsolute() != absoluteValues) {
         mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
         mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-        mModelInstance->loadData(mViewConfig);
+        mModelInstance->loadViewData(mViewConfig);
         setupView();
     }
 }
@@ -100,7 +100,7 @@ void PostoptTreeViewFrame::setupView(QSharedPointer<AbstractModelInstance> model
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
-    mModelInstance->loadData(mViewConfig);
+    mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
@@ -141,7 +141,7 @@ bool PostoptTreeViewFrame::hasData() const
 
 void PostoptTreeViewFrame::setupView()
 {
-    mBaseModel = new PostoptTreeModel(mViewConfig->view(),
+    mBaseModel = new PostoptTreeModel(mViewConfig->viewId(),
                                       mModelInstance,
                                       ui->treeView);
     ui->treeView->setModel(mBaseModel);

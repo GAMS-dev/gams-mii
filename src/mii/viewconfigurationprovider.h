@@ -30,6 +30,7 @@ namespace gams {
 namespace studio{
 namespace mii {
 
+class AbstractViewFrame;
 class AbstractModelInstance;
 
 class AbstractViewConfiguration
@@ -52,20 +53,24 @@ public:
 
     void setModelInstance(QSharedPointer<AbstractModelInstance> modelInstance);
 
-    inline int view() const
+    inline int viewId() const
     {
-        return mView;
+        return mViewId;
     }
 
-    inline void setView(int view)
+    inline void setViewId(int viewId)
     {
-        mView = view;
+        mViewId = viewId;
     }
 
     inline ViewDataType viewType() const
     {
         return mViewType;
     }
+
+    AbstractViewFrame* view() const;
+
+    void setView(AbstractViewFrame* view);
 
     Aggregation& currentAggregation()
     {
@@ -163,7 +168,6 @@ protected:
 protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     SearchResult mSearchResult;
-    int mView;
 
     SectionLabels mHorizontalSectionLabels;
     SectionLabels mVerticalSectionLabels;
@@ -181,7 +185,9 @@ protected:
     Aggregation mDefaultAggregation;
 
 private:
+    int mViewId;
     ViewDataType mViewType;
+    AbstractViewFrame* mView = nullptr;
 };
 
 class ViewConfigurationProvider final
@@ -190,10 +196,23 @@ private:
     ViewConfigurationProvider() {};
 
 public:
+    static int currentViewId()
+    {
+        return ViewId;
+    }
+
+    static int nextViewId()
+    {
+        return ++ViewId;
+    }
+
     static AbstractViewConfiguration* defaultConfiguration();
 
     static AbstractViewConfiguration* configuration(ViewDataType viewType,
                                                     QSharedPointer<AbstractModelInstance> modelInstance);
+
+private:
+    static int ViewId;
 };
 
 }

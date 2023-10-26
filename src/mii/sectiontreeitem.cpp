@@ -33,12 +33,12 @@ SectionTreeItem::SectionTreeItem(const QString &name,
 
 }
 
-
-SectionTreeItem::SectionTreeItem(const QString &name, int page,
+SectionTreeItem::SectionTreeItem(const QString &name,
+                                 AbstractViewFrame* widget,
                                  SectionTreeItem *parent)
     : mName(name)
     , mParent(parent)
-    , mPage(page)
+    , mWidget(widget)
 {
 
 }
@@ -51,6 +51,31 @@ SectionTreeItem::~SectionTreeItem()
 void SectionTreeItem::append(SectionTreeItem *child)
 {
     mChilds.append(child);
+}
+
+QList<AbstractViewFrame*> SectionTreeItem::removeChilds()
+{
+    QList<AbstractViewFrame*> wgts;
+    if (isGroup()) {
+        while (mChilds.count()) {
+            auto child = mChilds.takeFirst();
+            wgts.append(child->removeChilds());
+            delete child;
+        }
+        return wgts;
+    }
+    if (widget()) {
+        wgts.append(widget());
+    }
+    return wgts;
+}
+
+void SectionTreeItem::remove(SectionTreeItem *child)
+{
+    if (!child)
+        return;
+    mChilds.removeOne(child);
+    delete child;
 }
 
 void SectionTreeItem::remove(int index, int count)
@@ -89,12 +114,27 @@ void SectionTreeItem::setName(const QString &name) {
     mName = name;
 }
 
-int SectionTreeItem::page() const {
-    return mPage;
+AbstractViewFrame* SectionTreeItem::widget() const {
+    return mWidget;
 }
 
-void SectionTreeItem::setPage(int page) {
-    mPage = page;
+QList<AbstractViewFrame*> SectionTreeItem::widgets() const
+{
+    QList<AbstractViewFrame*> wgts;
+    if (isGroup()) {
+        for (auto child : mChilds) {
+            wgts.append(child->widgets());
+        }
+        return wgts;
+    }
+    if (widget()) {
+        wgts.append(widget());
+    }
+    return wgts;
+}
+
+void SectionTreeItem::setWidget(AbstractViewFrame* page) {
+    mWidget = page;
 }
 
 int SectionTreeItem::row() const

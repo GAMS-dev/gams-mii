@@ -7,6 +7,6 @@ TEMPLATE = app
 
 INCLUDEPATH += $$SRCPATH/mii
 
-SOURCES +=  tst_testsectiontreeitem.cpp          \
-            $$SRCPATH/mii/common.cpp             \
+SOURCES +=  tst_testsectiontreeitem.cpp         \
+            $$SRCPATH/mii/common.cpp            \
             $$SRCPATH/mii/sectiontreeitem.cpp

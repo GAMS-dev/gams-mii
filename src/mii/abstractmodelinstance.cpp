@@ -247,12 +247,7 @@ const QVector<Symbol*> &EmptyModelInstance::symbols(Symbol::Type type) const
     return mSymbols;
 }
 
-void EmptyModelInstance::loadData()
-{
-
-}
-
-void EmptyModelInstance::loadJacobian()
+void EmptyModelInstance::loadBaseData()
 {
 
 }
@@ -314,7 +309,7 @@ QSharedPointer<AbstractViewConfiguration> EmptyModelInstance::clone(int view, in
     return nullptr;
 }
 
-void EmptyModelInstance::loadData(QSharedPointer<AbstractViewConfiguration> viewConfig)
+void EmptyModelInstance::loadViewData(QSharedPointer<AbstractViewConfiguration> viewConfig)
 {
     Q_UNUSED(viewConfig);
 }
@@ -359,6 +354,11 @@ QVariant EmptyModelInstance::plainHeaderData(Qt::Orientation orientation,
 void EmptyModelInstance::jacobianData(DataMatrix &dataMatrix)
 {
     Q_UNUSED(dataMatrix);
+}
+
+void EmptyModelInstance::remove(int viewId)
+{
+    Q_UNUSED(viewId);
 }
 
 }

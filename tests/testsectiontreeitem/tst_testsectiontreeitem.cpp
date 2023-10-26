@@ -62,22 +62,24 @@ void TestSectionTreeItem::test_default()
     QCOMPARE(item.childCount(), 0);
     QCOMPARE(item.columnCount(), 1);
     QCOMPARE(item.name(), "default");
-    QCOMPARE(item.page(), -1);
+    QCOMPARE(item.widget(), nullptr);
+    QCOMPARE(item.widgets(), QList<AbstractViewFrame*>());
     QCOMPARE(item.row(), 0);
     QCOMPARE(item.type(), ViewDataType::Unknown);
     QCOMPARE(item.parent(), nullptr);
     QCOMPARE(item.isCustom(), false);
     QCOMPARE(item.isGroup(), false);
+    QCOMPARE(item.removeChilds(), QList<AbstractViewFrame*>());
 }
 
 void TestSectionTreeItem::test_constructor()
 {
-    SectionTreeItem item1("default", nullptr);
+    SectionTreeItem item1("default");
     QCOMPARE(item1.name(), "default");
     QCOMPARE(item1.parent(), nullptr);
-    SectionTreeItem item2("other", 42, &item1);
+    SectionTreeItem item2("other", nullptr, &item1);
     QCOMPARE(item2.name(), "other");
-    QCOMPARE(item2.page(), 42);
+    QCOMPARE(item2.widget(), nullptr);
     QCOMPARE(item2.parent(), &item1);
 }
 
@@ -85,12 +87,12 @@ void TestSectionTreeItem::test_getSet()
 {
     SectionTreeItem item("default");
 
-    auto c1 = new SectionTreeItem("c1", 0, &item);
+    auto c1 = new SectionTreeItem("c1", &item);
     item.append(c1);
     QCOMPARE(item.child(0), c1);
     QCOMPARE(item.child(1), nullptr);
     QCOMPARE(item.childCount(), 1);
-    auto c2 = new SectionTreeItem("c2", 1, &item);
+    auto c2 = new SectionTreeItem("c2", &item);
     item.append(c2);
     QCOMPARE(item.child(0), c1);
     QCOMPARE(item.child(1), c2);
@@ -104,8 +106,13 @@ void TestSectionTreeItem::test_getSet()
     item.setType(ViewDataType::Symbols);
     QCOMPARE(item.type(), ViewDataType::Symbols);
 
-    item.setPage(42);
-    QCOMPARE(item.page(), 42);
+    // TODO tests: Add an empty frame for tests?
+    //auto frame = new PostoptTreeViewFrame;
+    //item.setWidget(frame);
+    //QCOMPARE(item.widget(), frame);
+    //item.setWidget(nullptr);
+    //QCOMPARE(item.widget(), nullptr);
+    //delete frame;
 
     item.setCustom(true);
     QCOMPARE(item.isCustom(), true);

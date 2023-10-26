@@ -41,7 +41,7 @@ public:
                     QSharedPointer<AbstractViewConfiguration> viewConfig,
                     QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    AbstractTableViewFrame *clone(int view) override;
+    AbstractTableViewFrame *clone(int viewId) override;
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
@@ -53,7 +53,7 @@ public:
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    void setView(int view) override;
+    void setViewId(int view) override;
 
     void updateView() override;
 

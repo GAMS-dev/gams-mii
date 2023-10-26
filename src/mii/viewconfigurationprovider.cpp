@@ -28,6 +28,8 @@ namespace gams {
 namespace studio{
 namespace mii {
 
+int ViewConfigurationProvider::ViewId = 127;
+
 class DefaultViewConfiguration final : public AbstractViewConfiguration
 {
 public:
@@ -439,7 +441,7 @@ protected:
 AbstractViewConfiguration::AbstractViewConfiguration(ViewDataType viewType,
                                                      QSharedPointer<AbstractModelInstance> modelInstance)
     : mModelInstance(modelInstance)
-    , mView((int)viewType)
+    , mViewId((int)viewType)
     , mViewType(viewType)
 {
 
@@ -448,6 +450,16 @@ AbstractViewConfiguration::AbstractViewConfiguration(ViewDataType viewType,
 void AbstractViewConfiguration::setModelInstance(QSharedPointer<AbstractModelInstance> modelInstance)
 {
     mModelInstance = modelInstance;
+}
+
+AbstractViewFrame *AbstractViewConfiguration::view() const
+{
+    return mView;
+}
+
+void AbstractViewConfiguration::setView(AbstractViewFrame* view)
+{
+    mView = view;
 }
 
 void AbstractViewConfiguration::updateIdentifierFilter(const QList<Symbol *> &eqnFilter,

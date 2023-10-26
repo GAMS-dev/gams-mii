@@ -385,15 +385,10 @@ const QVector<Symbol*>& ModelInstance::symbols(Symbol::Type type) const
     return type == Symbol::Equation ? mEquations : mVariables;
 }
 
-void ModelInstance::loadData()
+void ModelInstance::loadBaseData()
 {
     loadSymbols();
     loadLabels();
-    mDataHandler->loadJacobian();
-}
-
-void ModelInstance::loadJacobian()
-{
     mDataHandler->loadJacobian();
 }
 
@@ -416,42 +411,42 @@ double ModelInstance::rhs(int row) const
     return gmoGetRhsOne(mGMO, row);
 }
 
-int ModelInstance::rowCount(int view) const
+int ModelInstance::rowCount(int viewId) const
 {
-    return mDataHandler->rowCount(view);
+    return mDataHandler->rowCount(viewId);
 }
 
-int ModelInstance::rowEntries(int row, int view) const
+int ModelInstance::rowEntries(int row, int viewId) const
 {
-    return mDataHandler->rowEntries(row, view);
+    return mDataHandler->rowEntries(row, viewId);
 }
 
-int ModelInstance::columnCount(int view) const
+int ModelInstance::columnCount(int viewId) const
 {
-    return mDataHandler->columnCount(view);
+    return mDataHandler->columnCount(viewId);
 }
 
-int ModelInstance::columnEntries(int column, int view) const
+int ModelInstance::columnEntries(int column, int viewId) const
 {
-    return mDataHandler->columnEntries(column, view);
+    return mDataHandler->columnEntries(column, viewId);
 }
 
-int ModelInstance::symbolRowCount(int view) const
+int ModelInstance::symbolRowCount(int viewId) const
 {
-    return mDataHandler->symbolRowCount(view);
+    return mDataHandler->symbolRowCount(viewId);
 }
 
-int ModelInstance::symbolColumnCount(int view) const
+int ModelInstance::symbolColumnCount(int viewId) const
 {
-    return mDataHandler->symbolColumnCount(view);
+    return mDataHandler->symbolColumnCount(viewId);
 }
 
-QSharedPointer<AbstractViewConfiguration> ModelInstance::clone(int view, int newView)
+QSharedPointer<AbstractViewConfiguration> ModelInstance::clone(int viewId, int newViewId)
 {
-    return mDataHandler->clone(view, newView);
+    return mDataHandler->clone(viewId, newViewId);
 }
 
-void ModelInstance::loadData(QSharedPointer<AbstractViewConfiguration> viewConfig)
+void ModelInstance::loadViewData(QSharedPointer<AbstractViewConfiguration> viewConfig)
 {
     return mDataHandler->loadData(viewConfig);
 }
@@ -478,38 +473,39 @@ void ModelInstance::loadLabels()
     }
 }
 
-QVariant ModelInstance::data(int row, int column, int view) const
+QVariant ModelInstance::data(int row, int column, int viewId) const
 {
-    return mDataHandler->data(row, column, view);
+    return mDataHandler->data(row, column, viewId);
 }
 
-QSharedPointer<PostoptTreeItem> ModelInstance::dataTree(int view) const
+QSharedPointer<PostoptTreeItem> ModelInstance::dataTree(int viewId) const
 {
-    return mDataHandler->dataTree(view);
+    return mDataHandler->dataTree(viewId);
 }
 
 QVariant ModelInstance::headerData(int logicalIndex,
                                    Qt::Orientation orientation,
-                                   int view, int role) const
+                                   int viewId,
+                                   int role) const
 {
     if (role == Mi::IndexDataRole) {
-        return mDataHandler->headerData(logicalIndex, orientation, view);
+        return mDataHandler->headerData(logicalIndex, orientation, viewId);
     }
     if (role == Mi::LabelDataRole) {
-        return mDataHandler->plainHeaderData(orientation, view, logicalIndex, 0);
+        return mDataHandler->plainHeaderData(orientation, viewId, logicalIndex, 0);
     }
     if (role == Mi::SectionLabelRole) {
-        return mDataHandler->sectionLabels(orientation, view, logicalIndex);
+        return mDataHandler->sectionLabels(orientation, viewId, logicalIndex);
     }
     return QVariant();
 }
 
 QVariant ModelInstance::plainHeaderData(Qt::Orientation orientation,
-                                        int view,
+                                        int viewId,
                                         int logicalIndex,
                                         int dimension) const
 {
-    return mDataHandler->plainHeaderData(orientation, view, logicalIndex, dimension);
+    return mDataHandler->plainHeaderData(orientation, viewId, logicalIndex, dimension);
 }
 
 void ModelInstance::initialize()
@@ -735,6 +731,11 @@ QVariant ModelInstance::variableAttribute(const QString &header, int index, int 
     }
     value = abs ? std::abs(value) : value;
     return specialValuePostopt(value, abs);
+}
+
+void ModelInstance::remove(int viewId)
+{
+    mDataHandler->remove(viewId);
 }
 
 QPair<double, double> ModelInstance::equationBounds(int row) const
