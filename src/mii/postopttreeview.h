@@ -29,6 +29,8 @@ namespace mii {
 
 class PostoptTreeView : public QTreeView
 {
+    Q_OBJECT
+
 public:
     PostoptTreeView(QWidget *parent = nullptr);
 
@@ -37,6 +39,12 @@ public:
     void zoomIn(int range = 1);
     void zoomOut(int range = 1);
     void resetZoom();
+
+signals:
+    void openFilterDialog();
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
 
 private:
     void zoom(int range);

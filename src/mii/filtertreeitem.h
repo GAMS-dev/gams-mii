@@ -83,9 +83,6 @@ public:
     bool isVisible() const;
     void setVisible(bool visible);
 
-    static const QString EquationText;
-    static const QString VariableText;
-
 private:
     FilterTreeItem *mParent = nullptr;
 

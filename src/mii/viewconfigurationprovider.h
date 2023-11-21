@@ -36,7 +36,15 @@ class AbstractModelInstance;
 class AbstractViewConfiguration
 {
 public:
-    AbstractViewConfiguration(ViewDataType viewType,
+    enum Option {
+        AggregationConfig   = 0x01,
+        IdentifierConfig    = 0x02,
+        LabelConfig         = 0x04,
+        ValueConfig         = 0x08
+    };
+    Q_DECLARE_FLAGS(Options, Option)
+
+    AbstractViewConfiguration(ViewHelper::ViewDataType viewType,
                               QSharedPointer<AbstractModelInstance> modelInstance = nullptr);
 
     virtual ~AbstractViewConfiguration()
@@ -63,7 +71,7 @@ public:
         mViewId = viewId;
     }
 
-    inline ViewDataType viewType() const
+    inline ViewHelper::ViewDataType viewType() const
     {
         return mViewType;
     }
@@ -82,7 +90,7 @@ public:
         mCurrentAggregation = aggregation;
     }
 
-    const Aggregation& defaultAggregation() const
+    Aggregation& defaultAggregation()
     {
         return mDefaultAggregation;
     }
@@ -92,7 +100,12 @@ public:
         mDefaultAggregation = aggregation;
     }
 
-    const LabelFilter& currentLabelFiler() const
+    void resetAggregation()
+    {
+        mCurrentAggregation = mDefaultAggregation;
+    }
+
+    LabelFilter& currentLabelFiler()
     {
         return mCurrentLabelFilter;
     }
@@ -102,7 +115,7 @@ public:
         mCurrentLabelFilter = filter;
     }
 
-    const LabelFilter& defaultLabelFilter() const
+    LabelFilter& defaultLabelFilter()
     {
         return mDefaultLabelFilter;
     }
@@ -110,6 +123,11 @@ public:
     void setDefaultLabelFilter(const LabelFilter& filter)
     {
         mDefaultLabelFilter = filter;
+    }
+
+    void resetLabelFilter()
+    {
+        mCurrentLabelFilter = mDefaultLabelFilter;
     }
 
     IdentifierFilter& currentIdentifierFilter()
@@ -122,13 +140,19 @@ public:
         mCurrentIdentifierFilter = filter;
     }
 
-    const IdentifierFilter& defaultIdentifierFilter() const {
+    const IdentifierFilter& defaultIdentifierFilter() const
+    {
         return mDefaultIdentifierFilter;
     }
 
     void setDefaultIdentifierFilter(const IdentifierFilter& filter)
     {
         mDefaultIdentifierFilter = filter;
+    }
+
+    void resetIdentifierFilter()
+    {
+        mCurrentIdentifierFilter = mDefaultIdentifierFilter;
     }
 
     void updateIdentifierFilter(const QList<Symbol *> &eqnFilter,
@@ -144,13 +168,44 @@ public:
         mCurrentValueFilter = filter;
     }
 
-    ValueFilter& defaultValueFilter() {
+    ValueFilter& defaultValueFilter()
+    {
         return mDefaultValueFilter;
     }
 
     void setDefaultValueFilter(const ValueFilter& filter)
     {
         mDefaultValueFilter = filter;
+    }
+
+    void resetValueFilter()
+    {
+        mCurrentValueFilter = mDefaultValueFilter;
+    }
+
+    LabelCheckStates& currentAttributeFilter()
+    {
+        return mCurrentAttributeFilter;
+    }
+
+    void setCurrentAttributeFilter(const LabelCheckStates &filter)
+    {
+        mCurrentAttributeFilter = filter;
+    }
+
+    LabelCheckStates& defaultAttributeFilter()
+    {
+        return mDefaultAttributeFilter;
+    }
+
+    void setDefaultAttributeFilter(const LabelCheckStates &filter)
+    {
+        mDefaultAttributeFilter = filter;
+    }
+
+    void resetAttributeFilter()
+    {
+        mCurrentAttributeFilter = mDefaultAttributeFilter;
     }
 
     const SectionLabels& sectionLabels(Qt::Orientation orientation) const;
@@ -184,11 +239,16 @@ protected:
     Aggregation mCurrentAggregation;
     Aggregation mDefaultAggregation;
 
+    LabelCheckStates mCurrentAttributeFilter;
+    LabelCheckStates mDefaultAttributeFilter;
+
 private:
     int mViewId;
-    ViewDataType mViewType;
+    ViewHelper::ViewDataType mViewType;
     AbstractViewFrame* mView = nullptr;
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(AbstractViewConfiguration::Options)
 
 class ViewConfigurationProvider final
 {
@@ -208,7 +268,7 @@ public:
 
     static AbstractViewConfiguration* defaultConfiguration();
 
-    static AbstractViewConfiguration* configuration(ViewDataType viewType,
+    static AbstractViewConfiguration* configuration(ViewHelper::ViewDataType viewType,
                                                     QSharedPointer<AbstractModelInstance> modelInstance);
 
 private:

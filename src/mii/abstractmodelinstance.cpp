@@ -72,6 +72,16 @@ void AbstractModelInstance::setScratchDirectory(const QString &scratchDir)
     mScratchDir = scratchDir;
 }
 
+bool AbstractModelInstance::globalAbsolute() const
+{
+    return mGlobalAbsolute;
+}
+
+void AbstractModelInstance::setGlobalAbsolute(bool absolute)
+{
+    mGlobalAbsolute = absolute;
+}
+
 bool AbstractModelInstance::useOutput() const
 {
     return mUseOutput;
@@ -98,7 +108,7 @@ int AbstractModelInstance::equationCount() const
     return 0;
 }
 
-int AbstractModelInstance::equationCount(EquationType type) const
+int AbstractModelInstance::equationCount(ValueHelper::EquationType type) const
 {
     Q_UNUSED(type);
     return 0;
@@ -120,7 +130,7 @@ int AbstractModelInstance::variableCount() const
     return 0;
 }
 
-int AbstractModelInstance::variableCount(VariableType type) const
+int AbstractModelInstance::variableCount(ValueHelper::VariableType type) const
 {
     Q_UNUSED(type);
     return 0;

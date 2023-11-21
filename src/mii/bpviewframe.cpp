@@ -65,21 +65,6 @@ const QList<Symbol*>& AbstractBPViewFrame::selectedVariables() const
     return mSelectedVariables;
 }
 
-void AbstractBPViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
-{
-    mViewConfig->setCurrentIdentifierFilter(filter);
-    if (mIdentifierFilterModel)
-        mIdentifierFilterModel->setIdentifierFilter(filter);
-}
-
-void AbstractBPViewFrame::reset()
-{
-    setIdentifierFilter(mViewConfig->defaultIdentifierFilter());
-    setValueFilter(mViewConfig->defaultValueFilter());
-    setLabelFilter(mViewConfig->defaultLabelFilter());
-    updateView();
-}
-
 bool AbstractBPViewFrame::hasData() const
 {
     return mBaseModel && mBaseModel->rowCount() && mBaseModel->columnCount();
@@ -108,7 +93,6 @@ void AbstractBPViewFrame::setIdentifierLabelFilter(const IdentifierState &state,
         mViewConfig->currentIdentifierFilter()[orientation][state.SymbolIndex] = state;
     }
     updateView();
-    emit filtersChanged();
 }
 
 void AbstractBPViewFrame::handleRowColumnSelection()
@@ -120,25 +104,30 @@ void AbstractBPViewFrame::handleRowColumnSelection()
         if (!index.isValid())
             continue;
         section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
-                                                     Mi::IndexDataRole).toInt();
+                                                     ViewHelper::IndexDataRole).toInt();
         auto equation = mModelInstance->equation(section);
         rowSymbols[section] = equation;
         section = ui->tableView->model()->headerData(index.column(), Qt::Horizontal,
-                                                     Mi::IndexDataRole).toInt();
+                                                     ViewHelper::IndexDataRole).toInt();
         auto variable = mModelInstance->variable(section);
         columnSymbols[section] = variable;
-        break;
     }
     mSelectedEquations = rowSymbols.values();
     mSelectedVariables = columnSymbols.values();
     emit newSymbolViewRequested();
 }
 
+void AbstractBPViewFrame::updateIdentifierFilter()
+{
+    if (mIdentifierFilterModel)
+        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
+}
+
 void AbstractBPViewFrame::setIdentifierFilterCheckState(int symbolIndex,
                                                         Qt::CheckState state,
                                                         Qt::Orientation orientation)
 {
-    auto symbols = mViewConfig->currentIdentifierFilter()[orientation];
+    auto symbols = mViewConfig->currentIdentifierFilter().value(orientation);
     for (auto iter=symbols.begin(); iter!=symbols.end(); ++iter) {
         if (iter->SymbolIndex == symbolIndex) {
             iter->Checked = state;
@@ -165,14 +154,14 @@ BPOverviewViewFrame::BPOverviewViewFrame(QSharedPointer<AbstractModelInstance> m
 
 AbstractTableViewFrame *BPOverviewViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(mViewConfig->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
     auto frame = new BPOverviewViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
-    frame->setValueFilter(frame->viewConfig()->currentValueFilter());
-    frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
+    frame->updateFilters(AbstractViewConfiguration::ValueConfig |
+                         AbstractViewConfiguration::IdentifierConfig);
     return frame;
 }
 
@@ -180,32 +169,17 @@ void BPOverviewViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelI
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
+    mViewConfig->currentValueFilter().UseAbsoluteValues = modelInstance->globalAbsolute();
+    mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal = modelInstance->globalAbsolute();
     mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
-void BPOverviewViewFrame::setAggregation(const Aggregation &aggregation)
-{
-    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadViewData(mViewConfig);
-        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
-        emit filtersChanged();
-    }
-}
-
-void BPOverviewViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    Q_UNUSED(filter);
-}
-
 void BPOverviewViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
+    Q_UNUSED(absoluteValues);
     if (!mBaseModel)
         return;
-    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-    mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
     mModelInstance->loadViewData(mViewConfig);
     emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
 }
@@ -254,14 +228,14 @@ BPCountViewFrame::BPCountViewFrame(QSharedPointer<AbstractModelInstance> modelIn
 
 AbstractTableViewFrame *BPCountViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(mViewConfig->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
     auto frame = new BPCountViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
-    frame->setValueFilter(frame->viewConfig()->currentValueFilter());
-    frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
+    frame->updateFilters(AbstractViewConfiguration::ValueConfig |
+                         AbstractViewConfiguration::IdentifierConfig);
     return frame;
 }
 
@@ -269,33 +243,15 @@ void BPCountViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInst
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
+    mViewConfig->currentValueFilter().UseAbsoluteValues = modelInstance->globalAbsolute();
+    mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal = modelInstance->globalAbsolute();
     mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
-void BPCountViewFrame::setAggregation(const Aggregation &aggregation)
-{
-    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadViewData(mViewConfig);
-        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
-        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-        emit filtersChanged();
-    }
-}
-
-void BPCountViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    mViewConfig->setCurrentValueFilter(filter);
-    setShowAbsoluteValues(mViewConfig->currentValueFilter().UseAbsoluteValues);
-    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-}
-
 void BPCountViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
-    if (mAbsFormatModel)
-        mAbsFormatModel->setAbsFormat(absoluteValues);
+    Q_UNUSED(absoluteValues);
 }
 
 void BPCountViewFrame::updateView()
@@ -303,6 +259,12 @@ void BPCountViewFrame::updateView()
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();
     emit filtersChanged();
+}
+
+void BPCountViewFrame::updateValueFilter()
+{
+    setShowAbsoluteValues(mViewConfig->currentValueFilter().UseAbsoluteValues);
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void BPCountViewFrame::setupView()
@@ -320,10 +282,8 @@ void BPCountViewFrame::setupView()
                                            ui->tableView);
     mValueFormatModel = new BPValueFormatTypeProxyModel(ui->tableView);
     mValueFormatModel->setSourceModel(baseModel);
-    mAbsFormatModel = new AbsFormatProxyModel(ui->tableView);
-    mAbsFormatModel->setSourceModel(mValueFormatModel);
     mIdentifierFilterModel = new BPIdentifierFilterModel(mModelInstance, ui->tableView);
-    mIdentifierFilterModel->setSourceModel(mAbsFormatModel);
+    mIdentifierFilterModel->setSourceModel(mValueFormatModel);
 
     ui->tableView->setVerticalHeader(mVerticalHeader);
     auto oldSelectionModel = ui->tableView->selectionModel();
@@ -355,14 +315,14 @@ BPAverageViewFrame::BPAverageViewFrame(QSharedPointer<AbstractModelInstance> mod
 
 AbstractTableViewFrame *BPAverageViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(mViewConfig->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
     auto frame = new BPAverageViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
-    frame->setValueFilter(frame->viewConfig()->currentValueFilter());
-    frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
+    frame->updateFilters(AbstractViewConfiguration::ValueConfig |
+                         AbstractViewConfiguration::IdentifierConfig);
     return frame;
 }
 
@@ -370,33 +330,15 @@ void BPAverageViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
+    mViewConfig->currentValueFilter().UseAbsoluteValues = modelInstance->globalAbsolute();
+    mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal = modelInstance->globalAbsolute();
     mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
-void BPAverageViewFrame::setAggregation(const Aggregation &aggregation)
-{
-    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadViewData(mViewConfig);
-        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
-        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-        emit filtersChanged();
-    }
-}
-
-void BPAverageViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    mViewConfig->setCurrentValueFilter(filter);
-    setShowAbsoluteValues(mViewConfig->currentValueFilter().UseAbsoluteValues);
-    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-}
-
 void BPAverageViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
-    if (mAbsFormatModel)
-        mAbsFormatModel->setAbsFormat(absoluteValues);
+    Q_UNUSED(absoluteValues);
 }
 
 void BPAverageViewFrame::updateView()
@@ -404,6 +346,12 @@ void BPAverageViewFrame::updateView()
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();
     emit filtersChanged();
+}
+
+void BPAverageViewFrame::updateValueFilter()
+{
+    setShowAbsoluteValues(mViewConfig->currentValueFilter().UseAbsoluteValues);
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void BPAverageViewFrame::setupView()
@@ -421,10 +369,8 @@ void BPAverageViewFrame::setupView()
                                              ui->tableView);
     mValueFormatModel = new BPValueFormatTypeProxyModel(ui->tableView);
     mValueFormatModel->setSourceModel(baseModel);
-    mAbsFormatModel = new AbsFormatProxyModel(ui->tableView);
-    mAbsFormatModel->setSourceModel(mValueFormatModel);
     mIdentifierFilterModel = new BPIdentifierFilterModel(mModelInstance, ui->tableView);
-    mIdentifierFilterModel->setSourceModel(mAbsFormatModel);
+    mIdentifierFilterModel->setSourceModel(mValueFormatModel);
 
     ui->tableView->setVerticalHeader(mVerticalHeader);
     auto oldSelectionModel = ui->tableView->selectionModel();
@@ -456,53 +402,22 @@ BPScalingViewFrame::BPScalingViewFrame(QSharedPointer<AbstractModelInstance> mod
 
 AbstractTableViewFrame* BPScalingViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(mViewConfig->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
     auto frame = new BPScalingViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
-    frame->setValueFilter(frame->viewConfig()->currentValueFilter());
-    frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
+    frame->updateFilters(AbstractViewConfiguration::ValueConfig |
+                         AbstractViewConfiguration::IdentifierConfig);
     return frame;
-}
-
-void BPScalingViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    if (!mBaseModel)
-        return;
-    if (filter.Reset) {
-        mViewConfig->setCurrentValueFilter(filter);
-        mModelInstance->loadViewData(mViewConfig);
-    } else if (mViewConfig->currentValueFilter().UseAbsoluteValues != filter.UseAbsoluteValues) {
-        mViewConfig->currentValueFilter().UseAbsoluteValues = filter.UseAbsoluteValues;
-        mModelInstance->loadViewData(mViewConfig);
-    }
-    if (!filter.Reset) {
-        mViewConfig->setCurrentValueFilter(filter);
-    }
-    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-}
-
-void BPScalingViewFrame::setAggregation(const Aggregation &aggregation)
-{
-    if (mBaseModel && mViewConfig->currentAggregation().useAbsoluteValues() != aggregation.useAbsoluteValues()) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(aggregation.useAbsoluteValues());
-        mModelInstance->loadViewData(mViewConfig);
-        emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-        mViewConfig->currentValueFilter().UseAbsoluteValues = aggregation.useAbsoluteValues();
-        mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-        emit filtersChanged();
-    }
 }
 
 void BPScalingViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
+    Q_UNUSED(absoluteValues);
     if (!mBaseModel)
         return;
-    mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-    mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
     mModelInstance->loadViewData(mViewConfig);
     emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
     mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
@@ -512,6 +427,8 @@ void BPScalingViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelIn
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
+    mViewConfig->currentValueFilter().UseAbsoluteValues = modelInstance->globalAbsolute();
+    mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal = modelInstance->globalAbsolute();
     mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
@@ -521,6 +438,15 @@ void BPScalingViewFrame::updateView()
     ui->tableView->resizeColumnsToContents();
     ui->tableView->resizeRowsToContents();
     emit filtersChanged();
+}
+
+void BPScalingViewFrame::updateValueFilter()
+{
+    if (!mBaseModel)
+        return;
+    mModelInstance->loadViewData(mViewConfig);
+    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
 void BPScalingViewFrame::setupView()

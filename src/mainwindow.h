@@ -85,8 +85,9 @@ private slots:
 
     // Other
     void loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus);
+    void handleLibProcessResult(int exitCode, QProcess::ExitStatus exitStatus);
     void aggregationUpdate();
-    void globalFilterUpdate();
+    void viewConfigUpdate();
     void setGlobalFiltersData();
     void searchResultSelectionChanged(const QModelIndex &index);
     void updateModelInstance();
@@ -112,6 +113,8 @@ private:
     QString projectDirectory() const;
 
     void updateScratchDataWatcher(const QString& scrdir);
+
+    void setRunButtonState(bool enabled);
 
 private:
     Ui::MainWindow *ui;

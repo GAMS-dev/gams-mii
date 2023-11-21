@@ -20,8 +20,10 @@
  */
 #include "aggregationdialog.h"
 #include "ui_aggregationdialog.h"
+#include "abstractmodelinstance.h"
 #include "filtertreeitem.h"
 #include "filtertreemodel.h"
+#include "viewconfigurationprovider.h"
 
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
@@ -37,9 +39,10 @@ QRegularExpression AggregationDialog::RegExp = QRegularExpression("^\\d+$");
 AggregationDialog::AggregationDialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::AggregationDialog)
+    , mViewConfig(ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::Unknown,
+                                                           QSharedPointer<AbstractModelInstance>(new EmptyModelInstance)))
 {
     ui->setupUi(this);
-
     connect(ui->filterEdit, &QLineEdit::textChanged,
             this, &AggregationDialog::filterUpdate);
     connect(this, &QDialog::rejected,
@@ -51,23 +54,20 @@ AggregationDialog::~AggregationDialog()
     delete ui;
 }
 
-const Aggregation& AggregationDialog::aggregation() const
+QSharedPointer<AbstractViewConfiguration> AggregationDialog::viewConfig() const
 {
-    return mAggregation;
+    return mViewConfig;
 }
 
-void AggregationDialog::setAggregation(const Aggregation &aggregation,
-                                       const IdentifierFilter &filter,
-                                       bool absValuesGlobal)
+void AggregationDialog::setViewConfig(QSharedPointer<AbstractViewConfiguration> config)
 {
-    mAggregation = aggregation;
-    mIdentifierFilter = filter;
-    mAbsValuesGlobal = absValuesGlobal;
+    mViewConfig = config;
+    mAbsValuesGlobal = mViewConfig->currentAggregation().useAbsoluteValues();
     ui->filterEdit->setText("");
-    ui->aggregationBox->setCurrentText(mAggregation.typeText());
+    ui->aggregationBox->setCurrentText(mViewConfig->currentAggregation().typeText());
     mAggregationMethod = ui->aggregationBox->currentIndex();
-    ui->absoluteBox->setChecked(mAggregation.useAbsoluteValues());
-    if (Mi::isAggregatable(mAggregation.viewType())) {
+    ui->absoluteBox->setChecked(mViewConfig->currentAggregation().useAbsoluteValues());
+    if (ViewHelper::isAggregatable(mViewConfig->currentAggregation().viewType())) {
         ui->applyButton->setEnabled(true);
         ui->resetButton->setEnabled(true);
     } else {
@@ -79,11 +79,6 @@ void AggregationDialog::setAggregation(const Aggregation &aggregation,
         ui->absoluteBox->setEnabled(false);
     else
         ui->absoluteBox->setEnabled(true);
-}
-
-void AggregationDialog::setDefaultAggregation(const Aggregation &aggregation)
-{
-    mDefaultAggregation = aggregation;
 }
 
 void AggregationDialog::on_selectButton_clicked()
@@ -98,13 +93,13 @@ void AggregationDialog::on_deselectButton_clicked()
 
 void AggregationDialog::on_cancelButton_clicked()
 {
-    setAggregation(mAggregation, mIdentifierFilter, mAbsValuesGlobal);
+    //setAggregation(mAggregation, mIdentifierFilter, mAbsValuesGlobal);
     close();
 }
 
 void AggregationDialog::on_resetButton_clicked()
 {
-    setAggregation(mDefaultAggregation, mIdentifierFilter, mAbsValuesGlobal);
+    //setAggregation(mDefaultAggregation, mIdentifierFilter, mAbsValuesGlobal);
     applyAggregation();
     emit aggregationUpdated();
 }
@@ -158,12 +153,12 @@ void AggregationDialog::setupAggregationView()
 void AggregationDialog::setupTreeItems(Qt::Orientation orientation,
                                        FilterTreeItem *root)
 {
-    auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ? FilterTreeItem::VariableText :
-                                                                       FilterTreeItem::EquationText,
+    auto typeItem = new FilterTreeItem(orientation == Qt::Horizontal ? ViewHelper::VariableHeaderText :
+                                                                       ViewHelper::EquationHeaderText,
                                        Qt::Unchecked, root);
     typeItem->setCheckable(false);
-    auto identifierStates = mIdentifierFilter[orientation];
-    Q_FOREACH(const auto& item, mAggregation.aggregationSymbols(orientation)) {
+    auto identifierStates = mViewConfig->currentIdentifierFilter()[orientation];
+    Q_FOREACH(const auto& item, mViewConfig->currentAggregation().aggregationSymbols(orientation)) {
         if (item.checkStates().isEmpty())
             continue;
         if (identifierStates[item.symbolIndex()].Checked == Qt::Unchecked)
@@ -191,17 +186,17 @@ void AggregationDialog::setupTreeItems(Qt::Orientation orientation,
 
 void AggregationDialog::applyAggregation()
 {
-    mAggregation.setUseAbsoluteValues(ui->absoluteBox->isChecked());
-    mAggregation.setType(ui->aggregationBox->currentText());
+    mViewConfig->currentAggregation().setUseAbsoluteValues(ui->absoluteBox->isChecked());
+    mViewConfig->currentAggregation().setType(ui->aggregationBox->currentText());
     QList<FilterTreeItem*> items {
         static_cast<FilterTreeModel*>(mAggregationModel->sourceModel())->filterItem()->childs()
     };
     while (!items.isEmpty()) {
         auto item = items.takeFirst();
-        if (item->text() == FilterTreeItem::EquationText) {
-            mAggregation.setAggregationSymbols(Qt::Vertical, checkStates(item));
-        } else if (item->text() == FilterTreeItem::VariableText) {
-            mAggregation.setAggregationSymbols(Qt::Horizontal, checkStates(item));
+        if (item->text() == ViewHelper::EquationHeaderText) {
+            mViewConfig->currentAggregation().setAggregationSymbols(Qt::Vertical, checkStates(item));
+        } else if (item->text() == ViewHelper::VariableHeaderText) {
+            mViewConfig->currentAggregation().setAggregationSymbols(Qt::Horizontal, checkStates(item));
         }
     }
 }

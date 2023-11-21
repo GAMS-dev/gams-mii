@@ -45,6 +45,8 @@ public:
 
     void execute();
 
+    QProcess* process();
+
 signals:
     void newStdChannelData(const QByteArray &data);
 

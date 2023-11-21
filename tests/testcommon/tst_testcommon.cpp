@@ -33,11 +33,7 @@ public:
     ~TestCommon();
 
 private slots:
-    void test_Mi_specialValues();
-    void test_Mi_isSpecialValue();
     void test_Mi_roleNames();
-    void test_Mi_isAggregatable();
-    void test_Mi_isStandardView();
 
     void test_searchResult();
     void test_searchOperators();
@@ -45,13 +41,25 @@ private slots:
     void test_default_identifierState();
     void test_getSet_identifierState();
     void test_unite_identifierState();
+    void test_operators_identifierState();
 
     void test_labelFilter();
 
     void test_default_valueFilter();
     void test_getSet_valueFilter();
 
-    void testAttributeValue();
+    void test_AttributeHelper_attributeText();
+    void test_AttributeHelper_attributeValue();
+    void test_AttributeHelper_static();
+
+    void test_SpecialValueHelper_specialValueText();
+    void test_SpecialValueHelper_isSpecialValue();
+    void test_SpecialValueHelper_static();
+
+    void test_ViewHelper_isAggregatable();
+    void test_ViewHelper_isStandardView();
+    void test_ViewHelper_zoomFactor();
+    void test_ViewHelper_static();
 };
 
 TestCommon::TestCommon()
@@ -64,67 +72,24 @@ TestCommon::~TestCommon()
 
 }
 
-void TestCommon::test_Mi_specialValues()
-{
-    QCOMPARE(Mi::SV_NA, "NA");
-    QCOMPARE(Mi::SV_EPS, "EPS");
-    QCOMPARE(Mi::SV_INF, "INF");
-    QCOMPARE(Mi::SV_PINF, "+INF");
-    QCOMPARE(Mi::SV_NINF, "-INF");
-}
-
-void TestCommon::test_Mi_isSpecialValue()
-{
-    QCOMPARE(Mi::isSpecialValue(Mi::SV_NA), true);
-    QCOMPARE(Mi::isSpecialValue(Mi::SV_EPS), true);
-    QCOMPARE(Mi::isSpecialValue(Mi::SV_INF), true);
-    QCOMPARE(Mi::isSpecialValue(Mi::SV_PINF), true);
-    QCOMPARE(Mi::isSpecialValue(Mi::SV_NINF), true);
-    QCOMPARE(Mi::isSpecialValue(QString()), false);
-    QCOMPARE(Mi::isSpecialValue("stuff"), false);
-    QCOMPARE(Mi::isSpecialValue(QString::number(0.1)), false);
-}
-
 void TestCommon::test_Mi_roleNames()
 {
-    auto names = Mi::roleNames();
+    auto names = ViewHelper::roleNames();
     QCOMPARE(names.size(), 7);
-    QVERIFY(names.contains(Mi::IndexDataRole));
-    QVERIFY(names.contains(Mi::LabelDataRole));
-    QVERIFY(names.contains(Mi::RowEntryRole));
-    QVERIFY(names.contains(Mi::ColumnEntryRole));
-    QVERIFY(names.contains(Mi::HorizontalDimensionRole));
-    QVERIFY(names.contains(Mi::VerticalDimensionRole));
-    QVERIFY(names.contains(Mi::SectionLabelRole));
-    QCOMPARE(names[Mi::IndexDataRole], "indexdata");
-    QCOMPARE(names[Mi::LabelDataRole], "labeldata");
-    QCOMPARE(names[Mi::RowEntryRole], "rowentry");
-    QCOMPARE(names[Mi::ColumnEntryRole], "columnentry");
-    QCOMPARE(names[Mi::HorizontalDimensionRole], "horizontaldimension");
-    QCOMPARE(names[Mi::VerticalDimensionRole], "verticaldimension");
-    QCOMPARE(names[Mi::SectionLabelRole], "sectionlabel");
-}
-
-void TestCommon::test_Mi_isAggregatable()
-{
-    QCOMPARE(Mi::isAggregatable(ViewDataType::BP_Overview), false);
-    QCOMPARE(Mi::isAggregatable(ViewDataType::BP_Count), false);
-    QCOMPARE(Mi::isAggregatable(ViewDataType::BP_Average), false);
-    QCOMPARE(Mi::isAggregatable(ViewDataType::BP_Scaling), false);
-    QCOMPARE(Mi::isAggregatable(ViewDataType::Postopt), false);
-    QCOMPARE(Mi::isAggregatable(ViewDataType::Symbols), true);
-    QCOMPARE(Mi::isAggregatable(ViewDataType::Unknown), false);
-}
-
-void TestCommon::test_Mi_isStandardView()
-{
-    QCOMPARE(Mi::isStandardView(ViewDataType::BP_Overview), true);
-    QCOMPARE(Mi::isStandardView(ViewDataType::BP_Count), false);
-    QCOMPARE(Mi::isStandardView(ViewDataType::BP_Average), false);
-    QCOMPARE(Mi::isStandardView(ViewDataType::BP_Scaling), false);
-    QCOMPARE(Mi::isStandardView(ViewDataType::Postopt), true);
-    QCOMPARE(Mi::isStandardView(ViewDataType::Symbols), true);
-    QCOMPARE(Mi::isStandardView(ViewDataType::Unknown), true);
+    QVERIFY(names.contains(ViewHelper::ItemDataRole::IndexDataRole));
+    QVERIFY(names.contains(ViewHelper::ItemDataRole::LabelDataRole));
+    QVERIFY(names.contains(ViewHelper::ItemDataRole::RowEntryRole));
+    QVERIFY(names.contains(ViewHelper::ItemDataRole::ColumnEntryRole));
+    QVERIFY(names.contains(ViewHelper::ItemDataRole::HorizontalDimensionRole));
+    QVERIFY(names.contains(ViewHelper::ItemDataRole::VerticalDimensionRole));
+    QVERIFY(names.contains(ViewHelper::ItemDataRole::SectionLabelRole));
+    QCOMPARE(names[ViewHelper::ItemDataRole::IndexDataRole], "indexdata");
+    QCOMPARE(names[ViewHelper::ItemDataRole::LabelDataRole], "labeldata");
+    QCOMPARE(names[ViewHelper::ItemDataRole::RowEntryRole], "rowentry");
+    QCOMPARE(names[ViewHelper::ItemDataRole::ColumnEntryRole], "columnentry");
+    QCOMPARE(names[ViewHelper::ItemDataRole::HorizontalDimensionRole], "horizontaldimension");
+    QCOMPARE(names[ViewHelper::ItemDataRole::VerticalDimensionRole], "verticaldimension");
+    QCOMPARE(names[ViewHelper::ItemDataRole::SectionLabelRole], "sectionlabel");
 }
 
 void TestCommon::test_searchResult()
@@ -234,6 +199,30 @@ void TestCommon::test_unite_identifierState()
     QCOMPARE(state_1.CheckStates, checkStates);
 }
 
+void TestCommon::test_operators_identifierState()
+{
+    IdentifierState state;
+    state.Enabled = true;
+    state.SectionIndex = 4;
+    state.SymbolIndex = 2;
+    state.Text = "x";
+    state.Checked = Qt::Checked;
+    IndexCheckStates checkStates { { 0, Qt::Unchecked },
+                                 { 0, Qt::Unchecked },
+                                 { 0, Qt::Unchecked } };
+    state.CheckStates = checkStates;
+
+    QCOMPARE(IdentifierState(), IdentifierState());
+    QVERIFY(state != IdentifierState());
+    QCOMPARE(state, state);
+
+    IdentifierState state0(state);
+    QCOMPARE(state, state0);
+    IdentifierState state1;
+    state1 = state;
+    QCOMPARE(state, state1);
+}
+
 void TestCommon::test_labelFilter()
 {
     LabelFilter defaultFilter;
@@ -242,10 +231,17 @@ void TestCommon::test_labelFilter()
 
     LabelCheckStates states = { { "l1", Qt::Checked},
                                 { "l2", Qt::Unchecked } };
+    QCOMPARE(states, states);
+    QVERIFY(states != LabelCheckStates());
+
     LabelFilter labelFilter { true,
                               { { Qt::Horizontal, states } } };
     QCOMPARE(labelFilter.Any, true);
     QCOMPARE(labelFilter.LabelCheckStates[Qt::Horizontal], states);
+    QCOMPARE(labelFilter, labelFilter);
+    QVERIFY(labelFilter != LabelFilter());
+    defaultFilter = labelFilter;
+    QCOMPARE(defaultFilter, labelFilter);
 }
 
 void TestCommon::test_default_valueFilter()
@@ -258,10 +254,9 @@ void TestCommon::test_default_valueFilter()
     QCOMPARE(filter.ShowPInf, true);
     QCOMPARE(filter.ShowNInf, true);
     QCOMPARE(filter.ShowEps, true);
-    QCOMPARE(filter.Reset, false);
-    QVERIFY(filter.accepts(Mi::SV_EPS));
-    QVERIFY(filter.accepts(Mi::SV_NINF));
-    QVERIFY(filter.accepts(Mi::SV_PINF));
+    QVERIFY(filter.accepts(ValueHelper::EPSText));
+    QVERIFY(filter.accepts(ValueHelper::NINFText));
+    QVERIFY(filter.accepts(ValueHelper::PINFText));
     QVERIFY(filter.accepts(std::numeric_limits<double>::min()));
     QVERIFY(filter.accepts(std::numeric_limits<double>::max()));
 }
@@ -290,31 +285,124 @@ void TestCommon::test_getSet_valueFilter()
 
     filter.ShowEps = false;
     QCOMPARE(filter.ShowEps, false);
-
-    filter.Reset = true;
-    QCOMPARE(filter.Reset, true);
-
-    QVERIFY(!filter.accepts(Mi::SV_EPS));
-    QVERIFY(!filter.accepts(Mi::SV_NINF));
-    QVERIFY(!filter.accepts(Mi::SV_PINF));
+    
+    QVERIFY(!filter.accepts(ValueHelper::EPSText));
+    QVERIFY(!filter.accepts(ValueHelper::NINFText));
+    QVERIFY(!filter.accepts(ValueHelper::PINFText));
     QVERIFY(filter.accepts(1001.2));
     QVERIFY(!filter.accepts(-42));
 }
 
-void TestCommon::testAttributeValue()
+void TestCommon::test_AttributeHelper_attributeText()
+{
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Level), "Level");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Marginal), "Marginal");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::MarginalNum), "MarginalNum");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Lower), "Lower");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Upper), "Upper");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Scale), "Scale");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Range), "Range");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::SlackLB), "Slack lower bound");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::SlackUB), "Slack upper bound");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Slack), "Slack");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Infeasibility), "Infeasibility");
+    QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Type), "Type");
+}
+
+void TestCommon::test_AttributeHelper_attributeValue()
 {
     double pInf =  1e+299;
     double nInf = -1e+299;
-    QCOMPARE(Mi::attributeValue(pInf, nInf, true, true), 0.0);
-    QCOMPARE(Mi::attributeValue(nInf, pInf, true, true), 0.0);
-    QCOMPARE(Mi::attributeValue(nInf, nInf, true, true), nInf);
-    QCOMPARE(Mi::attributeValue(pInf, pInf, true, true), pInf);
-    QCOMPARE(Mi::attributeValue(pInf, 42, true, false), pInf);
-    QCOMPARE(Mi::attributeValue(42, pInf, false, true), pInf);
-    QCOMPARE(Mi::attributeValue(38, nInf, false, true), nInf);
-    QCOMPARE(Mi::attributeValue(nInf, 38, true, false), nInf);
-    QCOMPARE(Mi::attributeValue(8, 8), 0.0);
-    QCOMPARE(Mi::attributeValue(4, 8), -4);
+    QCOMPARE(AttributeHelper::attributeValue(pInf, nInf, true, true), 0.0);
+    QCOMPARE(AttributeHelper::attributeValue(nInf, pInf, true, true), 0.0);
+    QCOMPARE(AttributeHelper::attributeValue(nInf, nInf, true, true), nInf);
+    QCOMPARE(AttributeHelper::attributeValue(pInf, pInf, true, true), pInf);
+    QCOMPARE(AttributeHelper::attributeValue(pInf, 42, true, false), pInf);
+    QCOMPARE(AttributeHelper::attributeValue(42, pInf, false, true), pInf);
+    QCOMPARE(AttributeHelper::attributeValue(38, nInf, false, true), nInf);
+    QCOMPARE(AttributeHelper::attributeValue(nInf, 38, true, false), nInf);
+    QCOMPARE(AttributeHelper::attributeValue(8, 8), 0.0);
+    QCOMPARE(AttributeHelper::attributeValue(4, 8), -4);
+}
+
+void TestCommon::test_AttributeHelper_static()
+{
+    QCOMPARE(AttributeHelper::LevelText, "Level");
+    QCOMPARE(AttributeHelper::MarginalText, "Marginal");
+    QCOMPARE(AttributeHelper::MarginalNumText, "MarginalNum");
+    QCOMPARE(AttributeHelper::LowerText, "Lower");
+    QCOMPARE(AttributeHelper::UpperText, "Upper");
+    QCOMPARE(AttributeHelper::ScaleText, "Scale");
+    QCOMPARE(AttributeHelper::RangeText, "Range");
+    QCOMPARE(AttributeHelper::SlackLBText, "Slack lower bound");
+    QCOMPARE(AttributeHelper::SlackUBText, "Slack upper bound");
+    QCOMPARE(AttributeHelper::SlackText, "Slack");
+    QCOMPARE(AttributeHelper::InfeasibilityText, "Infeasibility");
+    QCOMPARE(AttributeHelper::TypeText, "Type");
+}
+
+void TestCommon::test_SpecialValueHelper_specialValueText()
+{
+    QCOMPARE(ValueHelper::specialValueText(ValueHelper::SpecialValueType::NA), "NA");
+    QCOMPARE(ValueHelper::specialValueText(ValueHelper::SpecialValueType::EPS), "EPS");
+    QCOMPARE(ValueHelper::specialValueText(ValueHelper::SpecialValueType::INF), "INF");
+    QCOMPARE(ValueHelper::specialValueText(ValueHelper::SpecialValueType::P_INF), "+INF");
+    QCOMPARE(ValueHelper::specialValueText(ValueHelper::SpecialValueType::N_INF), "-INF");
+}
+
+void TestCommon::test_SpecialValueHelper_isSpecialValue()
+{
+    QCOMPARE(ValueHelper::isSpecialValue(ValueHelper::NAText), true);
+    QCOMPARE(ValueHelper::isSpecialValue(ValueHelper::EPSText), true);
+    QCOMPARE(ValueHelper::isSpecialValue(ValueHelper::INFText), true);
+    QCOMPARE(ValueHelper::isSpecialValue(ValueHelper::PINFText), true);
+    QCOMPARE(ValueHelper::isSpecialValue(ValueHelper::NINFText), true);
+    QCOMPARE(ValueHelper::isSpecialValue(QString()), false);
+    QCOMPARE(ValueHelper::isSpecialValue("stuff"), false);
+    QCOMPARE(ValueHelper::isSpecialValue(QString::number(0.1)), false);
+}
+
+void TestCommon::test_SpecialValueHelper_static()
+{
+    QCOMPARE(ValueHelper::NAText, "NA");
+    QCOMPARE(ValueHelper::EPSText, "EPS");
+    QCOMPARE(ValueHelper::INFText, "INF");
+    QCOMPARE(ValueHelper::PINFText, "+INF");
+    QCOMPARE(ValueHelper::NINFText, "-INF");
+}
+
+void TestCommon::test_ViewHelper_isAggregatable()
+{
+    QCOMPARE(ViewHelper::isAggregatable(ViewHelper::ViewDataType::BP_Overview), false);
+    QCOMPARE(ViewHelper::isAggregatable(ViewHelper::ViewDataType::BP_Count), false);
+    QCOMPARE(ViewHelper::isAggregatable(ViewHelper::ViewDataType::BP_Average), false);
+    QCOMPARE(ViewHelper::isAggregatable(ViewHelper::ViewDataType::BP_Scaling), false);
+    QCOMPARE(ViewHelper::isAggregatable(ViewHelper::ViewDataType::Postopt), false);
+    QCOMPARE(ViewHelper::isAggregatable(ViewHelper::ViewDataType::Symbols), true);
+    QCOMPARE(ViewHelper::isAggregatable(ViewHelper::ViewDataType::Unknown), false);
+}
+
+void TestCommon::test_ViewHelper_isStandardView()
+{
+    QCOMPARE(ViewHelper::isStandardView(ViewHelper::ViewDataType::BP_Overview), true);
+    QCOMPARE(ViewHelper::isStandardView(ViewHelper::ViewDataType::BP_Count), false);
+    QCOMPARE(ViewHelper::isStandardView(ViewHelper::ViewDataType::BP_Average), false);
+    QCOMPARE(ViewHelper::isStandardView(ViewHelper::ViewDataType::BP_Scaling), false);
+    QCOMPARE(ViewHelper::isStandardView(ViewHelper::ViewDataType::Postopt), true);
+    QCOMPARE(ViewHelper::isStandardView(ViewHelper::ViewDataType::Symbols), true);
+    QCOMPARE(ViewHelper::isStandardView(ViewHelper::ViewDataType::Unknown), true);
+}
+
+void TestCommon::test_ViewHelper_zoomFactor()
+{
+    QCOMPARE(ViewHelper::ZoomFactor, 2);
+}
+
+void TestCommon::test_ViewHelper_static()
+{
+    QCOMPARE(ViewHelper::AttributeHeaderText, "Attributes");
+    QCOMPARE(ViewHelper::EquationHeaderText, "Equations");
+    QCOMPARE(ViewHelper::VariableHeaderText, "Variables");
 }
 
 QTEST_APPLESS_MAIN(TestCommon)

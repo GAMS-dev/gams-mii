@@ -44,12 +44,12 @@ protected:
     ValueFilter mValueFilter;
 };
 
-class GeneralValueFormatProxyModel final : public ValueFormatProxyModel
+class PostoptValueFormatProxyModel final : public ValueFormatProxyModel
 {
     Q_OBJECT
 
 public:
-    GeneralValueFormatProxyModel(QObject *parent = nullptr);
+    PostoptValueFormatProxyModel(QObject *parent = nullptr);
 
     void setValueFilter(const ValueFilter &valueFilter) override;
 

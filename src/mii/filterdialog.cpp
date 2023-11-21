@@ -22,6 +22,8 @@
 #include "ui_filterdialog.h"
 #include "filtertreeitem.h"
 #include "filtertreemodel.h"
+#include "abstractmodelinstance.h"
+#include "viewconfigurationprovider.h"
 
 #include <QSortFilterProxyModel>
 
@@ -29,11 +31,11 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-// TODO (AF) consolidate filters, aggregation, row/column data source... struct/class?
-
 FilterDialog::FilterDialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FilterDialog)
+    , mViewConfig(ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::Unknown,
+                                                           QSharedPointer<AbstractModelInstance>(new EmptyModelInstance)))
 {
     ui->setupUi(this);
     ui->labelView->sortByColumn(0, Qt::AscendingOrder);
@@ -62,121 +64,81 @@ FilterDialog::~FilterDialog()
     delete ui;
 }
 
-IdentifierFilter FilterDialog::idendifierFilter() const
+QSharedPointer<AbstractViewConfiguration> FilterDialog::viewConfig() const
 {
-    return mIdentifierFilter;
+    return mViewConfig;
 }
 
-void FilterDialog::setIdentifierFilter(const IdentifierFilter &filter)
+void FilterDialog::setViewConfig(QSharedPointer<AbstractViewConfiguration> config)
 {
-    mIdentifierFilter = filter;
-    setupEquationFilter(mIdentifierFilter[equationOrientation()], mDefaultIdentifierFilter[equationOrientation()]);
-    setupVariableFilter(mIdentifierFilter[variableOrientation()], mDefaultIdentifierFilter[variableOrientation()]);
-}
+    mViewConfig = config;
+    setupEquationFilter(mViewConfig->currentIdentifierFilter().value(equationOrientation()),
+                        mViewConfig->defaultIdentifierFilter().value(equationOrientation()));
+    setupVariableFilter(mViewConfig->currentIdentifierFilter().value(variableOrientation()),
+                        mViewConfig->defaultIdentifierFilter().value(variableOrientation()));
+    setupAttributeFilter();
+    setupLabelFilter();
 
-void FilterDialog::setDefaultIdentifierFilter(const IdentifierFilter &filter)
-{
-    mDefaultIdentifierFilter = filter;
-}
-
-ValueFilter FilterDialog::valueFilter() const
-{
-    return mValueFilter;
-}
-
-void FilterDialog::setValueFilter(const ValueFilter &filter)
-{
-    mValueFilter = filter;
-    ui->minEdit->setText(QString::number(mValueFilter.MinValue));
+    ui->minEdit->setText(QString::number(mViewConfig->currentValueFilter().MinValue));
     updateRangeEdit(ui->minEdit, ui->minEdit->text());
-    ui->maxEdit->setText(QString::number(mValueFilter.MaxValue));
+    ui->maxEdit->setText(QString::number(mViewConfig->currentValueFilter().MaxValue));
     updateRangeEdit(ui->maxEdit, ui->maxEdit->text());
-    ui->excludeBox->setChecked(mValueFilter.ExcludeRange);
-    ui->absoluteBox->setChecked(mValueFilter.UseAbsoluteValues);
-    if (mValueFilter.UseAbsoluteValuesGlobal)
+    ui->excludeBox->setChecked(mViewConfig->currentValueFilter().ExcludeRange);
+    ui->absoluteBox->setChecked(mViewConfig->currentValueFilter().UseAbsoluteValues);
+    if (mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal)
         ui->absoluteBox->setEnabled(false);
     else
         ui->absoluteBox->setEnabled(true);
-    ui->epsBox->setChecked(mValueFilter.ShowEps);
-    ui->nInfBox->setChecked(mValueFilter.ShowNInf);
-    ui->pInfBox->setChecked(mValueFilter.ShowPInf);
-}
-
-void FilterDialog::setDefaultValueFilter(const ValueFilter &filter)
-{
-    mDefaultValueFilter = filter;
-}
-
-LabelFilter FilterDialog::labelFilter() const
-{
-    return mLabelFilter;
-}
-
-void FilterDialog::setLabelFilter(const LabelFilter &filter)
-{
-    mLabelFilter = filter;
-    setupLabelFilter();
-}
-
-void FilterDialog::setDefaultLabelFilter(const LabelFilter &filter)
-{
-    mDefaultLabelFilter = filter;
-}
-
-ViewDataType FilterDialog::viewType() const
-{
-    return mViewType;
-}
-
-void FilterDialog::setViewType(ViewDataType viewType)
-{
-    mViewType = viewType;
+    ui->epsBox->setChecked(mViewConfig->currentValueFilter().ShowEps);
+    ui->nInfBox->setChecked(mViewConfig->currentValueFilter().ShowNInf);
+    ui->pInfBox->setChecked(mViewConfig->currentValueFilter().ShowPInf);
 }
 
 void FilterDialog::on_applyButton_clicked()
 {
-    mIdentifierFilter[variableOrientation()] = applyHeaderFilter(mVarFilterModel);
-    mIdentifierFilter[equationOrientation()] = applyHeaderFilter(mEqnFilterModel);
+    mViewConfig->currentIdentifierFilter()[variableOrientation()] = applyHeaderFilter(mVarFilterModel);
+    mViewConfig->currentIdentifierFilter()[equationOrientation()] = applyHeaderFilter(mEqnFilterModel);
     applyValueFilter();
-    mLabelFilter.LabelCheckStates[variableOrientation()] = applyLabelFilter(variableOrientation(), mLabelFilterModel);
-    mLabelFilter.LabelCheckStates[equationOrientation()] = applyLabelFilter(equationOrientation(), mLabelFilterModel);
-    mLabelFilter.Any = ui->labelBox->currentIndex();
-    mValueFilter.Reset = false;
-    emit filterUpdated();
+    mViewConfig->currentLabelFiler().LabelCheckStates[variableOrientation()] = applyLabelFilter(variableOrientation(), mLabelFilterModel);
+    mViewConfig->currentLabelFiler().LabelCheckStates[equationOrientation()] = applyLabelFilter(equationOrientation(), mLabelFilterModel);
+    mViewConfig->currentLabelFiler().Any = ui->labelBox->currentIndex();
+    mViewConfig->setCurrentAttributeFilter(applyAttributeFilter(mAttrFilterModel));
+    emit viewConfigUpdated();
 }
 
 void FilterDialog::on_resetButton_clicked()
 {
-    setIdentifierFilter(mDefaultIdentifierFilter);
-    resetValueFilter();
-    setLabelFilter(mDefaultLabelFilter);
-
     ui->rowEdit->setText("");
     ui->columnEdit->setText("");
     ui->labelEdit->setText("");
     ui->labelBox->setCurrentIndex(0);
 
-    mIdentifierFilter[variableOrientation()] = applyHeaderFilter(mVarFilterModel);
-    mIdentifierFilter[equationOrientation()] = applyHeaderFilter(mEqnFilterModel);
+    mViewConfig->resetIdentifierFilter();
+    mViewConfig->resetLabelFilter();
+    auto filter = mViewConfig->defaultValueFilter();
+    if (mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal) {
+        filter.UseAbsoluteValues = mViewConfig->currentValueFilter().UseAbsoluteValues;
+        filter.UseAbsoluteValuesGlobal = mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal;
+    }
+    mViewConfig->setCurrentValueFilter(filter);
+    setViewConfig(mViewConfig);
+
+    mViewConfig->currentIdentifierFilter()[variableOrientation()] = applyHeaderFilter(mVarFilterModel);
+    mViewConfig->currentIdentifierFilter()[equationOrientation()] = applyHeaderFilter(mEqnFilterModel);
     applyValueFilter();
-    mLabelFilter.LabelCheckStates[variableOrientation()] = applyLabelFilter(variableOrientation(), mLabelFilterModel);
-    mLabelFilter.LabelCheckStates[equationOrientation()] = applyLabelFilter(equationOrientation(), mLabelFilterModel);
-    mLabelFilter.Any = ui->labelBox->currentIndex();
-    mValueFilter.Reset = true;
-    emit filterUpdated();
+    mViewConfig->currentLabelFiler().LabelCheckStates[variableOrientation()] = applyLabelFilter(variableOrientation(), mLabelFilterModel);
+    mViewConfig->currentLabelFiler().LabelCheckStates[equationOrientation()] = applyLabelFilter(equationOrientation(), mLabelFilterModel);
+    mViewConfig->currentLabelFiler().Any = ui->labelBox->currentIndex();
+    emit viewConfigUpdated();
 }
 
 void FilterDialog::on_cancelButton_clicked()
 {
-    setIdentifierFilter(mIdentifierFilter);
-    setValueFilter(mValueFilter);
-    setLabelFilter(mLabelFilter);
-
+    setViewConfig(mViewConfig);
     ui->rowEdit->setText("");
     ui->columnEdit->setText("");
     ui->labelEdit->setText("");
     ui->labelBox->setCurrentIndex(0);
-
     close();
 }
 
@@ -220,17 +182,29 @@ void FilterDialog::on_labelBox_currentIndexChanged(int index)
 {
     switch (index) {
     case 1: // Any
-        mLabelFilter.Any = true;
+        mViewConfig->currentLabelFiler().Any = true;
         break;
     default: // All
-        mLabelFilter.Any = false;
+        mViewConfig->currentLabelFiler().Any = false;
         break;
     }
 }
 
+void FilterDialog::on_selectAttrButton_clicked()
+{
+    applyCheckState(ui->attributeView, mAttrFilterModel, Qt::Checked);
+    ui->attributeView->dataChanged(QModelIndex(), QModelIndex());
+}
+
+void FilterDialog::on_deselectAttrButton_clicked()
+{
+    applyCheckState(ui->attributeView, mAttrFilterModel, Qt::Unchecked);
+    ui->attributeView->dataChanged(QModelIndex(), QModelIndex());
+}
+
 void FilterDialog::setupEquationFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
-    auto filterItem = setupSymTreeItems(FilterTreeItem::EquationText, filter, dFilter);
+    auto filterItem = setupSymTreeItems(ViewHelper::EquationHeaderText, filter, dFilter);
     auto oldEqnModel = ui->rowView->selectionModel();
     auto eqnTreeModel = new FilterTreeModel(filterItem, ui->rowView);
     mEqnFilterModel = new QSortFilterProxyModel(ui->rowView);
@@ -251,7 +225,7 @@ void FilterDialog::setupEquationFilter(const IdentifierStates &filter, const Ide
 
 void FilterDialog::setupVariableFilter(const IdentifierStates &filter, const IdentifierStates &dFilter)
 {
-    auto filterItem = setupSymTreeItems(FilterTreeItem::VariableText, filter, dFilter);
+    auto filterItem = setupSymTreeItems(ViewHelper::VariableHeaderText, filter, dFilter);
     auto oldVarModel = ui->columnView->selectionModel();
     auto varTreeModel = new FilterTreeModel(filterItem, ui->columnView);
     mVarFilterModel = new QSortFilterProxyModel(ui->columnEdit);
@@ -267,18 +241,48 @@ void FilterDialog::setupVariableFilter(const IdentifierStates &filter, const Ide
                                                 if (!mVarFilterModel) return;
                                                 mVarFilterModel->setFilterWildcard(text);
                                                 ui->columnView->expandAll();
-                                              });
+    });
+}
+
+void FilterDialog::setupAttributeFilter()
+{
+    auto root = new FilterTreeItem("", Qt::Unchecked);
+    auto attributeItem = new FilterTreeItem(ViewHelper::AttributeHeaderText, Qt::Unchecked, root);
+    attributeItem->setCheckable(false);
+    root->append(attributeItem);
+    auto checkStates = mViewConfig->currentAttributeFilter();
+    for (auto iter=checkStates.constKeyValueBegin(); iter!=checkStates.constKeyValueEnd(); ++iter) {
+        auto attrItem = new FilterTreeItem(iter->first,
+                                           iter->second ? Qt::Checked : Qt::Unchecked,
+                                           attributeItem);
+        attributeItem->append(attrItem);
+    }
+    auto oldAttrModel = ui->attributeView->selectionModel();
+    auto attrTreeModel = new FilterTreeModel(root, ui->attributeView);
+    mAttrFilterModel = new QSortFilterProxyModel(ui->attributeView);
+    mAttrFilterModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    mAttrFilterModel->setRecursiveFilteringEnabled(true);
+    mAttrFilterModel->setSourceModel(attrTreeModel);
+    ui->attributeView->setModel(mAttrFilterModel);
+    ui->attributeView->expandAll();
+    if (oldAttrModel)
+        oldAttrModel->deleteLater();
+    connect(ui->attributeEdit, &QLineEdit::textChanged,
+            this, [this](const QString &text){
+                mAttrFilterModel->setFilterWildcard(text);
+                ui->attributeView->expandAll();
+            });
 }
 
 void FilterDialog::setupLabelFilter()
 {
-    ui->labelBox->setCurrentIndex(mLabelFilter.Any);
+    ui->labelBox->setCurrentIndex(mViewConfig->currentLabelFiler().Any);
     auto labelFilterItem = new FilterTreeItem("", Qt::Unchecked);
     labelFilterItem->setCheckable(false);
-    setupLabelTreeItems(FilterTreeItem::EquationText,
+    setupLabelTreeItems(ViewHelper::EquationHeaderText,
                         equationOrientation(),
                         labelFilterItem);
-    setupLabelTreeItems(FilterTreeItem::VariableText,
+    setupLabelTreeItems(ViewHelper::VariableHeaderText,
                         variableOrientation(),
                         labelFilterItem);
 
@@ -310,8 +314,8 @@ FilterTreeItem* FilterDialog::setupSymTreeItems(const QString &text,
     for (const auto& item : filter) {
         auto fItem = new FilterTreeItem(item.Text, item.Checked, symbols);
         auto defaultItem = dFilter.value(item.SymbolIndex);
-        if (mViewType == ViewDataType::Symbols       &&
-                item.Checked == Qt::Unchecked           &&
+        if (mViewConfig->viewType() == ViewHelper::ViewDataType::Symbols    &&
+                item.Checked == Qt::Unchecked                               &&
                 defaultItem.Checked == Qt::Unchecked) {
             fItem->setEnabled(false);
         }
@@ -330,7 +334,7 @@ void FilterDialog::setupLabelTreeItems(const QString &text,
     typeItem->setCheckable(false);
     root->append(typeItem);
 
-    auto checkStates = mLabelFilter.LabelCheckStates[orientation];
+    auto checkStates = mViewConfig->currentLabelFiler().LabelCheckStates[orientation];
     for (auto iter=checkStates.constKeyValueBegin();
          iter!=checkStates.constKeyValueEnd(); ++iter) {
         auto treeItem = new FilterTreeItem(iter->first,
@@ -385,13 +389,13 @@ IdentifierStates FilterDialog::applyHeaderFilter(QSortFilterProxyModel *model)
 
 void FilterDialog::applyValueFilter()
 {
-    mValueFilter.MinValue = ui->minEdit->text().toDouble();
-    mValueFilter.MaxValue = ui->maxEdit->text().toDouble();
-    mValueFilter.ExcludeRange = ui->excludeBox->isChecked();
-    mValueFilter.UseAbsoluteValues = ui->absoluteBox->isChecked();
-    mValueFilter.ShowPInf = ui->pInfBox->isChecked();
-    mValueFilter.ShowNInf = ui->nInfBox->isChecked();
-    mValueFilter.ShowEps = ui->epsBox->isChecked();
+    mViewConfig->currentValueFilter().MinValue = ui->minEdit->text().toDouble();
+    mViewConfig->currentValueFilter().MaxValue = ui->maxEdit->text().toDouble();
+    mViewConfig->currentValueFilter().ExcludeRange = ui->excludeBox->isChecked();
+    mViewConfig->currentValueFilter().UseAbsoluteValues = ui->absoluteBox->isChecked();
+    mViewConfig->currentValueFilter().ShowPInf = ui->pInfBox->isChecked();
+    mViewConfig->currentValueFilter().ShowNInf = ui->nInfBox->isChecked();
+    mViewConfig->currentValueFilter().ShowEps = ui->epsBox->isChecked();
 }
 
 LabelCheckStates FilterDialog::applyLabelFilter(Qt::Orientation orientation,
@@ -399,11 +403,11 @@ LabelCheckStates FilterDialog::applyLabelFilter(Qt::Orientation orientation,
 {
     FilterTreeItem* root = nullptr;
     auto childs = static_cast<FilterTreeModel*>(model->sourceModel())->filterItem()->childs();
-    Q_FOREACH(auto child, childs) {
-        if (orientation == variableOrientation() && child->text() == FilterTreeItem::VariableText) {
+    for (auto child : childs) {
+        if (orientation == variableOrientation() && child->text() == ViewHelper::VariableHeaderText) {
             root = child;
             break;
-        } else if (orientation == equationOrientation() && child->text() == FilterTreeItem::EquationText) {
+        } else if (orientation == equationOrientation() && child->text() == ViewHelper::EquationHeaderText) {
             root = child;
             break;
         }
@@ -423,6 +427,16 @@ LabelCheckStates FilterDialog::applyLabelFilter(Qt::Orientation orientation,
     return filter;
 }
 
+LabelCheckStates FilterDialog::applyAttributeFilter(QSortFilterProxyModel *model)
+{
+    auto root = static_cast<FilterTreeModel*>(model->sourceModel())->filterItem()->child(0);
+    LabelCheckStates filter;
+    for (auto item : root->childs()) {
+        filter[item->text()] = item->checked();
+    }
+    return filter;
+}
+
 void FilterDialog::updateRangeEdit(QLineEdit *edit, const QString &text)
 {
     QPalette palette;
@@ -432,16 +446,6 @@ void FilterDialog::updateRangeEdit(QLineEdit *edit, const QString &text)
         palette.setColor(QPalette::Text, QApplication::palette().text().color());
     }
     edit->setPalette(palette);
-}
-
-void FilterDialog::resetValueFilter()
-{
-    auto filter = mDefaultValueFilter;
-    if (mValueFilter.UseAbsoluteValuesGlobal) {
-        filter.UseAbsoluteValues = mValueFilter.UseAbsoluteValues;
-        filter.UseAbsoluteValuesGlobal = mValueFilter.UseAbsoluteValuesGlobal;
-    }
-    setValueFilter(filter);
 }
 
 }

@@ -26,7 +26,6 @@
 #include <QWidget>
 
 #include "common.h"
-#include "aggregation.h"
 
 namespace gams {
 namespace studio{
@@ -38,11 +37,12 @@ class ModelInspector;
 
 class AbstractViewFrame;
 class AbstractModelInstance;
+class AbstractViewConfiguration;
 class SectionTreeModel;
 class SearchResultModel;
 
 class ModelInspector : public QWidget
-{// TODO !!! use ViewConfig in MI interface?
+{
     Q_OBJECT
 
 public:
@@ -60,8 +60,8 @@ public:
 
     bool showOutput() const;
     void setShowOutput(bool showOutpu);
-
-    void setShowAbsoluteValues(bool absoluteValues);
+    
+    void setShowAbsoluteValuesGlobal(bool absoluteValues);
 
     SearchResult& searchHeaders(const QString &term, bool isRegEx);
     SearchResult& searchResult();
@@ -70,27 +70,8 @@ public:
 
     void loadModelInstance(bool loadModel = true);
     void reloadModelInstance();
-    QSharedPointer<AbstractModelInstance> modelInstance() const;
 
-    IdentifierFilter identifierFilter() const;
-    IdentifierFilter defaultIdentifierFilter() const;
-    void setIdentifierFilter(const IdentifierFilter &filter);
-
-    ValueFilter valueFilter() const;
-    ValueFilter defaultValueFilter() const;
-    void setValueFilter(const ValueFilter &filter);
-
-    LabelFilter labelFilter() const;
-    LabelFilter defaultLabelFilter() const;
-    void setLabelFilter(const LabelFilter &filter);
-
-    Aggregation aggregation() const;
-    Aggregation defaultAggregation() const;
-    void setAggregation(const Aggregation &aggregation);
-
-    ViewDataType viewType() const;
-
-    void resetColumnRowFilter();
+    QSharedPointer<AbstractViewConfiguration> viewConfig();
 
     void cancelRun();
 
@@ -98,8 +79,12 @@ public:
     void zoomOut();
     void resetZoom();
 
+    void updateFilters();
+
 signals:
     void filtersChanged();
+
+    void openFilterDialog();
 
     void viewChanged(int);
 
@@ -128,7 +113,7 @@ private:
 
     void clearCustomViews();
 
-    void setCurrentViewIndex(ViewType viewType, ViewDataType viewDataType);
+    void setCurrentViewIndex(ViewHelper::ViewType viewType, ViewHelper::ViewDataType viewDataType);
 
     AbstractViewFrame* currentView() const;
 

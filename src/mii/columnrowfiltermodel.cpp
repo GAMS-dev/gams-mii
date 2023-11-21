@@ -36,7 +36,7 @@ bool ColumnRowFilterModel::filterAcceptsColumn(int sourceColumn,
 {
     bool ok;
     auto entries = sourceModel()->data(sourceModel()->index(0, sourceColumn, sourceParent),
-                                       Mi::ColumnEntryRole).toInt(&ok);
+                                       ViewHelper::ColumnEntryRole).toInt(&ok);
     return ok && entries;
 }
 
@@ -45,7 +45,7 @@ bool ColumnRowFilterModel::filterAcceptsRow(int sourceRow,
 {
     bool ok;
     auto entries = sourceModel()->data(sourceModel()->index(sourceRow, 0, sourceParent),
-                                       Mi::RowEntryRole).toInt(&ok);
+                                       ViewHelper::RowEntryRole).toInt(&ok);
     return ok && entries;
 }
 

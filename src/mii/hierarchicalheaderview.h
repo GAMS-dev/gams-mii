@@ -53,8 +53,8 @@ public:
 
     void setModel(QAbstractItemModel *model) override;
 
-    ViewDataType viewType() const;
-    void setViewType(ViewDataType viewType);
+    ViewHelper::ViewDataType viewType() const;
+    void setViewType(ViewHelper::ViewDataType viewType);
 
     int view() const;
     void setView(int view);
@@ -85,7 +85,7 @@ private:
     class HierarchicalHeaderView_private;
     HierarchicalHeaderView_private *mPrivate;
     QSharedPointer<AbstractModelInstance> mModelInstance;
-    ViewDataType mViewType = ViewDataType::Unknown;
+    ViewHelper::ViewDataType mViewType = ViewHelper::ViewDataType::Unknown;
     int mView;
 
     QMenu *mFilterMenu;

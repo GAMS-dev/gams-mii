@@ -72,6 +72,11 @@ void GAMSLibProcess::execute()
     mProcess.waitForFinished(-1);
 }
 
+QProcess *GAMSLibProcess::process()
+{
+    return &mProcess;
+}
+
 QString GAMSLibProcess::nativeAppPath()
 {
     QString systemDir = CommonPaths::systemDir();

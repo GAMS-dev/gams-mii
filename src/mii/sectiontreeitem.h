@@ -69,9 +69,9 @@ public:
 
     int row() const;
 
-    ViewDataType type() const;
+    ViewHelper::ViewDataType type() const;
 
-    void setType(ViewDataType type);
+    void setType(ViewHelper::ViewDataType type);
 
     void setType(const QString &text);
 
@@ -98,7 +98,7 @@ private:
     ///
     AbstractViewFrame* mWidget = nullptr;
 
-    ViewDataType mType = ViewDataType::Unknown;
+    ViewHelper::ViewDataType mType = ViewHelper::ViewDataType::Unknown;
     QVector<SectionTreeItem*> mChilds;
     bool mCustom = false;
     bool mGroup = false;

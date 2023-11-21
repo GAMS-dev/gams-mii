@@ -106,7 +106,7 @@ public:
 
     int verticalSectionDimension(int sectionIndex)
     {
-        if (!Mi::isStandardView(mHeaderView->viewType()))
+        if (!ViewHelper::isStandardView(mHeaderView->viewType()))
             return 1;
         return symbol(sectionIndex)->dimension();
     }
@@ -130,7 +130,7 @@ public:
         paintHorizontalCell(painter, rect, styleOption, currentTop,
                             label(sectionIndex, -1, mHeaderView->orientation()),
                             logicalIndex, sectionIndex, -1, true);
-        if (Mi::isStandardView(mHeaderView->viewType())) {
+        if (ViewHelper::isStandardView(mHeaderView->viewType())) {
             for (int d=0; d<horizontalSectionDimension(sectionIndex); ++d) {
                 paintHorizontalCell(painter, rect, styleOption, currentTop,
                                     label(sectionIndex, d, mHeaderView->orientation()),
@@ -159,7 +159,7 @@ public:
         styleOption.text = horizontalCellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
 
         painter->save();
-        if (isSymbol && Mi::isStandardView(mHeaderView->viewType())) {
+        if (isSymbol && ViewHelper::isStandardView(mHeaderView->viewType())) {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
             styleOption.rect = QRect(rect.x()+mFilterIconSize.width(), currentTop, rect.width(), size.height());
             mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
@@ -169,7 +169,7 @@ public:
             } else if (!styleOption.text.isEmpty()) {
                 painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
                                     mFilterIconSize.height(),
-                                    Mi::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
+                                    ViewHelper::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
             }
         } else {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
@@ -241,7 +241,7 @@ public:
         styleOption.text = verticalCellText(logicalIndex, sectionIndex, dimension, isSymbol, currentSym, text);
 
         painter->save();
-        if (isSymbol && Mi::isStandardView(mHeaderView->viewType())) {
+        if (isSymbol && ViewHelper::isStandardView(mHeaderView->viewType())) {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
             styleOption.rect = QRect(currentLeft+mFilterIconSize.width(), rect.y(), size.width(), rect.height());
             mHeaderView->style()->drawControl(QStyle::CE_HeaderLabel, &styleOption, painter, mHeaderView);
@@ -251,7 +251,7 @@ public:
             } else if (!styleOption.text.isEmpty()) {
                 painter->drawPixmap(rect.x(), rect.y(), mFilterIconSize.width(),
                                     mFilterIconSize.height(),
-                                    Mi::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
+                                    ViewHelper::isStandardView(mHeaderView->viewType()) ? mPixmapFilterOn : mPixmapFilterOff);
             }
         } else {
             mHeaderView->style()->drawControl(QStyle::CE_HeaderSection, &styleOption, painter, mHeaderView);
@@ -301,7 +301,7 @@ public:
                              bool isSymbol, const Symbol *symbol,
                              const QString &text)
     {// TODO header drawing rules... simplify and no on the fly stuff
-        if (!Mi::isStandardView(mHeaderView->viewType())) {
+        if (!ViewHelper::isStandardView(mHeaderView->viewType())) {
             return mHeaderView->modelInstance()->plainHeaderData(mHeaderView->orientation(),
                                                                  mHeaderView->view(),
                                                                  sectionIndex,
@@ -372,11 +372,11 @@ public:
 
     int maxSymbolDimension(Qt::Orientation orientation)
     {
-        if (!Mi::isStandardView(mHeaderView->viewType())) {
+        if (!ViewHelper::isStandardView(mHeaderView->viewType())) {
             // show 1 dim for eqns and non for vars
             return orientation == Qt::Vertical ? 1 : 0;
         }
-        if (mHeaderView->viewType() == ViewDataType::Symbols) {
+        if (mHeaderView->viewType() == ViewHelper::ViewDataType::Symbols) {
             auto section = mHeaderView->model()->headerData(0, orientation).toInt();
             Symbol* symbol;
             if (orientation == Qt::Horizontal)
@@ -431,7 +431,7 @@ public:
 private:
     int symbolDimension() const
     {
-        if (!Mi::isStandardView(mHeaderView->viewType()) && mHeaderView->orientation() == Qt::Vertical) {
+        if (!ViewHelper::isStandardView(mHeaderView->viewType()) && mHeaderView->orientation() == Qt::Vertical) {
             return 1; // non standard views have always diminsion 1
         }
         return mHeaderView->orientation() == Qt::Horizontal ? mHeaderView->modelInstance()->maximumVariableDimension() :
@@ -442,7 +442,7 @@ private:
     {
         QFontMetrics fm(mHeaderView->font());
         auto flags = Qt::TextSingleLine | Qt::TextDontClip;
-        if (Mi::isStandardView(mHeaderView->viewType())) {
+        if (ViewHelper::isStandardView(mHeaderView->viewType())) {
             if (mHeaderView->orientation() == Qt::Horizontal)
                 return fm.size(flags, mHeaderView->mModelInstance->longestVariableText());
             else
@@ -578,12 +578,12 @@ void HierarchicalHeaderView::setModel(QAbstractItemModel *model)
     QHeaderView::setModel(model);
 }
 
-ViewDataType HierarchicalHeaderView::viewType() const
+ViewHelper::ViewDataType HierarchicalHeaderView::viewType() const
 {
     return mViewType;
 }
 
-void HierarchicalHeaderView::setViewType(ViewDataType viewType)
+void HierarchicalHeaderView::setViewType(ViewHelper::ViewDataType viewType)
 {
     mViewType = viewType;
 }
@@ -600,7 +600,7 @@ void HierarchicalHeaderView::setView(int view)
 
 void HierarchicalHeaderView::customMenuRequested(const QPoint &position)
 {
-    if (mViewType != ViewDataType::Symbols)
+    if (mViewType != ViewHelper::ViewDataType::Symbols)
         return;
     bool ok;
     int logicalIndex = logicalIndexAt(position);

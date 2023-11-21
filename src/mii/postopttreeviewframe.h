@@ -31,6 +31,7 @@ namespace Ui {
 class PostoptTreeViewFrame;
 }
 class PostoptTreeModel;
+class ValueFormatProxyModel;
 
 
 class PostoptTreeViewFrame final : public AbstractViewFrame
@@ -50,10 +51,6 @@ public:
 
     AbstractViewFrame* clone(int viewId) override;
 
-    void setIdentifierFilter(const IdentifierFilter &filter) override;
-
-    void setAggregation(const Aggregation &aggregation) override;
-
     void setShowAbsoluteValues(bool absoluteValues) override;
 
     SearchResult& search(const QString &term, bool isRegEx) override;
@@ -62,9 +59,7 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
-    ViewDataType type() const override;
-
-    void reset() override;
+    ViewHelper::ViewDataType type() const override;
 
     void updateView() override;
 
@@ -76,12 +71,21 @@ public:
 
     bool hasData() const override;
 
+signals:
+    void openFilterDialog();
+
+protected:
+    void updateIdentifierFilter() override;
+
+    void updateValueFilter() override;
+
 private:
     void setupView();
 
 protected:
     Ui::PostoptTreeViewFrame* ui;
     PostoptTreeModel *mBaseModel;
+    ValueFormatProxyModel* mValueFormatModel = nullptr;
 };
 
 }

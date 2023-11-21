@@ -22,6 +22,7 @@
 #define ABSTRACTVIEWFRAME_H
 
 #include "common.h"
+#include "viewconfigurationprovider.h"
 
 #include <QFrame>
 
@@ -31,7 +32,6 @@ namespace mii {
 
 class Aggregation;
 class AbstractModelInstance;
-class AbstractViewConfiguration;
 
 class AbstractViewFrame : public QFrame
 {
@@ -45,43 +45,11 @@ public:
 
     virtual AbstractViewFrame* clone(int viewId) = 0;
 
-    const IdentifierFilter& identifierFilter() const;
-
-    const IdentifierFilter& defaultIdentifierFilter() const;
-
-    virtual void setIdentifierFilter(const IdentifierFilter &filter) = 0;
-
-    void setDefaultIdentifierFilter(const IdentifierFilter &filter);
-
-    const ValueFilter& valueFilter() const;
-
-    const ValueFilter& defaultValueFilter() const;
-
-    virtual void setValueFilter(const ValueFilter &filter);
-
-    void setDefaultValueFilter(const ValueFilter &filter);
-
-    const LabelFilter& labelFilter() const;
-
-    const LabelFilter& defaultLabelFilter() const;
-
-    virtual void setLabelFilter(const LabelFilter &filter);
-
-    void setDefaultLabelFilter(const LabelFilter &filter);
-
-    virtual void setAggregation(const Aggregation &aggregation) = 0;
-
-    void setDefaultAggregation(const Aggregation& aggregation);
-
-    const Aggregation& currentAggregation() const;
-
-    const Aggregation& defaultAggregation() const;
-
     virtual void setShowAbsoluteValues(bool absoluteValues) = 0;
 
-    virtual ViewDataType type() const = 0;
+    virtual ViewHelper::ViewDataType type() const = 0;
 
-    virtual void reset() = 0;
+    void updateFilters(AbstractViewConfiguration::Options options);
 
     virtual void updateView() = 0;
 
@@ -97,10 +65,6 @@ public:
 
     virtual void setSearchSelection(const SearchResult::SearchEntry &result) = 0;
 
-    int viewId() const;
-
-    virtual void setViewId(int viewId);
-
     virtual void setupView(QSharedPointer<AbstractModelInstance> modelInstance) = 0;
 
     QSharedPointer<AbstractViewConfiguration> viewConfig() const;
@@ -108,6 +72,13 @@ public:
     void setViewConfig(QSharedPointer<AbstractViewConfiguration> viewConfig);
 
     virtual bool hasData() const = 0;
+
+protected:
+    virtual void updateIdentifierFilter();
+
+    virtual void updateLabelFilter();
+
+    virtual void updateValueFilter();
 
 protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;

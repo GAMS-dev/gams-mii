@@ -19,6 +19,7 @@
  *
  */
 #include "postopttreeview.h"
+#include "postopttreeitem.h"
 #include "common.h"
 
 #include <QEvent>
@@ -40,9 +41,9 @@ bool PostoptTreeView::eventFilter(QObject *watched, QEvent *event)
         QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
         if (wheel->modifiers() == Qt::ControlModifier) {
             if (wheel->angleDelta().y() > 0)
-                zoomIn(Mi::ZoomFactor);
+                zoomIn(ViewHelper::ZoomFactor);
             else
-                zoomOut(Mi::ZoomFactor);
+                zoomOut(ViewHelper::ZoomFactor);
             return true;
         }
     }
@@ -65,6 +66,18 @@ void PostoptTreeView::resetZoom()
 {
     setFont(mBaseFont);
     resizeColumns();
+}
+
+void PostoptTreeView::mousePressEvent(QMouseEvent *event)
+{
+    auto idx = indexAt(event->pos());
+    if (idx.isValid()) {
+        auto item = static_cast<PostoptTreeItem*>(idx.internalPointer());
+        if (item->type() == PostoptTreeItem::ClickItem) {
+            emit openFilterDialog();
+        }
+    }
+    QTreeView::mousePressEvent(event);
 }
 
 void PostoptTreeView::zoom(int range)

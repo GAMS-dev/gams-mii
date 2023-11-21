@@ -63,12 +63,12 @@ SearchResult& AbstractTableViewFrame::search(const QString &term, bool isRegEx)
 
 void AbstractTableViewFrame::zoomIn()
 {
-    ui->tableView->zoomIn(Mi::ZoomFactor);
+    ui->tableView->zoomIn(ViewHelper::ZoomFactor);
 }
 
 void AbstractTableViewFrame::zoomOut()
 {
-    ui->tableView->zoomOut(Mi::ZoomFactor);
+    ui->tableView->zoomOut(ViewHelper::ZoomFactor);
 }
 
 void AbstractTableViewFrame::resetZoom()

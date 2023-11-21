@@ -47,7 +47,7 @@ public:
 
     virtual ~SectionTreeModel();
 
-    void appendCustomView(const QString &text, ViewDataType type, AbstractViewFrame* widget);
+    void appendCustomView(const QString &text, ViewHelper::ViewDataType type, AbstractViewFrame* widget);
 
     SectionTreeItem* data() const;
 

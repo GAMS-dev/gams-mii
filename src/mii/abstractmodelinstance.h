@@ -64,6 +64,10 @@ public:
 
     void setScratchDirectory(const QString &scratchDir);
 
+    bool globalAbsolute() const;
+
+    void setGlobalAbsolute(bool absolute);
+
     bool useOutput() const;
 
     void setUseOutput(bool useOutput);
@@ -85,7 +89,7 @@ public:
      * @brief Number of equations defined by <c>type</c>.
      * @param GMO equation type.
      */
-    virtual int equationCount(EquationType type) const;
+    virtual int equationCount(ValueHelper::EquationType type) const;
 
     virtual char equationType(int row) const = 0;
 
@@ -119,7 +123,7 @@ public:
      * @brief Number of variables defined by <c>type</c>.
      * @param Equation type.
      */
-    virtual int variableCount(VariableType type) const;
+    virtual int variableCount(ValueHelper::VariableType type) const;
 
     /**
      * @brief Total number of variable rows.
@@ -204,6 +208,8 @@ protected:
     QString mScratchDir;
     QString mWorkspace;
     QString mSystemDir;
+
+    bool mGlobalAbsolute = false;
 
     bool mUseOutput = false;
 

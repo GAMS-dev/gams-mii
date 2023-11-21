@@ -24,38 +24,46 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-const QString Mi::SV_NA     = "NA";
-const QString Mi::SV_EPS    = "EPS";
-const QString Mi::SV_INF    = "INF";
-const QString Mi::SV_PINF   = "+INF";
-const QString Mi::SV_NINF   = "-INF";
+const QString AttributeHelper::InfeasibilityText = "Infeasibility";
+const QString AttributeHelper::LevelText         = "Level";
+const QString AttributeHelper::LowerText         = "Lower";
+const QString AttributeHelper::MarginalText      = "Marginal";
+const QString AttributeHelper::MarginalNumText   = "MarginalNum";
+const QString AttributeHelper::RangeText         = "Range";
+const QString AttributeHelper::ScaleText         = "Scale";
+const QString AttributeHelper::SlackText         = "Slack";
+const QString AttributeHelper::SlackLBText       = "Slack lower bound";
+const QString AttributeHelper::SlackUBText       = "Slack upper bound";
+const QString AttributeHelper::UpperText         = "Upper";
+const QString AttributeHelper::TypeText          = "Type";
 
-const QString Mi::Infeasibility = "Infeasibility";
-const QString Mi::Level         = "Level";
-const QString Mi::Lower         = "Lower";
-const QString Mi::Marginal      = "Marginal";
-const QString Mi::MarginalNum   = "MarginalNum";
-const QString Mi::Range         = "Range";
-const QString Mi::Scale         = "Scale";
-const QString Mi::Slack         = "Slack";
-const QString Mi::SlackLB       = "Slack lower bound";
-const QString Mi::SlackUB       = "Slack upper bound";
-const QString Mi::Upper         = "Upper";
-const QString Mi::Type          = "Type";
+const QString ValueHelper::NAText     = "NA";
+const QString ValueHelper::EPSText    = "EPS";
+const QString ValueHelper::INFText    = "INF";
+const QString ValueHelper::PINFText   = "+INF";
+const QString ValueHelper::NINFText   = "-INF";
+const unsigned char ValueHelper::Plus   = '+';
+const unsigned char ValueHelper::Minus  = '-';
+const unsigned char ValueHelper::Mixed  = 'm';
+const QString ValueHelper::PlusMinus    = "+/-";
 
-const QString Mi::ModelInstance   = "Model Instance";
-const QString Mi::PredefinedViews = "Predefined Views";
-const QString Mi::CustomViews     = "Custom Views";
-const QString Mi::Blockpic        = "Blockpic";
-const QString Mi::SymbolView      = "Symbol View";
+const QString ViewHelper::AttributeHeaderText = "Attributes";
+const QString ViewHelper::EquationHeaderText  = "Equations";
+const QString ViewHelper::VariableHeaderText  = "Variables";
 
-const QString Mi::Jacobian      = "Jacobian";
-const QString Mi::BPScaling     = "Scaling";
-const QString Mi::BPOverview    = "Overview";
-const QString Mi::BPCount       = "Count";
-const QString Mi::BPAverage     = "Average";
-const QString Mi::Postopt       = "Postopt";
-const QStringList Mi::PredefinedViewTexts = {
+const QString ViewHelper::ModelInstance   = "Model Instance";
+const QString ViewHelper::PredefinedViews = "Predefined Views";
+const QString ViewHelper::CustomViews     = "Custom Views";
+const QString ViewHelper::Blockpic        = "Blockpic";
+const QString ViewHelper::SymbolView      = "Symbol View";
+
+const QString ViewHelper::Jacobian      = "Jacobian";
+const QString ViewHelper::BPScaling     = "Scaling";
+const QString ViewHelper::BPOverview    = "Overview";
+const QString ViewHelper::BPCount       = "Count";
+const QString ViewHelper::BPAverage     = "Average";
+const QString ViewHelper::Postopt       = "Postopt";
+const QStringList ViewHelper::PredefinedViewTexts = {
                                                 Jacobian,
                                                 BPOverview,
                                                 BPCount,
@@ -64,11 +72,11 @@ const QStringList Mi::PredefinedViewTexts = {
                                                 Postopt
                                             };
 
-const QString Mi::GamsCntr = "gamscntr.dat";
-const QString Mi::GamsDict = "gamsdict.dat";
-const QString Mi::Gamsmatr = "gamsmatr.dat";
-const QString Mi::GamsSolu = "gamssolu.dat";
-const QString Mi::GamsStat = "gamsstat.dat";
+const QString FileHelper::GamsCntr = "gamscntr.dat";
+const QString FileHelper::GamsDict = "gamsdict.dat";
+const QString FileHelper::Gamsmatr = "gamsmatr.dat";
+const QString FileHelper::GamsSolu = "gamssolu.dat";
+const QString FileHelper::GamsStat = "gamsstat.dat";
 }
 }
 }

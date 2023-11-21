@@ -28,6 +28,7 @@
 #include "mii/modelinspector.h"
 #include "mii/searchresultmodel.h"
 #include "mii/common.h"
+#include "mii/viewconfigurationprovider.h"
 
 #include <QDir>
 #include <QFileDialog>
@@ -41,7 +42,7 @@ using gams::studio::mii::AggregationDialog;
 using gams::studio::mii::FilterDialog;
 using gams::studio::mii::ModelInspector;
 using gams::studio::mii::SearchResultModel;
-using gams::studio::mii::ViewDataType;
+using gams::studio::mii::ViewHelper;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -62,7 +63,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->statusBar->addPermanentWidget(mAggregationStatusLabel);
     ui->actionAggregation->setEnabled(false);
     setWindowTitle(windowTitle() + " " + QApplication::applicationVersion());
-    mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
+    mAggregationStatusLabel->setText(mAggregationDialog->viewConfig()->currentAggregation().typeText());
     setupConnections();
     setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
     createProjectDirectory();
@@ -114,8 +115,7 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionRun_triggered()
 {
-    ui->actionRun->setEnabled(false);
-    ui->runButton->setEnabled(false);
+    setRunButtonState(false);
     auto path = workspace();
     QDir dir(path);
     if (!dir.mkpath(path)) {
@@ -218,13 +218,13 @@ void MainWindow::on_actionShow_search_result_triggered()
 
 void MainWindow::showAbsoluteValues()
 {
-    ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
+    ui->modelInspector->setShowAbsoluteValuesGlobal(ui->actionShow_Absolute->isChecked());
     if (!ui->actionShow_Absolute->isChecked()) {
-        auto defaultFilter = ui->modelInspector->defaultValueFilter();
-        auto currentFilter = ui->modelInspector->valueFilter();
+        auto defaultFilter = ui->modelInspector->viewConfig()->defaultValueFilter();
+        auto currentFilter = ui->modelInspector->viewConfig()->currentValueFilter();
         currentFilter.MinValue = defaultFilter.MinValue;
         currentFilter.MaxValue = defaultFilter.MaxValue;
-        ui->modelInspector->setValueFilter(currentFilter);
+        ui->modelInspector->viewConfig()->setCurrentValueFilter(currentFilter);
     }
     setGlobalFiltersData();
     setAggregationData();
@@ -234,7 +234,7 @@ void MainWindow::on_actionShow_Output_triggered()
 {
     ui->modelInspector->setShowOutput(ui->actionShow_Output->isChecked());
     ui->modelInspector->reloadModelInstance();
-    ui->modelInspector->setShowAbsoluteValues(ui->actionShow_Absolute->isChecked());
+    ui->modelInspector->setShowAbsoluteValuesGlobal(ui->actionShow_Absolute->isChecked());
     setGlobalFiltersData();
     setAggregationData();
 }
@@ -280,9 +280,10 @@ void MainWindow::on_actionAbout_Qt_triggered()
 void MainWindow::loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus)
 {
     Q_UNUSED(exitStatus);
-    if (exitCode > 0) {
+    if (exitCode != 0) {
         appendLogMessage("The GAMSProcess reported an issue. The exit code is " +
                          QString().number(exitCode));
+        setRunButtonState(true);
         return;
     }
     if (!mLoadScrFiles) {
@@ -295,21 +296,23 @@ void MainWindow::loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus
     QDir scrdir(ui->modelInspector->scratchDir());
     if (scrdir.count() == 0) {
         ui->logEdit->appendPlainText("Error: No scratch files found at " + ui->modelInspector->scratchDir());
+        setRunButtonState(true);
         return;
     }
     int datFileCount = 0;
     for (const auto& file : scrdir.entryList()) {
-        if (file.endsWith(mii::Mi::GamsCntr, Qt::CaseInsensitive) ||
-            file.endsWith(mii::Mi::GamsDict, Qt::CaseInsensitive) ||
-            file.endsWith(mii::Mi::Gamsmatr, Qt::CaseInsensitive) ||
-            file.endsWith(mii::Mi::GamsSolu, Qt::CaseInsensitive) ||
-            file.endsWith(mii::Mi::GamsStat, Qt::CaseInsensitive)) {
+        if (file.endsWith(mii::FileHelper::GamsCntr, Qt::CaseInsensitive) ||
+            file.endsWith(mii::FileHelper::GamsDict, Qt::CaseInsensitive) ||
+            file.endsWith(mii::FileHelper::Gamsmatr, Qt::CaseInsensitive) ||
+            file.endsWith(mii::FileHelper::GamsSolu, Qt::CaseInsensitive) ||
+            file.endsWith(mii::FileHelper::GamsStat, Qt::CaseInsensitive)) {
             ++datFileCount;
         }
     }
     if (datFileCount != 5) {
         ui->logEdit->appendPlainText("Error: It looks like the scratch files are incomplete. Loading scratch files aborted. Please check your model and " +
                                      ui->modelInspector->scratchDir());
+        setRunButtonState(true);
         return;
     }
     ui->modelInspector->loadModelInstance();
@@ -318,21 +321,24 @@ void MainWindow::loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus
     emit ui->actionShow_Absolute->triggered();
 }
 
+void MainWindow::handleLibProcessResult(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    Q_UNUSED(exitStatus);
+    if (exitCode != 0) {
+        setRunButtonState(true);
+    }
+}
+
 void MainWindow::aggregationUpdate()
 {
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
-    mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
-    ui->modelInspector->setAggregation(mAggregationDialog->aggregation());
+    mAggregationStatusLabel->setText(mAggregationDialog->viewConfig()->currentAggregation().typeText());
 }
 
-void MainWindow::globalFilterUpdate()
+void MainWindow::viewConfigUpdate()
 {
     static_cast<SearchResultModel*>(ui->searchResultView->model())->updateData({});
-    ui->modelInspector->setIdentifierFilter(mFilterDialog->idendifierFilter());
-    ui->modelInspector->setValueFilter(mFilterDialog->valueFilter());
-    ui->modelInspector->setLabelFilter(mFilterDialog->labelFilter());
-    ui->modelInspector->resetColumnRowFilter();
-    setAggregationData();
+    ui->modelInspector->updateFilters();
 }
 
 void MainWindow::searchResultSelectionChanged(const QModelIndex &index)
@@ -350,7 +356,7 @@ void MainWindow::updateModelInstance()
 
 void MainWindow::viewChanged(int viewType)
 {
-    if (viewType == (int)ViewDataType::Unknown) {
+    if (viewType == (int)ViewHelper::ViewDataType::Unknown) {
         ui->action_Search->setEnabled(false);
         ui->searchEdit->setEnabled(false);
         ui->actionFilters->setEnabled(false);
@@ -387,6 +393,8 @@ void MainWindow::setupConnections()
             this, &MainWindow::appendLogMessage);
     connect(mLibProcess, &GAMSLibProcess::newStdChannelData,
             this, &MainWindow::appendLogMessage);
+    connect(mLibProcess->process(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &MainWindow::handleLibProcessResult);
     connect(mProcess.get(), &GAMSProcess::newStdChannelData,
             this, &MainWindow::appendLogMessage);
     connect(ui->searchEdit, &QLineEdit::returnPressed,
@@ -397,8 +405,8 @@ void MainWindow::setupConnections()
             this, &MainWindow::on_actionRun_triggered);
     connect(mAggregationDialog, &AggregationDialog::aggregationUpdated,
              this, &MainWindow::aggregationUpdate);
-    connect(mFilterDialog, &FilterDialog::filterUpdated,
-            this, &MainWindow::globalFilterUpdate);
+    connect(mFilterDialog, &FilterDialog::viewConfigUpdated,
+            this, &MainWindow::viewConfigUpdate);
     connect(ui->modelInspector, &ModelInspector::viewChanged,
             this, &MainWindow::viewChanged);
     connect(ui->modelInspector, &ModelInspector::filtersChanged,
@@ -427,9 +435,10 @@ void MainWindow::setupConnections()
             this, &MainWindow::scrFileChanged);
     connect(ui->modelInspector, &ModelInspector::dataLoaded,
             this, [this]{
-        ui->runButton->setEnabled(true);
-        ui->actionRun->setEnabled(true);
+        setRunButtonState(true);
     });
+    connect(ui->modelInspector, &ModelInspector::openFilterDialog,
+            this, &MainWindow::on_actionFilters_triggered);
 }
 
 void MainWindow::createProjectDirectory()
@@ -481,24 +490,13 @@ void MainWindow::loadGAMSModel(const QString &path)
 
 void MainWindow::setGlobalFiltersData()
 {
-    mFilterDialog->setViewType(ui->modelInspector->viewType());
-    auto filter = ui->modelInspector->valueFilter();
-    filter.UseAbsoluteValuesGlobal = ui->actionShow_Absolute->isChecked();
-    mFilterDialog->setDefaultValueFilter(ui->modelInspector->defaultValueFilter());
-    mFilterDialog->setValueFilter(filter);
-    mFilterDialog->setDefaultIdentifierFilter(ui->modelInspector->defaultIdentifierFilter());
-    mFilterDialog->setIdentifierFilter(ui->modelInspector->identifierFilter());
-    mFilterDialog->setDefaultLabelFilter(ui->modelInspector->defaultLabelFilter());
-    mFilterDialog->setLabelFilter(ui->modelInspector->labelFilter());
+    mFilterDialog->setViewConfig(ui->modelInspector->viewConfig());
 }
 
 void MainWindow::setAggregationData()
 {
-    mAggregationDialog->setAggregation(ui->modelInspector->aggregation(),
-                                       ui->modelInspector->identifierFilter(),
-                                       ui->actionShow_Absolute->isChecked());
-    mAggregationDialog->setDefaultAggregation(ui->modelInspector->defaultAggregation());
-    mAggregationStatusLabel->setText(mAggregationDialog->aggregation().typeText());
+    mAggregationDialog->setViewConfig(ui->modelInspector->viewConfig());
+    mAggregationStatusLabel->setText(ui->modelInspector->viewConfig()->currentAggregation().typeText());
 }
 
 void MainWindow::showDialog(QDialog *dialog)
@@ -537,12 +535,18 @@ void MainWindow::updateScratchDataWatcher(const QString& scrdir)
     if (!mScrWatcher.directories().isEmpty()) {
         mScrWatcher.removePaths(mScrWatcher.directories());
     }
-    mScrWatcher.addPath(scrdir + "/" + mii::Mi::GamsCntr);
-    mScrWatcher.addPath(scrdir + "/" + mii::Mi::GamsDict);
-    mScrWatcher.addPath(scrdir + "/" + mii::Mi::Gamsmatr);
-    mScrWatcher.addPath(scrdir + "/" + mii::Mi::GamsSolu);
-    mScrWatcher.addPath(scrdir + "/" + mii::Mi::GamsStat);
+    mScrWatcher.addPath(scrdir + "/" + mii::FileHelper::GamsCntr);
+    mScrWatcher.addPath(scrdir + "/" + mii::FileHelper::GamsDict);
+    mScrWatcher.addPath(scrdir + "/" + mii::FileHelper::Gamsmatr);
+    mScrWatcher.addPath(scrdir + "/" + mii::FileHelper::GamsSolu);
+    mScrWatcher.addPath(scrdir + "/" + mii::FileHelper::GamsStat);
     if (mScrWatcher.files().count() < 5) {
         mScrWatcher.addPath(scrdir);
     }
+}
+
+void MainWindow::setRunButtonState(bool enabled)
+{
+    ui->runButton->setEnabled(enabled);
+    ui->actionRun->setEnabled(enabled);
 }

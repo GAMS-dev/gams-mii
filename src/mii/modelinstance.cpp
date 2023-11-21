@@ -80,22 +80,22 @@ int ModelInstance::equationCount() const
     return mEquations.count();
 }
 
-int ModelInstance::equationCount(EquationType type) const
+int ModelInstance::equationCount(ValueHelper::EquationType type) const
 {
     switch (type) {
-    case EquationType::E:
+    case ValueHelper::EquationType::E:
         return gmoGetEquTypeCnt(mGMO, gmoequ_E);
-    case EquationType::G:
+    case ValueHelper::EquationType::G:
         return gmoGetEquTypeCnt(mGMO, gmoequ_G);
-    case EquationType::L:
+    case ValueHelper::EquationType::L:
         return gmoGetEquTypeCnt(mGMO, gmoequ_L);
-    case EquationType::N:
+    case ValueHelper::EquationType::N:
         return gmoGetEquTypeCnt(mGMO, gmoequ_N);
-    case EquationType::X:
+    case ValueHelper::EquationType::X:
         return gmoGetEquTypeCnt(mGMO, gmoequ_X);
-    case EquationType::C:
+    case ValueHelper::EquationType::C:
         return gmoGetEquTypeCnt(mGMO, gmoequ_C);
-    case EquationType::B:
+    case ValueHelper::EquationType::B:
         return gmoGetEquTypeCnt(mGMO, gmoequ_B);
     default:
         return 0;
@@ -119,22 +119,22 @@ int ModelInstance::variableCount() const
     return mVariables.count();
 }
 
-int ModelInstance::variableCount(VariableType type) const
+int ModelInstance::variableCount(ValueHelper::VariableType type) const
 {
     switch (type) {
-    case VariableType::X:
+    case ValueHelper::VariableType::X:
         return gmoGetVarTypeCnt(mGMO, gmovar_X);
-    case VariableType::B:
+    case ValueHelper::VariableType::B:
         return gmoGetVarTypeCnt(mGMO, gmovar_B);
-    case VariableType::I:
+    case ValueHelper::VariableType::I:
         return gmoGetVarTypeCnt(mGMO, gmovar_I);
-    case VariableType::S1:
+    case ValueHelper::VariableType::S1:
         return gmoGetVarTypeCnt(mGMO, gmovar_S1);
-    case VariableType::S2:
+    case ValueHelper::VariableType::S2:
         return gmoGetVarTypeCnt(mGMO, gmovar_S2);
-    case VariableType::SC:
+    case ValueHelper::VariableType::SC:
         return gmoGetVarTypeCnt(mGMO, gmovar_SC);
-    case VariableType::SI:
+    case ValueHelper::VariableType::SI:
         return gmoGetVarTypeCnt(mGMO, gmovar_SI);
     default:
         return 0;
@@ -206,7 +206,7 @@ void ModelInstance::loadScratchData()
     if (mState == Error)
         return;
     mLogMessages << "Model Workspace: " + mWorkspace;
-    QString ctrlFile = mScratchDir + "/" + Mi::GamsCntr;
+    QString ctrlFile = mScratchDir + "/" + FileHelper::GamsCntr;
     mLogMessages << "CTRL File: " + ctrlFile;
     if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str())) {
         mLogMessages << "ERROR: Could not initialize model instance";
@@ -223,7 +223,7 @@ void ModelInstance::loadScratchData()
     }
 
     if (mUseOutput) {
-        QString solFile = mScratchDir + "/" + Mi::GamsSolu;
+        QString solFile = mScratchDir + "/" + FileHelper::GamsSolu;
         mLogMessages << "Solution File: " + solFile;
         gmoNameSolFileSet(mGMO, solFile.toStdString().c_str());
         if (gmoLoadSolutionLegacy(mGMO)) {
@@ -488,13 +488,13 @@ QVariant ModelInstance::headerData(int logicalIndex,
                                    int viewId,
                                    int role) const
 {
-    if (role == Mi::IndexDataRole) {
+    if (role == ViewHelper::IndexDataRole) {
         return mDataHandler->headerData(logicalIndex, orientation, viewId);
     }
-    if (role == Mi::LabelDataRole) {
+    if (role == ViewHelper::LabelDataRole) {
         return mDataHandler->plainHeaderData(orientation, viewId, logicalIndex, 0);
     }
-    if (role == Mi::SectionLabelRole) {
+    if (role == ViewHelper::SectionLabelRole) {
         return mDataHandler->sectionLabels(orientation, viewId, logicalIndex);
     }
     return QVariant();
@@ -593,63 +593,63 @@ QVariant ModelInstance::equationAttribute(const QString &header, int index, int 
 {
     double value = 0.0;
     int absoluteIndex = index + entry;
-    if (!header.compare(Mi::Level, Qt::CaseInsensitive)) {
+    if (!header.compare(AttributeHelper::LevelText, Qt::CaseInsensitive)) {
         value = gmoGetEquLOne(mGMO, absoluteIndex);
-    } else if (!header.compare(Mi::Lower, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::LowerText, Qt::CaseInsensitive)) {
         auto bounds = equationBounds(absoluteIndex);
         value = bounds.first;
-    } else if (!header.compare(Mi::Marginal, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::MarginalText, Qt::CaseInsensitive)) {
         value = gmoGetEquMOne(mGMO, absoluteIndex);
         return specialMarginalEquValuePtr(value, absoluteIndex, abs);
-    } else if (!header.compare(Mi::MarginalNum, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::MarginalNumText, Qt::CaseInsensitive)) {
         return specialValue(gmoGetEquMOne(mGMO, absoluteIndex));
-    } else if (!header.compare(Mi::Scale, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::ScaleText, Qt::CaseInsensitive)) {
         value = gmoGetEquScaleOne(mGMO, absoluteIndex);
-    } else if (!header.compare(Mi::Upper, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::UpperText, Qt::CaseInsensitive)) {
         auto bounds = equationBounds(absoluteIndex);
         value = bounds.second;
-    } else if (!header.compare(Mi::Infeasibility, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::InfeasibilityText, Qt::CaseInsensitive)) {
         double a = specialValue(equationBounds(absoluteIndex).first);
         double b = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
-        double v1 = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        double v1 = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         a = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
         b = specialValue(equationBounds(absoluteIndex).second);
-        double v2 = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        double v2 = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, std::max(v1, v2));
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
-    } else if (!header.compare(Mi::Range, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::RangeText, Qt::CaseInsensitive)) {
         double a = specialValue(equationBounds(absoluteIndex).second);
         double b = specialValue(equationBounds(absoluteIndex).first);
-        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
-    } else if (!header.compare(Mi::Slack, Qt::CaseInsensitive)) {
+        value = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
+    } else if (!header.compare(AttributeHelper::SlackText, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
         double b = specialValue(equationBounds(absoluteIndex).first);
-        double v1 = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        double v1 = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         v1 = std::max(0.0, v1);
         v1 = abs ? std::abs(v1) : v1;
         a = specialValue(equationBounds(absoluteIndex).second);
         b = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
-        double v2 = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        double v2 = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         v2 = std::max(0.0, v2);
         v2 = abs ? std::abs(v2) : v2;
         value = std::min(v1, v2);
         return isInf(value) ? specialValuePostopt(value, abs) : value;
-    } else if (!header.compare(Mi::SlackLB, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::SlackLBText, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
         double b = specialValue(equationBounds(absoluteIndex).first);
-        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        value = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, value);
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
-    } else if (!header.compare(Mi::SlackUB, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::SlackUBText, Qt::CaseInsensitive)) {
         double a = specialValue(equationBounds(absoluteIndex).second);
         double b = specialValue(gmoGetEquLOne(mGMO, absoluteIndex));
-        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        value = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, value);
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
-    } else if (!header.compare(Mi::Type, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::TypeText, Qt::CaseInsensitive)) {
         return QChar(equationType(index));
     } else {
         return "## Undefined ##";
@@ -662,59 +662,59 @@ QVariant ModelInstance::variableAttribute(const QString &header, int index, int 
 {
     double value = 0.0;
     int absoluteIndex = index + entry;
-    if (!header.compare(Mi::Level, Qt::CaseInsensitive)) {
+    if (!header.compare(AttributeHelper::LevelText, Qt::CaseInsensitive)) {
         value = gmoGetVarLOne(mGMO, absoluteIndex);
-    } else if (!header.compare(Mi::Lower, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::LowerText, Qt::CaseInsensitive)) {
         value = gmoGetVarLowerOne(mGMO, absoluteIndex);
-    } else if (!header.compare(Mi::Marginal, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::MarginalText, Qt::CaseInsensitive)) {
         value = gmoGetVarMOne(mGMO, absoluteIndex);
         return specialMarginalVarValuePtr(value, absoluteIndex, abs);
-    } else if (!header.compare(Mi::Scale, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::ScaleText, Qt::CaseInsensitive)) {
         value = gmoGetVarScaleOne(mGMO, absoluteIndex);
-    } else if (!header.compare(Mi::Upper, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::UpperText, Qt::CaseInsensitive)) {
         value = gmoGetVarUpperOne(mGMO, absoluteIndex);
-    } else if (!header.compare(Mi::Infeasibility, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::InfeasibilityText, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
-        double v1 = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        double v1 = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         a = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
         b = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
-        double v2 = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        double v2 = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, std::max(v1, v2));
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
-    } else if (!header.compare(Mi::Range, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::RangeText, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
-        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
-    } else if (!header.compare(Mi::Slack, Qt::CaseInsensitive)) {
+        value = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
+    } else if (!header.compare(AttributeHelper::SlackText, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
-        double v1 = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        double v1 = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         v1 = std::max(0.0, v1);
         v1 = abs ? std::abs(v1) : v1;
         a = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
         b = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
-        double v2 = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        double v2 = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         v2 = std::max(0.0, v2);
         v2 = abs ? std::abs(v2) : v2;
         value = std::min(v1, v2);
         return isInf(value) ? specialValuePostopt(value, abs) : value;
-    } else if (!header.compare(Mi::SlackLB, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::SlackLBText, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLowerOne(mGMO, absoluteIndex));
-        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        value = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, value);
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
-    } else if (!header.compare(Mi::SlackUB, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::SlackUBText, Qt::CaseInsensitive)) {
         double a = specialValue(gmoGetVarUpperOne(mGMO, absoluteIndex));
         double b = specialValue(gmoGetVarLOne(mGMO, absoluteIndex));
-        value = Mi::attributeValue(a, b, isInf(a), isInf(b));
+        value = AttributeHelper::attributeValue(a, b, isInf(a), isInf(b));
         value = std::max(0.0, value);
         value = abs ? std::abs(value) : value;
         return isInf(value) ? specialValuePostopt(value, abs) : value;
-    } else if (!header.compare(Mi::Type, Qt::CaseInsensitive)) {
+    } else if (!header.compare(AttributeHelper::TypeText, Qt::CaseInsensitive)) {
         auto type = QChar(variableType(index));
         if (type == 'x') { // x = continuous
             if (gmoGetVarLowerOne(mGMO, absoluteIndex) >= 0 && gmoGetVarUpperOne(mGMO, absoluteIndex) >= 0) {
@@ -781,11 +781,11 @@ double ModelInstance::specialValue(double value) const
 QVariant ModelInstance::specialValuePostopt(double value, bool abs) const
 {
     if (gmoPinf(mGMO) == value)
-        return Mi::SV_PINF;
+        return ValueHelper::PINFText;
     else if (gmoMinf(mGMO) == value)
-        return Mi::SV_NINF;
+        return ValueHelper::NINFText;
     else if (GMS_SV_EPS == value)
-        return Mi::SV_EPS;
+        return ValueHelper::EPSText;
     return abs ? std::abs(value) : value;
 }
 
@@ -797,14 +797,14 @@ bool ModelInstance::isSpecialValue(double value) const
 QVariant ModelInstance::specialMarginalEquValueBasis(double value, int rIndex, bool abs)
 {
     if (gmoGetEquStatOne(mGMO, rIndex) != gmoBstat_Basic && value == 0.0)
-        return Mi::SV_EPS;
+        return ValueHelper::EPSText;
     return specialValuePostopt(value, abs);
 }
 
 QVariant ModelInstance::specialMarginalVarValueBasis(double value, int cIndex, bool abs)
 {
     if (gmoGetVarStatOne(mGMO, cIndex) != gmoBstat_Basic && value == 0.0)
-        return Mi::SV_EPS;
+        return ValueHelper::EPSText;
     return specialValuePostopt(value, abs);
 }
 

@@ -58,10 +58,10 @@ void Search::run()
     if (!mDataModel)
         return;
     switch (mViewConfig->viewType()) {
-    case ViewDataType::BP_Overview:
-    case ViewDataType::BP_Count:
-    case ViewDataType::BP_Average:
-    case ViewDataType::BP_Scaling:
+    case ViewHelper::ViewDataType::BP_Overview:
+    case ViewHelper::ViewDataType::BP_Count:
+    case ViewHelper::ViewDataType::BP_Average:
+    case ViewHelper::ViewDataType::BP_Scaling:
         searchStaticHeader(Qt::Horizontal);
         searchStaticHeader(Qt::Vertical);
         break;
@@ -77,7 +77,7 @@ void Search::searchStaticHeader(Qt::Orientation orientation)
     int sections = orientation == Qt::Horizontal ? mDataModel->columnCount()
                                                  : mDataModel->rowCount();
     for (int section=0; section<sections; ++section) {
-        auto labels = mDataModel->headerData(section, orientation, Mi::SectionLabelRole).toStringList();
+        auto labels = mDataModel->headerData(section, orientation, ViewHelper::SectionLabelRole).toStringList();
         for (const auto& label : labels) {
             if (compare(label)) {
                 mViewConfig->searchResult().Entries.append(SearchResult::SearchEntry{section, orientation});

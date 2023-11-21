@@ -144,32 +144,32 @@ int SectionTreeItem::row() const
     return 0;
 }
 
-ViewDataType SectionTreeItem::type() const {
+ViewHelper::ViewDataType SectionTreeItem::type() const {
     return mType;
 }
 
-void SectionTreeItem::setType(ViewDataType type) {
+void SectionTreeItem::setType(ViewHelper::ViewDataType type) {
     mType = type;
 }
 
 void SectionTreeItem::setType(const QString &text)
 {
-    if (text == Mi::BPScaling)
-        mType = ViewDataType::BP_Scaling;
-    else if (text == Mi::BPOverview)
-        mType = ViewDataType::BP_Overview;
-    else if (text == Mi::BPCount)
-        mType = ViewDataType::BP_Count;
-    else if (text == Mi::BPAverage)
-        mType = ViewDataType::BP_Average;
-    else if (text == Mi::Postopt)
-        mType = ViewDataType::Postopt;
-    else if (text == Mi::SymbolView)
-        mType = ViewDataType::Symbols;
-    else if (text == Mi::Blockpic)
-        mType = ViewDataType::Blockpic;
+    if (text == ViewHelper::BPScaling)
+        mType = ViewHelper::ViewDataType::BP_Scaling;
+    else if (text == ViewHelper::BPOverview)
+        mType = ViewHelper::ViewDataType::BP_Overview;
+    else if (text == ViewHelper::BPCount)
+        mType = ViewHelper::ViewDataType::BP_Count;
+    else if (text == ViewHelper::BPAverage)
+        mType = ViewHelper::ViewDataType::BP_Average;
+    else if (text == ViewHelper::Postopt)
+        mType = ViewHelper::ViewDataType::Postopt;
+    else if (text == ViewHelper::SymbolView)
+        mType = ViewHelper::ViewDataType::Symbols;
+    else if (text == ViewHelper::Blockpic)
+        mType = ViewHelper::ViewDataType::Blockpic;
     else
-        mType = ViewDataType::Unknown;
+        mType = ViewHelper::ViewDataType::Unknown;
 }
 
 bool SectionTreeItem::isCustom() const

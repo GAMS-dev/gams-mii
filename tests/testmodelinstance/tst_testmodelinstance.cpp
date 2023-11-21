@@ -25,7 +25,7 @@
 using namespace gams::studio::mii;
 
 class TestModelInstance : public QObject
-{// TODO tests... also mind error state/messages
+{
     Q_OBJECT
 
 public:
@@ -55,17 +55,20 @@ void TestModelInstance::test_constructor_initialize()
     const QString scratchDir = "myScratchDir";
     ModelInstance instance(false, workspace, systemDir, scratchDir);
     QVERIFY(!instance.logMessages().isEmpty());
+    QCOMPARE(instance.state(), AbstractModelInstance::Error);
     auto realWorkspace = QDir(workspace).absolutePath();
     QCOMPARE(instance.workspace(), realWorkspace);
     QCOMPARE(instance.systemDirectory(), systemDir);
     QCOMPARE(instance.scratchDirectory(), scratchDir);
     QCOMPARE(instance.useOutput(), false);
+    QCOMPARE(instance.globalAbsolute(), false);
 }
 
 void TestModelInstance::test_default()
 {
     ModelInstance instance;
     QVERIFY(!instance.logMessages().isEmpty());
+    QCOMPARE(instance.state(), AbstractModelInstance::Error);
     QCOMPARE(instance.workspace(), QDir(".").absolutePath());
     QCOMPARE(instance.systemDirectory(), QString());
     QCOMPARE(instance.scratchDirectory(), QString());
@@ -73,12 +76,14 @@ void TestModelInstance::test_default()
     // Needed because of the GAMS Windows registry magic and build machine setup
     QVERIFY(!instance.modelName().compare(QString()) ||
             !instance.modelName().compare("GAMS Model"));
+    QCOMPARE(instance.globalAbsolute(), false);
 }
 
 void TestModelInstance::test_getSet()
 {
     ModelInstance instance;
     QVERIFY(!instance.logMessages().isEmpty());
+    QCOMPARE(instance.state(), AbstractModelInstance::Error);
     instance.setWorkspace("my_workspace");
     QCOMPARE(instance.workspace(), QDir("my_workspace").absolutePath());
     instance.setSystemDirectory("my_system_dir");
@@ -87,6 +92,8 @@ void TestModelInstance::test_getSet()
     QCOMPARE(instance.scratchDirectory(), "my_scratch_dir");
     instance.setUseOutput(true);
     QCOMPARE(instance.useOutput(), true);
+    instance.setGlobalAbsolute(true);
+    QCOMPARE(instance.globalAbsolute(), true);
 }
 
 QTEST_APPLESS_MAIN(TestModelInstance)

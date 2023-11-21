@@ -145,8 +145,8 @@ public:
     void setAggregationSymbols(Qt::Orientation orientation,
                                const AggregationSymbols &aggrSymbols);
 
-    ViewDataType viewType() const;
-    void setViewType(ViewDataType viewType);
+    ViewHelper::ViewDataType viewType() const;
+    void setViewType(ViewHelper::ViewDataType viewType);
 
     /**
      * @brief Start section mapping equation mapping for MinMax view.
@@ -177,7 +177,7 @@ private:
     bool mUseAbsoluteValues = false;
     Type mType = None;
     AggregationMap mAggregationMap;
-    ViewDataType mViewType = ViewDataType::Unknown;
+    ViewHelper::ViewDataType mViewType = ViewHelper::ViewDataType::Unknown;
 
     ///
     /// \brief Map origial start section to new start section.

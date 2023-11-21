@@ -46,17 +46,13 @@ public:
 
     virtual ~AbstractStandardTableViewFrame() = default;
 
-    void setIdentifierFilter(const IdentifierFilter &filter) override;
-
-    void setAggregation(const Aggregation &aggregation) override;
-
     void setShowAbsoluteValues(bool absoluteValues) override;
-
-    void reset() override;
 
     void updateView() override;
 
 protected:
+    void updateIdentifierFilter() override;
+
     void setIdentifierFilterCheckState(int symbolIndex, Qt::CheckState state,
                                        Qt::Orientation orientation);
 

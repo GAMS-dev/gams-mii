@@ -31,6 +31,13 @@ namespace mii {
 class PostoptTreeItem
 {
 public:
+    enum Type
+    {
+        LineItem,
+        GroupItem,
+        ClickItem
+    };
+
     explicit PostoptTreeItem(PostoptTreeItem* parent = nullptr)
         : mParent(parent)
     {
@@ -81,10 +88,8 @@ public:
         mParent = parent;
     }
 
-    static const QString AttributeHeader;
-    static const QString EquationHeader;
-    static const QString VariableHeader;
-    static const QVector<QVariant> AttributeRowHeader;
+    virtual Type type() const = 0;
+
     static const QVector<QVariant> EquationLineHeader;
     static const QVector<QVariant> VariableLineHeader;
 
@@ -114,6 +119,11 @@ public:
         return 1;
     }
 
+    Type type() const override
+    {
+        return GroupItem;
+    }
+
 private:
     QString mValue;
 };
@@ -141,8 +151,43 @@ public:
         return mData.size();
     }
 
+    Type type() const override
+    {
+        return LineItem;
+    }
+
 private:
     QVector<QVariant> mData;
+};
+
+class ClickPostoptTreeItem : public PostoptTreeItem
+{
+public:
+    explicit ClickPostoptTreeItem(const QString &text = QString(),
+                                  PostoptTreeItem* parent = nullptr)
+        : PostoptTreeItem(parent)
+        , mText(text)
+    {
+
+    }
+
+    QVariant data(int index) const override
+    {
+        return index == 0 ? mText : QVariant();
+    }
+
+    int columnCount() const override
+    {
+        return 1;
+    }
+
+    Type type() const override
+    {
+        return ClickItem;
+    }
+
+private:
+    QString mText;
 };
 
 }

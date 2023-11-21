@@ -50,10 +50,6 @@ public:
     const QList<Symbol*>& selectedEquations() const;
     const QList<Symbol*>& selectedVariables() const;
 
-    void setIdentifierFilter(const IdentifierFilter &filter) override;
-
-    void reset() override;
-
     bool hasData() const override;
 
 signals:
@@ -69,6 +65,8 @@ private slots:
     void handleRowColumnSelection();
 
 protected:
+    void updateIdentifierFilter() override;
+
     void setIdentifierFilterCheckState(int symbolIndex,
                                        Qt::CheckState state,
                                        Qt::Orientation orientation);
@@ -100,15 +98,11 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
-    void setAggregation(const Aggregation &aggregation) override;
-
-    void setValueFilter(const ValueFilter &filter) override;
-
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    inline ViewDataType type() const override
+    inline ViewHelper::ViewDataType type() const override
     {
-        return ViewDataType::BP_Overview;
+        return ViewHelper::ViewDataType::BP_Overview;
     }
 
     void updateView() override;
@@ -133,24 +127,22 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
-    void setAggregation(const Aggregation &aggregation) override;
-
-    void setValueFilter(const ValueFilter &filter) override;
-
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    inline ViewDataType type() const override
+    inline ViewHelper::ViewDataType type() const override
     {
-        return ViewDataType::BP_Count;
+        return ViewHelper::ViewDataType::BP_Count;
     }
 
     void updateView() override;
+
+protected:
+    void updateValueFilter() override;
 
 private:
     void setupView();
 
 private:
-    AbsFormatProxyModel* mAbsFormatModel = nullptr;
     ValueFormatProxyModel* mValueFormatModel = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
@@ -171,24 +163,22 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
-    void setAggregation(const Aggregation &aggregation) override;
-
-    void setValueFilter(const ValueFilter &filter) override;
-
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    inline ViewDataType type() const override
+    inline ViewHelper::ViewDataType type() const override
     {
-        return ViewDataType::BP_Average;
+        return ViewHelper::ViewDataType::BP_Average;
     }
 
     void updateView() override;
+
+protected:
+    void updateValueFilter() override;
 
 private:
     void setupView();
 
 private:
-    AbsFormatProxyModel* mAbsFormatModel = nullptr;
     ValueFormatProxyModel* mValueFormatModel = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
@@ -206,20 +196,19 @@ public:
 
     AbstractTableViewFrame* clone(int viewId) override;
 
-    ViewDataType type() const override
+    inline ViewHelper::ViewDataType type() const override
     {
-        return ViewDataType::BP_Scaling;
+        return ViewHelper::ViewDataType::BP_Scaling;
     }
-
-    void setValueFilter(const ValueFilter &filter) override;
-
-    void setAggregation(const Aggregation &aggregation) override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
     void updateView() override;
+
+protected:
+    void updateValueFilter() override;
 
 private:
     void setupView();
@@ -228,7 +217,6 @@ private:
     ValueFormatProxyModel* mValueFormatModel = nullptr;
     HierarchicalHeaderView* mVerticalHeader = nullptr;
 };
-
 
 }
 }

@@ -37,7 +37,7 @@ void ValueFormatProxyModel::setValueFilter(const ValueFilter &valueFilter)
     endResetModel();
 }
 
-GeneralValueFormatProxyModel::GeneralValueFormatProxyModel(QObject *parent)
+PostoptValueFormatProxyModel::PostoptValueFormatProxyModel(QObject *parent)
     : ValueFormatProxyModel(parent)
 {
     getValue = [](const QVariant &variant, bool *ok) {
@@ -46,7 +46,7 @@ GeneralValueFormatProxyModel::GeneralValueFormatProxyModel(QObject *parent)
     };
 }
 
-void GeneralValueFormatProxyModel::setValueFilter(const ValueFilter &valueFilter)
+void PostoptValueFormatProxyModel::setValueFilter(const ValueFilter &valueFilter)
 {
     beginResetModel();
     mValueFilter = valueFilter;
@@ -62,7 +62,7 @@ void GeneralValueFormatProxyModel::setValueFilter(const ValueFilter &valueFilter
     endResetModel();
 }
 
-QVariant GeneralValueFormatProxyModel::data(const QModelIndex &index, int role) const
+QVariant PostoptValueFormatProxyModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
@@ -71,19 +71,21 @@ QVariant GeneralValueFormatProxyModel::data(const QModelIndex &index, int role) 
     return applyFilter(QIdentityProxyModel::data(index, role));
 }
 
-QVariant GeneralValueFormatProxyModel::applyFilter(const QVariant &data) const
+QVariant PostoptValueFormatProxyModel::applyFilter(const QVariant &data) const
 {
-    if (!data.toString().compare(Mi::SV_EPS, Qt::CaseInsensitive)) {
+    if (!data.isValid())
+        return data;
+    if (!data.toString().compare(ValueHelper::EPSText, Qt::CaseInsensitive)) {
         if  (mValueFilter.ShowEps)
             return data;
         return QVariant();
     }
-    if (!data.toString().compare(Mi::SV_PINF, Qt::CaseInsensitive)) {
+    if (!data.toString().trimmed().compare(ValueHelper::PINFText, Qt::CaseInsensitive)) {
         if (mValueFilter.ShowPInf)
             return data;
         return QVariant();
     }
-    if (!data.toString().compare(Mi::SV_NINF, Qt::CaseInsensitive)) {
+    if (!data.toString().trimmed().compare(ValueHelper::NINFText, Qt::CaseInsensitive)) {
         if (mValueFilter.ShowNInf)
             return data;
         return QVariant();
@@ -95,8 +97,9 @@ QVariant GeneralValueFormatProxyModel::applyFilter(const QVariant &data) const
             return value;
         else if (mValueFilter.ExcludeRange && (value < mValueFilter.MinValue || value > mValueFilter.MaxValue))
             return value;
+        return QVariant();
     }
-    return QVariant();
+    return data;
 }
 
 JacobianValueFormatProxyModel::JacobianValueFormatProxyModel(QObject *parent)

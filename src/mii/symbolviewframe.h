@@ -45,23 +45,22 @@ public:
 
     void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
 
-    ViewDataType type() const override;
-
-    void setLabelFilter(const LabelFilter &filter) override;
-
-    void setValueFilter(const ValueFilter &filter) override;
+    ViewHelper::ViewDataType type() const override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
-
-    void setViewId(int view) override;
 
     void updateView() override;
 
     bool hasData() const override;
 
 protected slots:
+    void updateLabelFilter() override;
+
     void setIdentifierLabelFilter(const gams::studio::mii::IdentifierState &state,
                                   Qt::Orientation orientation) override;
+
+protected:
+    void updateValueFilter() override;
 
 private:
     void setupView();

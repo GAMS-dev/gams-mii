@@ -30,7 +30,7 @@ namespace mii {
 
 SectionTreeModel::SectionTreeModel(QObject *parent)
     : QAbstractItemModel(parent)
-    , mRoot(new SectionTreeItem({Mi::ModelInstance}))
+    , mRoot(new SectionTreeItem({ViewHelper::ModelInstance}))
 {
     mRoot->setGroup(true);
 }
@@ -41,17 +41,17 @@ SectionTreeModel::~SectionTreeModel()
 }
 
 void SectionTreeModel::appendCustomView(const QString &text,
-                                        ViewDataType type,
+                                        ViewHelper::ViewDataType type,
                                         AbstractViewFrame* widget)
 {
-    if (type == ViewDataType::Unknown) {
+    if (type == ViewHelper::ViewDataType::Unknown) {
         return;
     }
     beginResetModel();
-    if (type == ViewDataType::Postopt) {
+    if (type == ViewHelper::ViewDataType::Postopt) {
         if (!mCustomPostopt) {
-            mCustomPostopt = new SectionTreeItem(Mi::Postopt, mCustomRoot);
-            mCustomPostopt->setType(ViewDataType::Postopt);
+            mCustomPostopt = new SectionTreeItem(ViewHelper::Postopt, mCustomRoot);
+            mCustomPostopt->setType(ViewHelper::ViewDataType::Postopt);
             mCustomPostopt->setCustom(true);
             mCustomPostopt->setGroup(true);
             mCustomRoot->append(mCustomPostopt);
@@ -60,10 +60,10 @@ void SectionTreeModel::appendCustomView(const QString &text,
         item->setCustom(true);
         item->setType(type);
         mCustomPostopt->append(item);
-    } else if (type == ViewDataType::Symbols) {
+    } else if (type == ViewHelper::ViewDataType::Symbols) {
         if (!mCustomSymbolView) {
-            mCustomSymbolView = new SectionTreeItem(Mi::SymbolView, mCustomRoot);
-            mCustomSymbolView->setType(ViewDataType::Symbols);
+            mCustomSymbolView = new SectionTreeItem(ViewHelper::SymbolView, mCustomRoot);
+            mCustomSymbolView->setType(ViewHelper::ViewDataType::Symbols);
             mCustomSymbolView->setCustom(true);
             mCustomSymbolView->setGroup(true);
             mCustomRoot->append(mCustomSymbolView);
@@ -74,8 +74,8 @@ void SectionTreeModel::appendCustomView(const QString &text,
         mCustomSymbolView->append(item);
     } else {
         if (!mCustomBlockpic) {
-            mCustomBlockpic = new SectionTreeItem(Mi::Blockpic, mCustomRoot);
-            mCustomBlockpic->setType(ViewDataType::Blockpic);
+            mCustomBlockpic = new SectionTreeItem(ViewHelper::Blockpic, mCustomRoot);
+            mCustomBlockpic->setType(ViewHelper::ViewDataType::Blockpic);
             mCustomBlockpic->setCustom(true);
             mCustomBlockpic->setGroup(true);
             mCustomRoot->append(mCustomBlockpic);
@@ -284,55 +284,55 @@ QList<AbstractViewFrame*> SectionTreeModel::removeCustomRows()
 
 void SectionTreeModel::loadModelData(QStackedWidget *stackedWidget)
 {
-    auto predefinedItem = new SectionTreeItem(Mi::PredefinedViews,
+    auto predefinedItem = new SectionTreeItem(ViewHelper::PredefinedViews,
                                               nullptr,
                                               mRoot);
     predefinedItem->setGroup(true);
     mRoot->append(predefinedItem);
-    auto blockpicItem = new SectionTreeItem(Mi::Blockpic,
+    auto blockpicItem = new SectionTreeItem(ViewHelper::Blockpic,
                                             nullptr,
                                             predefinedItem);
     blockpicItem->setGroup(true);
     predefinedItem->append(blockpicItem);
-    for (int i=0; i<Mi::PredefinedViewTexts.size(); ++i) {
-        if (Mi::PredefinedViewTexts.at(i) == Mi::BPScaling) {
-            auto widget = stackedWidget->widget((int)ViewDataType::BP_Scaling);
-            auto item = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
+    for (int i=0; i<ViewHelper::PredefinedViewTexts.size(); ++i) {
+        if (ViewHelper::PredefinedViewTexts.at(i) == ViewHelper::BPScaling) {
+            auto widget = stackedWidget->widget((int)ViewHelper::ViewDataType::BP_Scaling);
+            auto item = new SectionTreeItem(ViewHelper::PredefinedViewTexts.at(i),
                                             static_cast<AbstractViewFrame*>(widget->children().last()),
                                             blockpicItem);
-            item->setType(Mi::PredefinedViewTexts.at(i));
+            item->setType(ViewHelper::PredefinedViewTexts.at(i));
             blockpicItem->append(item);
-        } else if (Mi::PredefinedViewTexts.at(i) == Mi::BPOverview) {
-            auto widget = stackedWidget->widget((int)ViewDataType::BP_Overview);
-            auto item = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
+        } else if (ViewHelper::PredefinedViewTexts.at(i) == ViewHelper::BPOverview) {
+            auto widget = stackedWidget->widget((int)ViewHelper::ViewDataType::BP_Overview);
+            auto item = new SectionTreeItem(ViewHelper::PredefinedViewTexts.at(i),
                                             static_cast<AbstractViewFrame*>(widget->children().last()),
                                             blockpicItem);
-            item->setType(Mi::PredefinedViewTexts.at(i));
+            item->setType(ViewHelper::PredefinedViewTexts.at(i));
             blockpicItem->append(item);
-        } else if (Mi::PredefinedViewTexts.at(i) == Mi::BPCount) {
-            auto widget = stackedWidget->widget((int)ViewDataType::BP_Count);
-            auto item = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
+        } else if (ViewHelper::PredefinedViewTexts.at(i) == ViewHelper::BPCount) {
+            auto widget = stackedWidget->widget((int)ViewHelper::ViewDataType::BP_Count);
+            auto item = new SectionTreeItem(ViewHelper::PredefinedViewTexts.at(i),
                                             static_cast<AbstractViewFrame*>(widget->children().last()),
                                             blockpicItem);
-            item->setType(Mi::PredefinedViewTexts.at(i));
+            item->setType(ViewHelper::PredefinedViewTexts.at(i));
             blockpicItem->append(item);
-        } else if (Mi::PredefinedViewTexts.at(i) == Mi::BPAverage) {
-            auto widget = stackedWidget->widget((int)ViewDataType::BP_Average);
-            auto item = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
+        } else if (ViewHelper::PredefinedViewTexts.at(i) == ViewHelper::BPAverage) {
+            auto widget = stackedWidget->widget((int)ViewHelper::ViewDataType::BP_Average);
+            auto item = new SectionTreeItem(ViewHelper::PredefinedViewTexts.at(i),
                                             static_cast<AbstractViewFrame*>(widget->children().last()),
                                             blockpicItem);
-            item->setType(Mi::PredefinedViewTexts.at(i));
+            item->setType(ViewHelper::PredefinedViewTexts.at(i));
             blockpicItem->append(item);
-        } else if (Mi::PredefinedViewTexts.at(i) == Mi::Postopt) {
-            auto widget = stackedWidget->widget((int)ViewDataType::Postopt);
-            auto item = new SectionTreeItem(Mi::PredefinedViewTexts.at(i),
+        } else if (ViewHelper::PredefinedViewTexts.at(i) == ViewHelper::Postopt) {
+            auto widget = stackedWidget->widget((int)ViewHelper::ViewDataType::Postopt);
+            auto item = new SectionTreeItem(ViewHelper::PredefinedViewTexts.at(i),
                                             static_cast<AbstractViewFrame*>(widget->children().last()),
                                             predefinedItem);
-            item->setType(Mi::PredefinedViewTexts.at(i));
+            item->setType(ViewHelper::PredefinedViewTexts.at(i));
             predefinedItem->append(item);
         }
     }
-    mCustomRoot = new SectionTreeItem(Mi::CustomViews, nullptr, mRoot);
+    mCustomRoot = new SectionTreeItem(ViewHelper::CustomViews, nullptr, mRoot);
     mCustomRoot->setGroup(true);
     mCustomRoot->setCustom(true);
     mRoot->append(mCustomRoot);

@@ -33,7 +33,7 @@ int ViewConfigurationProvider::ViewId = 127;
 class DefaultViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    DefaultViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    DefaultViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
 
@@ -55,15 +55,19 @@ protected:
 class JacobianViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    JacobianViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    JacobianViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
         mDefaultValueFilter.MinValue = mModelInstance->modelMinimum();
         mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum();
         mCurrentValueFilter = mDefaultValueFilter;
-        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
-        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
+        auto varFilter = createDefaultSymbolFilter(Qt::Horizontal);
+        if (!varFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Horizontal] = varFilter;
+        auto eqnFilter = createDefaultSymbolFilter(Qt::Vertical);
+        if (!eqnFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Vertical] = eqnFilter;
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
     }
 
@@ -96,12 +100,16 @@ protected:
 class BPScalingViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    BPScalingViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    BPScalingViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
-        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
-        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
+        auto varFilter = createDefaultSymbolFilter(Qt::Horizontal);
+        if (!varFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Horizontal] = varFilter;
+        auto eqnFilter = createDefaultSymbolFilter(Qt::Vertical);
+        if (!eqnFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Vertical] = eqnFilter;
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
         setSectionLabels();
     }
@@ -168,12 +176,16 @@ private:
 class SymbolViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    SymbolViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    SymbolViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
-        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
-        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
+        auto varFilter = createDefaultSymbolFilter(Qt::Horizontal);
+        if (!varFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Horizontal] = varFilter;
+        auto eqnFilter = createDefaultSymbolFilter(Qt::Vertical);
+        if (!eqnFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Vertical] = eqnFilter;
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
         mDefaultAggregation.setViewType(this->viewType());
         mCurrentAggregation.setViewType(this->viewType());
@@ -208,15 +220,19 @@ protected:
 class BPOverviewViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    BPOverviewViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    BPOverviewViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
         mDefaultValueFilter.MinValue = mModelInstance->modelMinimum();
         mDefaultValueFilter.MaxValue = mModelInstance->modelMaximum();
         mCurrentValueFilter = mDefaultValueFilter;
-        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
-        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
+        auto varFilter = createDefaultSymbolFilter(Qt::Horizontal);
+        if (!varFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Horizontal] = varFilter;
+        auto eqnFilter = createDefaultSymbolFilter(Qt::Vertical);
+        if (!eqnFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Vertical] = eqnFilter;
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
         setSectionLabels();
     }
@@ -266,12 +282,16 @@ private:
 class BPCountViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    BPCountViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    BPCountViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
-        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
-        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
+        auto varFilter = createDefaultSymbolFilter(Qt::Horizontal);
+        if (!varFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Horizontal] = varFilter;
+        auto eqnFilter = createDefaultSymbolFilter(Qt::Vertical);
+        if (!eqnFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Vertical] = eqnFilter;
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
         setSectionLabels();
     }
@@ -342,12 +362,16 @@ private:
 class BPAverageViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    BPAverageViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    BPAverageViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
-        mDefaultIdentifierFilter[Qt::Horizontal] = createDefaultSymbolFilter(Qt::Horizontal);
-        mDefaultIdentifierFilter[Qt::Vertical] = createDefaultSymbolFilter(Qt::Vertical);
+        auto varFilter = createDefaultSymbolFilter(Qt::Horizontal);
+        if (!varFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Horizontal] = varFilter;
+        auto eqnFilter = createDefaultSymbolFilter(Qt::Vertical);
+        if (!eqnFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Vertical] = eqnFilter;
         mCurrentIdentifierFilter = mDefaultIdentifierFilter;
         setSectionLabels();
     }
@@ -418,10 +442,18 @@ private:
 class PostoptViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    PostoptViewConfiguration(ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    PostoptViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
-
+        createLabelFilter();
+        auto varFilter = createDefaultSymbolFilter(Qt::Horizontal);
+        if (!varFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Horizontal] = varFilter;
+        auto eqnFilter = createDefaultSymbolFilter(Qt::Vertical);
+        if (!eqnFilter.isEmpty())
+            mDefaultIdentifierFilter[Qt::Vertical] = eqnFilter;
+        mCurrentIdentifierFilter = mDefaultIdentifierFilter;
+        createAttributeFilters();
     }
 
     AbstractViewConfiguration* clone() override
@@ -432,13 +464,45 @@ public:
 protected:
     IdentifierStates createDefaultSymbolFilter(Qt::Orientation orientation) const override
     {
-        Q_UNUSED(orientation);
-        return IdentifierStates();
+        const auto& symbols = orientation == Qt::Horizontal ? mModelInstance->variables()
+                                                            : mModelInstance->equations();
+        int symIndex = 0;
+        IdentifierStates states;
+        for (const auto& sym : symbols) {
+            IdentifierState identifierState;
+            identifierState.Enabled = true;
+            identifierState.SectionIndex = symIndex;
+            identifierState.SymbolIndex = sym->firstSection();
+            identifierState.Text = sym->name();
+            identifierState.Checked = Qt::Unchecked;
+            states[sym->firstSection()] = identifierState;
+            symIndex++;
+        }
+        return states;
+    }
+
+    void createLabelFilter() override
+    {
+        for (const auto& label : mModelInstance->labels()) {
+            mDefaultLabelFilter.LabelCheckStates[Qt::Horizontal][label] = Qt::Checked;
+            mDefaultLabelFilter.LabelCheckStates[Qt::Vertical][label] = Qt::Checked;
+            mCurrentLabelFilter.LabelCheckStates[Qt::Horizontal][label] = Qt::Checked;
+            mCurrentLabelFilter.LabelCheckStates[Qt::Vertical][label] = Qt::Checked;
+        }
+    }
+
+private:
+    void createAttributeFilters()
+    {
+        for (const auto& attribute : AttributeHelper::attributeTextList()) {
+            mDefaultAttributeFilter[attribute] = Qt::Checked;
+        }
+        mCurrentAttributeFilter = mDefaultAttributeFilter;
     }
 };
 
 
-AbstractViewConfiguration::AbstractViewConfiguration(ViewDataType viewType,
+AbstractViewConfiguration::AbstractViewConfiguration(ViewHelper::ViewDataType viewType,
                                                      QSharedPointer<AbstractModelInstance> modelInstance)
     : mModelInstance(modelInstance)
     , mViewId((int)viewType)
@@ -465,27 +529,20 @@ void AbstractViewConfiguration::setView(AbstractViewFrame* view)
 void AbstractViewConfiguration::updateIdentifierFilter(const QList<Symbol *> &eqnFilter,
                                                        const QList<Symbol *> &varFilter)
 {
+    qDebug() << eqnFilter.size() << varFilter.size();
     for (auto iter=mCurrentIdentifierFilter[Qt::Vertical].begin();
          iter!=mCurrentIdentifierFilter[Qt::Vertical].end(); ++iter) {
-        for (auto symbol : eqnFilter) {
-            if (iter->Text == symbol->name()) {
-                iter->Checked = Qt::Checked;
-                break;
-            } else {
-                iter->Checked = Qt::Unchecked;
-            }
-        }
+        iter->Checked = Qt::Unchecked;
+    }
+    for (auto symbol : eqnFilter) {
+        mCurrentIdentifierFilter[Qt::Vertical][symbol->firstSection()].Checked = Qt::Checked;
     }
     for (auto iter=mCurrentIdentifierFilter[Qt::Horizontal].begin();
          iter!=mCurrentIdentifierFilter[Qt::Horizontal].end(); ++iter) {
-        for (auto symbol : varFilter) {
-            if (iter->Text == symbol->name()) {
-                iter->Checked = Qt::Checked;
-                break;
-            } else {
-                iter->Checked = Qt::Unchecked;
-            }
-        }
+        iter->Checked = Qt::Unchecked;
+    }
+    for (auto symbol : varFilter) {
+        mCurrentIdentifierFilter[Qt::Horizontal][symbol->firstSection()].Checked = Qt::Checked;
     }
     mDefaultIdentifierFilter = mCurrentIdentifierFilter;
 }
@@ -508,24 +565,24 @@ void AbstractViewConfiguration::createLabelFilter()
 AbstractViewConfiguration *ViewConfigurationProvider::defaultConfiguration()
 {
     auto modelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
-    return new DefaultViewConfiguration(ViewDataType::Unknown, modelInstance);
+    return new DefaultViewConfiguration(ViewHelper::ViewDataType::Unknown, modelInstance);
 }
 
-AbstractViewConfiguration *ViewConfigurationProvider::configuration(ViewDataType viewType,
+AbstractViewConfiguration *ViewConfigurationProvider::configuration(ViewHelper::ViewDataType viewType,
                                                                     QSharedPointer<AbstractModelInstance> modelInstance)
 {
     switch (viewType) {
-    case ViewDataType::BP_Scaling:
+    case ViewHelper::ViewDataType::BP_Scaling:
         return new BPScalingViewConfiguration(viewType, modelInstance);
-    case ViewDataType::Symbols:
+    case ViewHelper::ViewDataType::Symbols:
         return new SymbolViewConfiguration(viewType, modelInstance);
-    case ViewDataType::BP_Overview:
+    case ViewHelper::ViewDataType::BP_Overview:
         return new BPOverviewViewConfiguration(viewType, modelInstance);
-    case ViewDataType::BP_Count:
+    case ViewHelper::ViewDataType::BP_Count:
         return new BPCountViewConfiguration(viewType, modelInstance);
-    case ViewDataType::BP_Average:
+    case ViewHelper::ViewDataType::BP_Average:
         return new BPAverageViewConfiguration(viewType, modelInstance);
-    case ViewDataType::Postopt:
+    case ViewHelper::ViewDataType::Postopt:
         return new PostoptViewConfiguration(viewType, modelInstance);
     default:
         return new DefaultViewConfiguration(viewType, modelInstance);

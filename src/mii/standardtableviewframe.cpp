@@ -19,12 +19,7 @@
  *
  */
 #include "standardtableviewframe.h"
-#include "ui_standardtableviewframe.h"
-#include "hierarchicalheaderview.h"
 #include "identifierfiltermodel.h"
-#include "labelfiltermodel.h"
-#include "valueformatproxymodel.h"
-#include "abstractmodelinstance.h"
 #include "viewconfigurationprovider.h"
 
 #include <QDebug>
@@ -39,29 +34,9 @@ AbstractStandardTableViewFrame::AbstractStandardTableViewFrame(QWidget *parent, 
 
 }
 
-void AbstractStandardTableViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
-{
-    mViewConfig->setCurrentIdentifierFilter(filter);
-    if (mIdentifierFilterModel) mIdentifierFilterModel->setIdentifierFilter(filter);
-}
-
-void AbstractStandardTableViewFrame::setAggregation(const Aggregation &aggregation)
-{
-    Q_UNUSED(aggregation);
-}
-
 void AbstractStandardTableViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
     Q_UNUSED(absoluteValues);
-}
-
-void AbstractStandardTableViewFrame::reset()
-{
-    setIdentifierFilter(mViewConfig->defaultIdentifierFilter());
-    setValueFilter(mViewConfig->defaultValueFilter());
-    setLabelFilter(mViewConfig->defaultLabelFilter());
-    setAggregation(mViewConfig->defaultAggregation());
-    updateView();
 }
 
 void AbstractStandardTableViewFrame::updateView()
@@ -69,6 +44,12 @@ void AbstractStandardTableViewFrame::updateView()
     //ui->tableView->resizeColumnsToContents();
     //ui->tableView->resizeRowsToContents();
     emit filtersChanged();
+}
+
+void AbstractStandardTableViewFrame::updateIdentifierFilter()
+{
+    if (mIdentifierFilterModel)
+        mIdentifierFilterModel->setIdentifierFilter(mViewConfig->currentIdentifierFilter());
 }
 
 void AbstractStandardTableViewFrame::setIdentifierFilterCheckState(int symbolIndex,

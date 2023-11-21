@@ -50,7 +50,7 @@ public:
 
     int equationCount() const override;
 
-    int equationCount(EquationType type) const override;
+    int equationCount(ValueHelper::EquationType type) const override;
 
     char equationType(int row) const override;
 
@@ -62,7 +62,7 @@ public:
 
     int variableCount() const override;
 
-    int variableCount(VariableType type) const override;
+    int variableCount(ValueHelper::VariableType type) const override;
 
     char variableType(int column) const override;
 

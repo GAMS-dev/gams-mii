@@ -65,7 +65,7 @@ void TestSectionTreeItem::test_default()
     QCOMPARE(item.widget(), nullptr);
     QCOMPARE(item.widgets(), QList<AbstractViewFrame*>());
     QCOMPARE(item.row(), 0);
-    QCOMPARE(item.type(), ViewDataType::Unknown);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::Unknown);
     QCOMPARE(item.parent(), nullptr);
     QCOMPARE(item.isCustom(), false);
     QCOMPARE(item.isGroup(), false);
@@ -102,9 +102,9 @@ void TestSectionTreeItem::test_getSet()
     item.setName("some entry");
     QCOMPARE(item.name(), "some entry");
 
-    QCOMPARE(item.type(), ViewDataType::Unknown);
-    item.setType(ViewDataType::Symbols);
-    QCOMPARE(item.type(), ViewDataType::Symbols);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::Unknown);
+    item.setType(ViewHelper::ViewDataType::Symbols);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::Symbols);
 
     // TODO tests: Add an empty frame for tests?
     //auto frame = new PostoptTreeViewFrame;
@@ -129,22 +129,22 @@ void TestSectionTreeItem::test_getSet()
 void TestSectionTreeItem::test_setTypeText()
 {
     SectionTreeItem item("default");
-    item.setType(Mi::BPScaling);
-    QCOMPARE(item.type(), ViewDataType::BP_Scaling);
-    item.setType(Mi::BPOverview);
-    QCOMPARE(item.type(), ViewDataType::BP_Overview);
-    item.setType(Mi::BPCount);
-    QCOMPARE(item.type(), ViewDataType::BP_Count);
-    item.setType(Mi::BPAverage);
-    QCOMPARE(item.type(), ViewDataType::BP_Average);
-    item.setType(Mi::Postopt);
-    QCOMPARE(item.type(), ViewDataType::Postopt);
-    item.setType(Mi::SymbolView);
-    QCOMPARE(item.type(), ViewDataType::Symbols);
-    item.setType(Mi::Blockpic);
-    QCOMPARE(item.type(), ViewDataType::Blockpic);
+    item.setType(ViewHelper::BPScaling);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::BP_Scaling);
+    item.setType(ViewHelper::BPOverview);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::BP_Overview);
+    item.setType(ViewHelper::BPCount);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::BP_Count);
+    item.setType(ViewHelper::BPAverage);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::BP_Average);
+    item.setType(ViewHelper::Postopt);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::Postopt);
+    item.setType(ViewHelper::SymbolView);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::Symbols);
+    item.setType(ViewHelper::Blockpic);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::Blockpic);
     item.setType("lala");
-    QCOMPARE(item.type(), ViewDataType::Unknown);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::Unknown);
 }
 
 QTEST_APPLESS_MAIN(TestSectionTreeItem)

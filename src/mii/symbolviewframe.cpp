@@ -53,12 +53,12 @@ SymbolViewFrame::SymbolViewFrame(QSharedPointer<AbstractModelInstance> modelInst
 
 AbstractTableViewFrame *SymbolViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(mViewConfig->viewId(), viewId));
     auto frame = new SymbolViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
-    frame->setValueFilter(frame->viewConfig()->currentValueFilter());
-    frame->setLabelFilter(frame->viewConfig()->currentLabelFiler());
-    frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
+    frame->updateFilters(AbstractViewConfiguration::ValueConfig |
+                         AbstractViewConfiguration::LabelConfig |
+                         AbstractViewConfiguration::IdentifierConfig);
     for (auto iter=mViewConfig->currentIdentifierFilter()[Qt::Horizontal].constBegin();
          iter!=mViewConfig->currentIdentifierFilter()[Qt::Horizontal].constEnd(); ++iter) {
         frame->mIdentifierLabelFilterModel->setIdentifierState(*iter, Qt::Horizontal);
@@ -80,42 +80,9 @@ void SymbolViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInsta
     setupView();
 }
 
-ViewDataType SymbolViewFrame::type() const
+ViewHelper::ViewDataType SymbolViewFrame::type() const
 {
-    return ViewDataType::Symbols;
-}
-
-void SymbolViewFrame::setLabelFilter(const LabelFilter &filter)
-{
-    AbstractStandardTableViewFrame::setLabelFilter(filter);
-    if (mLabelFilterModel)
-        mLabelFilterModel->setLabelFilter(filter);
-    if (mHorizontalHeader)
-        mHorizontalHeader->resetSymbolLabelFilters();
-    if (mVerticalHeader)
-        mVerticalHeader->resetSymbolLabelFilters();
-    if (mIdentifierLabelFilterModel) {
-        mIdentifierLabelFilterModel->clearIdentifierFilter();
-        mIdentifierLabelFilterModel->invalidate();
-    }
-}
-
-void SymbolViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    if (!mBaseModel)
-        return;
-    if (filter.Reset) {
-        mViewConfig->setCurrentValueFilter(filter);
-        mModelInstance->loadViewData(mViewConfig);
-    } else if (mViewConfig->currentValueFilter().UseAbsoluteValues != filter.UseAbsoluteValues) {
-        mViewConfig->currentValueFilter().UseAbsoluteValues = filter.UseAbsoluteValues;
-        mModelInstance->loadViewData(mViewConfig);
-    }
-    if (!filter.Reset) {
-        mViewConfig->setCurrentValueFilter(filter);
-    }
-    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
-    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+    return ViewHelper::ViewDataType::Symbols;
 }
 
 void SymbolViewFrame::updateView()
@@ -131,6 +98,20 @@ bool SymbolViewFrame::hasData() const
     return mBaseModel && mBaseModel->rowCount() && mBaseModel->columnCount();
 }
 
+void SymbolViewFrame::updateLabelFilter()
+{
+    if (mLabelFilterModel)
+        mLabelFilterModel->setLabelFilter(mViewConfig->currentLabelFiler());
+    if (mHorizontalHeader)
+        mHorizontalHeader->resetSymbolLabelFilters();
+    if (mVerticalHeader)
+        mVerticalHeader->resetSymbolLabelFilters();
+    if (mIdentifierLabelFilterModel) {
+        mIdentifierLabelFilterModel->clearIdentifierFilter();
+        mIdentifierLabelFilterModel->invalidate();
+    }
+}
+
 void SymbolViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
     if (!mBaseModel)
@@ -140,12 +121,6 @@ void SymbolViewFrame::setShowAbsoluteValues(bool absoluteValues)
     mModelInstance->loadViewData(mViewConfig);
     emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
     mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
-}
-
-void SymbolViewFrame::setViewId(int view)
-{
-    mViewConfig->setViewId(view);
-    mBaseModel->setView(view);
 }
 
 void SymbolViewFrame::setIdentifierLabelFilter(const IdentifierState &state,
@@ -165,6 +140,15 @@ void SymbolViewFrame::setIdentifierLabelFilter(const IdentifierState &state,
     emit filtersChanged();
 }
 
+void SymbolViewFrame::updateValueFilter()
+{
+    if (!mBaseModel)
+        return;
+    mModelInstance->loadViewData(mViewConfig);
+    emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+}
+
 void SymbolViewFrame::setupView()
 {
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
@@ -182,8 +166,7 @@ void SymbolViewFrame::setupView()
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &SymbolViewFrame::setIdentifierLabelFilter);
 
-    auto baseModel = new SymbolModelInstanceTableModel(mModelInstance, ui->tableView);
-    baseModel->setView(mViewConfig->viewId());
+    auto baseModel = new SymbolModelInstanceTableModel(mModelInstance, mViewConfig, ui->tableView);
     mValueFormatModel = new JacobianValueFormatProxyModel(ui->tableView);
     mValueFormatModel->setSourceModel(baseModel);
     mLabelFilterModel = new LabelFilterModel(mModelInstance, ui->tableView);

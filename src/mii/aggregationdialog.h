@@ -23,8 +23,6 @@
 
 #include <QDialog>
 
-#include "common.h"
-
 #include "aggregation.h"
 
 class QSortFilterProxyModel;
@@ -37,6 +35,7 @@ namespace Ui {
 class AggregationDialog;
 }
 
+class AbstractViewConfiguration;
 class FilterTreeItem;
 
 class AggregationDialog : public QDialog
@@ -47,9 +46,9 @@ public:
     explicit AggregationDialog(QWidget *parent = nullptr);
     ~AggregationDialog();
 
-    const Aggregation& aggregation() const;
-    void setAggregation(const Aggregation &aggregation, const IdentifierFilter &filter, bool absValuesGlobal);
-    void setDefaultAggregation(const Aggregation &aggregation);
+    QSharedPointer<AbstractViewConfiguration> viewConfig() const;
+
+    void setViewConfig(QSharedPointer<AbstractViewConfiguration> config);
 
 signals:
     void aggregationUpdated();
@@ -81,9 +80,7 @@ private:
     int mAggregationMethod = 0;
     bool mAbsValuesGlobal = false;
 
-    Aggregation mAggregation;
-    Aggregation mDefaultAggregation;
-    IdentifierFilter mIdentifierFilter;
+    QSharedPointer<AbstractViewConfiguration> mViewConfig;
 
     QSortFilterProxyModel *mAggregationModel = nullptr;
 

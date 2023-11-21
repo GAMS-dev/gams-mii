@@ -847,11 +847,11 @@ public:
                 if (mCoeffCount.count()[negRow][c] == 0 && mCoeffCount.count()[posRow][c] == 0) {
                     mDataMatrix[r][c] = 0x0;
                 } else if (mCoeffCount.count()[negRow][c] == 0 && mCoeffCount.count()[posRow][c] > 0) {
-                    mDataMatrix[r][c] = '+';
+                    mDataMatrix[r][c] = ValueHelper::Plus;
                 } else if (mCoeffCount.count()[negRow][c] < 0 && mCoeffCount.count()[posRow][c] == 0) {
-                    mDataMatrix[r][c] = '-';
+                    mDataMatrix[r][c] = ValueHelper::Minus;
                 } else {
-                    mDataMatrix[r][c] = 'm';
+                    mDataMatrix[r][c] = ValueHelper::Mixed;
                 }
             }
             mDataMatrix[r][mColumnCount-2] = mCoeffCount.count()[posRow][mCoeffCount.columnCount()-2];
@@ -860,12 +860,12 @@ public:
                 mDataMatrix[r][mColumnCount-1] = '0';
             } else if (mCoeffCount.count()[negRow][mColumnCount-1] == 0 &&
                        mCoeffCount.count()[posRow][mColumnCount-1] > 0) {
-                mDataMatrix[r][mColumnCount-1] = '+';
+                mDataMatrix[r][mColumnCount-1] = ValueHelper::Plus;
             } else if (mCoeffCount.count()[negRow][mColumnCount-1] < 0 &&
                        mCoeffCount.count()[posRow][mColumnCount-1] == 0) {
-                mDataMatrix[r][mColumnCount-1] = '-';
+                mDataMatrix[r][mColumnCount-1] = ValueHelper::Minus;
             } else {
-                mDataMatrix[r][mColumnCount-1] = 'm';
+                mDataMatrix[r][mColumnCount-1] = ValueHelper::Mixed;
             }
         }
         int varColumn = 0;
@@ -883,9 +883,9 @@ public:
             }
             if (mModelInstance.variableType(variable->firstSection()) == 'x') { // x = continuous
                 if (lower >= 0 && upper >= 0) {
-                    mDataMatrix[mRowCount-1][varColumn] = '+';
+                    mDataMatrix[mRowCount-1][varColumn] = ValueHelper::Plus;
                 } else if (lower <= 0 && upper <= 0) {
-                    mDataMatrix[mRowCount-1][varColumn] = '-';
+                    mDataMatrix[mRowCount-1][varColumn] = ValueHelper::Minus;
                 } else {
                     mDataMatrix[mRowCount-1][varColumn] = 'u';
                 }
@@ -1051,9 +1051,9 @@ public:
             }
             if (mModelInstance.variableType(variable->firstSection()) == 'x') { // x = continuous
                 if (lower >= 0 && upper >= 0) {
-                    mDataMatrix[mRowCount-1][varColumn] = '+';
+                    mDataMatrix[mRowCount-1][varColumn] = ValueHelper::Plus;
                 } else if (lower <= 0 && upper <= 0) {
-                    mDataMatrix[mRowCount-1][varColumn] = '-';
+                    mDataMatrix[mRowCount-1][varColumn] = ValueHelper::Minus;
                 } else {
                     mDataMatrix[mRowCount-1][varColumn] = 'u';
                 }
@@ -1072,7 +1072,7 @@ public:
 
     double data(int row, int column) const override
     {
-        return mDataMatrix[row][column];
+        return std::abs(mDataMatrix[row][column]);
     }
 
     auto& operator=(const BPCountDataProvider& other)
@@ -1250,7 +1250,7 @@ public:
 
     double data(int row, int column) const override
     {
-        return mDataMatrix[row][column];
+        return std::abs(mDataMatrix[row][column]);
     }
 
     auto& operator=(const BPAverageDataProvider& other)
@@ -1321,29 +1321,77 @@ public:
             value = std::bind(&PostoptDataProvider::identity, this, std::placeholders::_1);
         }
         mRootItem = QSharedPointer<PostoptTreeItem>(new LinePostoptTreeItem());
-        auto equations = new GroupPostoptTreeItem(PostoptTreeItem::EquationHeader, mRootItem.get());
-        mRootItem->append(equations);
+
+        auto equations = new GroupPostoptTreeItem(ViewHelper::EquationHeaderText);
+        auto eqnFilter = mViewConfig->currentIdentifierFilter()[Qt::Vertical];
         for (auto equation : mModelInstance.equations()) {
+            if (!eqnFilter[equation->firstSection()].Checked) {
+                continue;
+            }
             auto eqnGroup = new GroupPostoptTreeItem(equation->name(), equations);
-            equations->append(eqnGroup);
             for (int e=0; e<equation->entries(); ++e) {
-                auto eqnLine = new GroupPostoptTreeItem(symbolName(equation, e), eqnGroup);
-                eqnGroup->append(eqnLine);
+                if (skipEntry(equation, e, Qt::Vertical))
+                    continue;
+                auto eqnLine = new GroupPostoptTreeItem(symbolName(equation, e));
                 loadAttributes(equation, e, eqnLine);
                 loadVariables(equation, e, eqnLine);
+                if (eqnLine->rowCount()) {
+                    eqnLine->setParent(eqnGroup);
+                    eqnGroup->append(eqnLine);
+                } else {
+                    delete eqnLine;
+                }
+            }
+            if (eqnGroup->rowCount()) {
+                eqnGroup->setParent(equations);
+                equations->append(eqnGroup);
+            } else {
+                delete eqnGroup;
             }
         }
-        auto variables = new GroupPostoptTreeItem(PostoptTreeItem::VariableHeader, mRootItem.get());
-        mRootItem->append(variables);
+        if (equations->rowCount()) {
+            equations->setParent(mRootItem.get());
+            mRootItem->append(equations);
+        } else {
+            delete equations;
+        }
+
+        auto variables = new GroupPostoptTreeItem(ViewHelper::VariableHeaderText);
+        auto varFilter = mViewConfig->currentIdentifierFilter()[Qt::Horizontal];
         for (auto variable : mModelInstance.variables()) {
-            auto varGroup = new GroupPostoptTreeItem(variable->name(), variables);
-            variables->append(varGroup);
+            if (!varFilter[variable->firstSection()].Checked) {
+                continue;
+            }
+            auto varGroup = new GroupPostoptTreeItem(variable->name());
             for (int e=0; e<variable->entries(); ++e) {
-                auto varLine = new GroupPostoptTreeItem(symbolName(variable, e), varGroup);
-                varGroup->append(varLine);
+                if (skipEntry(variable, e, Qt::Horizontal))
+                    continue;
+                auto varLine = new GroupPostoptTreeItem(symbolName(variable, e));
                 loadAttributes(variable, e, varLine);
                 loadEquations(variable, e, varLine);
+                if (varLine->rowCount()) {
+                    varLine->setParent(varGroup);
+                    varGroup->append(varLine);
+                } else {
+                    delete varLine;
+                }
             }
+            if (varGroup->rowCount()) {
+                varGroup->setParent(variables);
+                variables->append(varGroup);
+            } else {
+                delete varGroup;
+            }
+        }
+        if (variables->rowCount()) {
+            variables->setParent(mRootItem.get());
+            mRootItem->append(variables);
+        } else {
+            delete variables;
+        }
+        if (!mRootItem->rowCount()) {
+            auto line = new ClickPostoptTreeItem("Please click here to configure the views content.", mRootItem.get());
+            mRootItem->append(line);
         }
     }
 
@@ -1376,27 +1424,36 @@ private:
     void loadAttributes(Symbol *symbol, int entry, PostoptTreeItem *parent)
     {
         bool abs = mViewConfig->currentValueFilter().isAbsolute();
-        auto attributes = new GroupPostoptTreeItem(PostoptTreeItem::AttributeHeader, parent);
-        parent->append(attributes);
-        for (const auto& label : PostoptTreeItem::AttributeRowHeader) {
+        auto attributes = new GroupPostoptTreeItem(ViewHelper::AttributeHeaderText);
+        for (const auto& label : AttributeHelper::attributeTextList()) {
+            if (mViewConfig->currentAttributeFilter().value(label) == Qt::Unchecked) {
+                continue;
+            }
             QVariant value;
             if (symbol->isEquation()) {
-                value = mModelInstance.equationAttribute(label.toString(), symbol->firstSection(), entry, abs);
+                value = mModelInstance.equationAttribute(label, symbol->firstSection(), entry, abs);
             } else if (symbol->isVariable()) {
-                value = mModelInstance.variableAttribute(label.toString(), symbol->firstSection(), entry, abs);
+                value = mModelInstance.variableAttribute(label, symbol->firstSection(), entry, abs);
             }
             attributes->append(new LinePostoptTreeItem({label, value}, attributes));
+        }
+        if (attributes->rowCount()) {
+            attributes->setParent(parent);
+            parent->append(attributes);
+        } else {
+            delete attributes;
         }
     }
 
     void loadEquations(Symbol *variable, int entry, PostoptTreeItem *parent)
     {
         bool abs = mViewConfig->currentValueFilter().isAbsolute();
-        auto equations = new LinePostoptTreeItem(PostoptTreeItem::EquationLineHeader, parent);
-        parent->append(equations);
+        auto equations = new LinePostoptTreeItem(PostoptTreeItem::EquationLineHeader);
         for (auto equation : mModelInstance.equations()) {
             auto eqnGroup = new GroupPostoptTreeItem(equation->name());
             for (int e=0; e<equation->entries(); ++e) {
+                if (skipEntry(equation, e, Qt::Vertical))
+                    continue;
                 auto row = dataRow(equation->firstSection()+e);
                 QVariant jacval;
                 if (row) {
@@ -1405,7 +1462,7 @@ private:
                 if (jacval.isValid()) {
                     auto name = symbolName(equation, e);
                     double jac = value(jacval.toDouble());
-                    double xi = mModelInstance.equationAttribute(Mi::MarginalNum, equation->firstSection(), e, abs).toDouble();
+                    double xi = mModelInstance.equationAttribute(AttributeHelper::MarginalNumText, equation->firstSection(), e, abs).toDouble();
                     double jacxi = value(jacval.toDouble() * xi);
                     eqnGroup->append(new LinePostoptTreeItem({name, jac, xi, jacxi}, eqnGroup));
                 }
@@ -1417,16 +1474,23 @@ private:
                 delete eqnGroup;
             }
         }
+        if (equations->rowCount()) {
+            equations->setParent(parent);
+            parent->append(equations);
+        } else {
+            delete equations;
+        }
     }
 
     void loadVariables(Symbol *equation, int entry, PostoptTreeItem *parent)
     {
         bool abs = mViewConfig->currentValueFilter().isAbsolute();
-        auto variables = new LinePostoptTreeItem(PostoptTreeItem::VariableLineHeader, parent);
-        parent->append(variables);
+        auto variables = new LinePostoptTreeItem(PostoptTreeItem::VariableLineHeader);
         for (auto variable : mModelInstance.variables()) {
             auto varGroup = new GroupPostoptTreeItem(variable->name());
             for (int e=0; e<variable->entries(); ++e) {
+                if (skipEntry(variable, e, Qt::Horizontal))
+                    continue;
                 auto row = dataRow(equation->firstSection()+entry);
                 QVariant jacval;
                 if (row) {
@@ -1435,7 +1499,7 @@ private:
                 if (jacval.isValid()) {
                     auto name = symbolName(variable, e);
                     double jac = value(jacval.toDouble());
-                    double ui = mModelInstance.variableAttribute(Mi::Level, variable->firstSection(), e, abs).toDouble();
+                    double ui = mModelInstance.variableAttribute(AttributeHelper::LevelText, variable->firstSection(), e, abs).toDouble();
                     double jacui = value(jac * ui);
                     varGroup->append(new LinePostoptTreeItem({name, jac, ui, jacui}, varGroup));
                 }
@@ -1447,6 +1511,12 @@ private:
                 delete varGroup;
             }
         }
+        if (variables->rowCount()) {
+            variables->setParent(parent);
+            parent->append(variables);
+        } else {
+            delete variables;
+        }
     }
 
     QString symbolName(Symbol *symbol, int entry)
@@ -1457,6 +1527,28 @@ private:
         if (!symbol->sectionLabels().contains(index))
             return QString("(..)");
         return QString("%1(%2)").arg(symbol->name(), symbol->sectionLabels()[index].join(", "));
+    }
+
+    bool skipEntry(Symbol *symbol, int entry, Qt::Orientation orientation)
+    {
+        if (symbol->isScalar())
+            return false;
+        int index = symbol->firstSection()+entry;
+        auto labels = symbol->sectionLabels().value(index);
+        auto states = mViewConfig->currentLabelFiler().LabelCheckStates.value(orientation);
+        if (mViewConfig->currentLabelFiler().Any) {
+            for (const auto& label : labels) {
+                if (states.value(label) == Qt::Checked)
+                    return false;
+            }
+        } else {
+            for (const auto& label : labels) {
+                if (states.value(label) == Qt::Unchecked)
+                    return true;
+            }
+            return false;
+        }
+        return true;
     }
 
     double abs(double value)
@@ -1625,32 +1717,32 @@ void DataHandler::loadJacobian()
 DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int viewId)
 {
     switch (mDataCache[viewId]->viewConfig()->viewType()) {
-    case ViewDataType::BP_Scaling:
+    case ViewHelper::ViewDataType::BP_Scaling:
     {
         auto provider = static_cast<BPScalingProvider*>(mDataCache[viewId].get());
         return new BPScalingProvider(*provider);
     }
-    case ViewDataType::Symbols:
+    case ViewHelper::ViewDataType::Symbols:
     {
         auto provider = static_cast<SymbolsDataProvider*>(mDataCache[viewId].get());
         return new SymbolsDataProvider(*provider);
     }
-    case ViewDataType::BP_Overview:
+    case ViewHelper::ViewDataType::BP_Overview:
     {
         auto provider = static_cast<BPOverviewDataProvider*>(mDataCache[viewId].get());
         return new BPOverviewDataProvider(*provider);
     }
-    case ViewDataType::BP_Count:
+    case ViewHelper::ViewDataType::BP_Count:
     {
         auto provider = static_cast<BPCountDataProvider*>(mDataCache[viewId].get());
         return new BPCountDataProvider(*provider);
     }
-    case ViewDataType::BP_Average:
+    case ViewHelper::ViewDataType::BP_Average:
     {
         auto provider = static_cast<BPAverageDataProvider*>(mDataCache[viewId].get());
         return new BPAverageDataProvider(*provider);
     }
-    case ViewDataType::Postopt:
+    case ViewHelper::ViewDataType::Postopt:
     {
         auto provider = static_cast<PostoptDataProvider*>(mDataCache[viewId].get());
         return new PostoptDataProvider(*provider);
@@ -1670,31 +1762,31 @@ QSharedPointer<DataHandler::AbstractDataProvider> DataHandler::newProvider(QShar
                                            mModelInstance.equationCount()*2);
     }
     switch (viewConfig->viewType()) {
-    case ViewDataType::BP_Scaling:
+    case ViewHelper::ViewDataType::BP_Scaling:
         return QSharedPointer<AbstractDataProvider>(new BPScalingProvider(this,
                                                                            mModelInstance,
                                                                            viewConfig,
                                                                            *mCoeffCount));
-    case ViewDataType::Symbols:
+    case ViewHelper::ViewDataType::Symbols:
         return QSharedPointer<AbstractDataProvider>(new SymbolsDataProvider(this,
                                                                             mModelInstance,
                                                                             viewConfig));
-    case ViewDataType::BP_Overview:
+    case ViewHelper::ViewDataType::BP_Overview:
         return QSharedPointer<AbstractDataProvider>(new BPOverviewDataProvider(this,
                                                                                mModelInstance,
                                                                                viewConfig,
                                                                                *mCoeffCount));
-    case ViewDataType::BP_Count:
+    case ViewHelper::ViewDataType::BP_Count:
         return QSharedPointer<AbstractDataProvider>(new BPCountDataProvider(this,
                                                                             mModelInstance,
                                                                             viewConfig,
                                                                             *mCoeffCount));
-    case ViewDataType::BP_Average:
+    case ViewHelper::ViewDataType::BP_Average:
         return QSharedPointer<AbstractDataProvider>(new BPAverageDataProvider(this,
                                                                               mModelInstance,
                                                                               viewConfig,
                                                                               *mCoeffCount));
-    case ViewDataType::Postopt:
+    case ViewHelper::ViewDataType::Postopt:
         return QSharedPointer<AbstractDataProvider>(new PostoptDataProvider(this,
                                                                             mModelInstance,
                                                                             viewConfig));

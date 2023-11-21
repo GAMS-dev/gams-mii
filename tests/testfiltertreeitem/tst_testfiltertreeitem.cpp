@@ -36,7 +36,6 @@ public:
     ~TestFilterTreeItem();
 
 private slots:
-    void test_static();
     void test_default();
     void test_constructor();
     void test_getSet();
@@ -53,12 +52,6 @@ TestFilterTreeItem::TestFilterTreeItem()
 TestFilterTreeItem::~TestFilterTreeItem()
 {
 
-}
-
-void TestFilterTreeItem::test_static()
-{
-    QCOMPARE(FilterTreeItem::EquationText, "Equations");
-    QCOMPARE(FilterTreeItem::VariableText, "Variables");
 }
 
 void TestFilterTreeItem::test_default()

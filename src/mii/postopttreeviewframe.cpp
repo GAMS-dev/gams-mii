@@ -23,6 +23,7 @@
 #include "postopttreemodel.h"
 #include "viewconfigurationprovider.h"
 #include "abstractmodelinstance.h"
+#include "valueformatproxymodel.h"
 
 namespace gams {
 namespace studio{
@@ -33,6 +34,8 @@ PostoptTreeViewFrame::PostoptTreeViewFrame(QWidget *parent, Qt::WindowFlags f)
     , ui(new Ui::PostoptTreeViewFrame)
 {
     ui->setupUi(this);
+    connect(ui->treeView, &PostoptTreeView::openFilterDialog,
+            this, &PostoptTreeViewFrame::openFilterDialog);
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
@@ -53,35 +56,22 @@ PostoptTreeViewFrame::~PostoptTreeViewFrame()
 
 AbstractViewFrame *PostoptTreeViewFrame::clone(int viewId)
 {
-    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(this->viewId(), viewId));
+    auto viewConfig = QSharedPointer<AbstractViewConfiguration>(mModelInstance->clone(mViewConfig->viewId(), viewId));
     if (!viewConfig)
         viewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(),
                                                                                                         mModelInstance));
     auto frame = new PostoptTreeViewFrame(mModelInstance, viewConfig, parentWidget(), windowFlags());
     frame->setupView();
-    frame->setValueFilter(frame->viewConfig()->currentValueFilter());
-    frame->setIdentifierFilter(frame->viewConfig()->currentIdentifierFilter());
+    frame->updateFilters(AbstractViewConfiguration::ValueConfig |
+                         AbstractViewConfiguration::IdentifierConfig);
     return frame;
-}
-
-void PostoptTreeViewFrame::setIdentifierFilter(const IdentifierFilter &filter)
-{
-    Q_UNUSED(filter);
-}
-
-void PostoptTreeViewFrame::setAggregation(const Aggregation &aggregation)
-{
-    Q_UNUSED(aggregation);
 }
 
 void PostoptTreeViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
-    if (mViewConfig->currentValueFilter().isAbsolute() != absoluteValues) {
-        mViewConfig->currentAggregation().setUseAbsoluteValues(absoluteValues);
-        mViewConfig->currentValueFilter().UseAbsoluteValues = absoluteValues;
-        mModelInstance->loadViewData(mViewConfig);
-        setupView();
-    }
+    Q_UNUSED(absoluteValues);
+    mModelInstance->loadViewData(mViewConfig);
+    setupView();
 }
 
 SearchResult &PostoptTreeViewFrame::search(const QString &term, bool isRegEx)
@@ -100,18 +90,15 @@ void PostoptTreeViewFrame::setupView(QSharedPointer<AbstractModelInstance> model
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
+    mViewConfig->currentValueFilter().UseAbsoluteValues = modelInstance->globalAbsolute();
+    mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal = modelInstance->globalAbsolute();
     mModelInstance->loadViewData(mViewConfig);
     setupView();
 }
 
-ViewDataType PostoptTreeViewFrame::type() const
+ViewHelper::ViewDataType PostoptTreeViewFrame::type() const
 {
-    return ViewDataType::Postopt;
-}
-
-void PostoptTreeViewFrame::reset()
-{
-
+    return ViewHelper::ViewDataType::Postopt;
 }
 
 void PostoptTreeViewFrame::updateView()
@@ -121,12 +108,12 @@ void PostoptTreeViewFrame::updateView()
 
 void PostoptTreeViewFrame::zoomIn()
 {
-    ui->treeView->zoomIn(Mi::ZoomFactor);
+    ui->treeView->zoomIn(ViewHelper::ZoomFactor);
 }
 
 void PostoptTreeViewFrame::zoomOut()
 {
-    ui->treeView->zoomOut(Mi::ZoomFactor);
+    ui->treeView->zoomOut(ViewHelper::ZoomFactor);
 }
 
 void PostoptTreeViewFrame::resetZoom()
@@ -139,16 +126,31 @@ bool PostoptTreeViewFrame::hasData() const
     return mBaseModel && mBaseModel->rowCount();
 }
 
+void PostoptTreeViewFrame::updateIdentifierFilter()
+{
+    mModelInstance->loadViewData(mViewConfig);
+    setupView();
+}
+
+void PostoptTreeViewFrame::updateValueFilter()
+{
+    if (!mValueFormatModel)
+        return;
+    mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
+    ui->treeView->expandAll();
+}
+
 void PostoptTreeViewFrame::setupView()
 {
     mBaseModel = new PostoptTreeModel(mViewConfig->viewId(),
                                       mModelInstance,
                                       ui->treeView);
-    ui->treeView->setModel(mBaseModel);
+    mValueFormatModel = new PostoptValueFormatProxyModel(ui->treeView);
+    mValueFormatModel->setSourceModel(mBaseModel);
 
-    //auto oldSelectionModel = ui->treeView->selectionModel();
-    //ui->treeView->setModel(baseModel);
-    //delete oldSelectionModel;
+    auto oldSelectionModel = ui->treeView->selectionModel();
+    ui->treeView->setModel(mValueFormatModel);
+    delete oldSelectionModel;
     ui->treeView->expandAll();
     ui->treeView->resizeColumnToContents(0);
 }

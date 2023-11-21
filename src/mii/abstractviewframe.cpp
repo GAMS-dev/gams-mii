@@ -20,7 +20,6 @@
  */
 #include "abstractviewframe.h"
 #include "abstractmodelinstance.h"
-#include "viewconfigurationprovider.h"
 
 namespace gams {
 namespace studio {
@@ -38,89 +37,22 @@ AbstractViewFrame::~AbstractViewFrame()
 
 }
 
-const IdentifierFilter &AbstractViewFrame::identifierFilter() const
+void AbstractViewFrame::updateFilters(AbstractViewConfiguration::Options options)
 {
-    return mViewConfig->currentIdentifierFilter();
-}
-
-const IdentifierFilter &AbstractViewFrame::defaultIdentifierFilter() const
-{
-    return mViewConfig->defaultIdentifierFilter();
-}
-
-void AbstractViewFrame::setDefaultIdentifierFilter(const IdentifierFilter &filter)
-{
-    mViewConfig->setDefaultIdentifierFilter(filter);
-}
-
-const ValueFilter &AbstractViewFrame::valueFilter() const
-{
-    return mViewConfig->currentValueFilter();
-}
-
-const ValueFilter &AbstractViewFrame::defaultValueFilter() const
-{
-    return mViewConfig->defaultValueFilter();
-}
-
-void AbstractViewFrame::setValueFilter(const ValueFilter &filter)
-{
-    mViewConfig->setCurrentValueFilter(filter);
-}
-
-void AbstractViewFrame::setDefaultValueFilter(const ValueFilter &filter)
-{
-    return mViewConfig->setDefaultValueFilter(filter);
-}
-
-const LabelFilter &AbstractViewFrame::labelFilter() const
-{
-    return mViewConfig->currentLabelFiler();
-}
-
-const LabelFilter &AbstractViewFrame::defaultLabelFilter() const
-{
-    return mViewConfig->defaultLabelFilter();
-}
-
-void AbstractViewFrame::setLabelFilter(const LabelFilter &filter)
-{
-    mViewConfig->setCurrentLabelFilter(filter);
-}
-
-void AbstractViewFrame::setDefaultLabelFilter(const LabelFilter &filter)
-{
-    mViewConfig->setDefaultLabelFilter(filter);
-}
-
-const Aggregation &AbstractViewFrame::currentAggregation() const
-{
-    return mViewConfig->currentAggregation();
-}
-
-const Aggregation &AbstractViewFrame::defaultAggregation() const
-{
-    return mViewConfig->defaultAggregation();
-}
-
-void AbstractViewFrame::setDefaultAggregation(const Aggregation &aggregation)
-{
-    mViewConfig->setDefaultAggregation(aggregation);
+    if (options | AbstractViewConfiguration::IdentifierConfig) {
+        updateIdentifierFilter();
+    }
+    if (options | AbstractViewConfiguration::LabelConfig) {
+        updateLabelFilter();
+    }
+    if (options | AbstractViewConfiguration::ValueConfig) {
+        updateValueFilter();
+    }
 }
 
 SearchResult &AbstractViewFrame::searchResult()
 {
     return mViewConfig->searchResult();
-}
-
-int AbstractViewFrame::viewId() const
-{
-    return mViewConfig->viewId();
-}
-
-void AbstractViewFrame::setViewId(int viewId)
-{
-    mViewConfig->setViewId(viewId);
 }
 
 QSharedPointer<AbstractViewConfiguration> AbstractViewFrame::viewConfig() const
@@ -131,6 +63,21 @@ QSharedPointer<AbstractViewConfiguration> AbstractViewFrame::viewConfig() const
 void AbstractViewFrame::setViewConfig(QSharedPointer<AbstractViewConfiguration> viewConfig)
 {
     mViewConfig = viewConfig;
+}
+
+void AbstractViewFrame::updateIdentifierFilter()
+{
+
+}
+
+void AbstractViewFrame::updateLabelFilter()
+{
+
+}
+
+void AbstractViewFrame::updateValueFilter()
+{
+
 }
 
 }

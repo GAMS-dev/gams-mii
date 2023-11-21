@@ -24,9 +24,6 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-const QString FilterTreeItem::EquationText = "Equations";
-const QString FilterTreeItem::VariableText = "Variables";
-
 FilterTreeItem::FilterTreeItem(const QString &text,
                                Qt::CheckState checkState,
                                FilterTreeItem *parent)

@@ -20,15 +20,18 @@
  */
 #include "symbolmodelinstancetablemodel.h"
 #include "abstractmodelinstance.h"
+#include "viewconfigurationprovider.h"
 
 namespace gams {
 namespace studio{
 namespace mii {
 
 SymbolModelInstanceTableModel::SymbolModelInstanceTableModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                                                             QSharedPointer<AbstractViewConfiguration> viewConfig,
                                                              QObject *parent)
     : QAbstractTableModel(parent)
     , mModelInstance(modelInstance)
+    , mViewConfig(viewConfig)
 {
 
 }
@@ -46,13 +49,13 @@ QVariant SymbolModelInstanceTableModel::data(const QModelIndex &index, int role)
         return Qt::AlignRight;
     }
     if (role == Qt::DisplayRole && index.isValid()) {
-        return mModelInstance->data(index.row(), index.column(), mView);
+        return mModelInstance->data(index.row(), index.column(), mViewConfig->viewId());
     }
-    if (role == Mi::ColumnEntryRole) {
-        return mModelInstance->columnEntries(index.column(), mView);
+    if (role == ViewHelper::ColumnEntryRole) {
+        return mModelInstance->columnEntries(index.column(), mViewConfig->viewId());
     }
-    if (role == Mi::RowEntryRole) {
-        return mModelInstance->rowEntries(index.row(), mView);
+    if (role == ViewHelper::RowEntryRole) {
+        return mModelInstance->rowEntries(index.row(), mViewConfig->viewId());
     }
     return QVariant();
 }
@@ -72,7 +75,8 @@ QVariant SymbolModelInstanceTableModel::headerData(int section,
 {
     if (role == Qt::DisplayRole) {
         auto realIndex = mModelInstance->headerData(section, orientation,
-                                                    mView, Mi::IndexDataRole).toInt();
+                                                    mViewConfig->viewId(),
+                                                    ViewHelper::IndexDataRole).toInt();
         return realIndex < 0 ? QVariant() : realIndex;
     }
     return QAbstractItemModel::headerData(section, orientation, role);
@@ -90,28 +94,18 @@ QModelIndex SymbolModelInstanceTableModel::index(int row,
 int SymbolModelInstanceTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->rowCount(mView);
+    return mModelInstance->rowCount(mViewConfig->viewId());
 }
 
 int SymbolModelInstanceTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return mModelInstance->columnCount(mView);
+    return mModelInstance->columnCount(mViewConfig->viewId());
 }
 
 QHash<int, QByteArray> SymbolModelInstanceTableModel::roleNames() const
 {
-    return Mi::roleNames();
-}
-
-int SymbolModelInstanceTableModel::view() const
-{
-    return mView;
-}
-
-void SymbolModelInstanceTableModel::setView(int view)
-{
-    mView = view;
+    return ViewHelper::roleNames();
 }
 
 }

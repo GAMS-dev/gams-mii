@@ -39,7 +39,6 @@ private slots:
 
     void test_DataMatrix();
     void test_DataHandler_empty();
-    void test_DataHandler_transport();
 };
 
 TestDataHandler::TestDataHandler()
@@ -164,11 +163,6 @@ void TestDataHandler::test_DataHandler_empty()
     QCOMPARE(dataHandler.columnEntries(-1, -1), 0);
     QCOMPARE(dataHandler.columnEntries(0, 0), 0);
     dataHandler.loadJacobian();
-}
-
-void TestDataHandler::test_DataHandler_transport()
-{
-    // TODO implement test
 }
 
 QTEST_APPLESS_MAIN(TestDataHandler)

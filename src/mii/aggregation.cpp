@@ -247,12 +247,12 @@ void Aggregation::setAggregationSymbols(Qt::Orientation orientation,
     mAggregationMap[orientation] = aggrSymbols;
 }
 
-ViewDataType Aggregation::viewType() const
+ViewHelper::ViewDataType Aggregation::viewType() const
 {
     return mViewType;
 }
 
-void Aggregation::setViewType(ViewDataType viewType)
+void Aggregation::setViewType(ViewHelper::ViewDataType viewType)
 {
     mViewType = viewType;
 }

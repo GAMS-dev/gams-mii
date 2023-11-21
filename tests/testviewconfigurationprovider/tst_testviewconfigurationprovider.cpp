@@ -39,7 +39,7 @@ private slots:
 
 private:
     void test_viewConfiguration(AbstractViewConfiguration *viewConfig,
-                                ViewDataType type);
+                                ViewHelper::ViewDataType type);
 };
 
 TestViewConfigurationProvider::TestViewConfigurationProvider()
@@ -55,7 +55,7 @@ TestViewConfigurationProvider::~TestViewConfigurationProvider()
 void TestViewConfigurationProvider::test_defaultConfiguration()
 {
     auto viewConfig = ViewConfigurationProvider::defaultConfiguration();
-    test_viewConfiguration(viewConfig, ViewDataType::Unknown);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::Unknown);
 }
 
 void TestViewConfigurationProvider::test_configuration()
@@ -63,39 +63,50 @@ void TestViewConfigurationProvider::test_configuration()
     AbstractViewConfiguration* viewConfig = nullptr;
     auto modelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
 
-    viewConfig = ViewConfigurationProvider::configuration(ViewDataType::Unknown, modelInstance);
-    test_viewConfiguration(viewConfig, ViewDataType::Unknown);
+    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::Unknown, modelInstance);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::Unknown);
     delete viewConfig;
 
     viewConfig = nullptr;
-    viewConfig = ViewConfigurationProvider::configuration(ViewDataType::BP_Overview, modelInstance);
-    test_viewConfiguration(viewConfig, ViewDataType::BP_Overview);
+    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::BP_Overview, modelInstance);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::BP_Overview);
     delete viewConfig;
 
     viewConfig = nullptr;
-    viewConfig = ViewConfigurationProvider::configuration(ViewDataType::BP_Count, modelInstance);
-    test_viewConfiguration(viewConfig, ViewDataType::BP_Count);
+    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::BP_Count, modelInstance);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::BP_Count);
     delete viewConfig;
 
     viewConfig = nullptr;
-    viewConfig = ViewConfigurationProvider::configuration(ViewDataType::BP_Average, modelInstance);
-    test_viewConfiguration(viewConfig, ViewDataType::BP_Average);
+    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::BP_Average, modelInstance);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::BP_Average);
     delete viewConfig;
 
     viewConfig = nullptr;
-    viewConfig = ViewConfigurationProvider::configuration(ViewDataType::BP_Scaling, modelInstance);
-    test_viewConfiguration(viewConfig, ViewDataType::BP_Scaling);
+    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::BP_Scaling, modelInstance);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::BP_Scaling);
     delete viewConfig;
 
     viewConfig = nullptr;
-    viewConfig = ViewConfigurationProvider::configuration(ViewDataType::Symbols, modelInstance);
-    test_viewConfiguration(viewConfig, ViewDataType::Symbols);
+    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::Symbols, modelInstance);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::Symbols);
+    delete viewConfig;
+
+    viewConfig = nullptr;
+    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::Postopt, modelInstance);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::Postopt);
+    delete viewConfig;
+
+    viewConfig = nullptr;
+    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::Blockpic, modelInstance);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::Blockpic);
     delete viewConfig;
 }
 
 void TestViewConfigurationProvider::test_viewConfiguration(AbstractViewConfiguration *viewConfig,
-                                                           ViewDataType type)
+                                                           ViewHelper::ViewDataType type)
 {
+    // test general properties
     if (viewConfig) {
         QVERIFY(true);
     } else {
@@ -106,9 +117,53 @@ void TestViewConfigurationProvider::test_viewConfiguration(AbstractViewConfigura
     QCOMPARE(viewConfig->viewType(), type);
     QCOMPARE(viewConfig->viewId(), (int)type);
 
-    //QCOMPARE(viewConfig->currentValueFilter(), ValueFilter());
-    //QCOMPARE(viewConfig->defaultValueFilter(), ValueFilter());
+    // TODO test aggregation... when enabled again
+
+    // test label filters
+    QCOMPARE(viewConfig->currentLabelFiler(), LabelFilter());
+    QCOMPARE(viewConfig->defaultLabelFilter(), LabelFilter());
+    viewConfig->currentLabelFiler().Any = true;
+    QVERIFY(viewConfig->currentLabelFiler() != viewConfig->defaultLabelFilter());
+    viewConfig->resetLabelFilter();
+    QCOMPARE(viewConfig->currentLabelFiler(), viewConfig->defaultLabelFilter());
+
+    // test identifier filters
+    QCOMPARE(viewConfig->currentIdentifierFilter(), IdentifierFilter());
+    QCOMPARE(viewConfig->defaultIdentifierFilter(), IdentifierFilter());
+    IdentifierStates states;
+    states[0] = IdentifierState();
+    viewConfig->currentIdentifierFilter()[Qt::Horizontal] = states;
+    QCOMPARE(viewConfig->currentIdentifierFilter().size(), 1);
+    viewConfig->resetIdentifierFilter();
+    QCOMPARE(viewConfig->currentIdentifierFilter(), viewConfig->defaultIdentifierFilter());
+
+    // test value filters
+    QCOMPARE(viewConfig->currentValueFilter(), ValueFilter());
+    QCOMPARE(viewConfig->defaultValueFilter(), ValueFilter());
     QCOMPARE(viewConfig->currentValueFilter(), viewConfig->defaultValueFilter());
+    viewConfig->currentValueFilter().ExcludeRange = true;
+    QVERIFY(viewConfig->currentValueFilter() != viewConfig->defaultValueFilter());
+    viewConfig->resetValueFilter();
+    QCOMPARE(viewConfig->currentValueFilter(), viewConfig->defaultValueFilter());
+
+    // test attribute filters
+    if (type == ViewHelper::ViewDataType::Postopt) {
+        QCOMPARE(viewConfig->currentAttributeFilter().size(), AttributeHelper::attributeTextList().size());
+        QCOMPARE(viewConfig->defaultAttributeFilter().size(), AttributeHelper::attributeTextList().size());
+        viewConfig->currentAttributeFilter().clear();
+        QCOMPARE(viewConfig->currentAttributeFilter().size(), 0);
+        viewConfig->resetAttributeFilter();
+        QCOMPARE(viewConfig->currentAttributeFilter().size(), AttributeHelper::attributeTextList().size());
+    } else {
+        QVERIFY(viewConfig->currentAttributeFilter().isEmpty());
+        QVERIFY(viewConfig->defaultAttributeFilter().isEmpty());
+        viewConfig->currentAttributeFilter().clear();
+        QVERIFY(viewConfig->currentAttributeFilter().isEmpty());
+        viewConfig->resetAttributeFilter();
+        QVERIFY(viewConfig->currentAttributeFilter().isEmpty());
+    }
+
+    // test default search result
     QCOMPARE(viewConfig->searchResult(), SearchResult());
 }
 

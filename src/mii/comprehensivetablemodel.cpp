@@ -83,22 +83,22 @@ QVariant ComprehensiveTableModel::headerData(int section,
             return section;
         } else {
             return mModelInstance->headerData(section, orientation,
-                                              mView, Mi::LabelDataRole);
+                                              mView, ViewHelper::LabelDataRole);
         }
     }
-    if (role == Mi::IndexDataRole) {
+    if (role == ViewHelper::IndexDataRole) {
         auto realIndex = mModelInstance->headerData(section, orientation,
                                                     mView, role).toInt();
         return realIndex < 0 ? QVariant() : realIndex;
     }
-    if (role == Mi::LabelDataRole) {
+    if (role == ViewHelper::LabelDataRole) {
         return orientation == Qt::Vertical ? QVariant()
                                            : mModelInstance->headerData(section,
                                                                         orientation,
                                                                         mView,
                                                                         role);
     }
-    if (role == Mi::SectionLabelRole) {
+    if (role == ViewHelper::SectionLabelRole) {
         return mModelInstance->headerData(section, orientation,
                                           mView, role);
     }
@@ -128,7 +128,7 @@ int ComprehensiveTableModel::columnCount(const QModelIndex &parent) const
 
 QHash<int, QByteArray> ComprehensiveTableModel::roleNames() const
 {
-    return Mi::roleNames();
+    return ViewHelper::roleNames();
 }
 
 int ComprehensiveTableModel::view() const
@@ -162,7 +162,11 @@ QVariant BPOverviewTableModel::data(const QModelIndex &index, int role) const
     }
     if (role == Qt::DisplayRole && index.isValid()) {
         auto value = mModelInstance->data(index.row(), index.column(), mView).toInt();
-        return value ? QChar(value) : QVariant();
+        if (value) {
+            if (value == ValueHelper::Mixed)
+                return ValueHelper::PlusMinus;
+            return QChar(value);
+        }
     }
     return QVariant();
 }
@@ -171,15 +175,15 @@ QVariant BPOverviewTableModel::headerData(int section,
                                           Qt::Orientation orientation,
                                           int role) const
 {
-    if (role == Qt::DisplayRole || role == Mi::LabelDataRole) {
+    if (role == Qt::DisplayRole || role == ViewHelper::LabelDataRole) {
         return mModelInstance->headerData(section, orientation,
-                                          mView, Mi::LabelDataRole);
+                                          mView, ViewHelper::LabelDataRole);
     }
-    if (role == Mi::IndexDataRole) {
+    if (role == ViewHelper::IndexDataRole) {
         return mModelInstance->headerData(section, orientation,
                                           mView, role);
     }
-    if (role == Mi::SectionLabelRole) {
+    if (role == ViewHelper::SectionLabelRole) {
         return mModelInstance->headerData(section, orientation,
                                           mView, role);
     }

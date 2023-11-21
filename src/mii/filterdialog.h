@@ -37,6 +37,7 @@ namespace Ui {
 class FilterDialog;
 }
 
+class AbstractViewConfiguration;
 class FilterTreeItem;
 
 class FilterDialog : public QDialog
@@ -47,23 +48,12 @@ public:
     explicit FilterDialog(QWidget *parent = nullptr);
     ~FilterDialog();
 
-    IdentifierFilter idendifierFilter() const;
-    void setIdentifierFilter(const IdentifierFilter &filter);
-    void setDefaultIdentifierFilter(const IdentifierFilter &filter);
+    QSharedPointer<AbstractViewConfiguration> viewConfig() const;
 
-    ValueFilter valueFilter() const;
-    void setValueFilter(const ValueFilter &filter);
-    void setDefaultValueFilter(const ValueFilter &filter);
-
-    LabelFilter labelFilter() const;
-    void setLabelFilter(const LabelFilter &filter);
-    void setDefaultLabelFilter(const LabelFilter &filter);
-
-    ViewDataType viewType() const;
-    void setViewType(ViewDataType viewType);
+    void setViewConfig(QSharedPointer<AbstractViewConfiguration> config);
 
 signals:
-    void filterUpdated();
+    void viewConfigUpdated();
 
 private slots:
     void on_applyButton_clicked();
@@ -86,9 +76,14 @@ private slots:
 
     void on_labelBox_currentIndexChanged(int index);
 
+    void on_selectAttrButton_clicked();
+
+    void on_deselectAttrButton_clicked();
+
 private:
     void setupEquationFilter(const IdentifierStates &filter, const IdentifierStates &dFilter);
     void setupVariableFilter(const IdentifierStates &filter, const IdentifierStates &dFilter);
+    void setupAttributeFilter();
     void setupLabelFilter();
     FilterTreeItem* setupSymTreeItems(const QString &text,
                                       const IdentifierStates &filter,
@@ -103,9 +98,9 @@ private:
     LabelCheckStates applyLabelFilter(Qt::Orientation orientation,
                                       QSortFilterProxyModel *model);
 
-    void updateRangeEdit(QLineEdit *edit, const QString &text);
+    LabelCheckStates applyAttributeFilter(QSortFilterProxyModel *model);
 
-    void resetValueFilter();
+    void updateRangeEdit(QLineEdit *edit, const QString &text);
 
     Qt::Orientation equationOrientation() const {
         return Qt::Vertical;
@@ -118,18 +113,12 @@ private:
 private:
     Ui::FilterDialog *ui;
 
-    ViewDataType mViewType;
-
-    IdentifierFilter mIdentifierFilter;
-    IdentifierFilter mDefaultIdentifierFilter;
-    ValueFilter mValueFilter;
-    ValueFilter mDefaultValueFilter;
-    LabelFilter mLabelFilter;
-    LabelFilter mDefaultLabelFilter;
+    QSharedPointer<AbstractViewConfiguration> mViewConfig;
 
     QSortFilterProxyModel *mEqnFilterModel;
     QSortFilterProxyModel *mVarFilterModel;
     QSortFilterProxyModel *mLabelFilterModel;
+    QSortFilterProxyModel *mAttrFilterModel;
 };
 
 }

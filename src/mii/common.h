@@ -32,26 +32,179 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-enum class ViewType
+class AttributeHelper
 {
-    Predefined  = 0,
-    Custom      = 1
+public:
+    enum AttributeType
+    {
+        Level,
+        /// Represents numerical and special values (as text).
+        Marginal,
+        /// Represents the numerical value.
+        MarginalNum,
+        Lower,
+        Upper,
+        Scale,
+        Range,
+        SlackLB,
+        SlackUB,
+        Slack,
+        Infeasibility,
+        Type
+    };
+
+    static QString attributeText(AttributeType type)
+    {
+        switch (type) {
+        case Level:
+            return LevelText;
+        case Marginal:
+            return MarginalText;
+        case MarginalNum:
+            return MarginalNumText;
+        case Lower:
+            return LowerText;
+        case Upper:
+            return UpperText;
+        case Scale:
+            return ScaleText;
+        case Range:
+            return RangeText;
+        case SlackLB:
+            return SlackLBText;
+        case SlackUB:
+            return SlackUBText;
+        case Slack:
+            return SlackText;
+        case Infeasibility:
+            return InfeasibilityText;
+        default:
+            return TypeText;
+        }
+    }
+
+    static QVector<QString> attributeTextList()
+    {
+        return QVector<QString> {
+            LevelText,
+            MarginalText,
+            LowerText,
+            UpperText,
+            ScaleText,
+            RangeText,
+            SlackLBText,
+            SlackUBText,
+            SlackText,
+            InfeasibilityText,
+            TypeText
+        };
+    }
+
+    static double attributeValue(double a, double b, bool aInf = false, bool bInf = false)
+    {
+        if (aInf || bInf) {
+            if (aInf && !bInf) {
+                return a;
+            } else if (!aInf && bInf) {
+                return b;
+            } else if ((a < 0 && b < 0) || (a > 0 && b > 0)) {
+                return a;
+            } else {
+                return a + b;
+            }
+        }
+        return a - b;
+    }
+
+    static const QString InfeasibilityText;
+    static const QString LevelText;
+    static const QString LowerText;
+    static const QString MarginalText;
+    static const QString MarginalNumText;
+    static const QString RangeText;
+    static const QString ScaleText;
+    static const QString SlackText;
+    static const QString SlackLBText;
+    static const QString SlackUBText;
+    static const QString UpperText;
+    static const QString TypeText;
 };
 
-enum class ViewDataType
+class ValueHelper
 {
-    BP_Overview         = 0,
-    BP_Count            = 1,
-    BP_Average          = 2,
-    BP_Scaling          = 3,
-    Postopt             = 4,
-    Symbols             = 5,
-    Blockpic            = 126,
-    Unknown             = 127
+public:
+    enum class EquationType
+    {
+        E,
+        G,
+        L,
+        N,
+        X,
+        C,
+        B
+    };
+
+    enum class VariableType
+    {
+        X,
+        B,
+        I,
+        S1,
+        S2,
+        SC,
+        SI
+    };
+
+    enum class SpecialValueType
+    {
+        NA,
+        EPS,
+        INF,
+        P_INF,
+        N_INF
+    };
+
+    static QString specialValueText(SpecialValueType type)
+    {
+        switch (type) {
+        case SpecialValueType::EPS:
+            return EPSText;
+        case SpecialValueType::INF:
+            return INFText;
+        case SpecialValueType::P_INF:
+            return PINFText;
+        case SpecialValueType::N_INF:
+            return NINFText;
+        default:
+            return NAText;
+        }
+    }
+
+    static bool isSpecialValue(const QVariant &value)
+    {
+        auto str = value.toString();
+        return !str.compare(EPSText, Qt::CaseInsensitive) ||
+               !str.compare(INFText, Qt::CaseInsensitive) ||
+               !str.compare(PINFText, Qt::CaseInsensitive) ||
+               !str.compare(NINFText, Qt::CaseInsensitive) ||
+               !str.compare(NAText, Qt::CaseInsensitive);
+    }
+
+    static const QString NAText;
+    static const QString EPSText;
+    static const QString INFText;
+    static const QString PINFText;
+    static const QString NINFText;
+
+    static const unsigned char Plus;
+    static const unsigned char Minus;
+    static const unsigned char Mixed;
+    static const QString PlusMinus;
 };
 
-struct Mi
+class ViewHelper
 {
+public:
     enum ItemDataRole
     {
         IndexDataRole = Qt::UserRole,
@@ -77,31 +230,23 @@ struct Mi
         return mapping;
     }
 
-    static double attributeValue(double a, double b, bool aInf = false, bool bInf = false)
+    enum class ViewType
     {
-        if (aInf || bInf) {
-            if (aInf && !bInf) {
-                return a;
-            } else if (!aInf && bInf) {
-                return b;
-            } else if ((a < 0 && b < 0) || (a > 0 && b > 0)) {
-                return a;
-            } else {
-                return a + b;
-            }
-        }
-        return a - b;
-    }
+        Predefined  = 0,
+        Custom      = 1
+    };
 
-    static bool isSpecialValue(const QVariant &value)
+    enum class ViewDataType
     {
-        auto str = value.toString();
-        return !str.compare(Mi::SV_EPS, Qt::CaseInsensitive) ||
-               !str.compare(Mi::SV_INF, Qt::CaseInsensitive) ||
-               !str.compare(Mi::SV_PINF, Qt::CaseInsensitive) ||
-               !str.compare(Mi::SV_NINF, Qt::CaseInsensitive) ||
-               !str.compare(Mi::SV_NA, Qt::CaseInsensitive);
-    }
+        BP_Overview         = 0,
+        BP_Count            = 1,
+        BP_Average          = 2,
+        BP_Scaling          = 3,
+        Postopt             = 4,
+        Symbols             = 5,
+        Blockpic            = 126,
+        Unknown             = 127
+    };
 
     static bool isAggregatable(ViewDataType type)
     {
@@ -132,24 +277,9 @@ struct Mi
 
     static const int ZoomFactor = 2;
 
-    static const QString SV_NA;
-    static const QString SV_EPS;
-    static const QString SV_INF;
-    static const QString SV_PINF;
-    static const QString SV_NINF;
-
-    static const QString Infeasibility;
-    static const QString Level;
-    static const QString Lower;
-    static const QString Marginal;
-    static const QString MarginalNum;
-    static const QString Range;
-    static const QString Scale;
-    static const QString Slack;
-    static const QString SlackLB;
-    static const QString SlackUB;
-    static const QString Upper;
-    static const QString Type;
+    static const QString AttributeHeaderText;
+    static const QString EquationHeaderText;
+    static const QString VariableHeaderText;
 
     static const QString ModelInstance;
     static const QString PredefinedViews;
@@ -164,34 +294,16 @@ struct Mi
     static const QString BPAverage;
     static const QString Postopt;
     static const QStringList PredefinedViewTexts;
+};
 
+class FileHelper
+{
+public:
     static const QString GamsCntr;
     static const QString GamsDict;
     static const QString Gamsmatr;
     static const QString GamsSolu;
     static const QString GamsStat;
-};
-
-enum class EquationType
-{
-    E,
-    G,
-    L,
-    N,
-    X,
-    C,
-    B
-};
-
-enum class VariableType
-{
-    X,
-    B,
-    I,
-    S1,
-    S2,
-    SC,
-    SI
 };
 
 struct ViewActionStates
@@ -300,6 +412,21 @@ struct IdentifierState
         CheckStates = other.CheckStates;
         SectionIndex = other.SectionIndex;
     }
+
+    bool operator==(const IdentifierState& other) const
+    {
+        return Enabled == other.Enabled &&
+               SectionIndex == other.SectionIndex &&
+               SymbolIndex == other.SymbolIndex &&
+               Text == other.Text &&
+               Checked == other.Checked &&
+               CheckStates == other.CheckStates;
+    }
+
+    bool operator!=(const IdentifierState& other) const
+    {
+        return !(*this == other);
+    }
 };
 
 typedef QMap<int, IdentifierState> IdentifierStates;
@@ -311,6 +438,17 @@ struct LabelFilter
 {
     bool Any = false;
     LabelStates LabelCheckStates;
+
+    bool operator==(const LabelFilter& other) const
+    {
+        return Any == other.Any &&
+               LabelCheckStates == other.LabelCheckStates;
+    }
+
+    bool operator!=(const LabelFilter& other) const
+    {
+        return !(*this == other);
+    }
 };
 
 struct ValueFilter
@@ -324,7 +462,6 @@ struct ValueFilter
     bool ShowPInf = true;
     bool ShowNInf = true;
     bool ShowEps = true;
-    bool Reset = false;
 
     bool isAbsolute() const
     {
@@ -336,13 +473,13 @@ struct ValueFilter
         if (!value.isValid())
             return false;
         auto str = value.toString();
-        if (!str.compare(Mi::SV_PINF, Qt::CaseInsensitive)) {
+        if (!str.compare(ValueHelper::PINFText, Qt::CaseInsensitive)) {
             return ShowPInf ? true : false;
         }
-        if (!str.compare(Mi::SV_NINF, Qt::CaseInsensitive)) {
+        if (!str.compare(ValueHelper::NINFText, Qt::CaseInsensitive)) {
             return ShowNInf ? true : false;
         }
-        if (!str.compare(Mi::SV_EPS, Qt::CaseInsensitive)) {
+        if (!str.compare(ValueHelper::EPSText, Qt::CaseInsensitive)) {
             return ShowEps ? true : false;
         }
         bool ok;

@@ -29,6 +29,7 @@ namespace studio{
 namespace mii {
 
 class AbstractModelInstance;
+class AbstractViewConfiguration;
 
 class SymbolModelInstanceTableModel final : public QAbstractTableModel
 {
@@ -36,6 +37,7 @@ class SymbolModelInstanceTableModel final : public QAbstractTableModel
 
 public:
     SymbolModelInstanceTableModel(QSharedPointer<AbstractModelInstance> modelInstance,
+                                  QSharedPointer<AbstractViewConfiguration> viewConfig,
                                   QObject *parent = nullptr);
 
     void setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance);
@@ -56,13 +58,9 @@ public:
 
     QHash<int, QByteArray> roleNames() const override;
 
-    int view() const;
-
-    void setView(int view);
-
 protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
-    int mView;
+    QSharedPointer<AbstractViewConfiguration> mViewConfig;
 };
 
 }
