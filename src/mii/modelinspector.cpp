@@ -244,9 +244,14 @@ void ModelInspector::createNewSymbolView()
     view->setupView(mModelInstance);
     ui->stackedWidget->addWidget(view);
     QString pageName = ViewHelper::SymbolView;
-    if (!currentBPView->selectedEquations().isEmpty() && !currentBPView->selectedVariables().isEmpty()) {
+    if (currentBPView->selectedEquations().size() == 1 && currentBPView->selectedVariables().size() == 1) {
         pageName = currentBPView->selectedEquations().constFirst()->name() + " + " +
                    currentBPView->selectedVariables().constFirst()->name();
+    } else if (currentBPView->selectedEquations().size() > 1 && currentBPView->selectedVariables().size() > 1) {
+        pageName = currentBPView->selectedEquations().constFirst()->name() + ".."  +
+                   currentBPView->selectedEquations().constLast()->name() + " + " +
+                   currentBPView->selectedVariables().constFirst()->name() + ".."  +
+                   currentBPView->selectedVariables().constLast()->name();
     }
     mSectionModel->appendCustomView(pageName, ViewHelper::ViewDataType::Symbols, view);
     ui->sectionView->expandAll();

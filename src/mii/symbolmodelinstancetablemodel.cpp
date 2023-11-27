@@ -79,6 +79,9 @@ QVariant SymbolModelInstanceTableModel::headerData(int section,
                                                     ViewHelper::IndexDataRole).toInt();
         return realIndex < 0 ? QVariant() : realIndex;
     }
+    if (role == ViewHelper::DimensionRole) {
+        return mModelInstance->maxSymbolDimension(mViewConfig->viewId(), orientation);
+    }
     return QAbstractItemModel::headerData(section, orientation, role);
 }
 

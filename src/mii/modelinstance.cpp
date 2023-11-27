@@ -733,6 +733,11 @@ QVariant ModelInstance::variableAttribute(const QString &header, int index, int 
     return specialValuePostopt(value, abs);
 }
 
+int ModelInstance::maxSymbolDimension(int viewId, Qt::Orientation orientation) const
+{
+    return mDataHandler->maxSymbolDimension(viewId, orientation);
+}
+
 void ModelInstance::remove(int viewId)
 {
     mDataHandler->remove(viewId);

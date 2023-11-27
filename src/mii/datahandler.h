@@ -356,6 +356,8 @@ public:
     double modelMaximum() const;
     void setModelMaximum(double maximum);
 
+    int maxSymbolDimension(int viewId, Qt::Orientation orientation);
+
     QSharedPointer<AbstractViewConfiguration> clone(int viewId, int newView);
     
     void loadJacobian();

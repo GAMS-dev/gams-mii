@@ -198,6 +198,8 @@ public:
 
     virtual QVariant variableAttribute(const QString &header, int index, int entry, bool abs) const;
 
+    virtual int maxSymbolDimension(int viewId, Qt::Orientation orientation) const = 0;
+
     virtual void remove(int viewId) = 0;
 
     State state() const;
@@ -286,6 +288,8 @@ public:
                              int dimension) const override;
 
     void jacobianData(DataMatrix& dataMatrix) override;
+
+    int maxSymbolDimension(int viewId, Qt::Orientation orientation) const override;
 
     void remove(int viewId) override;
 

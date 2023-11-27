@@ -529,7 +529,6 @@ void AbstractViewConfiguration::setView(AbstractViewFrame* view)
 void AbstractViewConfiguration::updateIdentifierFilter(const QList<Symbol *> &eqnFilter,
                                                        const QList<Symbol *> &varFilter)
 {
-    qDebug() << eqnFilter.size() << varFilter.size();
     for (auto iter=mCurrentIdentifierFilter[Qt::Vertical].begin();
          iter!=mCurrentIdentifierFilter[Qt::Vertical].end(); ++iter) {
         iter->Checked = Qt::Unchecked;

@@ -103,6 +103,10 @@ void AbstractBPViewFrame::handleRowColumnSelection()
     for (const auto& index : indexes) {
         if (!index.isValid())
             continue;
+        if (index.column() >= mModelInstance->variableCount())
+            continue;
+        if (index.row() >= mModelInstance->symbolRowCount(mViewConfig->viewId()))
+            continue;
         section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
                                                      ViewHelper::IndexDataRole).toInt();
         auto equation = mModelInstance->equation(section);

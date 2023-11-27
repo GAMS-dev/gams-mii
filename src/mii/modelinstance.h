@@ -132,6 +132,8 @@ public:
     QVariant variableAttribute(const QString &header,
                                int index, int entry, bool abs) const override;
 
+    int maxSymbolDimension(int viewId, Qt::Orientation orientation) const override;
+
     void remove(int viewId) override;
 
 private:

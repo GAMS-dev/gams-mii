@@ -162,6 +162,8 @@ void TestDataHandler::test_DataHandler_empty()
     QCOMPARE(dataHandler.columnCount(0), 0);
     QCOMPARE(dataHandler.columnEntries(-1, -1), 0);
     QCOMPARE(dataHandler.columnEntries(0, 0), 0);
+    QCOMPARE(dataHandler.maxSymbolDimension(0, Qt::Horizontal), 0);
+    QCOMPARE(dataHandler.maxSymbolDimension(0, Qt::Vertical), 0);
     dataHandler.loadJacobian();
 }
 

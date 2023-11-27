@@ -75,20 +75,18 @@ TestCommon::~TestCommon()
 void TestCommon::test_Mi_roleNames()
 {
     auto names = ViewHelper::roleNames();
-    QCOMPARE(names.size(), 7);
+    QCOMPARE(names.size(), 6);
     QVERIFY(names.contains(ViewHelper::ItemDataRole::IndexDataRole));
     QVERIFY(names.contains(ViewHelper::ItemDataRole::LabelDataRole));
     QVERIFY(names.contains(ViewHelper::ItemDataRole::RowEntryRole));
     QVERIFY(names.contains(ViewHelper::ItemDataRole::ColumnEntryRole));
-    QVERIFY(names.contains(ViewHelper::ItemDataRole::HorizontalDimensionRole));
-    QVERIFY(names.contains(ViewHelper::ItemDataRole::VerticalDimensionRole));
+    QVERIFY(names.contains(ViewHelper::ItemDataRole::DimensionRole));
     QVERIFY(names.contains(ViewHelper::ItemDataRole::SectionLabelRole));
     QCOMPARE(names[ViewHelper::ItemDataRole::IndexDataRole], "indexdata");
     QCOMPARE(names[ViewHelper::ItemDataRole::LabelDataRole], "labeldata");
     QCOMPARE(names[ViewHelper::ItemDataRole::RowEntryRole], "rowentry");
     QCOMPARE(names[ViewHelper::ItemDataRole::ColumnEntryRole], "columnentry");
-    QCOMPARE(names[ViewHelper::ItemDataRole::HorizontalDimensionRole], "horizontaldimension");
-    QCOMPARE(names[ViewHelper::ItemDataRole::VerticalDimensionRole], "verticaldimension");
+    QCOMPARE(names[ViewHelper::ItemDataRole::DimensionRole], "dimension");
     QCOMPARE(names[ViewHelper::ItemDataRole::SectionLabelRole], "sectionlabel");
 }
 

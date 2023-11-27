@@ -58,6 +58,8 @@ void TestEmptyModelInstance::test_constructor_initialize()
     QCOMPARE(instance.workspace(), realWorkspace);
     QCOMPARE(instance.systemDirectory(), systemDir);
     QCOMPARE(instance.scratchDirectory(), scratchDir);
+    QCOMPARE(instance.maxSymbolDimension(0, Qt::Horizontal), 0);
+    QCOMPARE(instance.maxSymbolDimension(0, Qt::Vertical), 0);
 }
 
 void TestEmptyModelInstance::test_default()
@@ -105,6 +107,8 @@ void TestEmptyModelInstance::test_default()
     QCOMPARE(instance.equationAttribute(QString(), -1, -4, false), QVariant());
     QCOMPARE(instance.variableAttribute(QString(), -1, -4, false), QVariant());
     QVERIFY(instance.dataTree(-42) != nullptr);
+    QCOMPARE(instance.maxSymbolDimension(0, Qt::Horizontal), 0);
+    QCOMPARE(instance.maxSymbolDimension(0, Qt::Vertical), 0);
 }
 
 void TestEmptyModelInstance::test_getSet()

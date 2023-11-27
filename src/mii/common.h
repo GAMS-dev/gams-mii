@@ -211,8 +211,7 @@ public:
         LabelDataRole,
         RowEntryRole,
         ColumnEntryRole,
-        HorizontalDimensionRole,
-        VerticalDimensionRole,
+        DimensionRole,
         SectionLabelRole
     };
 
@@ -223,8 +222,7 @@ public:
             {LabelDataRole, "labeldata"},
             {RowEntryRole, "rowentry"},
             {ColumnEntryRole, "columnentry"},
-            {HorizontalDimensionRole, "horizontaldimension"},
-            {VerticalDimensionRole, "verticaldimension"},
+            {DimensionRole, "dimension"},
             {SectionLabelRole, "sectionlabel"}
         };
         return mapping;

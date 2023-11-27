@@ -377,13 +377,7 @@ public:
             return orientation == Qt::Vertical ? 1 : 0;
         }
         if (mHeaderView->viewType() == ViewHelper::ViewDataType::Symbols) {
-            auto section = mHeaderView->model()->headerData(0, orientation).toInt();
-            Symbol* symbol;
-            if (orientation == Qt::Horizontal)
-                symbol = mHeaderView->modelInstance()->variable(section);
-            else
-                symbol = mHeaderView->modelInstance()->equation(section);
-            return symbol->dimension();
+            return mHeaderView->model()->headerData(0, orientation, ViewHelper::DimensionRole).toInt();
         }
         if (orientation == Qt::Horizontal) {
             if (mHeaderView->model()->columnCount() != mHeaderView->modelInstance()->variableRowCount())

@@ -26,7 +26,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <vector>
 
 #include <QSet>
 
@@ -153,6 +152,12 @@ public:
     virtual int rowEntries(int row) const
     {
         Q_UNUSED(row);
+        return 0;
+    }
+
+    virtual int maxSymbolDimension(Qt::Orientation orientation) const
+    {
+        Q_UNUSED(orientation);
         return 0;
     }
 
@@ -612,40 +617,49 @@ public:
 
     void loadData() override
     {
-        Symbol* equation = nullptr;
+        QList<Symbol*> equations;
         for (const auto &filter : std::as_const(mViewConfig->currentIdentifierFilter()[Qt::Vertical])) {
             if (filter.Checked == Qt::Unchecked)
                 continue;
-            equation = mModelInstance.equation(filter.SymbolIndex);
-            break;
+            auto equation = mModelInstance.equation(filter.SymbolIndex);
+            if (!equation)
+                continue;
+            equations.append(equation);
+            mEqnDimension = std::max(mEqnDimension, equation->dimension());
+            for (int s=equation->firstSection(); s<=equation->lastSection(); ++s) {
+                mLogicalSectionMapping[Qt::Vertical].append(s);
+            }
         }
-        if (!equation) return;
-        mRowCount = equation->entries();
+        mRowCount = mLogicalSectionMapping[Qt::Vertical].size();
         mRows = new SymbolRow[mRowCount];
-        Symbol* variable = nullptr;
+        QList<Symbol*> variables;
         for (const auto &filter : std::as_const(mViewConfig->currentIdentifierFilter()[Qt::Horizontal])) {
             if (filter.Checked == Qt::Unchecked)
                 continue;
-            variable = mModelInstance.variable(filter.SymbolIndex);
+            auto variable = mModelInstance.variable(filter.SymbolIndex);
+            if (!variable)
+                continue;
+            variables.append(variable);
+            mVarDimension = std::max(mVarDimension, variable->dimension());
             for (int s=variable->firstSection(); s<=variable->lastSection(); ++s) {
                 mLogicalSectionMapping[Qt::Horizontal].append(s);
             }
-            mColumnCount = mLogicalSectionMapping[Qt::Horizontal].size();
-            break;
         }
-        if (!variable) return;
+        mColumnCount += mLogicalSectionMapping[Qt::Horizontal].size();
         mColumnEntryCount = new int[mColumnCount];
         std::fill(mColumnEntryCount, mColumnEntryCount+mColumnCount, 0);
-        mViewConfig->currentValueFilter().UseAbsoluteValues ? aggregateAbs(equation, variable)
-                                                            : aggregateId(equation, variable);
+        mViewConfig->currentValueFilter().UseAbsoluteValues ? aggregateAbs(equations, variables)
+                                                            : aggregateId(equations, variables);
     }
 
     double data(int row, int column) const override
     {
-        if (!mRows || !mRows[row].entries())
+        if (!mRows || !mRows[row].entries()) {
             return 0.0;
-        if (column < mRows[row].firstIdx() || column > mRows[row].lastIdx())
+        }
+        if (column < mRows[row].firstIdx() || column > mRows[row].lastIdx()) {
             return 0.0;
+        }
         return mRows[row].data()[column-mRows[row].firstIdx()];
     }
 
@@ -657,6 +671,11 @@ public:
     int rowEntries(int row) const override
     {
         return row < mRowCount ? mRows[row].entries() : 0;
+    }
+
+    int maxSymbolDimension(Qt::Orientation orientation) const override
+    {
+        return orientation == Qt::Horizontal ? mVarDimension : mEqnDimension;
     }
 
     auto& operator=(const SymbolsDataProvider& other)
@@ -680,47 +699,50 @@ public:
     }
 
 private:
-    void aggregateAbs(Symbol *equation, Symbol* variable)
+    void aggregateAbs(QList<Symbol*>& equations, QList<Symbol*>& variables)
     {
-        mColumnCount = variable->entries();
-        for (int r=equation->firstSection(), rr=0; r<=equation->lastSection(); ++r, ++rr) {
-            mLogicalSectionMapping[Qt::Vertical].append(r);
-            auto sparseRow = dataRow(r);
-            int sym_nz = 0, start_i = -1, start_c = 0, end_c = 0;
-            for (int i=0; i<sparseRow->entries(); ++i) {
-                if (sparseRow->colIdx()[i] > variable->lastSection()) {
-                    break;
+        int rr = 0;
+        for (auto* equation : equations) {
+            for (int r=equation->firstSection(); r<=equation->lastSection(); ++r, ++rr) {
+                auto sparseRow = dataRow(r);
+                int sym_nz = 0, start_i = -1, start_c = 0, end_c = 0;
+                for (auto variable : variables) {
+                    for (int i=0; i<sparseRow->entries(); ++i) {
+                        if (sparseRow->colIdx()[i] > variable->lastSection()) {
+                            break;
+                        }
+                        if (sparseRow->colIdx()[i] < variable->firstSection()) {
+                            continue;
+                        }
+                        if (start_i < 0) {
+                            start_c = sparseRow->colIdx()[i];
+                            start_i = i;
+                        }
+                        end_c = sparseRow->colIdx()[i];
+                        ++sym_nz;
+                    }
                 }
-                if (sparseRow->colIdx()[i] < variable->firstSection()) {
-                    continue;
-                }
-                if (start_i < 0) {
-                    start_c = sparseRow->colIdx()[i];
-                    start_i = i;
-                }
-                end_c = sparseRow->colIdx()[i];
-                ++sym_nz;
-            }
-            if (!sym_nz) continue;
-            auto* row = &mRows[rr];
-            row->setEntries(end_c + 1 - start_c);
-            row->setData(new double[row->entries()]);
-            row->setFirstIdx(start_c - variable->firstSection());
-            if (sym_nz == row->entries()) {
-                for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz, ++c) {
-                    row->data()[c] = std::abs(sparseRow->data()[nz]);
-                    mDataMinimum = std::min(mDataMinimum, row->data()[c]);
-                    mDataMaximum = std::max(mDataMaximum, row->data()[c]);
-                    ++mColumnEntryCount[row->firstIdx()+c];
-                }
-            } else {
-                std::fill(row->data(), row->data()+row->entries(), 0.0);
-                for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz) {
-                    c = sparseRow->colIdx()[nz] - start_c;
-                    row->data()[c] = std::abs(sparseRow->data()[nz]);
-                    mDataMinimum = std::min(mDataMinimum, row->data()[c]);
-                    mDataMaximum = std::max(mDataMaximum, row->data()[c]);
-                    ++mColumnEntryCount[row->firstIdx()+c];
+                if (!sym_nz) continue;
+                SymbolRow* row = &mRows[rr];
+                row->setEntries(end_c + 1 - start_c);
+                row->setData(new double[row->entries()]);
+                row->setFirstIdx(start_c - variables.first()->firstSection());
+                if (sym_nz == row->entries()) {
+                    for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz, ++c) {
+                        row->data()[c] = std::abs(sparseRow->data()[nz]);
+                        mDataMinimum = std::min(mDataMinimum, row->data()[c]);
+                        mDataMaximum = std::max(mDataMaximum, row->data()[c]);
+                        ++mColumnEntryCount[row->firstIdx()+c];
+                    }
+                } else {
+                    std::fill(row->data(), row->data()+row->entries(), 0.0);
+                    for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz) {
+                        c = sparseRow->colIdx()[nz] - start_c;
+                        row->data()[c] = std::abs(sparseRow->data()[nz]);
+                        mDataMinimum = std::min(mDataMinimum, row->data()[c]);
+                        mDataMaximum = std::max(mDataMaximum, row->data()[c]);
+                        ++mColumnEntryCount[row->firstIdx()+c];
+                    }
                 }
             }
         }
@@ -730,47 +752,50 @@ private:
         mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
     }
 
-    void aggregateId(Symbol *equation, Symbol* variable)
+    void aggregateId(QList<Symbol*>& equations, QList<Symbol*>& variables)
     {
-        mColumnCount = variable->entries();
-        for (int r=equation->firstSection(), rr=0; r<=equation->lastSection(); ++r, ++rr) {
-            mLogicalSectionMapping[Qt::Vertical].append(r);
-            auto sparseRow = dataRow(r);
-            int sym_nz = 0, start_i = -1, start_c = 0, end_c = 0;
-            for (int i=0; i<sparseRow->entries(); ++i) {
-                if (sparseRow->colIdx()[i] > variable->lastSection()) {
-                    break;
+        int rr = 0;
+        for (auto* equation : equations) {
+            for (int r=equation->firstSection(); r<=equation->lastSection(); ++r, ++rr) {
+                auto sparseRow = dataRow(r);
+                int sym_nz = 0, start_i = -1, start_c = 0, end_c = 0;
+                for (auto variable : variables) {
+                    for (int i=0; i<sparseRow->entries(); ++i) {
+                        if (sparseRow->colIdx()[i] > variable->lastSection()) {
+                            break;
+                        }
+                        if (sparseRow->colIdx()[i] < variable->firstSection()) {
+                            continue;
+                        }
+                        if (start_i < 0) {
+                            start_c = sparseRow->colIdx()[i];
+                            start_i = i;
+                        }
+                        end_c = sparseRow->colIdx()[i];
+                        ++sym_nz;
+                    }
                 }
-                if (sparseRow->colIdx()[i] < variable->firstSection()) {
-                    continue;
-                }
-                if (start_i < 0) {
-                    start_c = sparseRow->colIdx()[i];
-                    start_i = i;
-                }
-                end_c = sparseRow->colIdx()[i];
-                ++sym_nz;
-            }
-            if (!sym_nz) continue;
-            auto* row = &mRows[rr];
-            row->setEntries(end_c + 1 - start_c);
-            row->setData(new double[row->entries()]);
-            row->setFirstIdx(start_c - variable->firstSection());
-            if (sym_nz == row->entries()) {
-                for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz, ++c) {
-                    row->data()[c] = sparseRow->data()[nz];
-                    mDataMinimum = std::min(mDataMinimum, row->data()[c]);
-                    mDataMaximum = std::max(mDataMaximum, row->data()[c]);
-                    ++mColumnEntryCount[row->firstIdx()+c];
-                }
-            } else {
-                std::fill(row->data(), row->data()+row->entries(), 0.0);
-                for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz) {
-                    c = sparseRow->colIdx()[nz] - start_c;
-                    row->data()[c] = sparseRow->data()[nz];
-                    mDataMinimum = std::min(mDataMinimum, row->data()[c]);
-                    mDataMaximum = std::max(mDataMaximum, row->data()[c]);
-                    ++mColumnEntryCount[row->firstIdx()+c];
+                if (!sym_nz) continue;
+                SymbolRow* row = &mRows[rr];
+                row->setEntries(end_c + 1 - start_c);
+                row->setData(new double[row->entries()]);
+                row->setFirstIdx(start_c - variables.first()->firstSection());
+                if (sym_nz == row->entries()) {
+                    for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz, ++c) {
+                        row->data()[c] = sparseRow->data()[nz];
+                        mDataMinimum = std::min(mDataMinimum, row->data()[c]);
+                        mDataMaximum = std::max(mDataMaximum, row->data()[c]);
+                        ++mColumnEntryCount[row->firstIdx()+c];
+                    }
+                } else {
+                    std::fill(row->data(), row->data()+row->entries(), 0.0);
+                    for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz) {
+                        c = sparseRow->colIdx()[nz] - start_c;
+                        row->data()[c] = sparseRow->data()[nz];
+                        mDataMinimum = std::min(mDataMinimum, row->data()[c]);
+                        mDataMaximum = std::max(mDataMaximum, row->data()[c]);
+                        ++mColumnEntryCount[row->firstIdx()+c];
+                    }
                 }
             }
         }
@@ -783,6 +808,8 @@ private:
 private:
     SymbolRow* mRows = nullptr;
     int* mColumnEntryCount = nullptr;
+    int mEqnDimension = 0;
+    int mVarDimension = 0;
 };
 
 class BPOverviewDataProvider final : public DataHandler::AbstractDataProvider
@@ -1697,6 +1724,13 @@ double DataHandler::modelMaximum() const
 void DataHandler::setModelMaximum(double maximum)
 {
     mModelMaximum = maximum;
+}
+
+int DataHandler::maxSymbolDimension(int viewId, Qt::Orientation orientation)
+{
+    if (!mDataCache.contains(viewId))
+        return 0;
+    return mDataCache[viewId]->maxSymbolDimension(orientation);
 }
 
 QSharedPointer<AbstractViewConfiguration> DataHandler::clone(int viewId, int newView)

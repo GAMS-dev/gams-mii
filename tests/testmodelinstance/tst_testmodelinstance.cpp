@@ -62,6 +62,8 @@ void TestModelInstance::test_constructor_initialize()
     QCOMPARE(instance.scratchDirectory(), scratchDir);
     QCOMPARE(instance.useOutput(), false);
     QCOMPARE(instance.globalAbsolute(), false);
+    QCOMPARE(instance.maxSymbolDimension(0, Qt::Horizontal), 0);
+    QCOMPARE(instance.maxSymbolDimension(0, Qt::Vertical), 0);
 }
 
 void TestModelInstance::test_default()
@@ -77,6 +79,8 @@ void TestModelInstance::test_default()
     QVERIFY(!instance.modelName().compare(QString()) ||
             !instance.modelName().compare("GAMS Model"));
     QCOMPARE(instance.globalAbsolute(), false);
+    QCOMPARE(instance.maxSymbolDimension(0, Qt::Horizontal), 0);
+    QCOMPARE(instance.maxSymbolDimension(0, Qt::Vertical), 0);
 }
 
 void TestModelInstance::test_getSet()

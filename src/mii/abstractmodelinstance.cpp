@@ -366,6 +366,13 @@ void EmptyModelInstance::jacobianData(DataMatrix &dataMatrix)
     Q_UNUSED(dataMatrix);
 }
 
+int EmptyModelInstance::maxSymbolDimension(int viewId, Qt::Orientation orientation) const
+{
+    Q_UNUSED(viewId);
+    Q_UNUSED(orientation);
+    return 0;
+}
+
 void EmptyModelInstance::remove(int viewId)
 {
     Q_UNUSED(viewId);
