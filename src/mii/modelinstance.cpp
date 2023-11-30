@@ -467,7 +467,7 @@ void ModelInstance::loadLabels()
         if (label == ttlblk || label == mincolcnt || label == minrowcnt)
             mLabels.removeLast();
     }
-    for (const auto& label : qAsConst(mLabels)) {
+    for (const auto& label : std::as_const(mLabels)) {
         if (label.size() > mLongestLabel.size())
             mLongestLabel = label.left(10); // TODO !!! fix header space issue
     }
