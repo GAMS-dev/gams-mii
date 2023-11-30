@@ -58,7 +58,7 @@ public:
 
     QHash<int, QByteArray> roleNames() const override;
 
-protected:
+private:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     QSharedPointer<AbstractViewConfiguration> mViewConfig;
 };

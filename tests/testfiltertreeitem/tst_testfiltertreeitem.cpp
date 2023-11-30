@@ -31,10 +31,6 @@ class TestFilterTreeItem : public QObject
 {
     Q_OBJECT
 
-public:
-    TestFilterTreeItem();
-    ~TestFilterTreeItem();
-
 private slots:
     void test_default();
     void test_constructor();
@@ -43,16 +39,6 @@ private slots:
     void test_subTreeCheckState();
     void test_isEnabled();
 };
-
-TestFilterTreeItem::TestFilterTreeItem()
-{
-
-}
-
-TestFilterTreeItem::~TestFilterTreeItem()
-{
-
-}
 
 void TestFilterTreeItem::test_default()
 {

@@ -30,18 +30,21 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-class Aggregation;
 class AbstractModelInstance;
 
+///
+/// \brief The abstract view frame interface for all MII views.
+///
 class AbstractViewFrame : public QFrame
 {
     Q_OBJECT
 
-public:
+protected:
     AbstractViewFrame(QWidget *parent = nullptr,
                       Qt::WindowFlags f = Qt::WindowFlags());
 
-    ~AbstractViewFrame() override;
+public:
+    virtual ~AbstractViewFrame() override;
 
     virtual AbstractViewFrame* clone(int viewId) = 0;
 
@@ -83,6 +86,47 @@ protected:
 protected:
     QSharedPointer<AbstractModelInstance> mModelInstance;
     QSharedPointer<AbstractViewConfiguration> mViewConfig;
+};
+
+///
+/// \brief The emtpy (or dummy) view frame implementation.
+///
+/// \remark Used as a placeholder, e.g. for unit testing.
+///
+class EmtpyViewFrame final : public AbstractViewFrame
+{
+    Q_OBJECT
+
+public:
+    EmtpyViewFrame(QWidget *parent = nullptr,
+                   Qt::WindowFlags f = Qt::WindowFlags());
+
+    ~EmtpyViewFrame();
+
+    AbstractViewFrame *clone(int viewId) override;
+
+    void setShowAbsoluteValues(bool absoluteValues) override;
+
+    ViewHelper::ViewDataType type() const override;
+
+    void updateView() override;
+
+    void zoomIn() override;
+
+    void zoomOut() override;
+
+    void resetZoom() override;
+
+    SearchResult &search(const QString &term, bool isRegEx) override;
+
+    void setSearchSelection(const SearchResult::SearchEntry &result) override;
+
+    void setupView(const QSharedPointer<AbstractModelInstance>& modelInstance) override;
+
+    bool hasData() const override;
+
+private:
+    SearchResult mSearchResult;
 };
 
 }

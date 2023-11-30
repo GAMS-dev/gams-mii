@@ -7,8 +7,9 @@ TEMPLATE = app
 
 INCLUDEPATH += $$SRCPATH/mii
 
-SOURCES +=  tst_testemptymodelinstance.cpp                      \
+SOURCES +=  tst_testemptymodelinstance.cpp           \
             $$SRCPATH/mii/abstractmodelinstance.cpp  \
+            $$SRCPATH/mii/datamatrix.cpp             \
             $$SRCPATH/mii/symbol.cpp                 \
             $$SRCPATH/mii/common.cpp                 \
             $$SRCPATH/mii/postopttreeitem.cpp

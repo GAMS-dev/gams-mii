@@ -24,6 +24,7 @@ SUBDIRS +=                          \
     testaggregation                 \
     testcommon                      \
     testdatahandler                 \
+    testdatamatrix                  \
     testemptymodelinstance          \
     testfiltertreeitem              \
     testlabeltreeitem               \

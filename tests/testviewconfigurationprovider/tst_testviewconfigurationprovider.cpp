@@ -29,10 +29,6 @@ class TestViewConfigurationProvider : public QObject
 {
     Q_OBJECT
 
-public:
-    TestViewConfigurationProvider();
-    ~TestViewConfigurationProvider();
-
 private slots:
     void test_defaultConfiguration();
     void test_configuration();
@@ -41,16 +37,6 @@ private:
     void test_viewConfiguration(AbstractViewConfiguration *viewConfig,
                                 ViewHelper::ViewDataType type);
 };
-
-TestViewConfigurationProvider::TestViewConfigurationProvider()
-{
-
-}
-
-TestViewConfigurationProvider::~TestViewConfigurationProvider()
-{
-
-}
 
 void TestViewConfigurationProvider::test_defaultConfiguration()
 {

@@ -28,25 +28,11 @@ class TestModelInstance : public QObject
 {
     Q_OBJECT
 
-public:
-    TestModelInstance();
-    ~TestModelInstance();
-
 private slots:
     void test_constructor_initialize();
     void test_default();
     void test_getSet();
 };
-
-TestModelInstance::TestModelInstance()
-{
-
-}
-
-TestModelInstance::~TestModelInstance()
-{
-
-}
 
 void TestModelInstance::test_constructor_initialize()
 {

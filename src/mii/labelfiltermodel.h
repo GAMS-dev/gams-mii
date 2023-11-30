@@ -41,6 +41,7 @@ public:
                      QObject *parent = nullptr);
 
     LabelFilter labelFilter() const;
+
     void setLabelFilter(const LabelFilter &filter);
 
 protected:

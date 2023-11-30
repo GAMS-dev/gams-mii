@@ -90,7 +90,7 @@ QVariant PostoptValueFormatProxyModel::applyFilter(const QVariant &data) const
             return data;
         return QVariant();
     }
-    bool ok;
+    bool ok = false;
     double value = getValue(data, &ok);
     if (ok) {
         if (!mValueFilter.ExcludeRange && value >= mValueFilter.MinValue && value <= mValueFilter.MaxValue)
@@ -133,7 +133,7 @@ QVariant JacobianValueFormatProxyModel::data(const QModelIndex &index, int role)
         return QVariant();
     if (role != Qt::DisplayRole)
         return sourceModel()->data(index, role);
-    bool ok;
+    bool ok = false;
     double value = getValue(QIdentityProxyModel::data(index, role), &ok);
     if (ok) {
         if (!mValueFilter.ExcludeRange && value >= mValueFilter.MinValue && value <= mValueFilter.MaxValue)
@@ -156,7 +156,7 @@ QVariant BPValueFormatProxyModel::data(const QModelIndex &index, int role) const
         return QVariant();
     if (role != Qt::DisplayRole)
         return QIdentityProxyModel::data(index, role);
-    bool ok;
+    bool ok = false;
     double value = QIdentityProxyModel::data(index, role).toDouble(&ok);
     if (ok) {
         double retval = value;
@@ -183,7 +183,7 @@ QVariant BPValueFormatTypeProxyModel::data(const QModelIndex &index, int role) c
     if (role != Qt::DisplayRole ||
         index.column() == columnCount()-4 || index.row() == rowCount()-1)
         return QIdentityProxyModel::data(index, role);
-    bool ok;
+    bool ok = false;
     double value = QIdentityProxyModel::data(index, role).toDouble(&ok);
     if (ok) {
         double retval = value;
@@ -208,7 +208,7 @@ QVariant AbsFormatProxyModel::data(const QModelIndex &index, int role) const
     if (!index.isValid())
         return QVariant();
     if (role == Qt::DisplayRole) {
-        bool ok;
+        bool ok = false;
         double value = QIdentityProxyModel::data(index, role).toDouble(&ok);
         if (ok && mAbsoluteValues)
             return std::abs(value);

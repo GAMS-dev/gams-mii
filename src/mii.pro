@@ -83,6 +83,7 @@ SOURCES += \
     mii/common.cpp \
     mii/comprehensivetablemodel.cpp \
     mii/datahandler.cpp \
+    mii/datamatrix.cpp \
     mii/filterdialog.cpp \
     mii/filtertreeitem.cpp \
     mii/filtertreemodel.cpp \
@@ -130,6 +131,7 @@ HEADERS += \
     mii/common.h \
     mii/comprehensivetablemodel.h \
     mii/datahandler.h \
+    mii/datamatrix.h \
     mii/filterdialog.h \
     mii/filtertreeitem.h \
     mii/filtertreemodel.h \

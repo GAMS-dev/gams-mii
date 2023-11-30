@@ -9,6 +9,7 @@ INCLUDEPATH += $$SRCPATH/mii
 
 SOURCES +=  tst_testdatahandler.cpp                      \
             $$SRCPATH/mii/datahandler.cpp                \
+            $$SRCPATH/mii/datamatrix.cpp                 \
             $$SRCPATH/mii/modelinstance.cpp              \
             $$SRCPATH/mii/abstractmodelinstance.cpp      \
             $$SRCPATH/mii/aggregation.cpp                \

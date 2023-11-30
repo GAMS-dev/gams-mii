@@ -34,7 +34,7 @@ LogHighlighter::LogHighlighter(QObject *parent)
     mHighlightingRules.push_back(errorRule);
     HighlightingRule warningRule;
     warningRule.setBold(QFont::Bold);
-    warningRule.setColor(QBrush(QColor(255, 165, 0))); // orange
+    warningRule.setColor(QBrush(QColorConstants::Svg::orange));
     warningRule.setPattern(QRegularExpression(".*warning.*", QRegularExpression::CaseInsensitiveOption));
     mHighlightingRules.push_back(warningRule);
 }
@@ -45,7 +45,7 @@ void LogHighlighter::highlightBlock(const QString &text)
         QRegularExpressionMatchIterator matchIterator = rule.pattern().globalMatch(text);
         while (matchIterator.hasNext()) {
             QRegularExpressionMatch match = matchIterator.next();
-            setFormat(match.capturedStart(), match.capturedLength(), rule.format());
+            setFormat(match.capturedStart(), (int)match.capturedLength(), rule.format());
         }
     }
 }
@@ -60,8 +60,8 @@ LogView::LogView(QWidget *parent)
 bool LogView::eventFilter(QObject *watched, QEvent *event)
 {
     if (event->type() == QEvent::Wheel) {
-        QWheelEvent *wheel = static_cast<QWheelEvent*>(event);
-        if (wheel->modifiers() == Qt::ControlModifier) {
+        QWheelEvent *wheel = dynamic_cast<QWheelEvent*>(event);
+        if (wheel && wheel->modifiers() == Qt::ControlModifier) {
             if (wheel->angleDelta().y() > 0)
                 zoomIn(gams::studio::mii::ViewHelper::ZoomFactor);
             else

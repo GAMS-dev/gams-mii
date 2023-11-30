@@ -22,6 +22,8 @@
 #include "abstractmodelinstance.h"
 #include "viewconfigurationprovider.h"
 
+#include <QFont>
+
 namespace gams {
 namespace studio{
 namespace mii {
@@ -47,6 +49,14 @@ QVariant SymbolModelInstanceTableModel::data(const QModelIndex &index, int role)
 {
     if (role == Qt::TextAlignmentRole) {
         return Qt::AlignRight;
+    }
+    if (role == Qt::FontRole) {
+        if (mModelInstance->nlFlag(index.row(), index.column(), mViewConfig->viewId())) {
+            QFont font;
+            font.setBold(true);
+            font.setItalic(true);
+            return font;
+        }
     }
     if (role == Qt::DisplayRole && index.isValid()) {
         return mModelInstance->data(index.row(), index.column(), mViewConfig->viewId());

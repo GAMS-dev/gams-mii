@@ -79,3 +79,31 @@ build-wei:
     name: mii-wei
     expire_in: 2 hours
     paths: [build]
+
+build-wei-debug:
+  stage: build
+  rules:
+    - if: $PF_WEI_DEBUG == "0"
+      when: never
+    - when: on_success
+  tags: [windows]
+  needs: [install-gams-wei]
+  variables:
+     cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
+  image:
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-qt6.6:latest
+  script:
+    - '& $cmd_vcvars'
+    - $data = 
+      "GAMS_DISTRIB=C:/Cache/gams-installs/$(Get-Content mygmsdir.tmp -Raw)",
+      'GAMS_DISTRIB_C_API=$$GAMS_DISTRIB/apifiles/C/api',
+      'GAMS_DISTRIB_CPP_API=$$GAMS_DISTRIB/apifiles/C++/api'
+    - $data | out-file -encoding ascii gamsinclude.pri
+    - mkdir build
+    - cd build
+    - qmake ..\gams-mii.pro "CONFIG+=debug"
+    - nmake
+  artifacts:
+    name: mii-wei-debug
+    expire_in: 2 hours
+    paths: [build]

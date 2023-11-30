@@ -44,12 +44,12 @@ class LabelFilterWidget : public QWidget
 public:
     explicit LabelFilterWidget(Qt::Orientation orientation,
                                QWidget *parent = nullptr);
-    ~LabelFilterWidget();
+    ~LabelFilterWidget() override;
 
     void setData(FilterTreeItem *rootItem);
 
 protected:
-    void showEvent(QShowEvent *event);
+    void showEvent(QShowEvent *event) override;
 
 signals:
     void filterChanged(const gams::studio::mii::IdentifierState&, Qt::Orientation);

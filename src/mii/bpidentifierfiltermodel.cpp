@@ -44,7 +44,7 @@ bool BPIdentifierFilterModel::filterAcceptsColumn(int sourceColumn,
 {
     Q_UNUSED(sourceParent);
 
-    bool ok;
+    bool ok = false;
     auto sectionIndex = sourceModel()->headerData(sourceColumn, Qt::Horizontal,
                                                   ViewHelper::IndexDataRole).toInt(&ok);
     if (!ok || sectionIndex < 0)
@@ -67,7 +67,7 @@ bool BPIdentifierFilterModel::filterAcceptsRow(int sourceRow,
 {
     Q_UNUSED(sourceParent);
 
-    bool ok;
+    bool ok = false;
     auto sectionIndex = sourceModel()->headerData(sourceRow, Qt::Vertical,
                                                   ViewHelper::IndexDataRole).toInt(&ok);
     if (!ok || sectionIndex < 0)

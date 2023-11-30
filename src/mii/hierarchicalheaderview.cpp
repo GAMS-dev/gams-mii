@@ -93,7 +93,7 @@ public:
 
     int sectionIndex(int logicalIndex) const
     {
-        bool ok;
+        bool ok = false;
         auto index = mHeaderView->model()->headerData(logicalIndex,
                                                       mHeaderView->orientation()).toInt(&ok);
         return !ok ? -1 : index;
@@ -470,7 +470,7 @@ private:
                          FilterTreeItem *parent)
     {
         if (data.isEmpty() || label.isEmpty()) return;
-        FilterTreeItem *labelItem;
+        FilterTreeItem *labelItem = nullptr;
         bool enabled = parent->parent() ? visibleSections.contains(data.firstKey()) : true;
         if (state.isValid() && state.CheckStates.contains(data.firstKey())) {
             labelItem = new FilterTreeItem(label,
@@ -529,10 +529,12 @@ private:
 
 HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
                                                const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                               int viewId,
                                                QWidget *parent)
     : QHeaderView(orientation, parent)
     , mPrivate(new HierarchicalHeaderView_private(this))
     , mModelInstance(modelInstance)
+    , mView(viewId)
     , mFilterMenu(new QMenu(this))
     , mFilterWidget(new LabelFilterWidget(orientation, this))
 {
@@ -596,7 +598,7 @@ void HierarchicalHeaderView::customMenuRequested(const QPoint &position)
 {
     if (mViewType != ViewHelper::ViewDataType::Symbols)
         return;
-    bool ok;
+    bool ok = false;
     int logicalIndex = logicalIndexAt(position);
     int sectionIndex = model()->headerData(logicalIndex, orientation()).toInt(&ok);
     if (!ok)

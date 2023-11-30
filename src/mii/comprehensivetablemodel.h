@@ -41,7 +41,7 @@ public:
                                      const QSharedPointer<AbstractModelInstance> &modelInstance,
                                      QObject *parent = nullptr);
 
-    virtual ~ComprehensiveTableModel();
+    ~ComprehensiveTableModel() override;
 
     void setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance);
 

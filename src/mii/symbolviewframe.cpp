@@ -153,16 +153,16 @@ void SymbolViewFrame::setupView()
 {
     mHorizontalHeader = new HierarchicalHeaderView(Qt::Horizontal,
                                                    mModelInstance,
+                                                   mViewConfig->viewId(),
                                                    ui->tableView);
     mHorizontalHeader->setViewType(type());
-    mHorizontalHeader->setView(mViewConfig->viewId());
     connect(mHorizontalHeader, &HierarchicalHeaderView::filterChanged,
             this, &SymbolViewFrame::setIdentifierLabelFilter);
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
+                                                 mViewConfig->viewId(),
                                                  ui->tableView);
     mVerticalHeader->setViewType(type());
-    mVerticalHeader->setView(mViewConfig->viewId());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &SymbolViewFrame::setIdentifierLabelFilter);
 

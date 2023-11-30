@@ -20,6 +20,7 @@
  */
 #include "modelinstance.h"
 #include "datahandler.h"
+#include "datamatrix.h"
 #include "labeltreeitem.h"
 
 #include <QAbstractItemModel>
@@ -102,7 +103,7 @@ int ModelInstance::equationCount(ValueHelper::EquationType type) const
     }
 }
 
-char ModelInstance::equationType(int row) const
+unsigned char ModelInstance::equationType(int row) const
 {
     char buffer[GMS_SSSIZE];
     gmoGetEquTypeTxt(mGMO, row, buffer);
@@ -241,6 +242,25 @@ void ModelInstance::loadScratchData()
     }
 
     mLogMessages << "Absolute Scratch Path: " + mScratchDir;
+}
+
+void ModelInstance::loadEvaluationPoint(double *evalPoint, int size)
+{
+    int i = 0;
+    double value;
+    for (auto var : variables()) {
+        if (i >= size)
+            continue;
+        if (var->isScalar()) {
+            value = variableAttribute(AttributeHelper::LevelText, var->firstSection(), 0, false).toDouble();
+            evalPoint[i++] = value;
+        } else {
+            for (auto e=var->firstSection(); e<var->entries(); ++e) {
+                value = variableAttribute(AttributeHelper::LevelText, var->firstSection(), e, false).toDouble();
+                evalPoint[i++] = value;
+            }
+        }
+    }
 }
 
 void ModelInstance::loadSymbols()
@@ -478,6 +498,11 @@ QVariant ModelInstance::data(int row, int column, int viewId) const
     return mDataHandler->data(row, column, viewId);
 }
 
+int ModelInstance::nlFlag(int row, int column, int viewId)
+{
+    return mDataHandler->nlFlag(row, column, viewId);
+}
+
 QSharedPointer<PostoptTreeItem> ModelInstance::dataTree(int viewId) const
 {
     return mDataHandler->dataTree(viewId);
@@ -557,7 +582,6 @@ void ModelInstance::initialize()
                                                std::placeholders::_2);
     }
 
-
     dctSetExitIndicator(0); // switch of lib exit() call
     dctSetScreenIndicator(0); // switch off std lib output
     dctSetErrorCallback(ModelInstance::errorCallback);
@@ -572,21 +596,62 @@ void ModelInstance::initialize()
     }
 }
 
-void ModelInstance::jacobianData(DataMatrix& dataMatrix)
+DataMatrix* ModelInstance::jacobianData()
 {
-    int nz, unused1, unused2;
-    int *nlflag = new int[variableRowCount()];
-    for (int row=0; row<equationRowCount(); ++row) {
-        if (gmoGetRowStat(mGMO, row, &nz, &unused1, &unused2))
-            continue;
-        auto* dataRow = dataMatrix.row(row);
-        dataRow->setEntries(nz);
-        dataRow->setColIdx(new int[nz]);
-        dataRow->setData(new double[nz]);
-        if (gmoGetRowSparse(mGMO, row, dataRow->colIdx(), dataRow->data(), nlflag, &unused1, &unused2))
-            continue;
+    int nz = 0, nlnz = 0, unused1 = 0;
+    auto matrix = new DataMatrix(equationRowCount(), variableRowCount(), gmoNLM(mGMO));
+    loadEvaluationPoint(matrix->evalPoint(), matrix->columnCount());
+    if (matrix->isLinear()) {
+        for (int row=0; row<equationRowCount(); ++row) {
+            if (gmoGetRowStat(mGMO, row, &nz, &unused1, &nlnz))
+                continue;
+            auto* dataRow = matrix->row(row);
+            dataRow->setEntries(nz);
+            dataRow->setEntriesNl(nlnz);
+            dataRow->setColIdx(new int[nz]);
+            dataRow->setInputData(new double[nz]);
+            dataRow->setNlFlags(new int[nz]);
+            if (gmoGetRowSparse(mGMO, row, dataRow->colIdx(), dataRow->inputData(),
+                                dataRow->nlFlags(), &unused1, &nlnz)) {
+                continue;
+            }
+        }
+    } else {
+        double* scratch = new double[matrix->columnCount()];
+        for (int row=0; row<equationRowCount(); ++row) {
+            if (gmoGetRowStat(mGMO, row, &nz, &unused1, &nlnz))
+                continue;
+            auto* dataRow = matrix->row(row);
+            dataRow->setEntries(nz);
+            dataRow->setEntriesNl(nlnz);
+            dataRow->setColIdx(new int[nz]);
+            dataRow->setInputData(new double[nz]);
+            dataRow->setOutputData(new double[nz]);
+            dataRow->setNlFlags(new int[nz]);
+            if (gmoGetRowSparse(mGMO, row, dataRow->colIdx(), dataRow->inputData(),
+                                dataRow->nlFlags(), &unused1, &nlnz)) {
+                continue;
+            }
+            std::copy(dataRow->inputData(), dataRow->inputData()+dataRow->entries(), dataRow->outputData());
+            if (!dataRow->entriesNl()) {
+                continue;
+            }
+            int numerr = 0;
+            double fnl = 0, gxnl = 0; // not needed
+            if (gmoEvalGradNL(mGMO, row, matrix->evalPoint(), &fnl, scratch, &gxnl, &numerr)) {
+                mLogMessages << QString("Gradient evaluation in Line %1 failed. Please check your model").arg(row);
+                mState = Error;
+                continue;
+            }
+            for (int c=0; c<dataRow->entries(); ++c) {
+                if (dataRow->nlFlags()[c]) {
+                    dataRow->outputData()[c] = scratch[dataRow->colIdx()[c]];
+                }
+            }
+        }
+        delete[] scratch;
     }
-    delete [] nlflag;
+    return matrix;
 }
 
 QVariant ModelInstance::equationAttribute(const QString &header, int index, int entry, bool abs) const

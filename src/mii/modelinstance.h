@@ -36,7 +36,7 @@ namespace mii {
 class DataHandler;
 class DataMatrix;
 
-class ModelInstance : public AbstractModelInstance
+class ModelInstance final : public AbstractModelInstance
 {
 public:
     ModelInstance(bool useOutput = false,
@@ -44,7 +44,7 @@ public:
                   const QString &systemDir = QString(),
                   const QString &scratchDir = QString());
 
-    ~ModelInstance();
+    ~ModelInstance() override;
 
     QString modelName() const override;
 
@@ -52,7 +52,7 @@ public:
 
     int equationCount(ValueHelper::EquationType type) const override;
 
-    char equationType(int row) const override;
+    unsigned char equationType(int row) const override;
 
     int equationRowCount() const override;
 
@@ -112,6 +112,8 @@ public:
 
     QVariant data(int row, int column, int viewId) const override;
 
+    int nlFlag(int row, int column, int viewId) override;
+
     QSharedPointer<PostoptTreeItem> dataTree(int viewId) const override;
 
     QVariant headerData(int logicalIndex,
@@ -124,7 +126,7 @@ public:
                              int logicalIndex,
                              int dimension) const override;
     
-    void jacobianData(DataMatrix& dataMatrix) override;
+    DataMatrix* jacobianData() override;
 
     QVariant equationAttribute(const QString &header,
                                int index, int entry, bool abs) const override;
@@ -142,6 +144,8 @@ private:
     int symbolCount() const;
 
     void loadScratchData();
+
+    void loadEvaluationPoint(double *evalPoint, int size);
 
     void loadSymbols();
     Symbol* loadSymbol(int index);

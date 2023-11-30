@@ -97,10 +97,21 @@ bool ModelInspector::showOutput() const
 void ModelInspector::setShowOutput(bool showOutput)
 {
     mModelInstance->setUseOutput(showOutput);
+    // TODO activate when preopt issue is tackled
+    //auto item = mSectionModel->predefinedItems()->childs().last();
+    //item->setText(showOutput ? ViewHelper::Postopt : ViewHelper::Preopt);
+    //ui->sectionView->dataChanged(QModelIndex(), QModelIndex());
 }
 
+///
+/// \brief Set show absolute values globaly.
+/// \remark The global config has higher priority then
+///         the local configuration (filter dialog).
+///
 void ModelInspector::setShowAbsoluteValuesGlobal(bool absoluteValues)
 {
+    if (mModelInstance->globalAbsolute() == absoluteValues)
+        return;
     mModelInstance->setGlobalAbsolute(absoluteValues);
     for (auto widget : mSectionModel->data()->widgets()) {
         widget->viewConfig()->currentAggregation().setUseAbsoluteValues(absoluteValues);
@@ -130,6 +141,7 @@ ViewActionStates ModelInspector::viewActionStates() const
 void ModelInspector::loadModelInstance(bool loadModel)
 {
     clearCustomViews();
+    clearDefaultViewData();
     mSectionModel->clearModelData();
     mSectionModel->loadModelData(ui->stackedWidget);
     setupModelInstanceView(loadModel);
@@ -138,8 +150,22 @@ void ModelInspector::loadModelInstance(bool loadModel)
 
 void ModelInspector::reloadModelInstance()
 {
-    setupModelInstanceView(true);
-    emit newLogMessage(mModelInstance->logMessages());
+    ui->bpOverviewFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    ui->bpCountFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    ui->bpAverageFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    auto loadData = [this]{
+        mModelInstance->loadViewData(ui->bpScalingFrame->viewConfig());
+        for (auto view : mSectionModel->customItems()->widgets()) {
+            if (view->type() == ViewHelper::ViewDataType::Postopt)
+                continue;
+            mModelInstance->loadViewData(view->viewConfig());
+        }
+        if (mModelInstance->state() == AbstractModelInstance::Error)
+            emit newLogMessage(mModelInstance->logMessages());
+        emit dataLoaded();
+        emit filtersChanged();
+    };
+    mFutureData = QtConcurrent::run(loadData);
 }
 
 QSharedPointer<AbstractViewConfiguration> ModelInspector::viewConfig()
@@ -357,10 +383,6 @@ void ModelInspector::setupConnections()
 
 void ModelInspector::setupModelInstanceView(bool loadModel)
 {
-    ui->bpOverviewFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
-    ui->bpCountFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
-    ui->bpAverageFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
-    ui->postoptFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
     auto loadData = [this, loadModel]{
         bool useOutput = mModelInstance->useOutput();
         bool globalAbs = mModelInstance->globalAbsolute();
@@ -370,8 +392,6 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
                                                                                      mSystemDir,
                                                                                      mScratchDir));
             mModelInstance->setGlobalAbsolute(globalAbs);
-            if (mModelInstance->state() == AbstractModelInstance::Error)
-                emit newLogMessage(mModelInstance->logMessages());
         }
         if (mModelInstance->state() == AbstractModelInstance::Error) {
             mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
@@ -379,18 +399,19 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
         }
 
         mModelInstance->loadBaseData();
+        if (mModelInstance->state() == AbstractModelInstance::Error)
+            emit newLogMessage(mModelInstance->logMessages());
         emit dataLoaded();
     };
     mFutureData = QtConcurrent::run(loadData);
 }
 
-void ModelInspector::selectScalingView()
+void ModelInspector::clearDefaultViewData()
 {
-    ui->bpScalingFrame->setupView(mModelInstance);
-    auto root = ui->sectionView->model()->index((int)ViewHelper::ViewType::Predefined, 0);
-    auto group = ui->sectionView->model()->index(0, 0, root);
-    auto index = ui->sectionView->model()->index((int)ViewHelper::ViewDataType::BP_Scaling, 0, group);
-    ui->sectionView->setCurrentIndex(index);
+    ui->bpOverviewFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    ui->bpCountFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    ui->bpAverageFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
+    ui->postoptFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
 }
 
 void ModelInspector::clearCustomViews()
@@ -404,6 +425,15 @@ void ModelInspector::clearCustomViews()
         mModelInstance->remove(widget->viewConfig()->viewId());
         delete widget;
     }
+}
+
+void ModelInspector::selectScalingView()
+{
+    ui->bpScalingFrame->setupView(mModelInstance);
+    auto root = ui->sectionView->model()->index((int)ViewHelper::ViewType::Predefined, 0);
+    auto group = ui->sectionView->model()->index(0, 0, root);
+    auto index = ui->sectionView->model()->index((int)ViewHelper::ViewDataType::BP_Scaling, 0, group);
+    ui->sectionView->setCurrentIndex(index);
 }
 
 AbstractViewFrame* ModelInspector::currentView() const

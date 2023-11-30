@@ -291,6 +291,7 @@ public:
     static const QString BPCount;
     static const QString BPAverage;
     static const QString Postopt;
+    static const QString Preopt;
     static const QStringList PredefinedViewTexts;
 };
 

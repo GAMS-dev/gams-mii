@@ -80,6 +80,75 @@ void AbstractViewFrame::updateValueFilter()
 
 }
 
+EmtpyViewFrame::EmtpyViewFrame(QWidget *parent, Qt::WindowFlags f)
+    : AbstractViewFrame(parent, f)
+{
+
+}
+
+EmtpyViewFrame::~EmtpyViewFrame()
+{
+
+}
+
+AbstractViewFrame *EmtpyViewFrame::clone(int viewId)
+{
+    Q_UNUSED(viewId);
+    return nullptr;
+}
+
+void EmtpyViewFrame::setShowAbsoluteValues(bool absoluteValues)
+{
+    Q_UNUSED(absoluteValues);
+}
+
+ViewHelper::ViewDataType EmtpyViewFrame::type() const
+{
+    return ViewHelper::ViewDataType::Unknown;
+}
+
+void EmtpyViewFrame::updateView()
+{
+
+}
+
+void EmtpyViewFrame::zoomIn()
+{
+
+}
+
+void EmtpyViewFrame::zoomOut()
+{
+
+}
+
+void EmtpyViewFrame::resetZoom()
+{
+
+}
+
+SearchResult &EmtpyViewFrame::search(const QString &term, bool isRegEx)
+{
+    Q_UNUSED(term);
+    Q_UNUSED(isRegEx);
+    return mSearchResult;
+}
+
+void EmtpyViewFrame::setSearchSelection(const SearchResult::SearchEntry &result)
+{
+    Q_UNUSED(result);
+}
+
+void EmtpyViewFrame::setupView(const QSharedPointer<AbstractModelInstance>& modelInstance)
+{
+    Q_UNUSED(modelInstance);
+}
+
+bool EmtpyViewFrame::hasData() const
+{
+    return false;
+}
+
 }
 }
 }

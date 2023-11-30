@@ -21,15 +21,18 @@
 #include "exception.h"
 
 Exception::Exception()
+    : mStream(new QTextStream(&mBuffer))
 {
-    mStream = new QTextStream(&mBuffer);
+
 }
 
 Exception::Exception(const Exception &other)
-    : mBuffer(other.mBuffer),
-      mStream(new QTextStream(&mBuffer)),
-      mInfoStart(other.mInfoStart)
-{}
+    : mBuffer(other.mBuffer)
+    , mStream(new QTextStream(&mBuffer))
+    , mInfoStart(other.mInfoStart)
+{
+
+}
 
 Exception::~Exception()
 {

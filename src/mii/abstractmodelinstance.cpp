@@ -19,6 +19,7 @@
  *
  */
 #include "abstractmodelinstance.h"
+#include "datamatrix.h"
 #include "postopttreeitem.h"
 
 #include <QDir>
@@ -152,6 +153,14 @@ const QStringList &AbstractModelInstance::labels() const
     return mLabels;
 }
 
+int AbstractModelInstance::nlFlag(int row, int column, int viewId)
+{
+    Q_UNUSED(row);
+    Q_UNUSED(column);
+    Q_UNUSED(viewId);
+    return 0;
+}
+
 QVariant AbstractModelInstance::equationAttribute(const QString &header,
                                                   int index,
                                                   int entry,
@@ -262,7 +271,7 @@ void EmptyModelInstance::loadBaseData()
 
 }
 
-char EmptyModelInstance::equationType(int row) const
+unsigned char EmptyModelInstance::equationType(int row) const
 {
     Q_UNUSED(row);
     return 0;
@@ -361,9 +370,9 @@ QVariant EmptyModelInstance::plainHeaderData(Qt::Orientation orientation,
     return QVariant();
 }
 
-void EmptyModelInstance::jacobianData(DataMatrix &dataMatrix)
+DataMatrix* EmptyModelInstance::jacobianData()
 {
-    Q_UNUSED(dataMatrix);
+    return new DataMatrix;
 }
 
 int EmptyModelInstance::maxSymbolDimension(int viewId, Qt::Orientation orientation) const

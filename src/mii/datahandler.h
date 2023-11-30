@@ -31,245 +31,78 @@ namespace mii {
 class Aggregation;
 class AbstractModelInstance;
 class AbstractViewConfiguration;
+class DataMatrix;
 class PostoptTreeItem;
 
 typedef QMap<Qt::Orientation, QList<int>> SectionMapping;
-
-class DataRow
-{
-public:
-    DataRow()
-        : mEntries(0)
-        , mColIdx(nullptr)
-        , mData(nullptr)
-    {
-
-    }
-
-    DataRow(int entries)
-        : mEntries(entries)
-    {
-        mColIdx = new int[mEntries];
-        mData = new double[mEntries];
-    }
-
-    DataRow(const DataRow& other)
-        : DataRow(other.entries())
-    {
-        std::copy(other.mColIdx, other.mColIdx+other.mEntries, mColIdx);
-        std::copy(other.mData, other.mData+other.mEntries, mData);
-    }
-
-    DataRow(DataRow&& other) noexcept
-        : mEntries(other.mEntries)
-        , mColIdx(other.mColIdx)
-        , mData(other.mData)
-    {
-        other.mEntries = 0;
-        other.mColIdx = nullptr;
-        other.mData = nullptr;
-    }
-
-    ~DataRow()
-    {
-        if (mColIdx) delete[] mData;
-        if (mData) delete[] mColIdx;
-    }
-
-    int entries() const
-    {
-        return mEntries;
-    }
-
-    void setEntries(int entries)
-    {
-        mEntries = entries;
-    }
-
-    int* colIdx() const
-    {
-        return mColIdx;
-    }
-
-    void setColIdx(int* colIdx)
-    {
-        mColIdx = colIdx;
-    }
-
-    double* data() const
-    {
-        return mData;
-    }
-
-    void setData(double* data)
-    {
-        mData = data;
-    }
-
-    QVariant value(int index, int lastSymIndex)
-    {
-        int entries = lastSymIndex < mEntries ? lastSymIndex+1 : mEntries;
-        for (int i=0; i<entries; ++i) {
-            if (mColIdx[i] == index) {
-                return mData[i];
-            }
-        }
-        return QVariant();
-    }
-
-    auto& operator=(const DataRow& other)
-    {
-        delete [] mColIdx;
-        delete [] mData;
-        mEntries = other.mEntries;
-        mColIdx = new int[mEntries];
-        mData = new double[mEntries];
-        std::copy(other.mColIdx, other.mColIdx+other.mEntries, mColIdx);
-        std::copy(other.mData, other.mData+other.mEntries, mData);
-        return *this;
-    }
-
-    auto& operator=(DataRow&& other) noexcept
-    {
-        mEntries = other.mEntries;
-        mColIdx = other.mColIdx;
-        mData = other.mData;
-        other.mEntries = 0;
-        other.mColIdx = nullptr;
-        other.mData = nullptr;
-        return *this;
-    }
-
-private:
-    int mEntries;
-    int* mColIdx;
-    double *mData;
-};
-
-class DataMatrix
-{
-public:
-    DataMatrix()
-        : mRowCount(0)
-        , mRows(nullptr)
-    {
-
-    }
-
-    DataMatrix(int rows)
-        : mRowCount(rows)
-    {
-        mRows = new DataRow[mRowCount];
-    }
-
-    DataMatrix(const DataMatrix& other)
-        : mRowCount(other.mRowCount)
-    {
-        mRows = new DataRow[mRowCount];
-        std::copy(other.mRows, other.mRows+other.mRowCount, mRows);
-    }
-
-    DataMatrix(DataMatrix&& other) noexcept
-        : mRowCount(other.mRowCount)
-        , mRows(other.mRows)
-    {
-        other.mRowCount = 0;
-        other.mRows = nullptr;
-    }
-
-    ~DataMatrix()
-    {
-        if (mRows) delete[] mRows;
-    }
-
-    inline int rowCount() const
-    {
-        return mRowCount;
-    }
-
-    inline DataRow* row(int row)
-    {
-        return (row < 0 || row > mRowCount) ? nullptr : mRows+row;
-    }
-
-    auto& operator=(const DataMatrix& other)
-    {
-        delete [] mRows;
-        mRowCount = other.mRowCount;
-        mRows = new DataRow[mRowCount];
-        std::copy(other.mRows, other.mRows+other.mRowCount, mRows);
-        return *this;
-    }
-
-    auto& operator=(DataMatrix&& other) noexcept
-    {
-        mRowCount = other.mRowCount;
-        mRows = other.mRows;
-        other.mRowCount = 0;
-        other.mRows = nullptr;
-        return *this;
-    }
-
-private:
-    int mRowCount;
-    DataRow *mRows;
-};
 
 class DataHandler
 {
 public:
     class AbstractDataProvider;
 
-    struct CoefficientCount
+    struct CoefficientInfo
     {
-        CoefficientCount()
+        CoefficientInfo(const CoefficientInfo& other)
+            : mRowCount(other.mRowCount)
+            , mColumnCount(other.mColumnCount)
+            , mCount(new int*[mRowCount])
+            , mNlFlags(new int*[mRowCount])
         {
-
-        }
-
-        CoefficientCount(const CoefficientCount& other)
-            : mColumnCount(other.mColumnCount)
-            , mRowCount(other.mRowCount)
-        {
-            mCount = new int*[mRowCount];
             for (int r=0; r<mRowCount; ++r) {
                 mCount[r] = new int[mColumnCount];
+                mNlFlags[r] = new int[mColumnCount];
                 std::copy(other.mCount[r], other.mCount[r]+other.mColumnCount, mCount[r]);
+                std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
             }
         }
 
-        CoefficientCount(CoefficientCount&& other) noexcept
-            : mCount(other.mCount)
+        CoefficientInfo(CoefficientInfo&& other) noexcept
+            : mRowCount(other.mRowCount)
             , mColumnCount(other.mColumnCount)
-            , mRowCount(other.mRowCount)
+            , mCount(other.mCount)
+            , mNlFlags(other.mNlFlags)
         {
             other.mCount = nullptr;
+            other.mNlFlags = nullptr;
             other.mColumnCount = 0;
             other.mRowCount = 0;
         }
 
-        CoefficientCount(int columnCount, int rowCount)
-            : mColumnCount(columnCount)
-            , mRowCount(rowCount)
+        CoefficientInfo(int columnCount, int rowCount)
+            : mRowCount(rowCount)
+            , mColumnCount(columnCount)
+            , mCount(new int*[mRowCount])
+            , mNlFlags(new int*[mRowCount])
         {
-            mCount = new int*[mRowCount];
             for (int r=0; r<mRowCount; ++r) {
                 mCount[r] = new int[mColumnCount];
+                mNlFlags[r] = new int[mColumnCount];
                 std::fill(mCount[r], mCount[r]+mColumnCount, 0);
+                std::fill(mNlFlags[r], mNlFlags[r]+mColumnCount, 0);
             }
         }
 
-        ~CoefficientCount()
+        ~CoefficientInfo()
         {
             for (int r=0; r<mRowCount; ++r) {
                 delete [] mCount[r];
             }
             if (mCount) delete [] mCount;
+            for (int r=0; r<mRowCount; ++r) {
+                delete [] mNlFlags[r];
+            }
+            if (mNlFlags) delete [] mNlFlags;
         }
 
         int** count()
         {
             return mCount;
+        }
+
+        int** nlFlags()
+        {
+            return mNlFlags;
         }
 
         int columnCount() const
@@ -282,26 +115,37 @@ public:
             return mRowCount;
         }
 
-        auto& operator=(const CoefficientCount& other)
+        auto& operator=(const CoefficientInfo& other)
         {
             mRowCount = other.mColumnCount;
             mColumnCount = other.mColumnCount;
             for (int r=0; r<mRowCount; ++r) {
                 delete [] mCount[r];
             }
-            delete [] mCount;
+            if (mCount) delete [] mCount;
             mCount = new int*[mRowCount];
             for (int r=0; r<mRowCount; ++r) {
                 mCount[r] = new int[mColumnCount];
                 std::copy(other.mCount[r], other.mCount[r]+other.mColumnCount, mCount[r]);
             }
+            for (int r=0; r<mRowCount; ++r) {
+                delete [] mNlFlags[r];
+            }
+            if (mNlFlags) delete [] mNlFlags;
+            mNlFlags = new int*[mRowCount];
+            for (int r=0; r<mRowCount; ++r) {
+                mNlFlags[r] = new int[mColumnCount];
+                std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
+            }
             return *this;
         }
 
-        auto& operator=(CoefficientCount&& other) noexcept
+        auto& operator=(CoefficientInfo&& other) noexcept
         {
             mCount = other.mCount;
             other.mCount = nullptr;
+            mNlFlags = other.mNlFlags;
+            other.mNlFlags = nullptr;
             mColumnCount = other.mColumnCount;
             other.mColumnCount = 0;
             mRowCount = other.mRowCount;
@@ -310,9 +154,10 @@ public:
         }
 
     private:
-        int** mCount = nullptr;
-        int mColumnCount = 0;
         int mRowCount = 0;
+        int mColumnCount = 0;
+        int** mCount = nullptr;
+        int** mNlFlags = nullptr;
     };
 
     DataHandler(AbstractModelInstance& modelInstance);
@@ -324,6 +169,8 @@ public:
     void loadData(const QSharedPointer<AbstractViewConfiguration> &viewConfig);
 
     QVariant data(int row, int column, int viewId) const;
+
+    int nlFlag(int row, int column, int viewId);
 
     QSharedPointer<PostoptTreeItem> dataTree(int viewId) const;
 
@@ -371,8 +218,8 @@ private:
     double mModelMinimum = std::numeric_limits<double>::max();
     double mModelMaximum = std::numeric_limits<double>::lowest();
 
-    DataMatrix mDataMatrix;
-    CoefficientCount *mCoeffCount = nullptr;
+    QScopedPointer<DataMatrix> mDataMatrix;
+    QSharedPointer<CoefficientInfo> mCoeffCount;
 
     ///
     /// \brief Abstract data provider cache, where key is the view ID.

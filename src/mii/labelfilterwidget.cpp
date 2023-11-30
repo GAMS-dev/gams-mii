@@ -34,6 +34,7 @@ LabelFilterWidget::LabelFilterWidget(Qt::Orientation orientation, QWidget *paren
     : QWidget(parent)
     , ui(new Ui::LabelFilterWidget)
     , mOrientation(orientation)
+    , mFilterModel(nullptr)
 {
     ui->setupUi(this);
 }
@@ -61,6 +62,8 @@ void LabelFilterWidget::setData(FilterTreeItem *rootItem)
 
 void LabelFilterWidget::showEvent(QShowEvent *event)
 {
+    if (!mFilterModel)
+        return;
     applyFilter(ui->labelEdit->text());
     QWidget::showEvent(event);
 }
@@ -68,7 +71,9 @@ void LabelFilterWidget::showEvent(QShowEvent *event)
 void LabelFilterWidget::on_applyButton_clicked()
 {
     emit filterChanged(identifierState(), mOrientation);
-    static_cast<QMenu*>(this->parent())->close();
+    auto menu = dynamic_cast<QMenu*>(this->parent());
+    if (menu)
+        menu->close();
     ui->labelEdit->clear();
 }
 
@@ -84,12 +89,16 @@ void LabelFilterWidget::on_deselectButton_clicked()
 
 void LabelFilterWidget::applyFilter(const QString &text)
 {
+    if (!mFilterModel)
+        return;
     mFilterModel->setFilterWildcard(text);
     ui->labelView->expandAll();
 }
 
 void LabelFilterWidget::applyCheckState(bool state)
 {
+    if (!mFilterModel)
+        return;
     QModelIndexList indexes;
     for(int row=0; row<mFilterModel->rowCount(); ++row) {
         indexes.append(mFilterModel->index(row, 0));
@@ -109,6 +118,8 @@ void LabelFilterWidget::applyCheckState(bool state)
 
 IdentifierState LabelFilterWidget::identifierState()
 {
+    if (!mFilterModel)
+        return IdentifierState();
     QList<FilterTreeItem*> items {
         static_cast<FilterTreeModel*>(mFilterModel->sourceModel())->filterItem()
     };

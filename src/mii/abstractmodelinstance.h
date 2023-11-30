@@ -91,7 +91,7 @@ public:
      */
     virtual int equationCount(ValueHelper::EquationType type) const;
 
-    virtual char equationType(int row) const = 0;
+    virtual unsigned char equationType(int row) const = 0;
 
     /**
      * @brief Total number of equation rows.
@@ -182,6 +182,8 @@ public:
 
     virtual QVariant data(int row, int column, int view) const = 0;
 
+    virtual int nlFlag(int row, int column, int viewId);
+
     virtual QSharedPointer<PostoptTreeItem> dataTree(int view) const = 0;
 
     virtual QVariant plainHeaderData(Qt::Orientation orientation,
@@ -192,7 +194,7 @@ public:
                                 Qt::Orientation orientation,
                                 int view, int role) const = 0;
 
-    virtual void jacobianData(DataMatrix& dataMatrix) = 0;
+    virtual DataMatrix* jacobianData() = 0;
 
     virtual QVariant equationAttribute(const QString &header, int index, int entry, bool abs) const;
 
@@ -227,7 +229,7 @@ public:
                        const QString &systemDir = QString(),
                        const QString &scratchDir = QString());
 
-    ~EmptyModelInstance();
+    ~EmptyModelInstance() override;
 
     const QVector<Symbol*>& equations() const override;
 
@@ -255,7 +257,7 @@ public:
 
     void loadBaseData() override;
 
-    char equationType(int row) const override;
+    unsigned char equationType(int row) const override;
 
     char variableType(int column) const override;
 
@@ -287,7 +289,7 @@ public:
                              int view, int logicalIndex,
                              int dimension) const override;
 
-    void jacobianData(DataMatrix& dataMatrix) override;
+    DataMatrix* jacobianData() override;
 
     int maxSymbolDimension(int viewId, Qt::Orientation orientation) const override;
 

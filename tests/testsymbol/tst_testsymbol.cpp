@@ -32,26 +32,12 @@ class TestSymbol : public QObject
 {
     Q_OBJECT
 
-public:
-    TestSymbol();
-    ~TestSymbol();
-
 private slots:
     void test_default();
     void test_getSet();
     void test_comparison();
     void test_appendDomainLabels();
 };
-
-TestSymbol::TestSymbol()
-{
-
-}
-
-TestSymbol::~TestSymbol()
-{
-
-}
 
 void TestSymbol::test_default()
 {

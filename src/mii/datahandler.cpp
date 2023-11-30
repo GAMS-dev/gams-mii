@@ -21,8 +21,9 @@
 #include "datahandler.h"
 #include "abstractmodelinstance.h"
 #include "aggregation.h"
-#include "viewconfigurationprovider.h"
+#include "datamatrix.h"
 #include "postopttreeitem.h"
+#include "viewconfigurationprovider.h"
 
 #include <algorithm>
 #include <functional>
@@ -73,7 +74,6 @@ protected:
         , mLogicalSectionMapping(std::move(other.mLogicalSectionMapping))
         , mViewConfig(std::move(other.mViewConfig))
     {
-        mLogicalSectionMapping.clear();
         other.mViewConfig = nullptr;
         other.mRowCount = 0;
         other.mColumnCount = 0;
@@ -88,12 +88,19 @@ public:
 
     DataRow* dataRow(int row)
     {
-        return mDataHandler->mDataMatrix.row(row);
+        return mDataHandler->mDataMatrix->row(row);
     }
 
     virtual void loadData() = 0;
 
     virtual double data(int row, int column) const = 0;
+
+    virtual int nlFlag(int row, int column) const
+    {
+        Q_UNUSED(row);
+        Q_UNUSED(column);
+        return 0;
+    }
 
     virtual QVariant plainHeaderData(Qt::Orientation orientation,
                                      int logicalIndex,
@@ -191,10 +198,8 @@ public:
         other.mSymbolColumnCount = 0;
         mDataHandler = other.mDataHandler;
         mModelInstance = other.mModelInstance;
-        mLogicalSectionMapping = other.mLogicalSectionMapping;
-        mLogicalSectionMapping.clear();
-        mViewConfig = other.mViewConfig;
-        other.mViewConfig = nullptr;
+        mLogicalSectionMapping = std::move(other.mLogicalSectionMapping);
+        mViewConfig = std::move(other.mViewConfig);
         return *this;
     }
 
@@ -225,7 +230,7 @@ public:
         mSymbolColumnCount = mColumnCount;
     }
 
-    virtual void loadData() override
+    void loadData() override
     {
 
     }
@@ -244,17 +249,20 @@ public:
     BPScalingProvider(DataHandler *dataHandler,
                       AbstractModelInstance& modelInstance,
                       const QSharedPointer<AbstractViewConfiguration> &viewConfig,
-                      DataHandler::CoefficientCount& negPosCount)
+                      const QSharedPointer<DataHandler::CoefficientInfo> &coeffInfo)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
-        , mCoeffCount(negPosCount)
+        , mCoeffInfo(coeffInfo)
     {
         mSymbolRowCount = mModelInstance.equationCount() * 2;
         mRowCount = mSymbolRowCount + 2; // one row for max and min
         mSymbolColumnCount = mModelInstance.variableCount();
         mColumnCount = mSymbolColumnCount + 2;
         mDataMatrix = new double*[mRowCount];
+        mNlFlags = new int*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new double[mColumnCount];
+            mNlFlags[r] = new int[mColumnCount];
+            std::fill(mNlFlags[r], mNlFlags[r]+mColumnCount, 0);
             if (r % 2) {
                 std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount,
                           std::numeric_limits<double>::max());
@@ -269,33 +277,40 @@ public:
 
     BPScalingProvider(const BPScalingProvider& other)
         : DataHandler::AbstractDataProvider(other)
-        , mCoeffCount(other.mCoeffCount)
+        , mDataMatrix(new double*[mRowCount])
+        , mCoeffInfo(other.mCoeffInfo)
+        , mNlFlags(new int*[mRowCount])
     {
-        mDataMatrix = new double*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new double[mColumnCount];
+            mNlFlags[r] = new int[mColumnCount];
             std::copy(other.mDataMatrix[r],
                       other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
+            std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
         }
     }
 
     BPScalingProvider(BPScalingProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(std::move(other))
-        , mCoeffCount(other.mCoeffCount)
+        , mDataMatrix(other.mDataMatrix)
+        , mCoeffInfo(std::move(other.mCoeffInfo))
+        , mNlFlags(other.mNlFlags)
     {
-        mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
+        other.mNlFlags = nullptr;
     }
 
-    ~BPScalingProvider()
+    ~BPScalingProvider() override
     {
         for (int r=0; r<mRowCount; ++r) {
             delete [] mDataMatrix[r];
+            delete [] mNlFlags[r];
         }
         delete [] mDataMatrix;
+        delete [] mNlFlags;
     }
 
-    virtual void loadData() override
+    void loadData() override
     {
         for (const auto& equation : mModelInstance.equations()) {
             mLogicalSectionMapping[Qt::Vertical].append(equation->firstSection());
@@ -312,18 +327,28 @@ public:
         return mDataMatrix[row][column];
     }
 
+    int nlFlag(int row, int column) const override
+    {
+        return mNlFlags[row][column];
+    }
+
     auto& operator=(const BPScalingProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
             delete [] mDataMatrix[r];
+            delete [] mNlFlags[r];
         }
-        delete [] mDataMatrix;
+        if (mDataMatrix) delete [] mDataMatrix;
+        if (mNlFlags) delete [] mNlFlags;
         mDataMatrix = new double*[mRowCount];
+        mNlFlags = new int*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new double[mColumnCount];
+            mNlFlags[r] = new int[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
+            std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
         }
-        mCoeffCount = other.mCoeffCount;
+        mCoeffInfo = other.mCoeffInfo;
         return *this;
     }
 
@@ -331,7 +356,9 @@ public:
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        mCoeffCount = other.mCoeffCount;
+        mCoeffInfo = std::move(other.mCoeffInfo);
+        mNlFlags = other.mNlFlags;
+        other.mNlFlags = nullptr;
         return *this;
     }
 
@@ -344,25 +371,32 @@ private:
             double rhsMax = std::numeric_limits<double>::lowest();
             double eqnMin = std::numeric_limits<double>::max();
             double eqnMax = std::numeric_limits<double>::lowest();
-            mCoeffCount.count()[maxRow][mColumnCount-2] = mModelInstance.equationType(equation->firstSection());
+            mCoeffInfo->count()[maxRow][mColumnCount-2] = mModelInstance.equationType(equation->firstSection());
             for (int r=equation->firstSection(); r<=equation->lastSection(); ++r) {
                 auto sparseRow = dataRow(r);
+                auto data = mModelInstance.useOutput() ? sparseRow->outputData() : sparseRow->inputData();
                 auto rhs = mModelInstance.rhs(r);
-                if (rhs) {
+                if (rhs != 0.0) {
                     rhsMin = std::min(rhsMin, rhs);
                     rhsMax = std::max(rhsMax, rhs);
-                    if (rhs < 0) --mCoeffCount.count()[minRow][mColumnCount-1];
-                    else if (rhs > 0) ++mCoeffCount.count()[maxRow][mColumnCount-1];
+                    if (rhs < 0) --mCoeffInfo->count()[minRow][mColumnCount-1];
+                    else if (rhs > 0) ++mCoeffInfo->count()[maxRow][mColumnCount-1];
                 }
                 for (int i=0; i<sparseRow->entries(); ++i) {
-                    auto value = sparseRow->data()[i];
+                    auto value = data[i];
                     auto column = mModelInstance.variable(sparseRow->colIdx()[i])->logicalIndex();
+                    if (sparseRow->nlFlags()[i]) {
+                        ++mCoeffInfo->nlFlags()[minRow][column];
+                        ++mCoeffInfo->nlFlags()[maxRow][column];
+                        ++mNlFlags[minRow][column];
+                        ++mNlFlags[maxRow][column];
+                    }
                     mDataMatrix[minRow][column] = std::min(value, mDataMatrix[minRow][column]);
                     mDataMatrix[maxRow][column] = std::max(value, mDataMatrix[maxRow][column]);
                     if (value < 0) {
-                        --mCoeffCount.count()[minRow][column];
+                        --mCoeffInfo->count()[minRow][column];
                     } else if (value > 0) {
-                        ++mCoeffCount.count()[maxRow][column];
+                        ++mCoeffInfo->count()[maxRow][column];
                     }
                 }
             }
@@ -375,8 +409,12 @@ private:
                 mDataMaximum = std::max(mDataMaximum, mDataMatrix[maxRow][c]);
                 mDataMatrix[mRowCount-1][c] = std::min(mDataMatrix[mRowCount-1][c], mDataMatrix[minRow][c]);
                 mDataMatrix[mRowCount-2][c] = std::max(mDataMatrix[mRowCount-2][c], mDataMatrix[maxRow][c]);
+                mNlFlags[mRowCount-1][c] += mNlFlags[minRow][c];
+                mNlFlags[mRowCount-2][c] += mNlFlags[maxRow][c];
                 eqnMin = std::min(eqnMin, mDataMatrix[minRow][c]);
                 eqnMax = std::max(eqnMax, mDataMatrix[maxRow][c]);
+                mNlFlags[minRow][mColumnCount-1] += mNlFlags[minRow][c];
+                mNlFlags[maxRow][mColumnCount-1] += mNlFlags[maxRow][c];
                 setEmtpyCell(minRow, c);
                 setEmtpyCell(maxRow, c);
             }
@@ -411,25 +449,32 @@ private:
             double rhsMax = std::numeric_limits<double>::lowest();
             double eqnMin = std::numeric_limits<double>::max();
             double eqnMax = std::numeric_limits<double>::lowest();
-            mCoeffCount.count()[maxRow][mColumnCount-2] = mModelInstance.equationType(equation->firstSection());
+            mCoeffInfo->count()[maxRow][mColumnCount-2] = mModelInstance.equationType(equation->firstSection());
             for (int r=equation->firstSection(); r<=equation->lastSection(); ++r) {
                 auto sparseRow = dataRow(r);
+                auto data = mModelInstance.useOutput() ? sparseRow->outputData() : sparseRow->inputData();
                 auto rhs = mModelInstance.rhs(r);
-                if (rhs) {
+                if (rhs != 0.0) {
                     rhsMin = std::min(rhsMin, std::abs(rhs));
                     rhsMax = std::max(rhsMax, std::abs(rhs));
-                    if (rhs < 0) ++mCoeffCount.count()[minRow][mColumnCount-1];
-                    else if (rhs > 0) ++mCoeffCount.count()[maxRow][mColumnCount-1];
+                    if (rhs < 0) ++mCoeffInfo->count()[minRow][mColumnCount-1];
+                    else if (rhs > 0) ++mCoeffInfo->count()[maxRow][mColumnCount-1];
                 }
                 for (int i=0; i<sparseRow->entries(); ++i) {
-                    auto value = sparseRow->data()[i];
+                    auto value = data[i];
                     auto column = mModelInstance.variable(sparseRow->colIdx()[i])->logicalIndex();
-                    mDataMatrix[minRow][column] = std::min(std::abs(sparseRow->data()[i]), mDataMatrix[minRow][column]);
-                    mDataMatrix[maxRow][column] = std::max(std::abs(sparseRow->data()[i]), mDataMatrix[maxRow][column]);
+                    if (sparseRow->nlFlags()[i]) {
+                        ++mCoeffInfo->nlFlags()[minRow][column];
+                        ++mCoeffInfo->nlFlags()[maxRow][column];
+                        ++mNlFlags[minRow][column];
+                        ++mNlFlags[maxRow][column];
+                    }
+                    mDataMatrix[minRow][column] = std::min(std::abs(data[i]), mDataMatrix[minRow][column]);
+                    mDataMatrix[maxRow][column] = std::max(std::abs(data[i]), mDataMatrix[maxRow][column]);
                     if (value < 0) {
-                        ++mCoeffCount.count()[minRow][column];
+                        ++mCoeffInfo->count()[minRow][column];
                     } else if (value > 0) {
-                        ++mCoeffCount.count()[maxRow][column];
+                        ++mCoeffInfo->count()[maxRow][column];
                     }
                 }
             }
@@ -442,8 +487,12 @@ private:
                 mDataMaximum = std::max(mDataMaximum, mDataMatrix[maxRow][c]);
                 mDataMatrix[mRowCount-1][c] = std::min(mDataMatrix[mRowCount-1][c], mDataMatrix[minRow][c]);
                 mDataMatrix[mRowCount-2][c] = std::max(mDataMatrix[mRowCount-2][c], mDataMatrix[maxRow][c]);
+                mNlFlags[mRowCount-1][c] += mNlFlags[minRow][c];
+                mNlFlags[mRowCount-2][c] += mNlFlags[maxRow][c];
                 eqnMin = std::min(eqnMin, mDataMatrix[minRow][c]);
                 eqnMax = std::max(eqnMax, mDataMatrix[maxRow][c]);
+                mNlFlags[minRow][mColumnCount-1] += mNlFlags[minRow][c];
+                mNlFlags[maxRow][mColumnCount-1] += mNlFlags[maxRow][c];
                 setEmtpyCell(minRow, c);
                 setEmtpyCell(maxRow, c);
             }
@@ -480,7 +529,8 @@ private:
 
 private:
     double** mDataMatrix;
-    DataHandler::CoefficientCount& mCoeffCount;
+    QSharedPointer<DataHandler::CoefficientInfo> mCoeffInfo;
+    int** mNlFlags;
 };
 
 class SymbolsDataProvider final : public DataHandler::AbstractDataProvider
@@ -497,24 +547,29 @@ private:
         SymbolRow(const SymbolRow& other)
             : mEntries(other.mEntries)
             , mFirstIdx(other.mFirstIdx)
+            , mData(new double[other.mEntries])
+            , mNlFlags(new int[other.mEntries])
         {
-            mData = new double[mEntries];
             std::copy(other.mData, other.mData+other.mEntries, mData);
+            std::copy(other.mNlFlags, other.mNlFlags+other.mEntries, mNlFlags);
         }
 
         SymbolRow(SymbolRow&& other) noexcept
             : mEntries(other.mEntries)
             , mFirstIdx(other.mFirstIdx)
             , mData(other.mData)
+            , mNlFlags(other.mNlFlags)
         {
             other.mEntries = 0;
             other.mFirstIdx = 0;
             other.mData = nullptr;
+            other.mNlFlags = nullptr;
         }
 
         ~SymbolRow()
         {
             if (mData) delete [] mData;
+            if (mNlFlags) delete [] mNlFlags;
         }
 
         inline int entries() const
@@ -552,13 +607,26 @@ private:
             mData = data;
         }
 
+        inline int* nlFlags()
+        {
+            return mNlFlags;
+        }
+
+        inline void setNlFlags(int* nlFlags)
+        {
+            mNlFlags = nlFlags;
+        }
+
         auto& operator=(const SymbolRow& other)
         {
-            delete [] mData;
+            if (mData) delete [] mData;
+            if (mNlFlags) delete [] mNlFlags;
             mEntries = other.mEntries;
             mFirstIdx = other.mFirstIdx;
-            mData = new double[mEntries];
+            mData = new double[other.mEntries];
+            mNlFlags = new int[other.mEntries];
             std::copy(other.mData, other.mData+other.mEntries, mData);
+            std::copy(other.mNlFlags, other.mNlFlags+other.mEntries, mNlFlags);
             return *this;
         }
 
@@ -570,6 +638,8 @@ private:
             other.mFirstIdx = 0;
             mData = other.mData;
             other.mData = nullptr;
+            mNlFlags = other.mNlFlags;
+            other.mNlFlags = nullptr;
             return *this;
         }
 
@@ -577,6 +647,7 @@ private:
         int mEntries = 0;
         int mFirstIdx = 0;
         double* mData = nullptr;
+        int *mNlFlags = nullptr;
     };
 
 public:
@@ -663,6 +734,17 @@ public:
         return mRows[row].data()[column-mRows[row].firstIdx()];
     }
 
+    int nlFlag(int row, int column) const override
+    {
+        if (!mRows || !mRows[row].entries()) {
+            return 0;
+        }
+        if (column < mRows[row].firstIdx() || column > mRows[row].lastIdx()) {
+            return 0;
+        }
+        return mRows[row].nlFlags()[column-mRows[row].firstIdx()];
+    }
+
     int columnEntries(int column) const override
     {
         return column < mColumnCount ? mColumnEntryCount[column] : 0;
@@ -705,6 +787,7 @@ private:
         for (auto* equation : equations) {
             for (int r=equation->firstSection(); r<=equation->lastSection(); ++r, ++rr) {
                 auto sparseRow = dataRow(r);
+                auto data = mModelInstance.useOutput() ? sparseRow->outputData() : sparseRow->inputData();
                 int sym_nz = 0, start_i = -1, start_c = 0, end_c = 0;
                 for (auto variable : variables) {
                     for (int i=0; i<sparseRow->entries(); ++i) {
@@ -726,19 +809,23 @@ private:
                 SymbolRow* row = &mRows[rr];
                 row->setEntries(end_c + 1 - start_c);
                 row->setData(new double[row->entries()]);
+                row->setNlFlags(new int[row->entries()]);
                 row->setFirstIdx(start_c - variables.first()->firstSection());
                 if (sym_nz == row->entries()) {
                     for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz, ++c) {
-                        row->data()[c] = std::abs(sparseRow->data()[nz]);
+                        row->data()[c] = std::abs(data[nz]);
+                        row->nlFlags()[c] = sparseRow->nlFlags()[nz];
                         mDataMinimum = std::min(mDataMinimum, row->data()[c]);
                         mDataMaximum = std::max(mDataMaximum, row->data()[c]);
                         ++mColumnEntryCount[row->firstIdx()+c];
                     }
                 } else {
                     std::fill(row->data(), row->data()+row->entries(), 0.0);
+                    std::fill(row->nlFlags(), row->nlFlags()+row->entries(), 0);
                     for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz) {
                         c = sparseRow->colIdx()[nz] - start_c;
-                        row->data()[c] = std::abs(sparseRow->data()[nz]);
+                        row->data()[c] = std::abs(data[nz]);
+                        row->nlFlags()[c] = sparseRow->nlFlags()[nz];
                         mDataMinimum = std::min(mDataMinimum, row->data()[c]);
                         mDataMaximum = std::max(mDataMaximum, row->data()[c]);
                         ++mColumnEntryCount[row->firstIdx()+c];
@@ -758,6 +845,7 @@ private:
         for (auto* equation : equations) {
             for (int r=equation->firstSection(); r<=equation->lastSection(); ++r, ++rr) {
                 auto sparseRow = dataRow(r);
+                auto data = mModelInstance.useOutput() ? sparseRow->outputData() : sparseRow->inputData();
                 int sym_nz = 0, start_i = -1, start_c = 0, end_c = 0;
                 for (auto variable : variables) {
                     for (int i=0; i<sparseRow->entries(); ++i) {
@@ -779,19 +867,23 @@ private:
                 SymbolRow* row = &mRows[rr];
                 row->setEntries(end_c + 1 - start_c);
                 row->setData(new double[row->entries()]);
+                row->setNlFlags(new int[row->entries()]);
                 row->setFirstIdx(start_c - variables.first()->firstSection());
                 if (sym_nz == row->entries()) {
                     for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz, ++c) {
-                        row->data()[c] = sparseRow->data()[nz];
+                        row->data()[c] = data[nz];
+                        row->nlFlags()[c] = sparseRow->nlFlags()[nz];
                         mDataMinimum = std::min(mDataMinimum, row->data()[c]);
                         mDataMaximum = std::max(mDataMaximum, row->data()[c]);
                         ++mColumnEntryCount[row->firstIdx()+c];
                     }
                 } else {
                     std::fill(row->data(), row->data()+row->entries(), 0.0);
+                    std::fill(row->nlFlags(), row->nlFlags()+row->entries(), 0);
                     for (int nz=start_i, c=0; nz<start_i+sym_nz; ++nz) {
                         c = sparseRow->colIdx()[nz] - start_c;
-                        row->data()[c] = sparseRow->data()[nz];
+                        row->data()[c] = data[nz];
+                        row->nlFlags()[c] = sparseRow->nlFlags()[nz];
                         mDataMinimum = std::min(mDataMinimum, row->data()[c]);
                         mDataMaximum = std::max(mDataMaximum, row->data()[c]);
                         ++mColumnEntryCount[row->firstIdx()+c];
@@ -818,7 +910,7 @@ public:
     BPOverviewDataProvider(DataHandler *dataHandler,
                            AbstractModelInstance& modelInstance,
                            const QSharedPointer<AbstractViewConfiguration> &viewConfig,
-                           DataHandler::CoefficientCount& negPosCount)
+                           const QSharedPointer<DataHandler::CoefficientInfo> &negPosCount)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
     {
@@ -831,6 +923,18 @@ public:
             mDataMatrix[r] = new char[mColumnCount];
             std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount, 0);
         }
+        mNlFlags = new int*[mRowCount];
+        for (int r=0, rr=0; r<mRowCount; ++r, rr+=2) {
+            mNlFlags[r] = new int[mColumnCount];
+            std::fill(mNlFlags[r], mNlFlags[r]+mColumnCount, 0);
+            if (rr+1 >= mCoeffCount->rowCount())
+                continue;
+            for (int c=0; c<mSymbolColumnCount; ++c) {
+                if (c < mCoeffCount->columnCount()) {
+                    mNlFlags[r][c] += mCoeffCount->nlFlags()[rr][c] + mCoeffCount->nlFlags()[rr+1][c];
+                }
+            }
+        }
     }
 
     BPOverviewDataProvider(const BPOverviewDataProvider& other)
@@ -842,14 +946,21 @@ public:
             mDataMatrix[r] = new char[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
+        mNlFlags = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mNlFlags[r] = new int[mColumnCount];
+            std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
+        }
     }
 
     BPOverviewDataProvider(BPOverviewDataProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(std::move(other))
-        , mCoeffCount(other.mCoeffCount)
+        , mDataMatrix(other.mDataMatrix)
+        , mCoeffCount(std::move(other.mCoeffCount))
+        , mNlFlags(other.mNlFlags)
     {
-        mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
+        other.mNlFlags = nullptr;
     }
 
     ~BPOverviewDataProvider()
@@ -857,7 +968,11 @@ public:
         for (int r=0; r<mRowCount; ++r) {
             delete [] mDataMatrix[r];
         }
-        delete [] mDataMatrix;
+        if (mDataMatrix) delete [] mDataMatrix;
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mNlFlags[r];
+        }
+        if (mNlFlags) delete [] mNlFlags;
     }
 
     void loadData() override
@@ -871,25 +986,25 @@ public:
         }
         for (int r=0; r<mModelInstance.equationCount(); ++r, negRow += 2, posRow += 2) {
             for (int c=0; c<mColumnCount-2; ++c) {
-                if (mCoeffCount.count()[negRow][c] == 0 && mCoeffCount.count()[posRow][c] == 0) {
+                if (mCoeffCount->count()[negRow][c] == 0 && mCoeffCount->count()[posRow][c] == 0) {
                     mDataMatrix[r][c] = 0x0;
-                } else if (mCoeffCount.count()[negRow][c] == 0 && mCoeffCount.count()[posRow][c] > 0) {
+                } else if (mCoeffCount->count()[negRow][c] == 0 && mCoeffCount->count()[posRow][c] > 0) {
                     mDataMatrix[r][c] = ValueHelper::Plus;
-                } else if (mCoeffCount.count()[negRow][c] < 0 && mCoeffCount.count()[posRow][c] == 0) {
+                } else if (mCoeffCount->count()[negRow][c] < 0 && mCoeffCount->count()[posRow][c] == 0) {
                     mDataMatrix[r][c] = ValueHelper::Minus;
                 } else {
                     mDataMatrix[r][c] = ValueHelper::Mixed;
                 }
             }
-            mDataMatrix[r][mColumnCount-2] = mCoeffCount.count()[posRow][mCoeffCount.columnCount()-2];
-            if (mCoeffCount.count()[negRow][mColumnCount-1] == 0 &&
-                mCoeffCount.count()[posRow][mColumnCount-1] == 0) {
+            mDataMatrix[r][mColumnCount-2] = mCoeffCount->count()[posRow][mCoeffCount->columnCount()-2];
+            if (mCoeffCount->count()[negRow][mColumnCount-1] == 0 &&
+                mCoeffCount->count()[posRow][mColumnCount-1] == 0) {
                 mDataMatrix[r][mColumnCount-1] = '0';
-            } else if (mCoeffCount.count()[negRow][mColumnCount-1] == 0 &&
-                       mCoeffCount.count()[posRow][mColumnCount-1] > 0) {
+            } else if (mCoeffCount->count()[negRow][mColumnCount-1] == 0 &&
+                       mCoeffCount->count()[posRow][mColumnCount-1] > 0) {
                 mDataMatrix[r][mColumnCount-1] = ValueHelper::Plus;
-            } else if (mCoeffCount.count()[negRow][mColumnCount-1] < 0 &&
-                       mCoeffCount.count()[posRow][mColumnCount-1] == 0) {
+            } else if (mCoeffCount->count()[negRow][mColumnCount-1] < 0 &&
+                       mCoeffCount->count()[posRow][mColumnCount-1] == 0) {
                 mDataMatrix[r][mColumnCount-1] = ValueHelper::Minus;
             } else {
                 mDataMatrix[r][mColumnCount-1] = ValueHelper::Mixed;
@@ -930,6 +1045,11 @@ public:
         return mDataMatrix[row][column];
     }
 
+    int nlFlag(int row, int column) const override
+    {
+        return mNlFlags[row][column];
+    }
+
     auto& operator=(const BPOverviewDataProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
@@ -942,6 +1062,15 @@ public:
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
         mCoeffCount = other.mCoeffCount;
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mNlFlags[r];
+        }
+        delete [] mNlFlags;
+        mNlFlags = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mNlFlags[r] = new int[mColumnCount];
+            std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
+        }
         return *this;
     }
 
@@ -949,13 +1078,16 @@ public:
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        mCoeffCount = other.mCoeffCount;
+        mCoeffCount = std::move(other.mCoeffCount);
+        mNlFlags = other.mNlFlags;
+        other.mNlFlags = nullptr;
         return *this;
     }
 
 private:
     char** mDataMatrix;
-    DataHandler::CoefficientCount& mCoeffCount;
+    QSharedPointer<DataHandler::CoefficientInfo> mCoeffCount;
+    int** mNlFlags = nullptr;
 };
 
 class BPCountDataProvider final : public DataHandler::AbstractDataProvider
@@ -964,9 +1096,9 @@ public:
     BPCountDataProvider(DataHandler *dataHandler,
                         AbstractModelInstance& modelInstance,
                         const QSharedPointer<AbstractViewConfiguration> &viewConfig,
-                        DataHandler::CoefficientCount& negPosCount)
+                        const QSharedPointer<DataHandler::CoefficientInfo> &coeffInfo)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
-        , mCoeffCount(negPosCount)
+        , mCoeffInfo(coeffInfo)
     {
         mDataMinimum = std::numeric_limits<double>::max();
         mDataMaximum = std::numeric_limits<double>::lowest();
@@ -977,37 +1109,53 @@ public:
         mDataMatrix = new int*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new int[mColumnCount];
-            for (int c=0; r<mCoeffCount.rowCount() && c<mCoeffCount.columnCount(); ++c) {
-                mDataMatrix[r][c] = mCoeffCount.count()[r][c];
+
+            for (int c=0; r<mCoeffInfo->rowCount() && c<mCoeffInfo->columnCount(); ++c) {
+                mDataMatrix[r][c] = mCoeffInfo->count()[r][c];
                 if (c != mColumnCount-4) {
                     mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[r][c]));
                     mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[r][c]));
                 }
             }
-            if (r < mCoeffCount.rowCount())
-                std::fill(mDataMatrix[r]+mCoeffCount.columnCount(), mDataMatrix[r]+mColumnCount, 0);
+            if (r < mCoeffInfo->rowCount())
+                std::fill(mDataMatrix[r]+mCoeffInfo->columnCount(), mDataMatrix[r]+mColumnCount, 0);
             else
                 std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount, 0);
+        }
+        mNlFlags = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mNlFlags[r] = new int[mColumnCount];
+            std::fill(mNlFlags[r], mNlFlags[r]+mColumnCount, 0);
+            if (r >= mCoeffInfo->rowCount())
+                continue;
+            std::copy(mCoeffInfo->nlFlags()[r], mCoeffInfo->nlFlags()[r]+mCoeffInfo->columnCount(), mNlFlags[r]);
         }
     }
 
     BPCountDataProvider(const BPCountDataProvider& other)
         : DataHandler::AbstractDataProvider(other)
-        , mCoeffCount(other.mCoeffCount)
+        , mCoeffInfo(other.mCoeffInfo)
     {
         mDataMatrix = new int*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new int[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
+        mNlFlags = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mNlFlags[r] = new int[mColumnCount];
+            std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
+        }
     }
 
     BPCountDataProvider(BPCountDataProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(std::move(other))
-        , mCoeffCount(other.mCoeffCount)
+        , mDataMatrix(other.mDataMatrix)
+        , mCoeffInfo(std::move(other.mCoeffInfo))
+        , mNlFlags(other.mNlFlags)
     {
-        mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
+        other.mNlFlags = nullptr;
     }
 
     ~BPCountDataProvider()
@@ -1016,6 +1164,10 @@ public:
             delete [] mDataMatrix[r];
         }
         delete [] mDataMatrix;
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mNlFlags[r];
+        }
+        delete [] mNlFlags;
     }
 
     void loadData() override
@@ -1033,6 +1185,12 @@ public:
                 mDataMatrix[posRow][mColumnCount-2] += mDataMatrix[posRow][v];
                 mDataMatrix[mRowCount-3][v] += mDataMatrix[negRow][v];
                 mDataMatrix[mRowCount-4][v] += mDataMatrix[posRow][v];
+                mNlFlags[posRow][mColumnCount-2] += mNlFlags[posRow][v];
+                mNlFlags[negRow][mColumnCount-2] += mNlFlags[negRow][v];
+                mNlFlags[mRowCount-4][v] += mNlFlags[posRow][v];
+                mNlFlags[mRowCount-3][v] += mNlFlags[negRow][v];
+                mNlFlags[mRowCount-4][mColumnCount-2] += mNlFlags[posRow][v];
+                mNlFlags[mRowCount-3][mColumnCount-2] += mNlFlags[negRow][v];
             }
             mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[negRow][mColumnCount-2]));
             mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[negRow][mColumnCount-2]));
@@ -1102,6 +1260,11 @@ public:
         return std::abs(mDataMatrix[row][column]);
     }
 
+    int nlFlag(int row, int column) const override
+    {
+        return mNlFlags[row][column];
+    }
+
     auto& operator=(const BPCountDataProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
@@ -1113,7 +1276,16 @@ public:
             mDataMatrix[r] = new int[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
-        mCoeffCount = other.mCoeffCount;
+        mCoeffInfo = other.mCoeffInfo;
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mNlFlags[r];
+        }
+        if (mNlFlags) delete [] mNlFlags;
+        mNlFlags = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mNlFlags[r] = new int[mColumnCount];
+            std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
+        }
         return *this;
     }
 
@@ -1121,13 +1293,16 @@ public:
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        mCoeffCount = other.mCoeffCount;
+        mCoeffInfo = std::move(other.mCoeffInfo);
+        mNlFlags = other.mNlFlags;
+        other.mNlFlags = nullptr;
         return *this;
     }
 
 private:
     int** mDataMatrix;
-    DataHandler::CoefficientCount& mCoeffCount;
+    QSharedPointer<DataHandler::CoefficientInfo> mCoeffInfo;
+    int** mNlFlags = nullptr;
 };
 
 class BPAverageDataProvider final : public DataHandler::AbstractDataProvider
@@ -1136,9 +1311,9 @@ public:
     BPAverageDataProvider(DataHandler *dataHandler,
                           AbstractModelInstance& modelInstance,
                           const QSharedPointer<AbstractViewConfiguration> &viewConfig,
-                          DataHandler::CoefficientCount& negPosCount)
+                          const QSharedPointer<DataHandler::CoefficientInfo> &coeffInfo)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
-        , mCoeffCount(negPosCount)
+        , mCoeffInfo(coeffInfo)
     {
         mDataMinimum = std::numeric_limits<double>::max();
         mDataMaximum = std::numeric_limits<double>::lowest();
@@ -1151,25 +1326,40 @@ public:
             mDataMatrix[r] = new double[mColumnCount];
             std::fill(mDataMatrix[r], mDataMatrix[r]+mColumnCount, 0);
         }
+        mNlFlags = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mNlFlags[r] = new int[mColumnCount];
+            std::fill(mNlFlags[r], mNlFlags[r]+mColumnCount, 0);
+            if (r >= mCoeffInfo->rowCount())
+                continue;
+            std::copy(mCoeffInfo->nlFlags()[r], mCoeffInfo->nlFlags()[r]+mCoeffInfo->columnCount(), mNlFlags[r]);
+        }
     }
 
     BPAverageDataProvider(const BPAverageDataProvider& other)
         : DataHandler::AbstractDataProvider(other)
-        , mCoeffCount(other.mCoeffCount)
+        , mCoeffInfo(other.mCoeffInfo)
     {
         mDataMatrix = new double*[mRowCount];
         for (int r=0; r<mRowCount; ++r) {
             mDataMatrix[r] = new double[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
+        mNlFlags = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mNlFlags[r] = new int[mColumnCount];
+            std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
+        }
     }
 
     BPAverageDataProvider(BPAverageDataProvider&& other) noexcept
         : DataHandler::AbstractDataProvider(std::move(other))
-        , mCoeffCount(other.mCoeffCount)
+        , mDataMatrix(other.mDataMatrix)
+        , mCoeffInfo(std::move(other.mCoeffInfo))
+        , mNlFlags(other.mNlFlags)
     {
-        mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
+        other.mNlFlags = nullptr;
     }
 
     ~BPAverageDataProvider()
@@ -1178,6 +1368,10 @@ public:
             delete [] mDataMatrix[r];
         }
         delete [] mDataMatrix;
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mNlFlags[r];
+        }
+        delete [] mNlFlags;
     }
 
     void loadData() override
@@ -1205,20 +1399,24 @@ public:
         }
         for (int r=0, negRow = 1, posRow = 0; r<mModelInstance.equationCount(); ++r, negRow += 2, posRow += 2) {
             for (int c=0; c<mColumnCount-4; ++c) {
-                mDataMatrix[negRow][c] = mCoeffCount.count()[negRow][c] / mDataMatrix[mRowCount-2][c];
-                mDataMatrix[negRow][mColumnCount-2] += mCoeffCount.count()[negRow][c];
-                mDataMatrix[mRowCount-3][c] += mCoeffCount.count()[negRow][c];
-                mDataMatrix[posRow][c] = mCoeffCount.count()[posRow][c] / mDataMatrix[mRowCount-2][c];
-                mDataMatrix[posRow][mColumnCount-2] += mCoeffCount.count()[posRow][c];
-                mDataMatrix[mRowCount-4][c] += mCoeffCount.count()[posRow][c];
+                mDataMatrix[negRow][c] = mCoeffInfo->count()[negRow][c] / mDataMatrix[mRowCount-2][c];
+                mDataMatrix[negRow][mColumnCount-2] += mCoeffInfo->count()[negRow][c];
+                mDataMatrix[mRowCount-3][c] += mCoeffInfo->count()[negRow][c];
+                mDataMatrix[posRow][c] = mCoeffInfo->count()[posRow][c] / mDataMatrix[mRowCount-2][c];
+                mDataMatrix[posRow][mColumnCount-2] += mCoeffInfo->count()[posRow][c];
+                mDataMatrix[mRowCount-4][c] += mCoeffInfo->count()[posRow][c];
                 mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[negRow][c]));
                 mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[posRow][c]));
                 mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[negRow][c]));
                 mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[posRow][c]));
+                mNlFlags[posRow][mColumnCount-2] += mNlFlags[posRow][c];
+                mNlFlags[negRow][mColumnCount-2] += mNlFlags[negRow][c];
+                mNlFlags[mRowCount-4][c] += mNlFlags[posRow][c];
+                mNlFlags[mRowCount-3][c] += mNlFlags[negRow][c];
             }
-            for (int c=mCoeffCount.columnCount()-2;
-                 posRow<mCoeffCount.rowCount() && c<mCoeffCount.columnCount(); ++c) {
-                mDataMatrix[posRow][c] = mCoeffCount.count()[posRow][c];
+            for (int c=mCoeffInfo->columnCount()-2;
+                 posRow<mCoeffInfo->rowCount() && c<mCoeffInfo->columnCount(); ++c) {
+                mDataMatrix[posRow][c] = mCoeffInfo->count()[posRow][c];
                 if (c != mColumnCount-4) {
                     mDataMinimum = std::min(mDataMinimum, double(mDataMatrix[posRow][c]));
                     mDataMaximum = std::max(mDataMaximum, double(mDataMatrix[posRow][c]));
@@ -1280,6 +1478,11 @@ public:
         return std::abs(mDataMatrix[row][column]);
     }
 
+    int nlFlag(int row, int column) const override
+    {
+        return mNlFlags[row][column];
+    }
+
     auto& operator=(const BPAverageDataProvider& other)
     {
         for (int r=0; r<mRowCount; ++r) {
@@ -1291,7 +1494,16 @@ public:
             mDataMatrix[r] = new double[mColumnCount];
             std::copy(other.mDataMatrix[r], other.mDataMatrix[r]+other.mColumnCount, mDataMatrix[r]);
         }
-        mCoeffCount = other.mCoeffCount;
+        mCoeffInfo = other.mCoeffInfo;
+        for (int r=0; r<mRowCount; ++r) {
+            delete [] mNlFlags[r];
+        }
+        if (mNlFlags) delete [] mNlFlags;
+        mNlFlags = new int*[mRowCount];
+        for (int r=0; r<mRowCount; ++r) {
+            mNlFlags[r] = new int[mColumnCount];
+            std::copy(other.mNlFlags[r], other.mNlFlags[r]+other.mColumnCount, mNlFlags[r]);
+        }
         return *this;
     }
 
@@ -1299,13 +1511,16 @@ public:
     {
         mDataMatrix = other.mDataMatrix;
         other.mDataMatrix = nullptr;
-        mCoeffCount = other.mCoeffCount;
+        mCoeffInfo = std::move(other.mCoeffInfo);
+        mNlFlags = other.mNlFlags;
+        other.mNlFlags = nullptr;
         return *this;
     }
 
 private:
     double** mDataMatrix;
-    DataHandler::CoefficientCount& mCoeffCount;
+    QSharedPointer<DataHandler::CoefficientInfo> mCoeffInfo;
+    int** mNlFlags = nullptr;
 };
 
 class PostoptDataProvider final : public DataHandler::AbstractDataProvider
@@ -1484,7 +1699,7 @@ private:
                 auto row = dataRow(equation->firstSection()+e);
                 QVariant jacval;
                 if (row) {
-                    jacval = row->value(variable->firstSection()+entry, variable->lastSection());
+                    jacval = row->outputValue(variable->firstSection()+entry, variable->lastSection());
                 }
                 if (jacval.isValid()) {
                     auto name = symbolName(equation, e);
@@ -1521,7 +1736,7 @@ private:
                 auto row = dataRow(equation->firstSection()+entry);
                 QVariant jacval;
                 if (row) {
-                    jacval = row->value(variable->firstSection()+e, variable->lastSection());
+                    jacval = row->outputValue(variable->firstSection()+e, variable->lastSection());
                 }
                 if (jacval.isValid()) {
                     auto name = symbolName(variable, e);
@@ -1595,13 +1810,14 @@ private:
 
 DataHandler::DataHandler(AbstractModelInstance& modelInstance)
     : mModelInstance(modelInstance)
+    , mDataMatrix(new DataMatrix)
 {
 
 }
 
 DataHandler::~DataHandler()
 {
-    if (mCoeffCount) delete mCoeffCount;
+
 }
 
 void DataHandler::aggregate(const QSharedPointer<AbstractViewConfiguration> &viewConfig)
@@ -1619,7 +1835,8 @@ void DataHandler::aggregate(const QSharedPointer<AbstractViewConfiguration> &vie
 
 void DataHandler::loadData(const QSharedPointer<AbstractViewConfiguration> &viewConfig)
 {
-    if (!viewConfig) return;
+    if (!viewConfig)
+        return;
     auto provider = newProvider(viewConfig);
     mDataCache.remove(viewConfig->viewId());
     provider->loadData();
@@ -1634,6 +1851,11 @@ QVariant DataHandler::data(int row, int column, int viewId) const
     return QVariant();
 }
 
+int DataHandler::nlFlag(int row, int column, int viewId)
+{
+    return mDataCache.contains(viewId) ? mDataCache[viewId]->nlFlag(row, column) : 0;
+}
+
 QSharedPointer<PostoptTreeItem> DataHandler::dataTree(int viewId) const
 {
     if (mDataCache.contains(viewId)) {
@@ -1645,7 +1867,8 @@ QSharedPointer<PostoptTreeItem> DataHandler::dataTree(int viewId) const
 
 void DataHandler::remove(int viewId)
 {
-    mDataCache.remove(viewId);
+    if (mDataCache.contains(viewId))
+        mDataCache.remove(viewId);
 }
 
 int DataHandler::headerData(int logicalIndex,
@@ -1744,8 +1967,7 @@ QSharedPointer<AbstractViewConfiguration> DataHandler::clone(int viewId, int new
 
 void DataHandler::loadJacobian()
 {
-    mDataMatrix = DataMatrix(mModelInstance.equationRowCount());
-    mModelInstance.jacobianData(mDataMatrix);
+    mDataMatrix.reset(mModelInstance.jacobianData());
 }
 
 DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int viewId)
@@ -1791,16 +2013,16 @@ DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int viewId)
 
 QSharedPointer<DataHandler::AbstractDataProvider> DataHandler::newProvider(const QSharedPointer<AbstractViewConfiguration> &viewConfig)
 {
-    if (!mCoeffCount) {
-        mCoeffCount = new CoefficientCount(mModelInstance.variableCount()+2,
-                                           mModelInstance.equationCount()*2);
+    if (!mCoeffCount || viewConfig->viewId() == (int)ViewHelper::ViewDataType::BP_Scaling) {
+        mCoeffCount.reset(new CoefficientInfo(mModelInstance.variableCount()+2,
+                                              mModelInstance.equationCount()*2));
     }
     switch (viewConfig->viewType()) {
     case ViewHelper::ViewDataType::BP_Scaling:
         return QSharedPointer<AbstractDataProvider>(new BPScalingProvider(this,
-                                                                           mModelInstance,
-                                                                           viewConfig,
-                                                                           *mCoeffCount));
+                                                                          mModelInstance,
+                                                                          viewConfig,
+                                                                          mCoeffCount));
     case ViewHelper::ViewDataType::Symbols:
         return QSharedPointer<AbstractDataProvider>(new SymbolsDataProvider(this,
                                                                             mModelInstance,
@@ -1809,17 +2031,17 @@ QSharedPointer<DataHandler::AbstractDataProvider> DataHandler::newProvider(const
         return QSharedPointer<AbstractDataProvider>(new BPOverviewDataProvider(this,
                                                                                mModelInstance,
                                                                                viewConfig,
-                                                                               *mCoeffCount));
+                                                                               mCoeffCount));
     case ViewHelper::ViewDataType::BP_Count:
         return QSharedPointer<AbstractDataProvider>(new BPCountDataProvider(this,
                                                                             mModelInstance,
                                                                             viewConfig,
-                                                                            *mCoeffCount));
+                                                                            mCoeffCount));
     case ViewHelper::ViewDataType::BP_Average:
         return QSharedPointer<AbstractDataProvider>(new BPAverageDataProvider(this,
                                                                               mModelInstance,
                                                                               viewConfig,
-                                                                              *mCoeffCount));
+                                                                              mCoeffCount));
     case ViewHelper::ViewDataType::Postopt:
         return QSharedPointer<AbstractDataProvider>(new PostoptDataProvider(this,
                                                                             mModelInstance,

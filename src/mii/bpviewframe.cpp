@@ -99,7 +99,6 @@ void AbstractBPViewFrame::handleRowColumnSelection()
 {
     QMap<int, Symbol*> rowSymbols, columnSymbols;
     auto indexes = ui->tableView->selectionModel()->selectedIndexes();
-    int section;
     for (const auto& index : indexes) {
         if (!index.isValid())
             continue;
@@ -107,7 +106,7 @@ void AbstractBPViewFrame::handleRowColumnSelection()
             continue;
         if (index.row() >= mModelInstance->symbolRowCount(mViewConfig->viewId()))
             continue;
-        section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
+        int section = ui->tableView->model()->headerData(index.row(), Qt::Vertical,
                                                      ViewHelper::IndexDataRole).toInt();
         auto equation = mModelInstance->equation(section);
         rowSymbols[section] = equation;
@@ -190,8 +189,8 @@ void BPOverviewViewFrame::setShowAbsoluteValues(bool absoluteValues)
 
 void BPOverviewViewFrame::updateView()
 {
-    //ui->tableView->resizeColumnsToContents();
-    //ui->tableView->resizeRowsToContents();
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
     emit filtersChanged();
 }
 
@@ -260,8 +259,8 @@ void BPCountViewFrame::setShowAbsoluteValues(bool absoluteValues)
 
 void BPCountViewFrame::updateView()
 {
-    //ui->tableView->resizeColumnsToContents();
-    //ui->tableView->resizeRowsToContents();
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
     emit filtersChanged();
 }
 
@@ -275,9 +274,9 @@ void BPCountViewFrame::setupView()
 {
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
+                                                 mViewConfig->viewId(),
                                                  ui->tableView);
     mVerticalHeader->setViewType(type());
-    mVerticalHeader->setView(mViewConfig->viewId());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPCountViewFrame::setIdentifierLabelFilter);
     
@@ -347,8 +346,8 @@ void BPAverageViewFrame::setShowAbsoluteValues(bool absoluteValues)
 
 void BPAverageViewFrame::updateView()
 {
-    //ui->tableView->resizeColumnsToContents();
-    //ui->tableView->resizeRowsToContents();
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
     emit filtersChanged();
 }
 
@@ -362,9 +361,9 @@ void BPAverageViewFrame::setupView()
 {
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
+                                                 mViewConfig->viewId(),
                                                  ui->tableView);
     mVerticalHeader->setViewType(type());
-    mVerticalHeader->setView(mViewConfig->viewId());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPAverageViewFrame::setIdentifierLabelFilter);
     
@@ -457,9 +456,9 @@ void BPScalingViewFrame::setupView()
 {
     mVerticalHeader = new HierarchicalHeaderView(Qt::Vertical,
                                                  mModelInstance,
+                                                 mViewConfig->viewId(),
                                                  ui->tableView);
     mVerticalHeader->setViewType(type());
-    mVerticalHeader->setView(mViewConfig->viewId());
     connect(mVerticalHeader, &HierarchicalHeaderView::filterChanged,
             this, &BPScalingViewFrame::setIdentifierLabelFilter);
 

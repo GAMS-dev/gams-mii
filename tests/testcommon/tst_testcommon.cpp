@@ -28,10 +28,6 @@ class TestCommon : public QObject
 {
     Q_OBJECT
 
-public:
-    TestCommon();
-    ~TestCommon();
-
 private slots:
     void test_Mi_roleNames();
 
@@ -61,16 +57,6 @@ private slots:
     void test_ViewHelper_zoomFactor();
     void test_ViewHelper_static();
 };
-
-TestCommon::TestCommon()
-{
-
-}
-
-TestCommon::~TestCommon()
-{
-
-}
 
 void TestCommon::test_Mi_roleNames()
 {

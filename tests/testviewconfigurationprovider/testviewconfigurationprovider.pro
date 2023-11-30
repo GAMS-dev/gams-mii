@@ -10,10 +10,11 @@ TEMPLATE = app
 
 INCLUDEPATH += $$SRCPATH/mii
 
-SOURCES +=  tst_testviewconfigurationprovider.cpp                   \
+SOURCES +=  tst_testviewconfigurationprovider.cpp        \
             $$SRCPATH/mii/abstractmodelinstance.cpp      \
             $$SRCPATH/mii/modelinstance.cpp              \
             $$SRCPATH/mii/datahandler.cpp                \
+            $$SRCPATH/mii/datamatrix.cpp                 \
             $$SRCPATH/mii/labeltreeitem.cpp              \
             $$SRCPATH/mii/symbol.cpp                     \
             $$SRCPATH/mii/aggregation.cpp                \

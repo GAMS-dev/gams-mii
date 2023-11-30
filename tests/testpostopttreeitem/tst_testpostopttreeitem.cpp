@@ -28,10 +28,6 @@ class TestPostoptTreeItem : public QObject
 {
     Q_OBJECT
 
-public:
-    TestPostoptTreeItem();
-    ~TestPostoptTreeItem();
-
 private slots:
     void test_GroupPostoptTreeItem_default();
     void test_GroupPostoptTreeItem_get_set();
@@ -39,16 +35,6 @@ private slots:
     void test_LinePostoptTreeItem_default();
     void test_LinePostoptTreeItem_get_set();
 };
-
-TestPostoptTreeItem::TestPostoptTreeItem()
-{
-
-}
-
-TestPostoptTreeItem::~TestPostoptTreeItem()
-{
-
-}
 
 void TestPostoptTreeItem::test_GroupPostoptTreeItem_default()
 {

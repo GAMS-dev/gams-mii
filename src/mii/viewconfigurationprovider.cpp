@@ -509,7 +509,6 @@ private:
     }
 };
 
-
 AbstractViewConfiguration::AbstractViewConfiguration(ViewHelper::ViewDataType viewType,
                                                      const QSharedPointer<AbstractModelInstance> &modelInstance)
     : mModelInstance(modelInstance)

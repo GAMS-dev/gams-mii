@@ -41,7 +41,7 @@ class AbstractViewConfiguration;
 class SectionTreeModel;
 class SearchResultModel;
 
-class ModelInspector : public QWidget
+class ModelInspector final : public QWidget
 {
     Q_OBJECT
 
@@ -110,6 +110,8 @@ private:
     void setupConnections();
 
     void setupModelInstanceView(bool loadModel);
+
+    void clearDefaultViewData();
 
     void clearCustomViews();
 

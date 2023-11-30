@@ -34,7 +34,7 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-QRegularExpression AggregationDialog::RegExp = QRegularExpression("^\\d+$");
+const QRegularExpression AggregationDialog::RegExp = QRegularExpression("^\\d+$");
 
 AggregationDialog::AggregationDialog(QWidget *parent)
     : QDialog(parent)

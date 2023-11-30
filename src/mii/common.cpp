@@ -63,6 +63,7 @@ const QString ViewHelper::BPOverview    = "Overview";
 const QString ViewHelper::BPCount       = "Count";
 const QString ViewHelper::BPAverage     = "Average";
 const QString ViewHelper::Postopt       = "Postopt";
+const QString ViewHelper::Preopt        = "Preopt";
 const QStringList ViewHelper::PredefinedViewTexts = {
                                                 Jacobian,
                                                 BPOverview,

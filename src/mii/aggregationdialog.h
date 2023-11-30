@@ -38,13 +38,13 @@ class AggregationDialog;
 class AbstractViewConfiguration;
 class FilterTreeItem;
 
-class AggregationDialog : public QDialog
+class AggregationDialog final : public QDialog
 {
     Q_OBJECT
 
 public:
     explicit AggregationDialog(QWidget *parent = nullptr);
-    ~AggregationDialog();
+    ~AggregationDialog() override;
 
     const QSharedPointer<AbstractViewConfiguration> &viewConfig() const;
 
@@ -84,7 +84,7 @@ private:
 
     QSortFilterProxyModel *mAggregationModel = nullptr;
 
-    static QRegularExpression RegExp;
+    static const QRegularExpression RegExp;
 };
 
 }

@@ -7,10 +7,11 @@ TEMPLATE = app
 
 INCLUDEPATH += $$SRCPATH/mii
 
-SOURCES +=  tst_testmodelinstance.cpp                               \
+SOURCES +=  tst_testmodelinstance.cpp                    \
             $$SRCPATH/mii/abstractmodelinstance.cpp      \
             $$SRCPATH/mii/modelinstance.cpp              \
             $$SRCPATH/mii/datahandler.cpp                \
+            $$SRCPATH/mii/datamatrix.cpp                 \
             $$SRCPATH/mii/filtertreeitem.cpp             \
             $$SRCPATH/mii/labeltreeitem.cpp              \
             $$SRCPATH/mii/symbol.cpp                     \

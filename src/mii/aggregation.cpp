@@ -50,7 +50,8 @@ void AggregationItem::setSymbolIndex(int index)
     mSymbolIndex = index;
 }
 
-int AggregationItem::newSymbolIndex() const {
+int AggregationItem::newSymbolIndex() const
+{
     return mAggregatedLabelTree ? mAggregatedLabelTree->sectionIndex() : -1;
 }
 
@@ -69,7 +70,7 @@ bool AggregationItem::isChecked(int dimension) const
     return mCheckState[dimension] == Qt::Checked;
 }
 
-const QSharedPointer<LabelTreeItem> &AggregationItem::aggregatedLabelTree() const
+const QSharedPointer<LabelTreeItem>& AggregationItem::aggregatedLabelTree() const
 {
     return mAggregatedLabelTree;
 }

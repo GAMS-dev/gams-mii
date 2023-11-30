@@ -29,13 +29,13 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-class SearchResultModel : public QAbstractTableModel
+class SearchResultModel final : public QAbstractTableModel
 {
     Q_OBJECT
 
 public:
     SearchResultModel(QObject *parent = nullptr);
-    ~SearchResultModel();
+    ~SearchResultModel() override;
 
     QVariant data(const QModelIndex &index,
                   int role = Qt::DisplayRole) const override;

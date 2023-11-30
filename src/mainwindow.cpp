@@ -219,13 +219,6 @@ void MainWindow::on_actionShow_search_result_triggered()
 void MainWindow::showAbsoluteValues()
 {
     ui->modelInspector->setShowAbsoluteValuesGlobal(ui->actionShow_Absolute->isChecked());
-    if (!ui->actionShow_Absolute->isChecked()) {
-        auto defaultFilter = ui->modelInspector->viewConfig()->defaultValueFilter();
-        auto currentFilter = ui->modelInspector->viewConfig()->currentValueFilter();
-        currentFilter.MinValue = defaultFilter.MinValue;
-        currentFilter.MaxValue = defaultFilter.MaxValue;
-        ui->modelInspector->viewConfig()->setCurrentValueFilter(currentFilter);
-    }
     setGlobalFiltersData();
     setAggregationData();
 }
@@ -233,10 +226,8 @@ void MainWindow::showAbsoluteValues()
 void MainWindow::on_actionShow_Output_triggered()
 {
     ui->modelInspector->setShowOutput(ui->actionShow_Output->isChecked());
-    ui->modelInspector->reloadModelInstance();
     ui->modelInspector->setShowAbsoluteValuesGlobal(ui->actionShow_Absolute->isChecked());
-    setGlobalFiltersData();
-    setAggregationData();
+    ui->modelInspector->reloadModelInstance();
 }
 
 void MainWindow::on_actionZoom_In_triggered()

@@ -36,6 +36,10 @@ FilterDialog::FilterDialog(QWidget *parent)
     , ui(new Ui::FilterDialog)
     , mViewConfig(ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::Unknown,
                                                            QSharedPointer<AbstractModelInstance>(new EmptyModelInstance)))
+    , mEqnFilterModel(nullptr)
+    , mVarFilterModel(nullptr)
+    , mLabelFilterModel(nullptr)
+    , mAttrFilterModel(nullptr)
 {
     ui->setupUi(this);
     ui->labelView->sortByColumn(0, Qt::AscendingOrder);
@@ -144,36 +148,48 @@ void FilterDialog::on_cancelButton_clicked()
 
 void FilterDialog::on_selectEqnButton_clicked()
 {
+    if (!mEqnFilterModel)
+        return;
     applyCheckState(ui->rowView, mEqnFilterModel, Qt::Checked);
     ui->rowView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void FilterDialog::on_deselectEqnButton_clicked()
 {
+    if (!mEqnFilterModel)
+        return;
     applyCheckState(ui->rowView, mEqnFilterModel, Qt::Unchecked);
     ui->rowView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void FilterDialog::on_selectVarButton_clicked()
 {
+    if (!mVarFilterModel)
+        return;
     applyCheckState(ui->columnView, mVarFilterModel, Qt::Checked);
     ui->columnView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void FilterDialog::on_deselectVarButton_clicked()
 {
+    if (!mVarFilterModel)
+        return;
     applyCheckState(ui->columnView, mVarFilterModel, Qt::Unchecked);
     ui->columnView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void FilterDialog::on_selectLabelButton_clicked()
 {
+    if (!mLabelFilterModel)
+        return;
     applyCheckState(ui->labelView, mLabelFilterModel, Qt::Checked);
     ui->labelView->dataChanged(QModelIndex(), QModelIndex());
 }
 
 void FilterDialog::on_deselectLabelButton_clicked()
 {
+    if (!mLabelFilterModel)
+        return;
     applyCheckState(ui->labelView, mLabelFilterModel, Qt::Unchecked);
     ui->labelView->dataChanged(QModelIndex(), QModelIndex());
 }

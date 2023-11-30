@@ -35,15 +35,17 @@ namespace mii {
 class AbstractModelInstance;
 class LabelFilterWidget;
 
-class HierarchicalHeaderView : public QHeaderView
+class HierarchicalHeaderView final : public QHeaderView
 {
     Q_OBJECT
 
 public:
     HierarchicalHeaderView(Qt::Orientation orientation,
                            const QSharedPointer<AbstractModelInstance> &modelInstance,
+                           int viewId,
                            QWidget *parent = nullptr);
-    ~HierarchicalHeaderView();
+
+    ~HierarchicalHeaderView() override;
 
     QSharedPointer<AbstractModelInstance> modelInstance() const;
 

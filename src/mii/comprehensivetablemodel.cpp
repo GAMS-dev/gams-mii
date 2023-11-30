@@ -21,6 +21,8 @@
 #include "comprehensivetablemodel.h"
 #include "abstractmodelinstance.h"
 
+#include <QFont>
+
 namespace gams {
 namespace studio{
 namespace mii {
@@ -58,6 +60,14 @@ QVariant ComprehensiveTableModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::TextAlignmentRole) {
         return Qt::AlignRight;
+    }
+    if (role == Qt::FontRole) {
+        if (mModelInstance->nlFlag(index.row(), index.column(), mView)) {
+            QFont font;
+            font.setBold(true);
+            font.setItalic(true);
+            return font;
+        }
     }
     if (role == Qt::DisplayRole && index.isValid()) {
         return mModelInstance->data(index.row(), index.column(), mView);
@@ -162,13 +172,13 @@ QVariant BPOverviewTableModel::data(const QModelIndex &index, int role) const
     }
     if (role == Qt::DisplayRole && index.isValid()) {
         auto value = mModelInstance->data(index.row(), index.column(), mView).toInt();
-        if (value) {
-            if (value == ValueHelper::Mixed)
-                return ValueHelper::PlusMinus;
-            return QChar(value);
-        }
+        if (!value)
+            return QVariant();
+        if (value == ValueHelper::Mixed)
+            return ValueHelper::PlusMinus;
+        return QChar(value);
     }
-    return QVariant();
+    return ComprehensiveTableModel::data(index, role);
 }
 
 QVariant BPOverviewTableModel::headerData(int section,
@@ -180,14 +190,12 @@ QVariant BPOverviewTableModel::headerData(int section,
                                           mView, ViewHelper::LabelDataRole);
     }
     if (role == ViewHelper::IndexDataRole) {
-        return mModelInstance->headerData(section, orientation,
-                                          mView, role);
+        return mModelInstance->headerData(section, orientation, mView, role);
     }
     if (role == ViewHelper::SectionLabelRole) {
-        return mModelInstance->headerData(section, orientation,
-                                          mView, role);
+        return mModelInstance->headerData(section, orientation, mView, role);
     }
-    return QAbstractItemModel::headerData(section, orientation, role);
+    return ComprehensiveTableModel::headerData(section, orientation, role);
 }
 
 BPCountTableModel::BPCountTableModel(QObject *parent)
@@ -217,7 +225,7 @@ QVariant BPCountTableModel::data(const QModelIndex &index, int role) const
         }
         return mModelInstance->data(index.row(), index.column(), mView);
     }
-    return QVariant();
+    return ComprehensiveTableModel::data(index, role);
 }
 
 BPAverageTableModel::BPAverageTableModel(QObject *parent)
@@ -247,7 +255,7 @@ QVariant BPAverageTableModel::data(const QModelIndex &index, int role) const
         }
         return mModelInstance->data(index.row(), index.column(), mView);
     }
-    return QVariant();
+    return ComprehensiveTableModel::data(index, role);
 }
 
 }

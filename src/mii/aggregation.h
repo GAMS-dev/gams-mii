@@ -54,6 +54,7 @@ public:
     bool isChecked(int dimension) const;
 
     const QSharedPointer<LabelTreeItem> &aggregatedLabelTree() const;
+
     void setAggregatedLabelTree(const QSharedPointer<LabelTreeItem> &labelTree);
 
     QString label(int sectionIndex, int dimension) const;

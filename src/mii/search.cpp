@@ -89,7 +89,7 @@ void Search::searchStaticHeader(Qt::Orientation orientation)
 
 void Search::searchHeaderHierarchy(Qt::Orientation orientation)
 {
-    bool ok;
+    bool ok = false;
     int sections = orientation == Qt::Horizontal ? mDataModel->columnCount() :
                                                    mDataModel->rowCount();
     for (int section=0; section<sections; ++section) {

@@ -36,10 +36,6 @@ class TestAggregation : public QObject
 {
     Q_OBJECT
 
-public:
-    TestAggregation();
-    ~TestAggregation();
-
 private slots:
     void initTestCase();
 
@@ -55,16 +51,6 @@ private slots:
     void test_aggregateLabels_aggregator();
     void test_aggregateLabels_aggregator_minmax();
 };
-
-TestAggregation::TestAggregation()
-{
-
-}
-
-TestAggregation::~TestAggregation()
-{
-
-}
 
 void TestAggregation::initTestCase()
 {

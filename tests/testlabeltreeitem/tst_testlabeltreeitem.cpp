@@ -28,10 +28,6 @@ class TestLabelTreeItem : public QObject
 {
     Q_OBJECT
 
-public:
-    TestLabelTreeItem();
-    ~TestLabelTreeItem();
-
 private slots:
     void test_constructor();
     void test_default();
@@ -68,16 +64,6 @@ private slots:
     void test_unite_ununified_4();
     void test_unite_ununified_invisible_1();
 };
-
-TestLabelTreeItem::TestLabelTreeItem()
-{
-
-}
-
-TestLabelTreeItem::~TestLabelTreeItem()
-{
-
-}
 
 void TestLabelTreeItem::test_constructor()
 {
