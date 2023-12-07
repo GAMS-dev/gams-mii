@@ -420,7 +420,7 @@ AbstractTableViewFrame* BPScalingViewFrame::clone(int viewId)
 void BPScalingViewFrame::setShowAbsoluteValues(bool absoluteValues)
 {
     Q_UNUSED(absoluteValues);
-    if (!mBaseModel)
+    if (!mBaseModel || !mValueFormatModel)
         return;
     mModelInstance->loadViewData(mViewConfig);
     emit mBaseModel->dataChanged(QModelIndex(), QModelIndex(), {Qt::DisplayRole});
