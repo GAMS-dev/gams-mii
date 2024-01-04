@@ -27,7 +27,7 @@ There are two ways to use the MII to inspect a model instance:
 
 1. Select the `.gms` file to execute in the MII and hit the `Run` button.
    - This will run the selected `.gms` file with some required command line parameter and the data of the **last** model instance in that file will be openend for inspection.
-2. Select a [scratch directory](https://www.gams.com/44/docs/UG_GamsCall.html#GAMSAOscrdir) of a model that was executed already and hit the `Run` button.
+2. Select `gamscntr.dat` from a [scratch directory](https://www.gams.com/44/docs/UG_GamsCall.html#GAMSAOscrdir) of a model that was executed already and hit the `Run` button.
    - This does not run the model again but just opens the given data for inspection.
    - The easiest way to generate such scratch directory is to execute a `.gms` file with the command line parameter [MIIMode](https://www.gams.com/44/docs/UG_GamsCall.html#GAMSAOmiimode).
 
