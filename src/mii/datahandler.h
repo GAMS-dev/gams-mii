@@ -319,9 +319,9 @@ public:
 
     ~DataHandler();
 
-    void aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig);
+    void aggregate(const QSharedPointer<AbstractViewConfiguration> &viewConfig);
 
-    void loadData(QSharedPointer<AbstractViewConfiguration> viewConfig);
+    void loadData(const QSharedPointer<AbstractViewConfiguration> &viewConfig);
 
     QVariant data(int row, int column, int viewId) const;
 
@@ -364,7 +364,7 @@ public:
 
 private:
     AbstractDataProvider *cloneProvider(int viewId);
-    QSharedPointer<AbstractDataProvider> newProvider(QSharedPointer<AbstractViewConfiguration> viewConfig);
+    QSharedPointer<AbstractDataProvider> newProvider(const QSharedPointer<AbstractViewConfiguration> &viewConfig);
 
 private:
     AbstractModelInstance& mModelInstance;

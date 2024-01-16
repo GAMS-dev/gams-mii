@@ -33,7 +33,7 @@ ComprehensiveTableModel::ComprehensiveTableModel(QObject *parent)
 }
 
 ComprehensiveTableModel::ComprehensiveTableModel(int view,
-                                                 QSharedPointer<AbstractModelInstance> modelInstance,
+                                                 const QSharedPointer<AbstractModelInstance> &modelInstance,
                                                  QObject *parent)
     : QAbstractTableModel(parent)
     , mModelInstance(modelInstance)
@@ -148,7 +148,7 @@ BPOverviewTableModel::BPOverviewTableModel(QObject *parent)
 }
 
 BPOverviewTableModel::BPOverviewTableModel(int view,
-                                           QSharedPointer<AbstractModelInstance> modelInstance,
+                                           const QSharedPointer<AbstractModelInstance> &modelInstance,
                                            QObject *parent)
     : ComprehensiveTableModel(view, modelInstance, parent)
 {
@@ -197,7 +197,7 @@ BPCountTableModel::BPCountTableModel(QObject *parent)
 }
 
 BPCountTableModel::BPCountTableModel(int view,
-                                     QSharedPointer<AbstractModelInstance> modelInstance,
+                                     const QSharedPointer<AbstractModelInstance> &modelInstance,
                                      QObject *parent)
     : ComprehensiveTableModel(view, modelInstance, parent)
 {
@@ -227,7 +227,7 @@ BPAverageTableModel::BPAverageTableModel(QObject *parent)
 }
 
 BPAverageTableModel::BPAverageTableModel(int view,
-                                         QSharedPointer<AbstractModelInstance> modelInstance,
+                                         const QSharedPointer<AbstractModelInstance> &modelInstance,
                                          QObject *parent)
     : ComprehensiveTableModel(view, modelInstance, parent)
 {

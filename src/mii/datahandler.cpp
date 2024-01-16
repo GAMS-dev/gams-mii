@@ -42,7 +42,7 @@ class DataHandler::AbstractDataProvider
 protected:
     AbstractDataProvider(DataHandler *dataHandler,
                          AbstractModelInstance& modelInstance,
-                         QSharedPointer<AbstractViewConfiguration> viewConfig)
+                         const QSharedPointer<AbstractViewConfiguration> &viewConfig)
         : mDataHandler(dataHandler)
         , mModelInstance(modelInstance)
         , mViewConfig(viewConfig)
@@ -70,8 +70,8 @@ protected:
         , mSymbolColumnCount(other.mSymbolColumnCount)
         , mDataHandler(other.mDataHandler)
         , mModelInstance(other.mModelInstance)
-        , mLogicalSectionMapping(other.mLogicalSectionMapping)
-        , mViewConfig(other.mViewConfig)
+        , mLogicalSectionMapping(std::move(other.mLogicalSectionMapping))
+        , mViewConfig(std::move(other.mViewConfig))
     {
         mLogicalSectionMapping.clear();
         other.mViewConfig = nullptr;
@@ -216,7 +216,7 @@ class IdentityDataProvider : public DataHandler::AbstractDataProvider
 public:
     IdentityDataProvider(DataHandler *dataHandler,
                          AbstractModelInstance& modelInstance,
-                         QSharedPointer<AbstractViewConfiguration> viewConfig)
+                         const QSharedPointer<AbstractViewConfiguration> &viewConfig)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
     {
         mRowCount = mModelInstance.equationRowCount();
@@ -243,7 +243,7 @@ class BPScalingProvider final : public DataHandler::AbstractDataProvider
 public:
     BPScalingProvider(DataHandler *dataHandler,
                       AbstractModelInstance& modelInstance,
-                      QSharedPointer<AbstractViewConfiguration> viewConfig,
+                      const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                       DataHandler::CoefficientCount& negPosCount)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
@@ -280,7 +280,7 @@ public:
     }
 
     BPScalingProvider(BPScalingProvider&& other) noexcept
-        : DataHandler::AbstractDataProvider(other)
+        : DataHandler::AbstractDataProvider(std::move(other))
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
@@ -582,7 +582,7 @@ private:
 public:
     SymbolsDataProvider(DataHandler *dataHandler,
                         AbstractModelInstance& modelInstance,
-                        QSharedPointer<AbstractViewConfiguration> viewConfig)
+                        const QSharedPointer<AbstractViewConfiguration> &viewConfig)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
     {
         mDataMinimum = std::numeric_limits<double>::max();
@@ -599,7 +599,7 @@ public:
     }
 
     SymbolsDataProvider(SymbolsDataProvider&& other) noexcept
-        : DataHandler::AbstractDataProvider(other)
+        : DataHandler::AbstractDataProvider(std::move(other))
         , mRows(other.mRows)
         , mColumnEntryCount(other.mColumnEntryCount)
     {
@@ -817,7 +817,7 @@ class BPOverviewDataProvider final : public DataHandler::AbstractDataProvider
 public:
     BPOverviewDataProvider(DataHandler *dataHandler,
                            AbstractModelInstance& modelInstance,
-                           QSharedPointer<AbstractViewConfiguration> viewConfig,
+                           const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                            DataHandler::CoefficientCount& negPosCount)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
@@ -845,7 +845,7 @@ public:
     }
 
     BPOverviewDataProvider(BPOverviewDataProvider&& other) noexcept
-        : DataHandler::AbstractDataProvider(other)
+        : DataHandler::AbstractDataProvider(std::move(other))
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
@@ -963,7 +963,7 @@ class BPCountDataProvider final : public DataHandler::AbstractDataProvider
 public:
     BPCountDataProvider(DataHandler *dataHandler,
                         AbstractModelInstance& modelInstance,
-                        QSharedPointer<AbstractViewConfiguration> viewConfig,
+                        const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                         DataHandler::CoefficientCount& negPosCount)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
@@ -1003,7 +1003,7 @@ public:
     }
 
     BPCountDataProvider(BPCountDataProvider&& other) noexcept
-        : DataHandler::AbstractDataProvider(other)
+        : DataHandler::AbstractDataProvider(std::move(other))
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
@@ -1135,7 +1135,7 @@ class BPAverageDataProvider final : public DataHandler::AbstractDataProvider
 public:
     BPAverageDataProvider(DataHandler *dataHandler,
                           AbstractModelInstance& modelInstance,
-                          QSharedPointer<AbstractViewConfiguration> viewConfig,
+                          const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                           DataHandler::CoefficientCount& negPosCount)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
         , mCoeffCount(negPosCount)
@@ -1165,7 +1165,7 @@ public:
     }
 
     BPAverageDataProvider(BPAverageDataProvider&& other) noexcept
-        : DataHandler::AbstractDataProvider(other)
+        : DataHandler::AbstractDataProvider(std::move(other))
         , mCoeffCount(other.mCoeffCount)
     {
         mDataMatrix = other.mDataMatrix;
@@ -1313,7 +1313,7 @@ class PostoptDataProvider final : public DataHandler::AbstractDataProvider
 public:
     PostoptDataProvider(DataHandler *dataHandler,
                         AbstractModelInstance& modelInstance,
-                        QSharedPointer<AbstractViewConfiguration> viewConfig)
+                        const QSharedPointer<AbstractViewConfiguration> &viewConfig)
         : DataHandler::AbstractDataProvider(dataHandler, modelInstance, viewConfig)
     {
         mColumnCount = 5;
@@ -1329,8 +1329,8 @@ public:
     }
 
     PostoptDataProvider(PostoptDataProvider&& other) noexcept
-        : DataHandler::AbstractDataProvider(other)
-        , mRootItem(other.mRootItem)
+        : DataHandler::AbstractDataProvider(std::move(other))
+        , mRootItem(std::move(other.mRootItem))
     {
         other.mRootItem = nullptr;
     }
@@ -1604,7 +1604,7 @@ DataHandler::~DataHandler()
     if (mCoeffCount) delete mCoeffCount;
 }
 
-void DataHandler::aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig)
+void DataHandler::aggregate(const QSharedPointer<AbstractViewConfiguration> &viewConfig)
 {
     if (!viewConfig) return;
     auto provider = newProvider(viewConfig);
@@ -1617,7 +1617,7 @@ void DataHandler::aggregate(QSharedPointer<AbstractViewConfiguration> viewConfig
     mDataCache[viewConfig->viewId()] = provider;
 }
 
-void DataHandler::loadData(QSharedPointer<AbstractViewConfiguration> viewConfig)
+void DataHandler::loadData(const QSharedPointer<AbstractViewConfiguration> &viewConfig)
 {
     if (!viewConfig) return;
     auto provider = newProvider(viewConfig);
@@ -1789,7 +1789,7 @@ DataHandler::AbstractDataProvider* DataHandler::cloneProvider(int viewId)
     }
 }
 
-QSharedPointer<DataHandler::AbstractDataProvider> DataHandler::newProvider(QSharedPointer<AbstractViewConfiguration> viewConfig)
+QSharedPointer<DataHandler::AbstractDataProvider> DataHandler::newProvider(const QSharedPointer<AbstractViewConfiguration> &viewConfig)
 {
     if (!mCoeffCount) {
         mCoeffCount = new CoefficientCount(mModelInstance.variableCount()+2,

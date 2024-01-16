@@ -32,9 +32,9 @@ namespace studio {
 namespace mii {
 
 class AbstractViewFrame;
-class SectionTreeItem;
+class AbstractSectionTreeItem;
 
-class SectionTreeModel : public QAbstractItemModel
+class SectionTreeModel final : public QAbstractItemModel
 {
     Q_OBJECT
 
@@ -45,13 +45,15 @@ public:
 
     explicit SectionTreeModel(QObject *parent = nullptr);
 
-    virtual ~SectionTreeModel();
+    virtual ~SectionTreeModel() override;
 
     void appendCustomView(const QString &text, ViewHelper::ViewDataType type, AbstractViewFrame* widget);
 
-    SectionTreeItem* data() const;
+    AbstractSectionTreeItem* data() const;
 
-    SectionTreeItem* customData() const;
+    AbstractSectionTreeItem* customItems() const;
+
+    AbstractSectionTreeItem* predefinedItems() const;
 
     QVariant data(const QModelIndex &index, int role) const override;
 
@@ -79,18 +81,20 @@ public:
 
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
 
-    QList<AbstractViewFrame*> removeItem(SectionTreeItem* item);
+    QList<AbstractViewFrame*> removeItem(AbstractSectionTreeItem* item);
 
     QList<AbstractViewFrame*> removeCustomRows();
 
+    void clearModelData();
     void loadModelData(QStackedWidget* stackedWidget);
 
 private:
-    SectionTreeItem *mRoot;
-    SectionTreeItem *mCustomRoot;
-    SectionTreeItem *mCustomBlockpic = nullptr;
-    SectionTreeItem *mCustomPostopt = nullptr;
-    SectionTreeItem *mCustomSymbolView = nullptr;
+    AbstractSectionTreeItem *mRoot;
+    AbstractSectionTreeItem *mCustomRoot;
+    AbstractSectionTreeItem *mPredefinedRoot;
+    AbstractSectionTreeItem *mCustomBlockpic;
+    AbstractSectionTreeItem *mCustomPostopt;
+    AbstractSectionTreeItem *mCustomSymbolView;
 };
 
 }

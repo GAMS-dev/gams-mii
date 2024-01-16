@@ -53,8 +53,8 @@ public:
     void setCheckState(int dimension, Qt::CheckState state);
     bool isChecked(int dimension) const;
 
-    QSharedPointer<LabelTreeItem> aggregatedLabelTree() const;
-    void setAggregatedLabelTree(QSharedPointer<LabelTreeItem> labelTree);
+    const QSharedPointer<LabelTreeItem> &aggregatedLabelTree() const;
+    void setAggregatedLabelTree(const QSharedPointer<LabelTreeItem> &labelTree);
 
     QString label(int sectionIndex, int dimension) const;
     const SectionLabels& labels() const;

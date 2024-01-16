@@ -37,7 +37,7 @@ class BPIdentifierFilterModel : public QSortFilterProxyModel
     Q_OBJECT
 
 public:
-    BPIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+    BPIdentifierFilterModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
                             QObject *parent = nullptr);
 
     void setIdentifierFilter(const IdentifierFilter &filter);

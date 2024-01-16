@@ -34,16 +34,16 @@ class SymbolViewFrame final : public AbstractStandardTableViewFrame
     Q_OBJECT
 
 public:
-    SymbolViewFrame(int view, QSharedPointer<AbstractModelInstance> modelInstance,
+    SymbolViewFrame(int view, const QSharedPointer<AbstractModelInstance> &modelInstance,
                     QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    SymbolViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                    QSharedPointer<AbstractViewConfiguration> viewConfig,
+    SymbolViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                    const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                     QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
     AbstractTableViewFrame *clone(int viewId) override;
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
+    void setupView(const QSharedPointer<AbstractModelInstance> &modelInstance) override;
 
     ViewHelper::ViewDataType type() const override;
 

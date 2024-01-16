@@ -41,7 +41,7 @@ public:
     AbstractViewFrame(QWidget *parent = nullptr,
                       Qt::WindowFlags f = Qt::WindowFlags());
 
-    virtual ~AbstractViewFrame();
+    ~AbstractViewFrame() override;
 
     virtual AbstractViewFrame* clone(int viewId) = 0;
 
@@ -65,11 +65,11 @@ public:
 
     virtual void setSearchSelection(const SearchResult::SearchEntry &result) = 0;
 
-    virtual void setupView(QSharedPointer<AbstractModelInstance> modelInstance) = 0;
+    virtual void setupView(const QSharedPointer<AbstractModelInstance> &modelInstance) = 0;
 
-    QSharedPointer<AbstractViewConfiguration> viewConfig() const;
+    const QSharedPointer<AbstractViewConfiguration>& viewConfig() const;
 
-    void setViewConfig(QSharedPointer<AbstractViewConfiguration> viewConfig);
+    void setViewConfig(const QSharedPointer<AbstractViewConfiguration> &viewConfig);
 
     virtual bool hasData() const = 0;
 

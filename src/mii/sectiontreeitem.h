@@ -32,42 +32,44 @@ namespace mii {
 
 class AbstractViewFrame;
 
-class SectionTreeItem
+class AbstractSectionTreeItem
 {
+protected:
+    explicit AbstractSectionTreeItem(const QString &text, bool group,
+                                     AbstractSectionTreeItem *parent = nullptr);
+
+    explicit AbstractSectionTreeItem(const QString &text,
+                                     AbstractViewFrame* widget, bool group,
+                                     AbstractSectionTreeItem *parent = nullptr);
+
+    AbstractSectionTreeItem(const AbstractSectionTreeItem& other);
+
+    AbstractSectionTreeItem(AbstractSectionTreeItem&& other) noexcept;
+
 public:
-    explicit SectionTreeItem(const QString &name,
-                             SectionTreeItem *parent = nullptr);
+    virtual ~AbstractSectionTreeItem();
 
-    explicit SectionTreeItem(const QString &name,
-                             AbstractViewFrame* widget,
-                             SectionTreeItem *parent = nullptr);
-    ~SectionTreeItem();
+    virtual void append(AbstractSectionTreeItem *child);
 
-    void append(SectionTreeItem *child);
+    virtual void removeAllChilds() = 0;
 
-    QList<AbstractViewFrame*> removeChilds();
+    virtual QList<AbstractViewFrame*> removeChilds();
 
-    void remove(SectionTreeItem *child);
+    virtual void remove(AbstractSectionTreeItem *child);
 
-    void remove(int index, int count);
+    virtual void remove(int index, int count);
 
-    SectionTreeItem *child(int row);
+    virtual AbstractSectionTreeItem *child(int row);
 
-    int childCount() const;
+    virtual const QList<AbstractSectionTreeItem*>& childs() const = 0;
 
-    int columnCount() const;
+    virtual int childCount() const;
 
-    QString name() const;
+    virtual QList<AbstractViewFrame*> widgets() const;
 
-    void setName(const QString &name);
+    virtual int columnCount() const;
 
-    AbstractViewFrame* widget() const;
-
-    QList<AbstractViewFrame*> widgets() const;
-
-    void setWidget(AbstractViewFrame* page);
-
-    int row() const;
+    virtual int rowCount() const;
 
     ViewHelper::ViewDataType type() const;
 
@@ -81,15 +83,30 @@ public:
 
     bool isGroup() const;
 
-    void setGroup(bool group);
+    AbstractSectionTreeItem *parent() const;
 
-    SectionTreeItem *parent() const;
+    void setParent(AbstractSectionTreeItem *parent);
 
-    void setParent(SectionTreeItem *parent);
+    QString text() const;
+
+    void setText(const QString &text);
+
+    AbstractViewFrame* widget() const;
+
+    void setWidget(AbstractViewFrame* page);
+
+    int row() const;
+
+    AbstractSectionTreeItem &operator=(const AbstractSectionTreeItem& other);
+
+    AbstractSectionTreeItem &operator=(AbstractSectionTreeItem&& other) noexcept;
 
 private:
-    QString mName;
-    SectionTreeItem *mParent;
+    QString mText;
+    AbstractSectionTreeItem *mParent;
+    ViewHelper::ViewDataType mType = ViewHelper::ViewDataType::Unknown;
+    bool mCustom = false;
+    bool mGroup = false;
 
     ///
     /// \brief Target widget.
@@ -97,11 +114,81 @@ private:
     /// \remark Do not delete. Owned by QStackedWidget.
     ///
     AbstractViewFrame* mWidget = nullptr;
+};
 
-    ViewHelper::ViewDataType mType = ViewHelper::ViewDataType::Unknown;
-    QVector<SectionTreeItem*> mChilds;
-    bool mCustom = false;
-    bool mGroup = false;
+class SectionGroupTreeItem final : public AbstractSectionTreeItem
+{
+public:
+    explicit SectionGroupTreeItem(const QString &text,
+                                  AbstractSectionTreeItem *parent = nullptr);
+
+    SectionGroupTreeItem(const SectionGroupTreeItem& other);
+
+    SectionGroupTreeItem(SectionGroupTreeItem&& other) noexcept;
+
+    virtual ~SectionGroupTreeItem() override;
+
+    void append(AbstractSectionTreeItem *child) override;
+
+    void removeAllChilds() override;
+
+    QList<AbstractViewFrame*> removeChilds() override;
+
+    void remove(AbstractSectionTreeItem *child) override;
+
+    void remove(int index, int count) override;
+
+    AbstractSectionTreeItem *child(int row) override;
+
+    const QList<AbstractSectionTreeItem*>& childs() const override;
+
+    int childCount() const override;
+
+    QList<AbstractViewFrame*> widgets() const override;
+
+    SectionGroupTreeItem& operator=(const SectionGroupTreeItem& other);
+
+    SectionGroupTreeItem& operator=(SectionGroupTreeItem&& other) noexcept;
+
+private:
+    QVector<AbstractSectionTreeItem*> mChilds;
+};
+
+class SectionTreeItem final : public AbstractSectionTreeItem
+{
+public:
+    explicit SectionTreeItem(const QString &text,
+                             AbstractViewFrame* widget,
+                             AbstractSectionTreeItem *parent = nullptr);
+
+    SectionTreeItem(const SectionTreeItem& other);
+
+    SectionTreeItem(SectionTreeItem&& other) noexcept;
+
+    virtual ~SectionTreeItem();
+
+    void append(AbstractSectionTreeItem *child) override;
+
+    void removeAllChilds() override;
+
+    QList<AbstractViewFrame*> removeChilds() override;
+
+    void remove(int index, int count) override;
+
+    AbstractSectionTreeItem *child(int row) override;
+
+    const QList<AbstractSectionTreeItem*>& childs() const override;
+
+    int childCount() const override;
+
+    QList<AbstractViewFrame*> widgets() const override;
+
+    SectionTreeItem& operator=(const SectionTreeItem& other);
+
+    SectionTreeItem& operator=(SectionTreeItem&& other) noexcept;
+
+private:
+    QVector<AbstractSectionTreeItem*> mChilds;
 };
 
 }

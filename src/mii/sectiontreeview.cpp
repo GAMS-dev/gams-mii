@@ -33,9 +33,17 @@ SectionTreeView::SectionTreeView(QWidget *parent)
     , mMenu(new QMenu(this))
     , mSaveViewAction(new QAction("Save", this))
     , mRemoveViewAction(new QAction("Remove", this))
+    , mRenameViewAction(new QAction("Rename", this))
+    , mCollapsAllAction(new QAction("Collapse All", this))
+    , mExpandAllAction(new QAction("Expand All", this))
 {
     mMenu->addAction(mSaveViewAction);
     mMenu->addAction(mRemoveViewAction);
+    mMenu->addSeparator();
+    mMenu->addAction(mRenameViewAction);
+    mMenu->addSeparator();
+    mMenu->addAction(mCollapsAllAction);
+    mMenu->addAction(mExpandAllAction);
 
     connect(this, &SectionTreeView::customContextMenuRequested,
             this, &SectionTreeView::showCustomContextMenu);
@@ -43,6 +51,12 @@ SectionTreeView::SectionTreeView(QWidget *parent)
             this, &SectionTreeView::saveViewTriggered);
     connect(mRemoveViewAction, &QAction::triggered,
             this, &SectionTreeView::removeViewTriggered);
+    connect(mRenameViewAction, &QAction::triggered,
+            this, &SectionTreeView::renameViewTriggered);
+    connect(mCollapsAllAction, &QAction::triggered,
+            this, &QTreeView::collapseAll);
+    connect(mExpandAllAction, &QAction::triggered,
+            this, &QTreeView::expandAll);
 }
 
 ViewActionStates SectionTreeView::viewActionStates() const
@@ -59,6 +73,13 @@ void SectionTreeView::showCustomContextMenu(const QPoint &pos)
     mSaveViewAction->setEnabled(states.SaveEnabled);
     mRemoveViewAction->setEnabled(states.RemoveEnabled);
     mMenu->popup(viewport()->mapToGlobal(pos));
+}
+
+void SectionTreeView::renameViewTriggered()
+{
+    auto cIdx = currentIndex();
+    if (cIdx.isValid())
+        edit(cIdx);
 }
 
 void SectionTreeView::currentChanged(const QModelIndex &current,

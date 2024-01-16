@@ -89,14 +89,14 @@ class BPOverviewViewFrame final : public AbstractBPViewFrame
 public:
     BPOverviewViewFrame(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    BPOverviewViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                        QSharedPointer<AbstractViewConfiguration> viewConfig,
+    BPOverviewViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                        const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                         QWidget *parent = nullptr,
                         Qt::WindowFlags f = Qt::WindowFlags());
 
     AbstractTableViewFrame *clone(int viewId) override;
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
+    void setupView(const QSharedPointer<AbstractModelInstance> &modelInstance) override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
@@ -118,14 +118,14 @@ class BPCountViewFrame final : public AbstractBPViewFrame
 public:
     BPCountViewFrame(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    BPCountViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                     QSharedPointer<AbstractViewConfiguration> viewConfig,
+    BPCountViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                     const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                      QWidget *parent = nullptr,
                      Qt::WindowFlags f = Qt::WindowFlags());
 
     AbstractTableViewFrame *clone(int viewId) override;
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
+    void setupView(const QSharedPointer<AbstractModelInstance> &modelInstance) override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
@@ -154,14 +154,14 @@ class BPAverageViewFrame final : public AbstractBPViewFrame
 public:
     BPAverageViewFrame(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    BPAverageViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                       QSharedPointer<AbstractViewConfiguration> viewConfig,
+    BPAverageViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                       const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                        QWidget *parent = nullptr,
                        Qt::WindowFlags f = Qt::WindowFlags());
 
     AbstractTableViewFrame *clone(int viewId) override;
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
+    void setupView(const QSharedPointer<AbstractModelInstance> &modelInstance) override;
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
@@ -190,8 +190,8 @@ class BPScalingViewFrame final : public AbstractBPViewFrame
 public:
     BPScalingViewFrame(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    BPScalingViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                       QSharedPointer<AbstractViewConfiguration> viewConfig,
+    BPScalingViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                       const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                        QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
     AbstractTableViewFrame* clone(int viewId) override;
@@ -203,7 +203,7 @@ public:
 
     void setShowAbsoluteValues(bool absoluteValues) override;
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
+    void setupView(const QSharedPointer<AbstractModelInstance> &modelInstance) override;
 
     void updateView() override;
 

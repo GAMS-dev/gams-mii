@@ -69,12 +69,12 @@ bool AggregationItem::isChecked(int dimension) const
     return mCheckState[dimension] == Qt::Checked;
 }
 
-QSharedPointer<LabelTreeItem> AggregationItem::aggregatedLabelTree() const
+const QSharedPointer<LabelTreeItem> &AggregationItem::aggregatedLabelTree() const
 {
     return mAggregatedLabelTree;
 }
 
-void AggregationItem::setAggregatedLabelTree(QSharedPointer<LabelTreeItem> labelTree)
+void AggregationItem::setAggregatedLabelTree(const QSharedPointer<LabelTreeItem> &labelTree)
 {
     mAggregatedLabelTree = labelTree;
 }

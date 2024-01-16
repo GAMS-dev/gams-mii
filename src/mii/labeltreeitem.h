@@ -49,7 +49,7 @@ public:
 
     QList<LabelTreeItem*> visibleChilds() const;
 
-    void setChilds(const QList<LabelTreeItem*> childs);
+    void setChilds(const QList<LabelTreeItem*> &childs);
 
     LabelTreeItem* clone(LabelTreeItem* newParent = nullptr) const;
 
@@ -111,7 +111,7 @@ public:
                                         const QString &typeText, int dimension);
 
 private:
-    void unite(QList<LabelTreeItem*> childs);
+    void unite(const QList<LabelTreeItem*> &childs);
 
 private:
     LabelTreeItem *mParent;

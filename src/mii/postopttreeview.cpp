@@ -23,6 +23,7 @@
 #include "common.h"
 
 #include <QEvent>
+#include <QMenu>
 #include <QWheelEvent>
 
 namespace gams {
@@ -31,8 +32,19 @@ namespace mii {
 
 PostoptTreeView::PostoptTreeView(QWidget *parent)
     : QTreeView(parent)
+    , mMenu(new QMenu(this))
+    , mCollapsAllAction(new QAction("Collapse All", this))
+    , mExpandAllAction(new QAction("Expand All", this))
 {
+    mMenu->addAction(mCollapsAllAction);
+    mMenu->addAction(mExpandAllAction);
 
+    connect(this, &PostoptTreeView::customContextMenuRequested,
+            this, &PostoptTreeView::showCustomContextMenu);
+    connect(mCollapsAllAction, &QAction::triggered,
+            this, &QTreeView::collapseAll);
+    connect(mExpandAllAction, &QAction::triggered,
+            this, &QTreeView::expandAll);
 }
 
 bool PostoptTreeView::eventFilter(QObject *watched, QEvent *event)
@@ -68,8 +80,19 @@ void PostoptTreeView::resetZoom()
     resizeColumns();
 }
 
+void PostoptTreeView::showCustomContextMenu(const QPoint &pos)
+{
+    auto index = indexAt(pos);
+    if (!index.isValid()) return;
+    mMenu->popup(viewport()->mapToGlobal(pos));
+}
+
 void PostoptTreeView::mousePressEvent(QMouseEvent *event)
 {
+    if (event->button() != Qt::LeftButton) {
+        QTreeView::mousePressEvent(event);
+        return;
+    }
     auto idx = indexAt(event->pos());
     if (idx.isValid()) {
         auto item = static_cast<PostoptTreeItem*>(idx.internalPointer());
@@ -82,13 +105,13 @@ void PostoptTreeView::mousePressEvent(QMouseEvent *event)
 
 void PostoptTreeView::zoom(int range)
 {
-    if (range == 0.f)
+    if (range == 0)
         return;
     QFont f = font();
-    const float newSize = f.pointSizeF() + range;
+    auto newSize = f.pointSizeF() + range;
     if (newSize <= 0)
         return;
-    f.setPointSize(newSize);
+    f.setPointSizeF(newSize);
     setFont(f);
     resizeColumns();
 }

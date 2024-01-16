@@ -33,7 +33,8 @@ int ViewConfigurationProvider::ViewId = 127;
 class DefaultViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    DefaultViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    DefaultViewConfiguration(ViewHelper::ViewDataType viewType,
+                             const QSharedPointer<AbstractModelInstance> &modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
 
@@ -55,7 +56,8 @@ protected:
 class JacobianViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    JacobianViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    JacobianViewConfiguration(ViewHelper::ViewDataType viewType,
+                              const QSharedPointer<AbstractModelInstance> &modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
@@ -100,7 +102,8 @@ protected:
 class BPScalingViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    BPScalingViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    BPScalingViewConfiguration(ViewHelper::ViewDataType viewType,
+                               const QSharedPointer<AbstractModelInstance> &modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
@@ -176,7 +179,8 @@ private:
 class SymbolViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    SymbolViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    SymbolViewConfiguration(ViewHelper::ViewDataType viewType,
+                            const QSharedPointer<AbstractModelInstance> &modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
@@ -220,7 +224,8 @@ protected:
 class BPOverviewViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    BPOverviewViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    BPOverviewViewConfiguration(ViewHelper::ViewDataType viewType,
+                                const QSharedPointer<AbstractModelInstance> &modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
@@ -282,7 +287,8 @@ private:
 class BPCountViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    BPCountViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    BPCountViewConfiguration(ViewHelper::ViewDataType viewType,
+                             const QSharedPointer<AbstractModelInstance> &modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
@@ -362,7 +368,8 @@ private:
 class BPAverageViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    BPAverageViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    BPAverageViewConfiguration(ViewHelper::ViewDataType viewType,
+                               const QSharedPointer<AbstractModelInstance> &modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
@@ -442,7 +449,8 @@ private:
 class PostoptViewConfiguration final : public AbstractViewConfiguration
 {
 public:
-    PostoptViewConfiguration(ViewHelper::ViewDataType viewType, QSharedPointer<AbstractModelInstance> modelInstance)
+    PostoptViewConfiguration(ViewHelper::ViewDataType viewType,
+                             const QSharedPointer<AbstractModelInstance> &modelInstance)
         : AbstractViewConfiguration(viewType, modelInstance)
     {
         createLabelFilter();
@@ -503,7 +511,7 @@ private:
 
 
 AbstractViewConfiguration::AbstractViewConfiguration(ViewHelper::ViewDataType viewType,
-                                                     QSharedPointer<AbstractModelInstance> modelInstance)
+                                                     const QSharedPointer<AbstractModelInstance> &modelInstance)
     : mModelInstance(modelInstance)
     , mViewId((int)viewType)
     , mViewType(viewType)
@@ -511,7 +519,7 @@ AbstractViewConfiguration::AbstractViewConfiguration(ViewHelper::ViewDataType vi
 
 }
 
-void AbstractViewConfiguration::setModelInstance(QSharedPointer<AbstractModelInstance> modelInstance)
+void AbstractViewConfiguration::setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     mModelInstance = modelInstance;
 }
@@ -568,7 +576,7 @@ AbstractViewConfiguration *ViewConfigurationProvider::defaultConfiguration()
 }
 
 AbstractViewConfiguration *ViewConfigurationProvider::configuration(ViewHelper::ViewDataType viewType,
-                                                                    QSharedPointer<AbstractModelInstance> modelInstance)
+                                                                    const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     switch (viewType) {
     case ViewHelper::ViewDataType::BP_Scaling:

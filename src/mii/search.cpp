@@ -32,7 +32,7 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-Search::Search(QSharedPointer<AbstractViewConfiguration> viewConfig,
+Search::Search(const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                QAbstractItemModel *dataModel,
                const QString &term,
                bool isRegEx)

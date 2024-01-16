@@ -64,12 +64,12 @@ FilterDialog::~FilterDialog()
     delete ui;
 }
 
-QSharedPointer<AbstractViewConfiguration> FilterDialog::viewConfig() const
+const QSharedPointer<AbstractViewConfiguration> &FilterDialog::viewConfig() const
 {
     return mViewConfig;
 }
 
-void FilterDialog::setViewConfig(QSharedPointer<AbstractViewConfiguration> config)
+void FilterDialog::setViewConfig(const QSharedPointer<AbstractViewConfiguration> &config)
 {
     mViewConfig = config;
     setupEquationFilter(mViewConfig->currentIdentifierFilter().value(equationOrientation()),

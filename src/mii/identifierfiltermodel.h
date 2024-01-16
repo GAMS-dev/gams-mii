@@ -37,7 +37,7 @@ class IdentifierFilterModel : public QSortFilterProxyModel
     Q_OBJECT
 
 public:
-    IdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+    IdentifierFilterModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
                           QObject *parent = nullptr);
 
     void setIdentifierFilter(const IdentifierFilter &filter);
@@ -59,7 +59,7 @@ class IdentifierLabelFilterModel : public QSortFilterProxyModel
     Q_OBJECT
 
 public:
-    IdentifierLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+    IdentifierLabelFilterModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
                                QObject *parent = nullptr);
 
     void clearIdentifierFilter();

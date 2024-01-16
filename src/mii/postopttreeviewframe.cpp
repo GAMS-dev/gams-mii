@@ -39,8 +39,8 @@ PostoptTreeViewFrame::PostoptTreeViewFrame(QWidget *parent, Qt::WindowFlags f)
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
-PostoptTreeViewFrame::PostoptTreeViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                                           QSharedPointer<AbstractViewConfiguration> viewConfig,
+PostoptTreeViewFrame::PostoptTreeViewFrame(const QSharedPointer<AbstractModelInstance>& modelInstance,
+                                           const QSharedPointer<AbstractViewConfiguration>& viewConfig,
                                            QWidget *parent,
                                            Qt::WindowFlags f)
     : PostoptTreeViewFrame(parent, f)
@@ -86,7 +86,7 @@ void PostoptTreeViewFrame::setSearchSelection(const SearchResult::SearchEntry &r
     Q_UNUSED(result);
 }
 
-void PostoptTreeViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
+void PostoptTreeViewFrame::setupView(const QSharedPointer<AbstractModelInstance>& modelInstance)
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));

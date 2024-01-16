@@ -41,7 +41,7 @@ class HierarchicalHeaderView : public QHeaderView
 
 public:
     HierarchicalHeaderView(Qt::Orientation orientation,
-                           QSharedPointer<AbstractModelInstance> modelInstance,
+                           const QSharedPointer<AbstractModelInstance> &modelInstance,
                            QWidget *parent = nullptr);
     ~HierarchicalHeaderView();
 

@@ -37,7 +37,7 @@ class LabelFilterModel : public QSortFilterProxyModel
     Q_OBJECT
 
 public:
-    LabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+    LabelFilterModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
                      QObject *parent = nullptr);
 
     LabelFilter labelFilter() const;

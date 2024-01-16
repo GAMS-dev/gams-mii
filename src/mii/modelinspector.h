@@ -47,7 +47,7 @@ class ModelInspector : public QWidget
 
 public:
     explicit ModelInspector(QWidget *parent = nullptr);
-    ~ModelInspector();
+    ~ModelInspector() override;
 
     QString scratchDir() const;
     void setScratchDir(const QString &scratchDir);

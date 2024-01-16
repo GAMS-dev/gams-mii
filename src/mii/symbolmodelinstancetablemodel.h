@@ -36,8 +36,8 @@ class SymbolModelInstanceTableModel final : public QAbstractTableModel
     Q_OBJECT
 
 public:
-    SymbolModelInstanceTableModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                                  QSharedPointer<AbstractViewConfiguration> viewConfig,
+    SymbolModelInstanceTableModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                  const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                                   QObject *parent = nullptr);
 
     void setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance);

@@ -147,8 +147,8 @@ BPOverviewViewFrame::BPOverviewViewFrame(QWidget *parent, Qt::WindowFlags f)
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
-BPOverviewViewFrame::BPOverviewViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                                         QSharedPointer<AbstractViewConfiguration> viewConfig,
+BPOverviewViewFrame::BPOverviewViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                         const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                                          QWidget *parent, Qt::WindowFlags f)
     : AbstractBPViewFrame(new BPOverviewTableModel, parent, f)
 {
@@ -169,7 +169,7 @@ AbstractTableViewFrame *BPOverviewViewFrame::clone(int viewId)
     return frame;
 }
 
-void BPOverviewViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
+void BPOverviewViewFrame::setupView(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
@@ -221,8 +221,8 @@ BPCountViewFrame::BPCountViewFrame(QWidget *parent, Qt::WindowFlags f)
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
-BPCountViewFrame::BPCountViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                                   QSharedPointer<AbstractViewConfiguration> viewConfig,
+BPCountViewFrame::BPCountViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                   const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                                    QWidget *parent, Qt::WindowFlags f)
     : AbstractBPViewFrame(new ComprehensiveTableModel, parent, f)
 {
@@ -243,7 +243,7 @@ AbstractTableViewFrame *BPCountViewFrame::clone(int viewId)
     return frame;
 }
 
-void BPCountViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
+void BPCountViewFrame::setupView(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
@@ -307,9 +307,9 @@ BPAverageViewFrame::BPAverageViewFrame(QWidget *parent, Qt::WindowFlags f)
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
-BPAverageViewFrame::BPAverageViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                                                   QSharedPointer<AbstractViewConfiguration> viewConfig,
-                                                   QWidget *parent, Qt::WindowFlags f)
+BPAverageViewFrame::BPAverageViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                       const QSharedPointer<AbstractViewConfiguration> &viewConfig,
+                                       QWidget *parent, Qt::WindowFlags f)
     : AbstractBPViewFrame(new BPAverageTableModel, parent, f)
 {
     mModelInstance = modelInstance;
@@ -330,7 +330,7 @@ AbstractTableViewFrame *BPAverageViewFrame::clone(int viewId)
     return frame;
 }
 
-void BPAverageViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
+void BPAverageViewFrame::setupView(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));
@@ -395,8 +395,8 @@ BPScalingViewFrame::BPScalingViewFrame(QWidget *parent, Qt::WindowFlags f)
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::defaultConfiguration());
 }
 
-BPScalingViewFrame::BPScalingViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                                       QSharedPointer<AbstractViewConfiguration> viewConfig,
+BPScalingViewFrame::BPScalingViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                       const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                                        QWidget *parent, Qt::WindowFlags f)
     : AbstractBPViewFrame(new ComprehensiveTableModel, parent, f)
 {
@@ -427,7 +427,7 @@ void BPScalingViewFrame::setShowAbsoluteValues(bool absoluteValues)
     mValueFormatModel->setValueFilter(mViewConfig->currentValueFilter());
 }
 
-void BPScalingViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
+void BPScalingViewFrame::setupView(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     mModelInstance = modelInstance;
     mViewConfig = QSharedPointer<AbstractViewConfiguration>(ViewConfigurationProvider::configuration(type(), mModelInstance));

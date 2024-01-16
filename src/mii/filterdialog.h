@@ -46,11 +46,11 @@ class FilterDialog : public QDialog
 
 public:
     explicit FilterDialog(QWidget *parent = nullptr);
-    ~FilterDialog();
+    ~FilterDialog() override;
 
-    QSharedPointer<AbstractViewConfiguration> viewConfig() const;
+    const QSharedPointer<AbstractViewConfiguration> &viewConfig() const;
 
-    void setViewConfig(QSharedPointer<AbstractViewConfiguration> config);
+    void setViewConfig(const QSharedPointer<AbstractViewConfiguration> &config);
 
 signals:
     void viewConfigUpdated();

@@ -197,7 +197,7 @@ public:
 
     void paintVerticalSection(QPainter *painter,
                               const QRect &rect,
-                              QStyleOptionHeader option,
+                              const QStyleOptionHeader &option,
                               int logicalIndex,
                               int sectionIndex)
     {
@@ -462,10 +462,10 @@ private:
         return mVisibleLabelSections[mHeaderView->orientation()][symbol->firstSection()];
     }
 
-    void labelFilterTree(const QString label,
+    void labelFilterTree(const QString &label,
                          const QMap<int, QStringList> &data,
                          const IdentifierState &state,
-                         QVector<int> visibleSections,
+                         const QVector<int> &visibleSections,
                          int symbolIndex,
                          FilterTreeItem *parent)
     {
@@ -528,7 +528,7 @@ private:
 };
 
 HierarchicalHeaderView::HierarchicalHeaderView(Qt::Orientation orientation,
-                                               QSharedPointer<AbstractModelInstance> modelInstance,
+                                               const QSharedPointer<AbstractModelInstance> &modelInstance,
                                                QWidget *parent)
     : QHeaderView(orientation, parent)
     , mPrivate(new HierarchicalHeaderView_private(this))

@@ -43,6 +43,9 @@ public:
 signals:
     void openFilterDialog();
 
+public slots:
+    void showCustomContextMenu(const QPoint &pos);
+
 protected:
     void mousePressEvent(QMouseEvent *event) override;
 
@@ -53,6 +56,9 @@ private:
 
 private:
     QFont mBaseFont;
+    QMenu* mMenu;
+    QAction* mCollapsAllAction;
+    QAction* mExpandAllAction;
 };
 
 }

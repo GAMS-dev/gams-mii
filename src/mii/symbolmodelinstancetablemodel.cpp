@@ -26,8 +26,8 @@ namespace gams {
 namespace studio{
 namespace mii {
 
-SymbolModelInstanceTableModel::SymbolModelInstanceTableModel(QSharedPointer<AbstractModelInstance> modelInstance,
-                                                             QSharedPointer<AbstractViewConfiguration> viewConfig,
+SymbolModelInstanceTableModel::SymbolModelInstanceTableModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                                             const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                                                              QObject *parent)
     : QAbstractTableModel(parent)
     , mModelInstance(modelInstance)

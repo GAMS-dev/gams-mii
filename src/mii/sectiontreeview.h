@@ -50,6 +50,9 @@ signals:
 public slots:
     void showCustomContextMenu(const QPoint &pos);
 
+private slots:
+    void renameViewTriggered();
+
 protected:
     void currentChanged(const QModelIndex &current,
                         const QModelIndex &previous) override;
@@ -61,6 +64,9 @@ private:
     QMenu* mMenu;
     QAction* mSaveViewAction;
     QAction* mRemoveViewAction;
+    QAction* mRenameViewAction;
+    QAction* mCollapsAllAction;
+    QAction* mExpandAllAction;
 };
 
 }

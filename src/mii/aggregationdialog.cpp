@@ -54,12 +54,12 @@ AggregationDialog::~AggregationDialog()
     delete ui;
 }
 
-QSharedPointer<AbstractViewConfiguration> AggregationDialog::viewConfig() const
+const QSharedPointer<AbstractViewConfiguration> &AggregationDialog::viewConfig() const
 {
     return mViewConfig;
 }
 
-void AggregationDialog::setViewConfig(QSharedPointer<AbstractViewConfiguration> config)
+void AggregationDialog::setViewConfig(const QSharedPointer<AbstractViewConfiguration> &config)
 {
     mViewConfig = config;
     mAbsValuesGlobal = mViewConfig->currentAggregation().useAbsoluteValues();

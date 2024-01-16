@@ -78,7 +78,7 @@ QList<LabelTreeItem*> LabelTreeItem::visibleChilds() const
     return visible;
 }
 
-void LabelTreeItem::setChilds(const QList<LabelTreeItem *> childs)
+void LabelTreeItem::setChilds(const QList<LabelTreeItem *> &childs)
 {
     mChilds = childs;
 }
@@ -309,7 +309,7 @@ LabelTreeItem* LabelTreeItem::visibleBranch(QList<LabelTreeItem*> &currentLevel,
     return newItem;
 }
 
-void LabelTreeItem::unite(QList<LabelTreeItem*> childs)
+void LabelTreeItem::unite(const QList<LabelTreeItem*> &childs)
 {
     QList<LabelTreeItem*> invisible;
     QHash<QString, LabelTreeItem*> unified;

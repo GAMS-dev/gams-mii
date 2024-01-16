@@ -33,7 +33,7 @@ namespace studio{
 namespace mii {
 
 SymbolViewFrame::SymbolViewFrame(int view,
-                                 QSharedPointer<AbstractModelInstance> modelInstance,
+                                 const QSharedPointer<AbstractModelInstance> &modelInstance,
                                  QWidget *parent,
                                  Qt::WindowFlags f)
     : AbstractStandardTableViewFrame(parent, f)
@@ -42,8 +42,8 @@ SymbolViewFrame::SymbolViewFrame(int view,
     mViewConfig->setViewId(view);
 }
 
-SymbolViewFrame::SymbolViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                                 QSharedPointer<AbstractViewConfiguration> viewConfig,
+SymbolViewFrame::SymbolViewFrame(const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                 const QSharedPointer<AbstractViewConfiguration> &viewConfig,
                                  QWidget *parent, Qt::WindowFlags f)
     : AbstractStandardTableViewFrame(parent, f)
 {
@@ -72,7 +72,7 @@ AbstractTableViewFrame *SymbolViewFrame::clone(int viewId)
     return frame;
 }
 
-void SymbolViewFrame::setupView(QSharedPointer<AbstractModelInstance> modelInstance)
+void SymbolViewFrame::setupView(const QSharedPointer<AbstractModelInstance> &modelInstance)
 {
     mModelInstance = modelInstance;
     mViewConfig->setModelInstance(mModelInstance);

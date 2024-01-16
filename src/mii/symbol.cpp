@@ -147,12 +147,12 @@ void Symbol::setLogicalIndex(int index)
     mLogicalIndex = index;
 }
 
-QSharedPointer<LabelTreeItem> Symbol::labelTree() const
+const QSharedPointer<LabelTreeItem> &Symbol::labelTree() const
 {
     return mLabelTree;
 }
 
-void Symbol::setLabelTree(QSharedPointer<LabelTreeItem> tree)
+void Symbol::setLabelTree(const QSharedPointer<LabelTreeItem> &tree)
 {
     mLabelTree = tree;
 }

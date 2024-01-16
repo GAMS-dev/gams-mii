@@ -38,7 +38,7 @@ struct SearchResult;
 class Search
 {
 public:
-    Search(QSharedPointer<AbstractViewConfiguration> viewConfig,
+    Search(const QSharedPointer<AbstractViewConfiguration> &viewConfig,
            QAbstractItemModel *dataModel,
            const QString &term,
            bool isRegEx);

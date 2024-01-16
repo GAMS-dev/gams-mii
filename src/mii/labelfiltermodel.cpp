@@ -25,7 +25,7 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-LabelFilterModel::LabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+LabelFilterModel::LabelFilterModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
                                    QObject *parent)
     : QSortFilterProxyModel(parent)
     , mModelInstance(modelInstance)

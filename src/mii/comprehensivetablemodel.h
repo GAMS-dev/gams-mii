@@ -38,7 +38,7 @@ public:
     explicit ComprehensiveTableModel(QObject *parent = nullptr);
 
     explicit ComprehensiveTableModel(int view,
-                                     QSharedPointer<AbstractModelInstance> modelInstance,
+                                     const QSharedPointer<AbstractModelInstance> &modelInstance,
                                      QObject *parent = nullptr);
 
     virtual ~ComprehensiveTableModel();
@@ -78,8 +78,8 @@ public:
     explicit BPOverviewTableModel(QObject *parent = nullptr);
 
     explicit BPOverviewTableModel(int view,
-                                        QSharedPointer<AbstractModelInstance> modelInstance,
-                                        QObject *parent = nullptr);
+                                  const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                  QObject *parent = nullptr);
 
     QVariant data(const QModelIndex &index, int role) const override;
 
@@ -95,8 +95,8 @@ public:
     explicit BPCountTableModel(QObject *parent = nullptr);
 
     explicit BPCountTableModel(int view,
-                                     QSharedPointer<AbstractModelInstance> modelInstance,
-                                     QObject *parent = nullptr);
+                               const QSharedPointer<AbstractModelInstance> &modelInstance,
+                               QObject *parent = nullptr);
 
     QVariant data(const QModelIndex &index, int role) const override;
 };
@@ -109,8 +109,8 @@ public:
     explicit BPAverageTableModel(QObject *parent = nullptr);
 
     explicit BPAverageTableModel(int view,
-                                       QSharedPointer<AbstractModelInstance> modelInstance,
-                                       QObject *parent = nullptr);
+                                 const QSharedPointer<AbstractModelInstance> &modelInstance,
+                                 QObject *parent = nullptr);
 
     QVariant data(const QModelIndex &index, int role) const override;
 };

@@ -55,12 +55,12 @@ SearchResult &AbstractViewFrame::searchResult()
     return mViewConfig->searchResult();
 }
 
-QSharedPointer<AbstractViewConfiguration> AbstractViewFrame::viewConfig() const
+const QSharedPointer<AbstractViewConfiguration> &AbstractViewFrame::viewConfig() const
 {
     return mViewConfig;
 }
 
-void AbstractViewFrame::setViewConfig(QSharedPointer<AbstractViewConfiguration> viewConfig)
+void AbstractViewFrame::setViewConfig(const QSharedPointer<AbstractViewConfiguration> &viewConfig)
 {
     mViewConfig = viewConfig;
 }

@@ -59,6 +59,9 @@
          <property name="contextMenuPolicy">
           <enum>Qt::CustomContextMenu</enum>
          </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::EditKeyPressed</set>
+         </property>
          <attribute name="headerVisible">
           <bool>false</bool>
          </attribute>

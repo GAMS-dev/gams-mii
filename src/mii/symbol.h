@@ -90,9 +90,9 @@ public:
 
     void setLogicalIndex(int index);
 
-    QSharedPointer<LabelTreeItem> labelTree() const;
+    const QSharedPointer<LabelTreeItem> &labelTree() const;
 
-    void setLabelTree(QSharedPointer<LabelTreeItem> tree);
+    void setLabelTree(const QSharedPointer<LabelTreeItem> &tree);
 
     bool isEquation() const;
 

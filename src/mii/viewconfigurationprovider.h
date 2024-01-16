@@ -45,7 +45,7 @@ public:
     Q_DECLARE_FLAGS(Options, Option)
 
     AbstractViewConfiguration(ViewHelper::ViewDataType viewType,
-                              QSharedPointer<AbstractModelInstance> modelInstance = nullptr);
+                              const QSharedPointer<AbstractModelInstance> &modelInstance = nullptr);
 
     virtual ~AbstractViewConfiguration()
     {
@@ -54,12 +54,12 @@ public:
 
     virtual AbstractViewConfiguration* clone() = 0;
 
-    QSharedPointer<AbstractModelInstance> modelInstance() const
+    const QSharedPointer<AbstractModelInstance> &modelInstance() const
     {
         return mModelInstance;
     }
 
-    void setModelInstance(QSharedPointer<AbstractModelInstance> modelInstance);
+    void setModelInstance(const QSharedPointer<AbstractModelInstance> &modelInstance);
 
     inline int viewId() const
     {
@@ -253,7 +253,10 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(AbstractViewConfiguration::Options)
 class ViewConfigurationProvider final
 {
 private:
-    ViewConfigurationProvider() {};
+    ViewConfigurationProvider()
+    {
+
+    }
 
 public:
     static int currentViewId()
@@ -269,7 +272,7 @@ public:
     static AbstractViewConfiguration* defaultConfiguration();
 
     static AbstractViewConfiguration* configuration(ViewHelper::ViewDataType viewType,
-                                                    QSharedPointer<AbstractModelInstance> modelInstance);
+                                                    const QSharedPointer<AbstractModelInstance> &modelInstance);
 
 private:
     static int ViewId;

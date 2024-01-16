@@ -36,10 +36,10 @@ class PostoptTreeModel final : public QAbstractItemModel
 
 public:
     explicit PostoptTreeModel(int view,
-                              QSharedPointer<AbstractModelInstance> modelInstance,
+                              const QSharedPointer<AbstractModelInstance>& modelInstance,
                               QObject *parent = nullptr);
 
-    ~PostoptTreeModel();
+    ~PostoptTreeModel() override;
 
     QVariant data(const QModelIndex &index, int role) const override;
 

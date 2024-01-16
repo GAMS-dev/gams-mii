@@ -42,12 +42,12 @@ public:
     PostoptTreeViewFrame(QWidget *parent = nullptr,
                          Qt::WindowFlags f = Qt::WindowFlags());
 
-    PostoptTreeViewFrame(QSharedPointer<AbstractModelInstance> modelInstance,
-                         QSharedPointer<AbstractViewConfiguration> viewConfig,
+    PostoptTreeViewFrame(const QSharedPointer<AbstractModelInstance>& modelInstance,
+                         const QSharedPointer<AbstractViewConfiguration>& viewConfig,
                          QWidget *parent = nullptr,
                          Qt::WindowFlags f = Qt::WindowFlags());
 
-    ~PostoptTreeViewFrame();
+    ~PostoptTreeViewFrame() override;
 
     AbstractViewFrame* clone(int viewId) override;
 
@@ -57,7 +57,7 @@ public:
 
     void setSearchSelection(const SearchResult::SearchEntry &result) override;
 
-    void setupView(QSharedPointer<AbstractModelInstance> modelInstance) override;
+    void setupView(const QSharedPointer<AbstractModelInstance>& modelInstance) override;
 
     ViewHelper::ViewDataType type() const override;
 

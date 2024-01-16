@@ -25,134 +25,159 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-SectionTreeItem::SectionTreeItem(const QString &name,
-                                 SectionTreeItem *parent)
-    : mName(name)
+AbstractSectionTreeItem::AbstractSectionTreeItem(const QString &text, bool group,
+                                                 AbstractSectionTreeItem *parent)
+    : mText(text)
     , mParent(parent)
+    , mGroup(group)
 {
 
 }
 
-SectionTreeItem::SectionTreeItem(const QString &name,
-                                 AbstractViewFrame* widget,
-                                 SectionTreeItem *parent)
-    : mName(name)
+AbstractSectionTreeItem::AbstractSectionTreeItem(const QString &text,
+                                                 AbstractViewFrame *widget,
+                                                 bool group,
+                                                 AbstractSectionTreeItem *parent)
+    : mText(text)
     , mParent(parent)
+    , mGroup(group)
     , mWidget(widget)
 {
 
 }
 
-SectionTreeItem::~SectionTreeItem()
+AbstractSectionTreeItem::AbstractSectionTreeItem(const AbstractSectionTreeItem &other)
+    : mText(other.mText)
+    , mParent(other.mParent)
+    , mType(other.mType)
+    , mCustom(other.mCustom)
+    , mGroup(other.mGroup)
+    , mWidget(other.mWidget)
 {
-    qDeleteAll(mChilds);
+
 }
 
-void SectionTreeItem::append(SectionTreeItem *child)
+AbstractSectionTreeItem::AbstractSectionTreeItem(AbstractSectionTreeItem &&other) noexcept
+    : mText(std::move(other.mText))
+    , mParent(other.mParent)
+    , mType(other.mType)
+    , mCustom(other.mCustom)
+    , mGroup(other.mGroup)
+    , mWidget(other.mWidget)
 {
-    mChilds.append(child);
+
 }
 
-QList<AbstractViewFrame*> SectionTreeItem::removeChilds()
+AbstractSectionTreeItem::~AbstractSectionTreeItem()
 {
-    QList<AbstractViewFrame*> wgts;
-    if (isGroup()) {
-        while (mChilds.count()) {
-            auto child = mChilds.takeFirst();
-            wgts.append(child->removeChilds());
-            delete child;
-        }
-        return wgts;
-    }
-    if (widget()) {
-        wgts.append(widget());
-    }
-    return wgts;
+
 }
 
-void SectionTreeItem::remove(SectionTreeItem *child)
+void AbstractSectionTreeItem::append(AbstractSectionTreeItem *child)
 {
-    if (!child)
-        return;
-    mChilds.removeOne(child);
-    delete child;
+    Q_UNUSED(child);
 }
 
-void SectionTreeItem::remove(int index, int count)
+QList<AbstractViewFrame *> AbstractSectionTreeItem::removeChilds()
 {
-    if (index+count > mChilds.size())
-        return;
-    QVector<SectionTreeItem*> items;
-    for (int i=index; i<index+count; ++i) {
-        items.push_back(mChilds[i]);
-    }
-    mChilds.remove(index, count);
-    qDeleteAll(items);
+    return QList<AbstractViewFrame*>();
 }
 
-SectionTreeItem *SectionTreeItem::child(int row)
+void AbstractSectionTreeItem::remove(AbstractSectionTreeItem *child)
 {
-    if (row < 0 || row >= mChilds.size())
-        return nullptr;
-    return mChilds.at(row);
+    Q_UNUSED(child);
 }
 
-int SectionTreeItem::childCount() const
+void AbstractSectionTreeItem::remove(int index, int count)
 {
-    return mChilds.count();
+    Q_UNUSED(index);
+    Q_UNUSED(count);
 }
 
-int SectionTreeItem::columnCount() const {
-    return 1;
-}
-
-QString SectionTreeItem::name() const {
-    return mName;
-}
-
-void SectionTreeItem::setName(const QString &name) {
-    mName = name;
-}
-
-AbstractViewFrame* SectionTreeItem::widget() const {
-    return mWidget;
-}
-
-QList<AbstractViewFrame*> SectionTreeItem::widgets() const
+AbstractSectionTreeItem *AbstractSectionTreeItem::child(int row)
 {
-    QList<AbstractViewFrame*> wgts;
-    if (isGroup()) {
-        for (auto child : mChilds) {
-            wgts.append(child->widgets());
-        }
-        return wgts;
-    }
-    if (widget()) {
-        wgts.append(widget());
-    }
-    return wgts;
+    Q_UNUSED(row);
+    return nullptr;
 }
 
-void SectionTreeItem::setWidget(AbstractViewFrame* page) {
-    mWidget = page;
-}
-
-int SectionTreeItem::row() const
+int AbstractSectionTreeItem::childCount() const
 {
-    if (mParent)
-        return mParent->mChilds.indexOf(const_cast<SectionTreeItem*>(this));
     return 0;
 }
 
-ViewHelper::ViewDataType SectionTreeItem::type() const {
+int AbstractSectionTreeItem::columnCount() const
+{
+    return 1;
+}
+
+int AbstractSectionTreeItem::rowCount() const
+{
+    return 0;
+}
+
+QString AbstractSectionTreeItem::text() const
+{
+    return mText;
+}
+
+void AbstractSectionTreeItem::setText(const QString &text)
+{
+    mText = text;
+}
+
+AbstractViewFrame *AbstractSectionTreeItem::widget() const
+{
+    return mWidget;
+}
+
+void AbstractSectionTreeItem::setWidget(AbstractViewFrame* page)
+{
+    mWidget = page;
+}
+
+int AbstractSectionTreeItem::row() const
+{
+    return parent() ? parent()->childs().indexOf(this) : 0;
+}
+
+AbstractSectionTreeItem& AbstractSectionTreeItem::operator=(const AbstractSectionTreeItem &other)
+{
+    mText = other.mText;
+    mParent = other.mParent;
+    mType = other.mType;
+    mCustom = other.mCustom;
+    mGroup = other.mGroup;
+    mWidget = other.mWidget;
+    return *this;
+}
+
+AbstractSectionTreeItem& AbstractSectionTreeItem::operator=(AbstractSectionTreeItem &&other) noexcept
+{
+    mText = other.mText;
+    mParent = other.mParent;
+    mType = other.mType;
+    mCustom = other.mCustom;
+    mGroup = other.mGroup;
+    mWidget = other.mWidget;
+    return *this;
+}
+
+QList<AbstractViewFrame *> AbstractSectionTreeItem::widgets() const
+{
+    return QList<AbstractViewFrame*>();
+}
+
+ViewHelper::ViewDataType AbstractSectionTreeItem::type() const
+{
     return mType;
 }
 
-void SectionTreeItem::setType(ViewHelper::ViewDataType type) {
+void AbstractSectionTreeItem::setType(ViewHelper::ViewDataType type)
+{
     mType = type;
 }
 
-void SectionTreeItem::setType(const QString &text)
+void AbstractSectionTreeItem::setType(const QString &text)
 {
     if (text == ViewHelper::BPScaling)
         mType = ViewHelper::ViewDataType::BP_Scaling;
@@ -172,34 +197,216 @@ void SectionTreeItem::setType(const QString &text)
         mType = ViewHelper::ViewDataType::Unknown;
 }
 
-bool SectionTreeItem::isCustom() const
+bool AbstractSectionTreeItem::isCustom() const
 {
     return mCustom;
 }
 
-void SectionTreeItem::setCustom(bool custom)
+void AbstractSectionTreeItem::setCustom(bool custom)
 {
     mCustom = custom;
 }
 
-bool SectionTreeItem::isGroup() const
+bool AbstractSectionTreeItem::isGroup() const
 {
     return mGroup;
 }
 
-void SectionTreeItem::setGroup(bool group)
-{
-    mGroup = group;
-}
-
-SectionTreeItem *SectionTreeItem::parent() const
+AbstractSectionTreeItem *AbstractSectionTreeItem::parent() const
 {
     return mParent;
 }
 
-void SectionTreeItem::setParent(SectionTreeItem *parent)
+void AbstractSectionTreeItem::setParent(AbstractSectionTreeItem *parent)
 {
     mParent = parent;
+}
+
+SectionGroupTreeItem::SectionGroupTreeItem(const QString &text,
+                                           AbstractSectionTreeItem *parent)
+    : AbstractSectionTreeItem(text, true, parent)
+{
+
+}
+
+SectionGroupTreeItem::SectionGroupTreeItem(const SectionGroupTreeItem &other)
+    : AbstractSectionTreeItem(other)
+    , mChilds(other.mChilds)
+{
+
+}
+
+SectionGroupTreeItem::SectionGroupTreeItem(SectionGroupTreeItem &&other) noexcept
+    : AbstractSectionTreeItem(std::move(other))
+    , mChilds(std::move(other.mChilds))
+{
+
+}
+
+SectionGroupTreeItem::~SectionGroupTreeItem()
+{
+    qDeleteAll(mChilds);
+}
+
+void SectionGroupTreeItem::append(AbstractSectionTreeItem *child)
+{
+    mChilds.append(child);
+}
+
+void SectionGroupTreeItem::removeAllChilds()
+{
+    qDeleteAll(mChilds);
+    mChilds.clear();
+}
+
+QList<AbstractViewFrame*> SectionGroupTreeItem::removeChilds()
+{
+    QList<AbstractViewFrame*> wgts = widgets();
+    qDeleteAll(mChilds);
+    mChilds.clear();
+    return wgts;
+}
+
+void SectionGroupTreeItem::remove(AbstractSectionTreeItem *child)
+{
+    if (!child)
+        return;
+    mChilds.removeOne(child);
+    delete child;
+}
+
+void SectionGroupTreeItem::remove(int index, int count)
+{
+    if (index+count > mChilds.size())
+        return;
+    QVector<AbstractSectionTreeItem*> items;
+    for (int i=index; i<index+count; ++i) {
+        items.push_back(mChilds[i]);
+    }
+    mChilds.remove(index, count);
+    qDeleteAll(items);
+}
+
+AbstractSectionTreeItem *SectionGroupTreeItem::child(int row)
+{
+    if (row < 0 || row >= mChilds.size())
+        return nullptr;
+    return mChilds.at(row);
+}
+
+const QList<AbstractSectionTreeItem *> &SectionGroupTreeItem::childs() const
+{
+    return mChilds;
+}
+
+int SectionGroupTreeItem::childCount() const
+{
+    return mChilds.count();
+}
+
+QList<AbstractViewFrame*> SectionGroupTreeItem::widgets() const
+{
+    QList<AbstractViewFrame*> wgts;
+    for (auto child : mChilds) {
+        wgts.append(child->widgets());
+    }
+    return wgts;
+}
+
+SectionGroupTreeItem &SectionGroupTreeItem::operator=(const SectionGroupTreeItem &other)
+{
+    mChilds = other.childs();
+    return *this;
+}
+
+SectionGroupTreeItem &SectionGroupTreeItem::operator=(SectionGroupTreeItem &&other) noexcept
+{
+    mChilds = other.childs();
+    return *this;
+}
+
+SectionTreeItem::SectionTreeItem(const QString &text,
+                                 AbstractViewFrame *widget,
+                                 AbstractSectionTreeItem *parent)
+    : AbstractSectionTreeItem(text, widget, false, parent)
+{
+
+}
+
+SectionTreeItem::SectionTreeItem(const SectionTreeItem &other)
+    : AbstractSectionTreeItem(other)
+    , mChilds(other.mChilds)
+{
+
+}
+
+SectionTreeItem::SectionTreeItem(SectionTreeItem &&other) noexcept
+    : AbstractSectionTreeItem(std::move(other))
+    , mChilds(std::move(other.mChilds))
+{
+
+}
+
+SectionTreeItem::~SectionTreeItem()
+{
+
+}
+
+void SectionTreeItem::append(AbstractSectionTreeItem *child)
+{
+    Q_UNUSED(child);
+}
+
+void SectionTreeItem::removeAllChilds()
+{
+    mChilds.clear();
+}
+
+QList<AbstractViewFrame *> SectionTreeItem::removeChilds()
+{
+    return QList<AbstractViewFrame*>();
+}
+
+void SectionTreeItem::remove(int index, int count)
+{
+    Q_UNUSED(index);
+    Q_UNUSED(count);
+}
+
+AbstractSectionTreeItem *SectionTreeItem::child(int row)
+{
+    Q_UNUSED(row);
+    return nullptr;
+}
+
+const QList<AbstractSectionTreeItem*> &SectionTreeItem::childs() const
+{
+    return mChilds;
+}
+
+int SectionTreeItem::childCount() const
+{
+    return 0;
+}
+
+QList<AbstractViewFrame*> SectionTreeItem::widgets() const
+{
+    QList<AbstractViewFrame*> wgts;
+    if (widget())
+        wgts.append(widget());
+    return wgts;
+}
+
+SectionTreeItem &SectionTreeItem::operator=(const SectionTreeItem &other)
+{
+    mChilds = other.childs();
+    return *this;
+}
+
+SectionTreeItem &SectionTreeItem::operator=(SectionTreeItem &&other) noexcept
+{
+    mChilds = other.childs();
+    return *this;
 }
 
 }

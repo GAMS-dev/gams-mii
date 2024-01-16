@@ -25,7 +25,7 @@ namespace gams {
 namespace studio{
 namespace mii {
 
-BPIdentifierFilterModel::BPIdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+BPIdentifierFilterModel::BPIdentifierFilterModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
                                                  QObject *parent)
     : QSortFilterProxyModel(parent)
     , mModelInstance(modelInstance)

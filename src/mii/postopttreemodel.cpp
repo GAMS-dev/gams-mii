@@ -27,7 +27,7 @@ namespace studio {
 namespace mii {
 
 PostoptTreeModel::PostoptTreeModel(int view,
-                                   QSharedPointer<AbstractModelInstance> modelInstance,
+                                   const QSharedPointer<AbstractModelInstance>& modelInstance,
                                    QObject *parent)
     : QAbstractItemModel(parent)
     , mModelInstance(modelInstance)
@@ -74,11 +74,8 @@ QModelIndex PostoptTreeModel::index(int row, int column, const QModelIndex &pare
 {
     if (!hasIndex(row, column, parent))
         return QModelIndex();
-    PostoptTreeItem *parentItem;
-    if (!parent.isValid())
-        parentItem = mRootItem.get();
-    else
-        parentItem = static_cast<PostoptTreeItem*>(parent.internalPointer());
+    PostoptTreeItem *parentItem = parent.isValid() ? static_cast<PostoptTreeItem*>(parent.internalPointer())
+                                                   : mRootItem.get();
     PostoptTreeItem *childItem = parentItem->child(row);
     if (childItem)
         return createIndex(row, column, childItem);

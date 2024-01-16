@@ -46,9 +46,9 @@ public:
     explicit AggregationDialog(QWidget *parent = nullptr);
     ~AggregationDialog();
 
-    QSharedPointer<AbstractViewConfiguration> viewConfig() const;
+    const QSharedPointer<AbstractViewConfiguration> &viewConfig() const;
 
-    void setViewConfig(QSharedPointer<AbstractViewConfiguration> config);
+    void setViewConfig(const QSharedPointer<AbstractViewConfiguration> &config);
 
 signals:
     void aggregationUpdated();

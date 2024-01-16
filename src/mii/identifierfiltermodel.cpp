@@ -25,7 +25,7 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-IdentifierFilterModel::IdentifierFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+IdentifierFilterModel::IdentifierFilterModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
                                              QObject *parent)
     : QSortFilterProxyModel(parent)
     , mModelInstance(modelInstance)
@@ -85,7 +85,7 @@ bool IdentifierFilterModel::filterAcceptsRow(int sourceRow,
     return true;
 }
 
-IdentifierLabelFilterModel::IdentifierLabelFilterModel(QSharedPointer<AbstractModelInstance> modelInstance,
+IdentifierLabelFilterModel::IdentifierLabelFilterModel(const QSharedPointer<AbstractModelInstance> &modelInstance,
                                                        QObject *parent)
     : QSortFilterProxyModel(parent)
     , mModelInstance(modelInstance)

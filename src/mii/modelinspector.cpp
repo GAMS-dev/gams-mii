@@ -130,6 +130,8 @@ ViewActionStates ModelInspector::viewActionStates() const
 void ModelInspector::loadModelInstance(bool loadModel)
 {
     clearCustomViews();
+    mSectionModel->clearModelData();
+    mSectionModel->loadModelData(ui->stackedWidget);
     setupModelInstanceView(loadModel);
     emit newLogMessage(mModelInstance->logMessages());
 }
