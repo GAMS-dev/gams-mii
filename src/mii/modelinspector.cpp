@@ -314,7 +314,7 @@ void ModelInspector::createNewSymbolView()
     view->viewConfig()->updateIdentifierFilter(currentBPView->selectedEquations(),
                                                currentBPView->selectedVariables());
     view->setupView(mModelInstance);
-    ui->stackedWidget->addWidget(view);
+    auto page = ui->stackedWidget->addWidget(view);
     QString pageName = ViewHelper::SymbolView;
     if (currentBPView->selectedEquations().size() == 1 && currentBPView->selectedVariables().size() == 1) {
         pageName = currentBPView->selectedEquations().constFirst()->name() + " + " +
@@ -325,6 +325,7 @@ void ModelInspector::createNewSymbolView()
                    currentBPView->selectedVariables().constFirst()->name() + ".."  +
                    currentBPView->selectedVariables().constLast()->name();
     }
+    ui->stackedWidget->setCurrentIndex(page);
     auto index = ui->sectionView->currentIndex();
     auto item = static_cast<AbstractSectionTreeItem*>(index.internalPointer());
     if (item) {
@@ -333,7 +334,7 @@ void ModelInspector::createNewSymbolView()
             return;
         mSectionModel->appendCustomView(pageName, view, customGroup);
         ui->sectionView->expandAll();
-        setCurrentViewIndex(ViewHelper::ViewType::Custom, ViewHelper::ViewDataType::Symbols);
+        setCurrentViewIndex(ViewHelper::ViewType::Custom, ViewHelper::ViewDataType::SymbolsGroup);
         connect(view, &SymbolViewFrame::filtersChanged,
                 this, &ModelInspector::filtersChanged);
         view->updateView();
@@ -385,7 +386,8 @@ void ModelInspector::setCurrentView()
     emit viewChanged((int)view->type());
 }
 
-void ModelInspector::setCurrentViewIndex(ViewHelper::ViewType viewType, ViewHelper::ViewDataType viewDataType)
+void ModelInspector::setCurrentViewIndex(ViewHelper::ViewType viewType,
+                                         ViewHelper::ViewDataType viewDataType)
 {
     if (viewType != ViewHelper::ViewType::Custom)
         return;
