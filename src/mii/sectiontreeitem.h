@@ -35,11 +35,11 @@ class AbstractViewFrame;
 class AbstractSectionTreeItem
 {
 protected:
-    explicit AbstractSectionTreeItem(const QString &text, bool group,
+    explicit AbstractSectionTreeItem(const QString &text,
                                      AbstractSectionTreeItem *parent = nullptr);
 
     explicit AbstractSectionTreeItem(const QString &text,
-                                     AbstractViewFrame* widget, bool group,
+                                     AbstractViewFrame* widget,
                                      AbstractSectionTreeItem *parent = nullptr);
 
     AbstractSectionTreeItem(const AbstractSectionTreeItem& other);
@@ -83,6 +83,16 @@ public:
 
     bool isGroup() const;
 
+    bool isModelInstanceGroup() const;
+
+    virtual bool isActive() const = 0;
+
+    virtual void setActive(bool active) = 0;
+
+    QString scratchDir() const;
+
+    void setScratchDir(const QString& scratchDir);
+
     AbstractSectionTreeItem *parent() const;
 
     void setParent(AbstractSectionTreeItem *parent);
@@ -97,16 +107,29 @@ public:
 
     int row() const;
 
+    AbstractSectionTreeItem* customGroup();
+
+    AbstractSectionTreeItem* predefinedGroup();
+
+    AbstractSectionTreeItem* symbolGroup();
+
+    AbstractSectionTreeItem* modelInstanceGroup();
+
+    AbstractSectionTreeItem* find(ViewHelper::ViewDataType type);
+
     AbstractSectionTreeItem &operator=(const AbstractSectionTreeItem& other);
 
     AbstractSectionTreeItem &operator=(AbstractSectionTreeItem&& other) noexcept;
 
+protected:
+    const QString ActivePostfix = " (inactive)";
+
 private:
     QString mText;
+    QString mScratchDir;
     AbstractSectionTreeItem *mParent;
     ViewHelper::ViewDataType mType = ViewHelper::ViewDataType::Unknown;
     bool mCustom = false;
-    bool mGroup = false;
 
     ///
     /// \brief Target widget.
@@ -127,6 +150,10 @@ public:
     SectionGroupTreeItem(SectionGroupTreeItem&& other) noexcept;
 
     virtual ~SectionGroupTreeItem() override;
+
+    bool isActive() const override;
+
+    void setActive(bool active) override;
 
     void append(AbstractSectionTreeItem *child) override;
 
@@ -167,6 +194,10 @@ public:
 
     virtual ~SectionTreeItem();
 
+    bool isActive() const override;
+
+    void setActive(bool active) override;
+
     void append(AbstractSectionTreeItem *child) override;
 
     void removeAllChilds() override;
@@ -189,6 +220,7 @@ public:
 
 private:
     QVector<AbstractSectionTreeItem*> mChilds;
+    bool mActive = false;
 };
 
 }

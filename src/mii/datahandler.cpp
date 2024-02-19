@@ -1865,10 +1865,15 @@ QSharedPointer<PostoptTreeItem> DataHandler::dataTree(int viewId) const
     return nullptr;
 }
 
-void DataHandler::remove(int viewId)
+void DataHandler::removeViewData(int viewId)
 {
     if (mDataCache.contains(viewId))
         mDataCache.remove(viewId);
+}
+
+void DataHandler::removeViewData()
+{
+    mDataCache.clear();
 }
 
 int DataHandler::headerData(int logicalIndex,

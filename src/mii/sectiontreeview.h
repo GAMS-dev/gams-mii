@@ -42,10 +42,15 @@ public:
     ViewActionStates viewActionStates() const;
 
 signals:
+    void logMessage(const QString&);
+
     void currentItemChanged();
 
     void saveViewTriggered();
+
     void removeViewTriggered();
+
+    void loadModelInstance();
 
 public slots:
     void showCustomContextMenu(const QPoint &pos);
@@ -62,6 +67,7 @@ private:
 
 private:
     QMenu* mMenu;
+    QAction* mLoadModelInstance;
     QAction* mSaveViewAction;
     QAction* mRemoveViewAction;
     QAction* mRenameViewAction;

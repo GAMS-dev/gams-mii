@@ -25,22 +25,19 @@ namespace gams {
 namespace studio {
 namespace mii {
 
-AbstractSectionTreeItem::AbstractSectionTreeItem(const QString &text, bool group,
+AbstractSectionTreeItem::AbstractSectionTreeItem(const QString &text,
                                                  AbstractSectionTreeItem *parent)
     : mText(text)
     , mParent(parent)
-    , mGroup(group)
 {
 
 }
 
 AbstractSectionTreeItem::AbstractSectionTreeItem(const QString &text,
                                                  AbstractViewFrame *widget,
-                                                 bool group,
                                                  AbstractSectionTreeItem *parent)
     : mText(text)
     , mParent(parent)
-    , mGroup(group)
     , mWidget(widget)
 {
 
@@ -51,7 +48,6 @@ AbstractSectionTreeItem::AbstractSectionTreeItem(const AbstractSectionTreeItem &
     , mParent(other.mParent)
     , mType(other.mType)
     , mCustom(other.mCustom)
-    , mGroup(other.mGroup)
     , mWidget(other.mWidget)
 {
 
@@ -62,7 +58,6 @@ AbstractSectionTreeItem::AbstractSectionTreeItem(AbstractSectionTreeItem &&other
     , mParent(other.mParent)
     , mType(other.mType)
     , mCustom(other.mCustom)
-    , mGroup(other.mGroup)
     , mWidget(other.mWidget)
 {
 
@@ -140,13 +135,78 @@ int AbstractSectionTreeItem::row() const
     return parent() ? parent()->childs().indexOf(this) : 0;
 }
 
+AbstractSectionTreeItem *AbstractSectionTreeItem::customGroup()
+{
+    if (mType == ViewHelper::ViewDataType::CustomGroup)
+        return this;
+    auto scrGroup = modelInstanceGroup();
+    if (!scrGroup)
+        return nullptr;
+    for (auto item : scrGroup->childs()) {
+        if (item->type() == ViewHelper::ViewDataType::CustomGroup)
+            return item;
+    }
+    return nullptr;
+}
+
+AbstractSectionTreeItem *AbstractSectionTreeItem::predefinedGroup()
+{
+    if (mType == ViewHelper::ViewDataType::PredefinedGroup)
+        return this;
+    auto scrGroup = modelInstanceGroup();
+    if (!scrGroup)
+        return nullptr;
+    for (auto item : scrGroup->childs()) {
+        if (item->type() == ViewHelper::ViewDataType::PredefinedGroup)
+            return item;
+    }
+    return nullptr;
+}
+
+AbstractSectionTreeItem *AbstractSectionTreeItem::symbolGroup()
+{
+    if (mType == ViewHelper::ViewDataType::SymbolsGroup)
+        return this;
+    for (auto item : childs()) {
+        auto group = item->customGroup();
+        if (group)
+            return group;
+    }
+    return nullptr;
+}
+
+AbstractSectionTreeItem *AbstractSectionTreeItem::modelInstanceGroup()
+{
+    AbstractSectionTreeItem* scratchGroup = nullptr;
+    auto p = this;
+    while (p) {
+        if (!p)
+            break;
+        if (p->type() == ViewHelper::ViewDataType::ModelInstanceGroup)
+            scratchGroup = p;
+        p = p->parent();
+    }
+    return scratchGroup;
+}
+
+AbstractSectionTreeItem *AbstractSectionTreeItem::find(ViewHelper::ViewDataType type)
+{
+    QList<AbstractSectionTreeItem*> items { this };
+    while (!items.isEmpty()) {
+        auto item = items.takeFirst();
+        if (item->type() == type)
+            return item;
+        items.append(item->childs());
+    }
+    return nullptr;
+}
+
 AbstractSectionTreeItem& AbstractSectionTreeItem::operator=(const AbstractSectionTreeItem &other)
 {
     mText = other.mText;
     mParent = other.mParent;
     mType = other.mType;
     mCustom = other.mCustom;
-    mGroup = other.mGroup;
     mWidget = other.mWidget;
     return *this;
 }
@@ -157,7 +217,6 @@ AbstractSectionTreeItem& AbstractSectionTreeItem::operator=(AbstractSectionTreeI
     mParent = other.mParent;
     mType = other.mType;
     mCustom = other.mCustom;
-    mGroup = other.mGroup;
     mWidget = other.mWidget;
     return *this;
 }
@@ -192,7 +251,7 @@ void AbstractSectionTreeItem::setType(const QString &text)
     else if (text == ViewHelper::SymbolView)
         mType = ViewHelper::ViewDataType::Symbols;
     else if (text == ViewHelper::Blockpic)
-        mType = ViewHelper::ViewDataType::Blockpic;
+        mType = ViewHelper::ViewDataType::BlockpicGroup;
     else
         mType = ViewHelper::ViewDataType::Unknown;
 }
@@ -209,7 +268,31 @@ void AbstractSectionTreeItem::setCustom(bool custom)
 
 bool AbstractSectionTreeItem::isGroup() const
 {
-    return mGroup;
+    switch (mType) {
+    case ViewHelper::ViewDataType::BlockpicGroup:
+    case ViewHelper::ViewDataType::SymbolsGroup:
+    case ViewHelper::ViewDataType::CustomGroup:
+    case ViewHelper::ViewDataType::PredefinedGroup:
+    case ViewHelper::ViewDataType::ModelInstanceGroup:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool AbstractSectionTreeItem::isModelInstanceGroup() const
+{
+    return ViewHelper::ViewDataType::ModelInstanceGroup == mType;
+}
+
+QString AbstractSectionTreeItem::scratchDir() const
+{
+    return mScratchDir;
+}
+
+void AbstractSectionTreeItem::setScratchDir(const QString &scratchDir)
+{
+    mScratchDir = scratchDir;
 }
 
 AbstractSectionTreeItem *AbstractSectionTreeItem::parent() const
@@ -224,7 +307,7 @@ void AbstractSectionTreeItem::setParent(AbstractSectionTreeItem *parent)
 
 SectionGroupTreeItem::SectionGroupTreeItem(const QString &text,
                                            AbstractSectionTreeItem *parent)
-    : AbstractSectionTreeItem(text, true, parent)
+    : AbstractSectionTreeItem(text, parent)
 {
 
 }
@@ -246,6 +329,28 @@ SectionGroupTreeItem::SectionGroupTreeItem(SectionGroupTreeItem &&other) noexcep
 SectionGroupTreeItem::~SectionGroupTreeItem()
 {
     qDeleteAll(mChilds);
+}
+
+bool SectionGroupTreeItem::isActive() const
+{
+    for (auto child : mChilds) {
+        return child->isActive();
+    }
+    return false;
+}
+
+void SectionGroupTreeItem::setActive(bool active)
+{
+    if (type() == ViewHelper::ViewDataType::ModelInstanceGroup) {
+        if (active) {
+            setText(text().split(" ").first().trimmed());
+        } else {
+            setText(text() + ActivePostfix);
+        }
+    }
+    for (auto child : mChilds) {
+        child->setActive(active);
+    }
 }
 
 void SectionGroupTreeItem::append(AbstractSectionTreeItem *child)
@@ -328,7 +433,7 @@ SectionGroupTreeItem &SectionGroupTreeItem::operator=(SectionGroupTreeItem &&oth
 SectionTreeItem::SectionTreeItem(const QString &text,
                                  AbstractViewFrame *widget,
                                  AbstractSectionTreeItem *parent)
-    : AbstractSectionTreeItem(text, widget, false, parent)
+    : AbstractSectionTreeItem(text, widget, parent)
 {
 
 }
@@ -350,6 +455,16 @@ SectionTreeItem::SectionTreeItem(SectionTreeItem &&other) noexcept
 SectionTreeItem::~SectionTreeItem()
 {
 
+}
+
+bool SectionTreeItem::isActive() const
+{
+    return mActive;
+}
+
+void SectionTreeItem::setActive(bool active)
+{
+    mActive = active;
 }
 
 void SectionTreeItem::append(AbstractSectionTreeItem *child)

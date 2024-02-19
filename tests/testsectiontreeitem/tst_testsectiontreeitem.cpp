@@ -39,11 +39,17 @@ private slots:
     void test_SectionGroupTreeItem_constructor();
     void test_SectionGroupTreeItem_getSet();
     void test_SectionGroupTreeItem_removeAllChilds();
+    void test_SectionGroupTreeItem_isActive();
+    void test_SectionGroupTreeItem_setActive();
+    void test_SectionGroupTreeItem_isGroup();
 
     void test_SectionTreeItem_default();
     void test_SectionTreeItem_constructor();
     void test_SectionTreeItem_getSet();
     void test_SectionTreeItem_removeAllChilds();
+    void test_SectionTreeItem_isActive();
+    void test_SectionTreeItem_setActive();
+    void test_SectionTreeItem_isGroup();
 };
 
 void TestSectionTreeItem::test_setTypeText()
@@ -62,7 +68,7 @@ void TestSectionTreeItem::test_setTypeText()
     item.setType(ViewHelper::SymbolView);
     QCOMPARE(item.type(), ViewHelper::ViewDataType::Symbols);
     item.setType(ViewHelper::Blockpic);
-    QCOMPARE(item.type(), ViewHelper::ViewDataType::Blockpic);
+    QCOMPARE(item.type(), ViewHelper::ViewDataType::BlockpicGroup);
     item.setType("lala");
     QCOMPARE(item.type(), ViewHelper::ViewDataType::Unknown);
 }
@@ -84,7 +90,7 @@ void TestSectionTreeItem::test_SectionGroupTreeItem_default()
     QCOMPARE(item.type(), ViewHelper::ViewDataType::Unknown);
     QCOMPARE(item.parent(), nullptr);
     QCOMPARE(item.isCustom(), false);
-    QCOMPARE(item.isGroup(), true);
+    QCOMPARE(item.isGroup(), false);
     QCOMPARE(item.removeChilds(), QList<AbstractViewFrame*>());
 }
 
@@ -93,12 +99,12 @@ void TestSectionTreeItem::test_SectionGroupTreeItem_constructor()
     SectionGroupTreeItem item1("default");
     QCOMPARE(item1.text(), "default");
     QCOMPARE(item1.parent(), nullptr);
-    QCOMPARE(item1.isGroup(), true);
+    QCOMPARE(item1.isGroup(), false);
     SectionGroupTreeItem item2("other", &item1);
     QCOMPARE(item2.text(), "other");
     QCOMPARE(item2.parent(), &item1);
     QCOMPARE(item2.widget(), nullptr);
-    QCOMPARE(item2.isGroup(), true);
+    QCOMPARE(item2.isGroup(), false);
 }
 
 void TestSectionTreeItem::test_SectionGroupTreeItem_getSet()
@@ -127,7 +133,7 @@ void TestSectionTreeItem::test_SectionGroupTreeItem_getSet()
     item.setCustom(true);
     QCOMPARE(item.isCustom(), true);
 
-    QCOMPARE(item.isGroup(), true);
+    QCOMPARE(item.isGroup(), false);
 
     item.setParent(c1);
     QCOMPARE(item.parent(), c1);
@@ -148,6 +154,48 @@ void TestSectionTreeItem::test_SectionGroupTreeItem_removeAllChilds()
     QCOMPARE(item.childCount(), 2);
     item.removeAllChilds();
     QCOMPARE(item.childCount(), 0);
+}
+
+void TestSectionTreeItem::test_SectionGroupTreeItem_isActive()
+{
+    SectionGroupTreeItem item("default");
+    QCOMPARE(item.isActive(), false);
+}
+
+void TestSectionTreeItem::test_SectionGroupTreeItem_setActive()
+{
+    SectionGroupTreeItem item("default", nullptr);
+    QCOMPARE(item.isActive(), false);
+    item.setActive(true);
+    QCOMPARE(item.isActive(), false);
+}
+
+void TestSectionTreeItem::test_SectionGroupTreeItem_isGroup()
+{
+    SectionGroupTreeItem item("default", nullptr);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BP_Overview);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BP_Count);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BP_Average);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BP_Scaling);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::Postopt);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::Symbols);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BlockpicGroup);
+    QCOMPARE(item.isGroup(), true);
+    item.setType(ViewHelper::ViewDataType::SymbolsGroup);
+    QCOMPARE(item.isGroup(), true);
+    item.setType(ViewHelper::ViewDataType::CustomGroup);
+    QCOMPARE(item.isGroup(), true);
+    item.setType(ViewHelper::ViewDataType::PredefinedGroup);
+    QCOMPARE(item.isGroup(), true);
+    item.setType(ViewHelper::ViewDataType::ModelInstanceGroup);
+    QCOMPARE(item.isGroup(), true);
 }
 
 void TestSectionTreeItem::test_SectionTreeItem_default()
@@ -232,6 +280,48 @@ void TestSectionTreeItem::test_SectionTreeItem_removeAllChilds()
     item.removeAllChilds();
     QCOMPARE(item.childCount(), 0);
     delete c1;
+}
+
+void TestSectionTreeItem::test_SectionTreeItem_isActive()
+{
+    SectionTreeItem item("default", nullptr);
+    QCOMPARE(item.isActive(), false);
+}
+
+void TestSectionTreeItem::test_SectionTreeItem_setActive()
+{
+    SectionTreeItem item("default", nullptr);
+    QCOMPARE(item.isActive(), false);
+    item.setActive(true);
+    QCOMPARE(item.isActive(), true);
+}
+
+void TestSectionTreeItem::test_SectionTreeItem_isGroup()
+{
+    SectionTreeItem item("default", nullptr);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BP_Overview);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BP_Count);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BP_Average);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BP_Scaling);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::Postopt);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::Symbols);
+    QCOMPARE(item.isGroup(), false);
+    item.setType(ViewHelper::ViewDataType::BlockpicGroup);
+    QCOMPARE(item.isGroup(), true);
+    item.setType(ViewHelper::ViewDataType::SymbolsGroup);
+    QCOMPARE(item.isGroup(), true);
+    item.setType(ViewHelper::ViewDataType::CustomGroup);
+    QCOMPARE(item.isGroup(), true);
+    item.setType(ViewHelper::ViewDataType::PredefinedGroup);
+    QCOMPARE(item.isGroup(), true);
+    item.setType(ViewHelper::ViewDataType::ModelInstanceGroup);
+    QCOMPARE(item.isGroup(), true);
 }
 
 QTEST_APPLESS_MAIN(TestSectionTreeItem)

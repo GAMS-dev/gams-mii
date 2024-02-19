@@ -84,8 +84,8 @@ void TestViewConfigurationProvider::test_configuration()
     delete viewConfig;
 
     viewConfig = nullptr;
-    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::Blockpic, modelInstance);
-    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::Blockpic);
+    viewConfig = ViewConfigurationProvider::configuration(ViewHelper::ViewDataType::BlockpicGroup, modelInstance);
+    test_viewConfiguration(viewConfig, ViewHelper::ViewDataType::BlockpicGroup);
     delete viewConfig;
 }
 

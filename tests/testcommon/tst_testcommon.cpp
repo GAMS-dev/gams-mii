@@ -56,6 +56,7 @@ private slots:
     void test_ViewHelper_isStandardView();
     void test_ViewHelper_zoomFactor();
     void test_ViewHelper_static();
+    void test_ViewHelper_miiMode();
 };
 
 void TestCommon::test_Mi_roleNames()
@@ -387,6 +388,16 @@ void TestCommon::test_ViewHelper_static()
     QCOMPARE(ViewHelper::AttributeHeaderText, "Attributes");
     QCOMPARE(ViewHelper::EquationHeaderText, "Equations");
     QCOMPARE(ViewHelper::VariableHeaderText, "Variables");
+}
+
+void TestCommon::test_ViewHelper_miiMode()
+{
+    QCOMPARE(ViewHelper::miiMode(QString()), ViewHelper::MiiModeType::None);
+    QCOMPARE(ViewHelper::miiMode("none"), ViewHelper::MiiModeType::None);
+    QCOMPARE(ViewHelper::miiMode("SINGLEmi"), ViewHelper::MiiModeType::Single);
+    QCOMPARE(ViewHelper::miiMode("MultiMI"), ViewHelper::MiiModeType::Multi);
+    QCOMPARE(ViewHelper::miiMode("key=lalal none=singleMi"), ViewHelper::MiiModeType::Single);
+    QCOMPARE(ViewHelper::miiMode("none=MULTIMI"), ViewHelper::MiiModeType::Multi);
 }
 
 QTEST_APPLESS_MAIN(TestCommon)

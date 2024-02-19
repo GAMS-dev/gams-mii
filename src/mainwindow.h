@@ -102,6 +102,10 @@ private:
 
     QString aboutModelInspector() const;
 
+    void loadSingleModelInstance(int exitCode, QProcess::ExitStatus exitStatus);
+
+    void loadMultiModelInstance(int exitCode, QProcess::ExitStatus exitStatus);
+
     void loadGAMSModel(const QString &path);
 
     void setAggregationData();

@@ -22,6 +22,7 @@
 #include "sectiontreeitem.h"
 #include "abstractviewframe.h"
 
+#include <QDir>
 #include <QStackedWidget>
 
 namespace gams {
@@ -31,13 +32,8 @@ namespace mii {
 SectionTreeModel::SectionTreeModel(QObject *parent)
     : QAbstractItemModel(parent)
     , mRoot(new SectionGroupTreeItem({ViewHelper::ModelInstance}))
-    , mCustomRoot(nullptr)
-    , mPredefinedRoot(nullptr)
-    , mCustomBlockpic(nullptr)
-    , mCustomPostopt(nullptr)
-    , mCustomSymbolView(nullptr)
 {
-
+    mRoot->setType(ViewHelper::ViewDataType::Unknown);
 }
 
 SectionTreeModel::~SectionTreeModel()
@@ -45,76 +41,87 @@ SectionTreeModel::~SectionTreeModel()
     delete mRoot;
 }
 
-void SectionTreeModel::appendCustomView(const QString &text,
-                                        ViewHelper::ViewDataType type,
-                                        AbstractViewFrame* widget)
+QString SectionTreeModel::scratchDir() const
 {
-    if (type == ViewHelper::ViewDataType::Unknown) {
+    return mScratchDir;
+}
+
+void SectionTreeModel::setScratchDir(const QString &scratchDir)
+{
+    mScratchDir = scratchDir;
+}
+
+void SectionTreeModel::appendCustomView(const QString &text,
+                                        AbstractViewFrame* widget,
+                                        AbstractSectionTreeItem *customRoot)
+{
+    if (widget->type() == ViewHelper::ViewDataType::Unknown || !customRoot) {
         return;
     }
+    bool active = customRoot->modelInstanceGroup()->isActive();
     beginResetModel();
-    if (type == ViewHelper::ViewDataType::Postopt) {
-        if (!mCustomPostopt) {
-            mCustomPostopt = new SectionGroupTreeItem(ViewHelper::Postopt, mCustomRoot);
-            mCustomPostopt->setType(ViewHelper::ViewDataType::Postopt);
-            mCustomPostopt->setCustom(true);
-            mCustomRoot->append(mCustomPostopt);
+    if (widget->type() == ViewHelper::ViewDataType::Postopt) {
+        auto customPostopt = customRoot->find(ViewHelper::ViewDataType::PostoptGroup);
+        if (!customPostopt) {
+            customPostopt = new SectionGroupTreeItem(ViewHelper::Postopt, customRoot);
+            customPostopt->setType(ViewHelper::ViewDataType::PostoptGroup);
+            customPostopt->setCustom(true);
+            customRoot->append(customPostopt);
         }
-        auto item = new SectionTreeItem(text, widget, mCustomPostopt);
+        auto item = new SectionTreeItem(text, widget, customPostopt);
+        item->setType(widget->type());
         item->setCustom(true);
-        item->setType(type);
-        mCustomPostopt->append(item);
-    } else if (type == ViewHelper::ViewDataType::Symbols) {
-        if (!mCustomSymbolView) {
-            mCustomSymbolView = new SectionGroupTreeItem(ViewHelper::SymbolView, mCustomRoot);
-            mCustomSymbolView->setType(ViewHelper::ViewDataType::Symbols);
-            mCustomSymbolView->setCustom(true);
-            mCustomRoot->append(mCustomSymbolView);
+        customPostopt->append(item);
+        customPostopt->setActive(active);
+    } else if (widget->type() == ViewHelper::ViewDataType::Symbols) {
+        auto customSymbolView = customRoot->find(ViewHelper::ViewDataType::SymbolsGroup);
+        if (!customSymbolView) {
+            customSymbolView = new SectionGroupTreeItem(ViewHelper::SymbolView, customRoot);
+            customSymbolView->setType(ViewHelper::ViewDataType::SymbolsGroup);
+            customSymbolView->setCustom(true);
+            customRoot->append(customSymbolView);
         }
-        auto item = new SectionTreeItem(text, widget, mCustomSymbolView);
+        auto item = new SectionTreeItem(text, widget, customSymbolView);
+        item->setType(widget->type());
         item->setCustom(true);
-        item->setType(type);
-        mCustomSymbolView->append(item);
+        customSymbolView->append(item);
+        customSymbolView->setActive(active);
     } else {
-        if (!mCustomBlockpic) {
-            mCustomBlockpic = new SectionGroupTreeItem(ViewHelper::Blockpic, mCustomRoot);
-            mCustomBlockpic->setType(ViewHelper::ViewDataType::Blockpic);
-            mCustomBlockpic->setCustom(true);
-            mCustomRoot->append(mCustomBlockpic);
+        auto customBlockpic = customRoot->find(ViewHelper::ViewDataType::BlockpicGroup);
+        if (!customBlockpic) {
+            customBlockpic = new SectionGroupTreeItem(ViewHelper::Blockpic, customRoot);
+            customBlockpic->setType(ViewHelper::ViewDataType::BlockpicGroup);
+            customBlockpic->setCustom(true);
+            customRoot->append(customBlockpic);
         }
-        auto item = new SectionTreeItem(text, widget, mCustomBlockpic);
+        auto item = new SectionTreeItem(text, widget, customBlockpic);
+        item->setType(widget->type());
         item->setCustom(true);
-        item->setType(type);
-        mCustomBlockpic->append(item);
+        customBlockpic->append(item);
+        customBlockpic->setActive(active);
     }
     endResetModel();
 }
 
-AbstractSectionTreeItem *SectionTreeModel::data() const
+AbstractSectionTreeItem *SectionTreeModel::rootItem() const
 {
     return mRoot;
-}
-
-AbstractSectionTreeItem *SectionTreeModel::customItems() const
-{
-    return mCustomRoot;
-}
-
-AbstractSectionTreeItem *SectionTreeModel::predefinedItems() const
-{
-    return mPredefinedRoot;
 }
 
 QVariant SectionTreeModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
+    auto *item = static_cast<AbstractSectionTreeItem*>(index.internalPointer());
     if (role == ItemDataTypeRole) {
-        auto *item = static_cast<SectionTreeItem*>(index.internalPointer());
         return (int)item->type();
     }
+    if (role == Qt::FontRole && item->type() == ViewHelper::ViewDataType::ModelInstanceGroup) {
+        QFont font;
+        font.setBold(item->isActive());
+        return font;
+    }
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
-        auto *item = static_cast<SectionTreeItem*>(index.internalPointer());
         if (index.column() == 0)
             return item->text();
     }
@@ -210,31 +217,18 @@ bool SectionTreeModel::removeRows(int row, int count, const QModelIndex &parent)
     if (!parent.isValid())
         return false;
     auto parentItem = static_cast<AbstractSectionTreeItem*>(parent.internalPointer());
+    auto customRoot = parentItem->customGroup();
     if (!parentItem->childCount())
         return false;
-    if (parentItem == mCustomRoot) {
-        for (int r=row; r<row+count && r<parentItem->childCount(); ++r) {
-            if (mCustomBlockpic == parentItem->child(r)) {
-                mCustomBlockpic = nullptr;
-            } else if (mCustomPostopt == parentItem->child(r)) {
-                mCustomPostopt = nullptr;
-            } else if (mCustomSymbolView == parentItem->child(r)) {
-                mCustomSymbolView = nullptr;
-            }
-        }
-    }
     beginResetModel();
     parentItem->remove(row, count);
-    endResetModel();
-    if (parentItem != mCustomRoot && !parentItem->childCount()) {
-        if (mCustomBlockpic == parentItem) {
-            mCustomBlockpic = nullptr;
-        } else if (mCustomPostopt == parentItem) {
-            mCustomPostopt = nullptr;
-        } else if (mCustomSymbolView == parentItem) {
-            mCustomSymbolView = nullptr;
-        }
+    if (parentItem != customRoot && !parentItem->childCount() &&
+        (parentItem->type() == ViewHelper::ViewDataType::BlockpicGroup ||
+         parentItem->type() == ViewHelper::ViewDataType::PostoptGroup  ||
+         parentItem->type() == ViewHelper::ViewDataType::SymbolsGroup)) {
+        customRoot->remove(parentItem);
     }
+    endResetModel();
     return true;
 }
 
@@ -242,34 +236,27 @@ QList<AbstractViewFrame*> SectionTreeModel::removeItem(AbstractSectionTreeItem *
 {
     if (!item)
         return QList<AbstractViewFrame*>();
+    QList<AbstractViewFrame*> wgts;
     beginResetModel();
-    auto wgts = item->removeChilds();
-    if (item == mCustomRoot) {
-        mCustomBlockpic = nullptr;
-        mCustomPostopt = nullptr;
-        mCustomSymbolView = nullptr;
-    } else {
-        if (item == mCustomBlockpic) {
-            mCustomBlockpic = nullptr;
-        } else if (item == mCustomPostopt) {
-            mCustomPostopt = nullptr;
-        } else if (item == mCustomSymbolView) {
-            mCustomSymbolView = nullptr;
-        }
-        auto parent = item->parent();
-        parent->remove(item);
+    auto p = item->parent();
+    if (item->isGroup() && item->type() != ViewHelper::ViewDataType::CustomGroup) {
+        auto customRoot = item->customGroup();
+        wgts = item->removeChilds();
+        customRoot->remove(item);
+    } else if (!item->isGroup()) {
+        wgts.append(item->widgets());
+        p->remove(item);
     }
     endResetModel();
     return wgts;
 }
 
-QList<AbstractViewFrame*> SectionTreeModel::removeCustomRows()
+QList<AbstractViewFrame*> SectionTreeModel::removeCustomRows(AbstractSectionTreeItem *cutomRoot)
 {
+    if (!cutomRoot)
+        return QList<AbstractViewFrame*>();
     beginResetModel();
-    auto wgts = mCustomRoot->removeChilds();
-    mCustomBlockpic = nullptr;
-    mCustomPostopt = nullptr;
-    mCustomSymbolView = nullptr;
+    auto wgts = cutomRoot->removeChilds();
     endResetModel();
     return wgts;
 }
@@ -277,21 +264,64 @@ QList<AbstractViewFrame*> SectionTreeModel::removeCustomRows()
 void SectionTreeModel::clearModelData()
 {
     beginResetModel();
-    mCustomRoot = nullptr;
-    mPredefinedRoot = nullptr;
-    mCustomBlockpic = nullptr;
-    mCustomPostopt = nullptr;
-    mCustomSymbolView = nullptr;
     mRoot->removeAllChilds();
     endResetModel();
 }
 
-void SectionTreeModel::loadModelData(QStackedWidget *stackedWidget)
+void SectionTreeModel::loadModelData(QStackedWidget *stackedWidget,
+                                     ViewHelper::MiiModeType mode,
+                                     const QString &modelFileName)
 {
-    mPredefinedRoot = new SectionGroupTreeItem(ViewHelper::PredefinedViews, mRoot);
-    mRoot->append(mPredefinedRoot);
-    auto blockpicItem = new SectionGroupTreeItem(ViewHelper::Blockpic, mPredefinedRoot);
-    mPredefinedRoot->append(blockpicItem);
+    switch (mode) {
+    case ViewHelper::MiiModeType::Single:
+        loadSingleModeModelData(stackedWidget, modelFileName);
+        break;
+    case ViewHelper::MiiModeType::Multi:
+        loadMultiModeModelData(stackedWidget);
+    default:
+        break;
+    }
+}
+
+void SectionTreeModel::loadSingleModeModelData(QStackedWidget* stackedWidget,
+                                               const QString &modelFilePath)
+{
+    QFileInfo fi(modelFilePath);
+    auto group = new SectionGroupTreeItem(fi.fileName(), mRoot);
+    group->setType(ViewHelper::ViewDataType::ModelInstanceGroup);
+    mRoot->append(group);
+    loadViewTreeData(group, stackedWidget);
+    group->setActive(true);
+}
+
+void SectionTreeModel::loadMultiModeModelData(QStackedWidget* stackedWidget)
+{
+    bool setActive = true;
+    QDir scratchDir(mScratchDir);
+    for (const auto& entry : scratchDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+        auto group = new SectionGroupTreeItem(entry, mRoot);
+        group->setType(ViewHelper::ViewDataType::ModelInstanceGroup);
+        QDir groupScratchDir(mScratchDir + QDir::separator() + entry);
+        group->setScratchDir(groupScratchDir.absolutePath());
+        mRoot->append(group);
+        loadViewTreeData(group, stackedWidget);
+        if (setActive) {
+            group->setActive(setActive);
+            setActive = false;
+        } else {
+            group->setActive(setActive);
+        }
+    }
+}
+
+void SectionTreeModel::loadViewTreeData(AbstractSectionTreeItem *root, QStackedWidget *stackedWidget)
+{
+    auto predefinedRoot = new SectionGroupTreeItem(ViewHelper::PredefinedViews, root);
+    predefinedRoot->setType(ViewHelper::ViewDataType::PredefinedGroup);
+    root->append(predefinedRoot);
+    auto blockpicItem = new SectionGroupTreeItem(ViewHelper::Blockpic, predefinedRoot);
+    blockpicItem->setType(ViewHelper::ViewDataType::BlockpicGroup);
+    predefinedRoot->append(blockpicItem);
     for (int i=0; i<ViewHelper::PredefinedViewTexts.size(); ++i) {
         if (ViewHelper::PredefinedViewTexts.at(i) == ViewHelper::BPScaling) {
             auto widget = stackedWidget->widget((int)ViewHelper::ViewDataType::BP_Scaling);
@@ -325,14 +355,15 @@ void SectionTreeModel::loadModelData(QStackedWidget *stackedWidget)
             auto widget = stackedWidget->widget((int)ViewHelper::ViewDataType::Postopt);
             auto item = new SectionTreeItem(ViewHelper::PredefinedViewTexts.at(i),
                                             static_cast<AbstractViewFrame*>(widget->children().last()),
-                                            mPredefinedRoot);
+                                            predefinedRoot);
             item->setType(ViewHelper::PredefinedViewTexts.at(i));
-            mPredefinedRoot->append(item);
+            predefinedRoot->append(item);
         }
     }
-    mCustomRoot = new SectionGroupTreeItem(ViewHelper::CustomViews, mRoot);
-    mCustomRoot->setCustom(true);
-    mRoot->append(mCustomRoot);
+    auto customRoot = new SectionGroupTreeItem(ViewHelper::CustomViews, root);
+    customRoot->setType(ViewHelper::ViewDataType::CustomGroup);
+    customRoot->setCustom(true);
+    root->append(customRoot);
 }
 
 }

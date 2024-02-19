@@ -31,12 +31,15 @@ namespace mii {
 SectionTreeView::SectionTreeView(QWidget *parent)
     : QTreeView(parent)
     , mMenu(new QMenu(this))
+    , mLoadModelInstance(new QAction("Load instance", this))
     , mSaveViewAction(new QAction("Save", this))
     , mRemoveViewAction(new QAction("Remove", this))
     , mRenameViewAction(new QAction("Rename", this))
     , mCollapsAllAction(new QAction("Collapse All", this))
     , mExpandAllAction(new QAction("Expand All", this))
 {
+    mMenu->addAction(mLoadModelInstance);
+    mMenu->addSeparator();
     mMenu->addAction(mSaveViewAction);
     mMenu->addAction(mRemoveViewAction);
     mMenu->addSeparator();
@@ -47,6 +50,8 @@ SectionTreeView::SectionTreeView(QWidget *parent)
 
     connect(this, &SectionTreeView::customContextMenuRequested,
             this, &SectionTreeView::showCustomContextMenu);
+    connect(mLoadModelInstance, &QAction::triggered,
+            this, &SectionTreeView::loadModelInstance);
     connect(mSaveViewAction, &QAction::triggered,
             this, &SectionTreeView::saveViewTriggered);
     connect(mRemoveViewAction, &QAction::triggered,
@@ -70,8 +75,10 @@ void SectionTreeView::showCustomContextMenu(const QPoint &pos)
     auto index = indexAt(pos);
     if (!index.isValid()) return;
     auto states = viewActionStates(index);
+    mLoadModelInstance->setEnabled(states.LoadInstance);
     mSaveViewAction->setEnabled(states.SaveEnabled);
     mRemoveViewAction->setEnabled(states.RemoveEnabled);
+    mRenameViewAction->setEnabled(states.RenameEnabled);
     mMenu->popup(viewport()->mapToGlobal(pos));
 }
 
@@ -85,8 +92,14 @@ void SectionTreeView::renameViewTriggered()
 void SectionTreeView::currentChanged(const QModelIndex &current,
                                      const QModelIndex &previous)
 {
-    if (!current.isValid())
+    if (!current.isValid() || !previous.isValid())
         return;
+    auto item = static_cast<AbstractSectionTreeItem*>(current.internalPointer());
+    auto inst = item->modelInstanceGroup();
+    if (!inst->isActive()) {
+        emit logMessage("Warning: Inactive view clicked. Please load the related model instance via the context menu.");
+        return;
+    }
     emit currentItemChanged();
     QTreeView::currentChanged(current, previous);
 }
@@ -95,23 +108,33 @@ ViewActionStates SectionTreeView::viewActionStates(const QModelIndex &index) con
 {
     ViewActionStates states;
     if (index.isValid()) {
-        auto *item = static_cast<SectionTreeItem*>(index.internalPointer());
-        if (item->isCustom()) {
-            if (item->isGroup()) {
-                states.SaveEnabled = false;
-                states.RemoveEnabled = true;
+        auto item = static_cast<AbstractSectionTreeItem*>(index.internalPointer());
+        states.LoadInstance = !item->isActive();
+        if (item->isActive()) {
+            if (item->isCustom()) {
+                if (item->type() == ViewHelper::ViewDataType::CustomGroup) {
+                    states.SaveEnabled = false;
+                    states.RemoveEnabled = false;
+                } else if (item->isGroup()) {
+                    states.SaveEnabled = false;
+                    states.RemoveEnabled = true;
+                } else {
+                    states.SaveEnabled = true;
+                    states.RemoveEnabled = true;
+                }
             } else {
-                states.SaveEnabled = true;
-                states.RemoveEnabled = true;
+                if (item->isGroup()) {
+                    states.SaveEnabled = false;
+                    states.RemoveEnabled = false;
+                } else {
+                    states.SaveEnabled = true;
+                    states.RemoveEnabled = false;
+                }
             }
         } else {
-            if (item->isGroup()) {
-                states.SaveEnabled = false;
-                states.RemoveEnabled = false;
-            } else {
-                states.SaveEnabled = true;
-                states.RemoveEnabled = false;
-            }
+            states.SaveEnabled = false;
+            states.RemoveEnabled = false;
+            states.RenameEnabled = false;
         }
     }
     return states;

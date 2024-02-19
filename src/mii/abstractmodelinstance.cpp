@@ -382,9 +382,14 @@ int EmptyModelInstance::maxSymbolDimension(int viewId, Qt::Orientation orientati
     return 0;
 }
 
-void EmptyModelInstance::remove(int viewId)
+void EmptyModelInstance::removeViewData(int viewId)
 {
     Q_UNUSED(viewId);
+}
+
+void EmptyModelInstance::removeViewData()
+{
+
 }
 
 }

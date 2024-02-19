@@ -37,6 +37,7 @@ class ModelInspector;
 
 class AbstractViewFrame;
 class AbstractModelInstance;
+class AbstractSectionTreeItem;
 class AbstractViewConfiguration;
 class SectionTreeModel;
 class SearchResultModel;
@@ -50,7 +51,10 @@ public:
     ~ModelInspector() override;
 
     QString scratchDir() const;
-    void setScratchDir(const QString &scratchDir);
+    void setScratchDir(const QString &baseDir);
+
+    QString baseScratchDir() const;
+    void setBaseScratchDir(const QString &baseDir);
 
     QString workspace() const;
     void setWorkspace(const QString &workspace);
@@ -58,8 +62,14 @@ public:
     QString systemDirectory() const;
     void setSystemDirectory(const QString &systemDir);
 
+    QString modelFilePath() const;
+    void setModelFilePath(const QString &newModelFilePath);
+
     bool showOutput() const;
     void setShowOutput(bool showOutpu);
+
+    ViewHelper::MiiModeType miiMode() const;
+    void setMiiMode(ViewHelper::MiiModeType miiMode);
     
     void setShowAbsoluteValuesGlobal(bool absoluteValues);
 
@@ -68,7 +78,7 @@ public:
 
     ViewActionStates viewActionStates() const;
 
-    void loadModelInstance(bool loadModel = true);
+    void loadModelInstance(bool loadModel);
     void reloadModelInstance();
 
     QSharedPointer<AbstractViewConfiguration> viewConfig();
@@ -106,6 +116,8 @@ public slots:
 private slots:
     void selectScalingView();
 
+    void switchModelInstance();
+
 private:
     void setupConnections();
 
@@ -113,7 +125,7 @@ private:
 
     void clearDefaultViewData();
 
-    void clearCustomViews();
+    void loadModelInstance(const QString &scrdir);
 
     void setCurrentViewIndex(ViewHelper::ViewType viewType, ViewHelper::ViewDataType viewDataType);
 
@@ -121,12 +133,19 @@ private:
 
     int currentViewIndex(AbstractViewFrame* view) const;
 
+    QModelIndex customIndex(AbstractSectionTreeItem* instanceRoot);
+
+    QModelIndex predefinedIndex(AbstractSectionTreeItem* instanceRoot);
+
 private:
     Ui::ModelInspector* ui;
     QString mScratchDir;
+    QString mBaseScratchDir;
     QString mWorkspace;
     QString mSystemDir;
+    QString mModelFilePath;
     SearchResult mDefaultSearchResult;
+    ViewHelper::MiiModeType mMiiMode = ViewHelper::MiiModeType::None;
 
     SectionTreeModel* mSectionModel = nullptr;
     QSharedPointer<AbstractModelInstance> mModelInstance;

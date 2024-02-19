@@ -47,13 +47,19 @@ public:
 
     virtual ~SectionTreeModel() override;
 
-    void appendCustomView(const QString &text, ViewHelper::ViewDataType type, AbstractViewFrame* widget);
+    QString modelFileName() const;
 
-    AbstractSectionTreeItem* data() const;
+    void setModelFileName(const QString &fileName);
 
-    AbstractSectionTreeItem* customItems() const;
+    QString scratchDir() const;
 
-    AbstractSectionTreeItem* predefinedItems() const;
+    void setScratchDir(const QString &scratchDir);
+
+    void appendCustomView(const QString &text,
+                          AbstractViewFrame* widget,
+                          AbstractSectionTreeItem* customRoot);
+
+    AbstractSectionTreeItem* rootItem() const;
 
     QVariant data(const QModelIndex &index, int role) const override;
 
@@ -83,18 +89,25 @@ public:
 
     QList<AbstractViewFrame*> removeItem(AbstractSectionTreeItem* item);
 
-    QList<AbstractViewFrame*> removeCustomRows();
+    QList<AbstractViewFrame*> removeCustomRows(AbstractSectionTreeItem *cutomRoot);
 
     void clearModelData();
-    void loadModelData(QStackedWidget* stackedWidget);
+
+    void loadModelData(QStackedWidget* stackedWidget,
+                       ViewHelper::MiiModeType mode,
+                       const QString &modelFileName = QString());
+
+private:
+    void loadSingleModeModelData(QStackedWidget* stackedWidget,
+                                 const QString &modelFilePath);
+
+    void loadMultiModeModelData(QStackedWidget* stackedWidget);
+
+    void loadViewTreeData(AbstractSectionTreeItem *root, QStackedWidget* stackedWidget);
 
 private:
     AbstractSectionTreeItem *mRoot;
-    AbstractSectionTreeItem *mCustomRoot;
-    AbstractSectionTreeItem *mPredefinedRoot;
-    AbstractSectionTreeItem *mCustomBlockpic;
-    AbstractSectionTreeItem *mCustomPostopt;
-    AbstractSectionTreeItem *mCustomSymbolView;
+    QString mScratchDir;
 };
 
 }

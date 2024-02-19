@@ -242,22 +242,29 @@ public:
         BP_Scaling          = 3,
         Postopt             = 4,
         Symbols             = 5,
-        Blockpic            = 126,
+        BlockpicGroup       = 121,
+        SymbolsGroup        = 122,
+        PostoptGroup        = 123,
+        CustomGroup         = 124,
+        PredefinedGroup     = 125,
+        ModelInstanceGroup  = 126,
         Unknown             = 127
+    };
+
+    enum class MiiModeType
+    {
+        None,
+        Single,
+        Multi
     };
 
     static bool isAggregatable(ViewDataType type)
     {
         switch (type) {
-        case ViewDataType::BP_Overview:
-        case ViewDataType::BP_Count:
-        case ViewDataType::BP_Average:
-        case ViewDataType::BP_Scaling:
-        case ViewDataType::Postopt:
-        case ViewDataType::Unknown:
-            return false;
-        default:
+        case ViewDataType::Symbols:
             return true;
+        default:
+            return false;
         }
     }
 
@@ -271,6 +278,16 @@ public:
         default:
             return true;
         }
+    }
+
+    static MiiModeType miiMode(const QString &params)
+    {
+        if (params.contains("singleMI", Qt::CaseInsensitive)) {
+            return MiiModeType::Single;
+        } else if (params.contains("multiMI", Qt::CaseInsensitive)) {
+            return MiiModeType::Multi;
+        }
+        return MiiModeType::None;
     }
 
     static const int ZoomFactor = 2;
@@ -310,6 +327,7 @@ struct ViewActionStates
     bool SaveEnabled = true;
     bool RemoveEnabled = true;
     bool RenameEnabled = true;
+    bool LoadInstance = true;
 };
 
 ///

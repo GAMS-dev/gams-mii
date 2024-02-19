@@ -46,7 +46,7 @@ ModelInspector::ModelInspector(QWidget *parent)
     ui->bpOverviewFrame->viewConfig()->setViewId((int)ViewHelper::ViewDataType::BP_Overview);
     ui->bpCountFrame->viewConfig()->setViewId((int)ViewHelper::ViewDataType::BP_Count);
     ui->bpAverageFrame->viewConfig()->setViewId((int)ViewHelper::ViewDataType::BP_Average);
-    mSectionModel->loadModelData(ui->stackedWidget);
+    mSectionModel->loadModelData(ui->stackedWidget, ViewHelper::MiiModeType::None);
     ui->sectionView->setModel(mSectionModel);
     loadModelInstance(false);
     setupConnections();
@@ -67,6 +67,16 @@ QString ModelInspector::scratchDir() const
 void ModelInspector::setScratchDir(const QString &scratchDir)
 {
     mScratchDir = scratchDir;
+}
+
+QString ModelInspector::baseScratchDir() const
+{
+    return mBaseScratchDir;
+}
+
+void ModelInspector::setBaseScratchDir(const QString &baseDir)
+{
+    mBaseScratchDir = baseDir;
 }
 
 QString ModelInspector::workspace() const
@@ -97,10 +107,16 @@ bool ModelInspector::showOutput() const
 void ModelInspector::setShowOutput(bool showOutput)
 {
     mModelInstance->setUseOutput(showOutput);
-    // TODO activate when preopt issue is tackled
-    //auto item = mSectionModel->predefinedItems()->childs().last();
-    //item->setText(showOutput ? ViewHelper::Postopt : ViewHelper::Preopt);
-    //ui->sectionView->dataChanged(QModelIndex(), QModelIndex());
+}
+
+ViewHelper::MiiModeType ModelInspector::miiMode() const
+{
+    return mMiiMode;
+}
+
+void ModelInspector::setMiiMode(ViewHelper::MiiModeType miiMode)
+{
+    mMiiMode = miiMode;
 }
 
 ///
@@ -113,7 +129,7 @@ void ModelInspector::setShowAbsoluteValuesGlobal(bool absoluteValues)
     if (mModelInstance->globalAbsolute() == absoluteValues)
         return;
     mModelInstance->setGlobalAbsolute(absoluteValues);
-    for (auto widget : mSectionModel->data()->widgets()) {
+    for (auto widget : mSectionModel->rootItem()->widgets()) {
         widget->viewConfig()->currentAggregation().setUseAbsoluteValues(absoluteValues);
         widget->viewConfig()->currentValueFilter().UseAbsoluteValues = absoluteValues;
         widget->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal = absoluteValues;
@@ -140,11 +156,27 @@ ViewActionStates ModelInspector::viewActionStates() const
 
 void ModelInspector::loadModelInstance(bool loadModel)
 {
-    clearCustomViews();
     clearDefaultViewData();
     mSectionModel->clearModelData();
-    mSectionModel->loadModelData(ui->stackedWidget);
+    mSectionModel->setScratchDir(mBaseScratchDir);
+    mSectionModel->loadModelData(ui->stackedWidget, mMiiMode, mModelFilePath);
+    if (mSectionModel->rootItem()->childs().size() && mMiiMode == ViewHelper::MiiModeType::Multi) {
+        auto scrDir = mSectionModel->rootItem()->childs().first()->scratchDir();
+        setScratchDir(scrDir);
+    }
+    ui->sectionView->expandAll();
+    mModelInstance->removeViewData();
     setupModelInstanceView(loadModel);
+    emit newLogMessage(mModelInstance->logMessages());
+}
+
+void ModelInspector::loadModelInstance(const QString &scrdir)
+{
+    clearDefaultViewData();
+    setScratchDir(scrdir);
+    ui->sectionView->expandAll();
+    mModelInstance->removeViewData();
+    setupModelInstanceView(true);
     emit newLogMessage(mModelInstance->logMessages());
 }
 
@@ -155,7 +187,10 @@ void ModelInspector::reloadModelInstance()
     ui->bpAverageFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
     auto loadData = [this]{
         mModelInstance->loadViewData(ui->bpScalingFrame->viewConfig());
-        for (auto view : mSectionModel->customItems()->widgets()) {
+        auto customGroup = mSectionModel->rootItem()->customGroup();
+        if (!customGroup)
+            return;
+        for (auto view : customGroup->widgets()) {
             if (view->type() == ViewHelper::ViewDataType::Postopt)
                 continue;
             mModelInstance->loadViewData(view->viewConfig());
@@ -188,21 +223,21 @@ void ModelInspector::cancelRun()
 
 void ModelInspector::zoomIn()
 {
-    for (auto widget : mSectionModel->data()->widgets()) {
+    for (auto widget : mSectionModel->rootItem()->widgets()) {
         widget->zoomIn();
     }
 }
 
 void ModelInspector::zoomOut()
 {
-    for (auto widget : mSectionModel->data()->widgets()) {
+    for (auto widget : mSectionModel->rootItem()->widgets()) {
         widget->zoomOut();
     }
 }
 
 void ModelInspector::resetZoom()
 {
-    for (auto widget : mSectionModel->data()->widgets()) {
+    for (auto widget : mSectionModel->rootItem()->widgets()) {
         widget->resetZoom();
     }
 }
@@ -218,12 +253,15 @@ void ModelInspector::updateFilters()
 
 void ModelInspector::saveModelView()
 {
+    if (!ui->sectionView->viewActionStates().SaveEnabled)
+        return;
     auto view = currentView();
     if (!view) {
         emit newLogMessage("ERROR: ModelInspector::saveModelView() widget nullptr!");
         return;
     }
-    auto text = ui->sectionView->currentIndex().data().toString();
+    auto index = ui->sectionView->currentIndex();
+    auto text = index.data().toString();
     auto clone = view->clone(ViewConfigurationProvider::nextViewId());
     ui->stackedWidget->addWidget(clone);
     ViewHelper::ViewDataType dataType = ViewHelper::ViewDataType::Unknown;
@@ -232,7 +270,7 @@ void ModelInspector::saveModelView()
     case ViewHelper::ViewDataType::BP_Count:
     case ViewHelper::ViewDataType::BP_Average:
     case ViewHelper::ViewDataType::BP_Scaling:
-        dataType = ViewHelper::ViewDataType::Blockpic;
+        dataType = ViewHelper::ViewDataType::BlockpicGroup;
         connect(static_cast<AbstractBPViewFrame*>(clone), &AbstractBPViewFrame::filtersChanged,
                 this, &ModelInspector::filtersChanged);
         connect(static_cast<AbstractBPViewFrame*>(clone), &AbstractBPViewFrame::newSymbolViewRequested,
@@ -247,9 +285,15 @@ void ModelInspector::saveModelView()
         dataType = clone->type();
         break;
     }
-    mSectionModel->appendCustomView(text, view->type(), clone);
-    ui->sectionView->expandAll();
-    setCurrentViewIndex(ViewHelper::ViewType::Custom, dataType);
+    auto item = static_cast<AbstractSectionTreeItem*>(index.internalPointer());
+    if (item) {
+        auto customGroup = item->customGroup();
+        if (!customGroup)
+            return;
+        mSectionModel->appendCustomView(text, clone, customGroup);
+        ui->sectionView->expandAll();
+        setCurrentViewIndex(ViewHelper::ViewType::Custom, dataType);
+    }
 }
 
 void ModelInspector::createNewSymbolView()
@@ -281,30 +325,41 @@ void ModelInspector::createNewSymbolView()
                    currentBPView->selectedVariables().constFirst()->name() + ".."  +
                    currentBPView->selectedVariables().constLast()->name();
     }
-    mSectionModel->appendCustomView(pageName, ViewHelper::ViewDataType::Symbols, view);
-    ui->sectionView->expandAll();
-    setCurrentViewIndex(ViewHelper::ViewType::Custom, ViewHelper::ViewDataType::Symbols);
-    connect(view, &SymbolViewFrame::filtersChanged,
-            this, &ModelInspector::filtersChanged);
-    view->updateView();
+    auto index = ui->sectionView->currentIndex();
+    auto item = static_cast<AbstractSectionTreeItem*>(index.internalPointer());
+    if (item) {
+        auto customGroup = item->customGroup();
+        if (!customGroup)
+            return;
+        mSectionModel->appendCustomView(pageName, view, customGroup);
+        ui->sectionView->expandAll();
+        setCurrentViewIndex(ViewHelper::ViewType::Custom, ViewHelper::ViewDataType::Symbols);
+        connect(view, &SymbolViewFrame::filtersChanged,
+                this, &ModelInspector::filtersChanged);
+        view->updateView();
+    }
 }
 
 void ModelInspector::removeModelView()
 {
+    if (!ui->sectionView->viewActionStates().RemoveEnabled)
+        return;
     auto currentIndex = ui->sectionView->currentIndex();
+    if (!currentIndex.isValid())
+        return;
     auto item = static_cast<SectionTreeItem*>(currentIndex.internalPointer());
     auto parent = item->parent();
+    auto customViewIndex = customIndex(item->modelInstanceGroup());
+    auto predefinedViewIndex = predefinedIndex(item->modelInstanceGroup());
     for (auto widget : mSectionModel->removeItem(item)) {
         ui->stackedWidget->removeWidget(widget);
-        mModelInstance->remove(widget->viewConfig()->viewId());
+        mModelInstance->removeViewData(widget->viewConfig()->viewId());
         delete widget;
     }
     if (!parent->childCount()) {
         mSectionModel->removeItem(parent);
     }
-    auto customViewIndex = ui->sectionView->model()->index((int)ViewHelper::ViewType::Custom, 0);
     if (!ui->sectionView->model()->rowCount(customViewIndex)) {
-        auto predefinedViewIndex = ui->sectionView->model()->index((int)ViewHelper::ViewType::Predefined, 0);
         int pos = ui->sectionView->model()->rowCount(predefinedViewIndex) - 1;
         auto index = ui->sectionView->model()->index(pos, 0, predefinedViewIndex);
         ui->sectionView->setCurrentIndex(index);
@@ -319,8 +374,9 @@ void ModelInspector::removeModelView()
 void ModelInspector::setCurrentView()
 {
     auto view = currentView();
-    if (!view)
+    if (!view) {
         return;
+    }
     int index = currentViewIndex(view);
     ui->stackedWidget->setCurrentIndex(index);
     if (!view->hasData() && mFutureData.isFinished()) {
@@ -333,7 +389,8 @@ void ModelInspector::setCurrentViewIndex(ViewHelper::ViewType viewType, ViewHelp
 {
     if (viewType != ViewHelper::ViewType::Custom)
         return;
-    auto customViewIndex = ui->sectionView->model()->index((int)viewType, 0);
+    auto dirIndex = ui->sectionView->model()->index(0, 0);
+    auto customViewIndex = ui->sectionView->model()->index((int)viewType, 0, dirIndex);
     int pos = ui->sectionView->model()->rowCount(customViewIndex) - 1;
     if (pos < 0)
         return;
@@ -361,10 +418,16 @@ void ModelInspector::setupConnections()
 {
     connect(ui->sectionView, &SectionTreeView::currentItemChanged,
             this, &ModelInspector::setCurrentView);
-    connect(ui->bpScalingFrame, &BPScalingViewFrame::filtersChanged,
-            this, &ModelInspector::filtersChanged);
     connect(ui->sectionView, &SectionTreeView::saveViewTriggered,
             this, &ModelInspector::saveModelView);
+    connect(ui->sectionView, &SectionTreeView::removeViewTriggered,
+            this, &ModelInspector::removeModelView);
+    connect(ui->sectionView, &SectionTreeView::loadModelInstance,
+            this, &ModelInspector::switchModelInstance);
+    connect(ui->sectionView, &SectionTreeView::logMessage,
+            this, &ModelInspector::newLogMessage);
+    connect(ui->bpScalingFrame, &BPScalingViewFrame::filtersChanged,
+            this, &ModelInspector::filtersChanged);
     connect(ui->bpOverviewFrame, &AbstractBPViewFrame::newSymbolViewRequested,
             this, &ModelInspector::createNewSymbolView);
     connect(ui->bpCountFrame, &AbstractBPViewFrame::newSymbolViewRequested,
@@ -373,8 +436,6 @@ void ModelInspector::setupConnections()
             this, &ModelInspector::createNewSymbolView);
     connect(ui->bpScalingFrame, &AbstractBPViewFrame::newSymbolViewRequested,
             this, &ModelInspector::createNewSymbolView);
-    connect(ui->sectionView, &SectionTreeView::removeViewTriggered,
-            this, &ModelInspector::removeModelView);
     connect(this, &ModelInspector::dataLoaded,
             this, &ModelInspector::selectScalingView);
     connect(ui->postoptFrame, &PostoptTreeViewFrame::openFilterDialog,
@@ -397,7 +458,6 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
             mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
             mModelInstance->setUseOutput(useOutput);
         }
-
         mModelInstance->loadBaseData();
         if (mModelInstance->state() == AbstractModelInstance::Error)
             emit newLogMessage(mModelInstance->logMessages());
@@ -414,26 +474,47 @@ void ModelInspector::clearDefaultViewData()
     ui->postoptFrame->setupView(QSharedPointer<AbstractModelInstance>(new EmptyModelInstance));
 }
 
-void ModelInspector::clearCustomViews()
-{
-    auto customViewIndex = ui->sectionView->model()->index((int)ViewHelper::ViewType::Custom, 0);
-    int rows = ui->sectionView->model()->rowCount(customViewIndex);
-    ui->sectionView->model()->removeRows(0, rows, customViewIndex);
-    for (auto widget : mSectionModel->removeCustomRows()) {
-        ui->stackedWidget->removeWidget(widget);
-        widget->setParent(nullptr);
-        mModelInstance->remove(widget->viewConfig()->viewId());
-        delete widget;
-    }
-}
-
 void ModelInspector::selectScalingView()
 {
+    int row = 0;
     ui->bpScalingFrame->setupView(mModelInstance);
-    auto root = ui->sectionView->model()->index((int)ViewHelper::ViewType::Predefined, 0);
+    for (auto item : mSectionModel->rootItem()->childs()) {
+        if (item->isActive()) {
+            row = item->row();
+            break;
+        }
+    }
+    auto grid1 = ui->sectionView->model()->index(row, 0);
+    auto root = ui->sectionView->model()->index((int)ViewHelper::ViewType::Predefined, 0, grid1);
     auto group = ui->sectionView->model()->index(0, 0, root);
     auto index = ui->sectionView->model()->index((int)ViewHelper::ViewDataType::BP_Scaling, 0, group);
     ui->sectionView->setCurrentIndex(index);
+    ui->stackedWidget->setCurrentIndex((int)ViewHelper::ViewDataType::BP_Scaling);
+}
+
+void ModelInspector::switchModelInstance()
+{
+    auto index = ui->sectionView->currentIndex();
+    if (!index.isValid())
+        return;
+    auto item = static_cast<AbstractSectionTreeItem*>(index.internalPointer());
+    auto inst = item->modelInstanceGroup();
+    for (auto sibling : inst->parent()->childs()) {
+        if (!sibling->isActive())
+            continue;
+        auto wgts = mSectionModel->removeCustomRows(sibling->customGroup());
+        for (auto wgt : wgts) {
+            ui->stackedWidget->removeWidget(wgt);
+            wgt->setParent(nullptr);
+            delete wgt;
+        }
+        sibling->setActive(false);
+        break;
+    }
+    if (!inst)
+        return;
+    inst->setActive(true);
+    loadModelInstance(inst->scratchDir());
 }
 
 AbstractViewFrame* ModelInspector::currentView() const
@@ -451,6 +532,28 @@ int ModelInspector::currentViewIndex(AbstractViewFrame* view) const
         return ui->stackedWidget->indexOf(view);
     }
     return ui->stackedWidget->indexOf(view->parentWidget());
+}
+
+QModelIndex ModelInspector::customIndex(AbstractSectionTreeItem* instanceRoot)
+{
+    auto root = ui->sectionView->model()->index(instanceRoot->row(), 0);
+    return ui->sectionView->model()->index((int)ViewHelper::ViewType::Custom, 0, root);
+}
+
+QModelIndex ModelInspector::predefinedIndex(AbstractSectionTreeItem *instanceRoot)
+{
+    auto root = ui->sectionView->model()->index(instanceRoot->row(), 0);
+    return ui->sectionView->model()->index((int)ViewHelper::ViewType::Predefined, 0, root);
+}
+
+QString ModelInspector::modelFilePath() const
+{
+    return mModelFilePath;
+}
+
+void ModelInspector::setModelFilePath(const QString &newModelFilePath)
+{
+    mModelFilePath = newModelFilePath;
 }
 
 }

@@ -174,7 +174,9 @@ public:
 
     QSharedPointer<PostoptTreeItem> dataTree(int viewId) const;
 
-    void remove(int viewId);
+    void removeViewData(int viewId);
+
+    void removeViewData();
 
     int headerData(int logicalIndex, Qt::Orientation orientation, int viewId) const;
 

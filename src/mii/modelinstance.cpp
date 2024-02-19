@@ -803,9 +803,14 @@ int ModelInstance::maxSymbolDimension(int viewId, Qt::Orientation orientation) c
     return mDataHandler->maxSymbolDimension(viewId, orientation);
 }
 
-void ModelInstance::remove(int viewId)
+void ModelInstance::removeViewData(int viewId)
 {
-    mDataHandler->remove(viewId);
+    mDataHandler->removeViewData(viewId);
+}
+
+void ModelInstance::removeViewData()
+{
+    mDataHandler->removeViewData();
 }
 
 QPair<double, double> ModelInstance::equationBounds(int row) const

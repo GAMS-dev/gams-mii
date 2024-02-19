@@ -202,7 +202,9 @@ public:
 
     virtual int maxSymbolDimension(int viewId, Qt::Orientation orientation) const = 0;
 
-    virtual void remove(int viewId) = 0;
+    virtual void removeViewData(int viewId) = 0;
+
+    virtual void removeViewData() = 0;
 
     State state() const;
 
@@ -293,7 +295,9 @@ public:
 
     int maxSymbolDimension(int viewId, Qt::Orientation orientation) const override;
 
-    void remove(int viewId) override;
+    void removeViewData(int viewId) override;
+
+    void removeViewData() override;
 
 private:
     QVector<Symbol*> mSymbols;

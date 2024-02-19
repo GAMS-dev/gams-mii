@@ -109,7 +109,7 @@ void MainWindow::on_actionOpen_triggered()
     ui->logEdit->appendPlainText("Loading scratch data from: " + fi.dir().path());
     if (ui->modelEdit->text().endsWith(".dat")) {
         auto dir = fi.dir().path();
-        ui->paramsEdit->setText(QString("MIIMode=singleMI scrdir=%1").arg(dir));
+        ui->paramsEdit->setText(QString("MIIMode=multiMI scrdir=%1").arg(dir));
     }
 }
 
@@ -124,6 +124,7 @@ void MainWindow::on_actionRun_triggered()
     }
     mLoadScrFiles = false;
     mScrFilesUpdated = false;
+    ui->modelInspector->setModelFilePath(ui->modelEdit->text());
     ui->modelInspector->setShowOutput(ui->actionShow_Output->isChecked());
     if (ui->modelEdit->text().endsWith(".dat")) {
         mLoadScrFiles = true;
@@ -131,6 +132,7 @@ void MainWindow::on_actionRun_triggered()
         auto dir = fi.dir().path();
         ui->modelInspector->setWorkspace(dir + "/..");
         ui->modelInspector->setScratchDir(dir);
+        ui->modelInspector->setBaseScratchDir(dir);
         loadModelInstance(0, QProcess::NormalExit);
     } else {
         QStringList keys;
@@ -145,10 +147,10 @@ void MainWindow::on_actionRun_triggered()
         if (index >= 0) {
             auto scrdir = values.at(index).trimmed();
             QDir dir(scrdir);
-            if (!dir.exists()) {
-                dir.mkdir(dir.absolutePath());
-            }
+            dir.removeRecursively();
+            dir.mkdir(dir.absolutePath());
             ui->modelInspector->setScratchDir(scrdir);
+            ui->modelInspector->setBaseScratchDir(scrdir);
             updateScratchDataWatcher(scrdir);
         } else {
             ui->logEdit->appendPlainText("Error: No scrach direcetory specified.");
@@ -270,46 +272,19 @@ void MainWindow::on_actionAbout_Qt_triggered()
 
 void MainWindow::loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus)
 {
-    Q_UNUSED(exitStatus);
-    if (exitCode != 0) {
-        appendLogMessage("The GAMSProcess reported an issue. The exit code is " +
-                         QString().number(exitCode));
-        setRunButtonState(true);
-        return;
+    auto miiMode = ViewHelper::miiMode(ui->paramsEdit->text());
+    ui->modelInspector->setMiiMode(miiMode);
+    switch (miiMode) {
+    case ViewHelper::MiiModeType::Single:
+        loadSingleModelInstance(exitCode, exitStatus);
+        break;
+    case ViewHelper::MiiModeType::Multi:
+        loadMultiModelInstance(exitCode, exitStatus);
+        break;
+    default:
+        ui->logEdit->appendPlainText("Error: Wrong MiiMode parameter: " + ui->paramsEdit->text());
+        break;
     }
-    if (!mLoadScrFiles) {
-        if (mScrFilesUpdated) {
-            ui->logEdit->appendPlainText("The scratch directory files have been updated.");
-        } else {
-            ui->logEdit->appendPlainText(mScrUpdateWarning);
-        }
-    }
-    QDir scrdir(ui->modelInspector->scratchDir());
-    if (scrdir.count() == 0) {
-        ui->logEdit->appendPlainText("Error: No scratch files found at " + ui->modelInspector->scratchDir());
-        setRunButtonState(true);
-        return;
-    }
-    int datFileCount = 0;
-    for (const auto& file : scrdir.entryList()) {
-        if (file.endsWith(mii::FileHelper::GamsCntr, Qt::CaseInsensitive) ||
-            file.endsWith(mii::FileHelper::GamsDict, Qt::CaseInsensitive) ||
-            file.endsWith(mii::FileHelper::Gamsmatr, Qt::CaseInsensitive) ||
-            file.endsWith(mii::FileHelper::GamsSolu, Qt::CaseInsensitive) ||
-            file.endsWith(mii::FileHelper::GamsStat, Qt::CaseInsensitive)) {
-            ++datFileCount;
-        }
-    }
-    if (datFileCount != 5) {
-        ui->logEdit->appendPlainText("Error: It looks like the scratch files are incomplete. Loading scratch files aborted. Please check your model and " +
-                                     ui->modelInspector->scratchDir());
-        setRunButtonState(true);
-        return;
-    }
-    ui->modelInspector->loadModelInstance();
-    setGlobalFiltersData();
-    setAggregationData();
-    emit ui->actionShow_Absolute->triggered();
 }
 
 void MainWindow::handleLibProcessResult(int exitCode, QProcess::ExitStatus exitStatus)
@@ -461,6 +436,71 @@ QString MainWindow::aboutModelInspector() const
     about += "The source code of the program can be accessed at ";
     about += "<a href=\"https://github.com/GAMS-dev/model-inspector\">https://github.com/GAMS-dev/model-inspector</a></p>.";
     return about;
+}
+
+void MainWindow::loadSingleModelInstance(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    Q_UNUSED(exitStatus);
+    if (exitCode != 0) {
+        appendLogMessage("The GAMSProcess reported an issue. The exit code is " +
+                         QString().number(exitCode));
+        setRunButtonState(true);
+        return;
+    }
+    if (!mLoadScrFiles) {
+        if (mScrFilesUpdated) {
+            ui->logEdit->appendPlainText("The scratch directory files have been updated.");
+        } else {
+            ui->logEdit->appendPlainText(mScrUpdateWarning);
+        }
+    }
+    QDir scrdir(ui->modelInspector->scratchDir());
+    if (scrdir.count() == 0) {
+        ui->logEdit->appendPlainText("Error: No scratch files found at " + ui->modelInspector->scratchDir());
+        setRunButtonState(true);
+        return;
+    }
+    int datFileCount = 0;
+    for (const auto& file : scrdir.entryList()) {
+        if (file.endsWith(mii::FileHelper::GamsCntr, Qt::CaseInsensitive) ||
+            file.endsWith(mii::FileHelper::GamsDict, Qt::CaseInsensitive) ||
+            file.endsWith(mii::FileHelper::Gamsmatr, Qt::CaseInsensitive) ||
+            file.endsWith(mii::FileHelper::GamsSolu, Qt::CaseInsensitive) ||
+            file.endsWith(mii::FileHelper::GamsStat, Qt::CaseInsensitive)) {
+            ++datFileCount;
+        }
+    }
+    if (datFileCount != 5) {
+        ui->logEdit->appendPlainText("Error: It looks like the scratch files are incomplete. Loading scratch files aborted. Please check your model and " +
+                                     ui->modelInspector->scratchDir());
+        setRunButtonState(true);
+        return;
+    }
+    ui->modelInspector->loadModelInstance(true);
+    setGlobalFiltersData();
+    setAggregationData();
+    emit ui->actionShow_Absolute->triggered();
+}
+
+void MainWindow::loadMultiModelInstance(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    Q_UNUSED(exitStatus);
+    if (exitCode != 0) {
+        appendLogMessage("The GAMSProcess reported an issue. The exit code is " +
+                         QString().number(exitCode));
+        setRunButtonState(true);
+        return;
+    }
+    QDir scrdir(ui->modelInspector->scratchDir());
+    if (!scrdir.isEmpty()) {
+        ui->logEdit->appendPlainText("The scratch directory files have been updated.");
+    } else {
+        ui->logEdit->appendPlainText("Error: No scratch files found at " + ui->modelInspector->scratchDir());
+    }
+    ui->modelInspector->loadModelInstance(true);
+    setGlobalFiltersData();
+    setAggregationData();
+    emit ui->actionShow_Absolute->triggered();
 }
 
 void MainWindow::loadGAMSModel(const QString &path)

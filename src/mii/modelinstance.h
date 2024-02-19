@@ -136,7 +136,9 @@ public:
 
     int maxSymbolDimension(int viewId, Qt::Orientation orientation) const override;
 
-    void remove(int viewId) override;
+    void removeViewData(int viewId) override;
+
+    void removeViewData() override;
 
 private:
     void initialize();
