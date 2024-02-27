@@ -24,7 +24,6 @@
 #include <QFileSystemWatcher>
 #include <QMainWindow>
 #include <QProcess>
-#include <QRegularExpression>
 #include <QSharedPointer>
 
 class QLabel;
@@ -131,7 +130,6 @@ private:
     const QString mScrUpdateWarning = "Warning: It looks like the scratch data has not been updated.";
     bool mScrFilesUpdated = false;
     bool mLoadScrFiles = false;
-    QRegularExpression mRegEx;
 };
 
 #endif // MAINWINDOW_H

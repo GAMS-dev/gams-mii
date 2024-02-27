@@ -379,7 +379,7 @@ private:
                 if (rhs != 0.0) {
                     rhsMin = std::min(rhsMin, rhs);
                     rhsMax = std::max(rhsMax, rhs);
-                    if (rhs < 0) --mCoeffInfo->count()[minRow][mColumnCount-1];
+                    if (rhs < 0) ++mCoeffInfo->count()[minRow][mColumnCount-1];
                     else if (rhs > 0) ++mCoeffInfo->count()[maxRow][mColumnCount-1];
                 }
                 for (int i=0; i<sparseRow->entries(); ++i) {
@@ -394,7 +394,7 @@ private:
                     mDataMatrix[minRow][column] = std::min(value, mDataMatrix[minRow][column]);
                     mDataMatrix[maxRow][column] = std::max(value, mDataMatrix[maxRow][column]);
                     if (value < 0) {
-                        --mCoeffInfo->count()[minRow][column];
+                        ++mCoeffInfo->count()[minRow][column];
                     } else if (value > 0) {
                         ++mCoeffInfo->count()[maxRow][column];
                     }
@@ -433,10 +433,17 @@ private:
         setEmtpyCell(mRowCount-1, mColumnCount-2);
         mDataMatrix[mRowCount-2][mColumnCount-1] = 0.0;
         mDataMatrix[mRowCount-1][mColumnCount-1] = 0.0;
-        mViewConfig->defaultValueFilter().MinValue = mDataMinimum;
-        mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
-        mViewConfig->currentValueFilter().MinValue = mDataMinimum;
-        mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
+        if (!mViewConfig->defaultValueFilter().minMaxChanged()) {
+            mViewConfig->defaultValueFilter().MinValue = mDataMinimum;
+            mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
+        }
+        if (mViewConfig->currentValueFilter().PreviousAbsolute != mViewConfig->currentValueFilter().isAbsolute()) {
+            mViewConfig->currentValueFilter().MinValue = mDataMinimum;
+            mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
+        } else if (!mViewConfig->currentValueFilter().minMaxChanged()) {
+            mViewConfig->currentValueFilter().MinValue = mDataMinimum;
+            mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
+        }
         mDataHandler->setModelMinimum(mDataMinimum);
         mDataHandler->setModelMaximum(mDataMaximum);
     }
@@ -511,10 +518,15 @@ private:
         setEmtpyCell(mRowCount-1, mColumnCount-2);
         mDataMatrix[mRowCount-2][mColumnCount-1] = 0.0;
         mDataMatrix[mRowCount-1][mColumnCount-1] = 0.0;
-        mViewConfig->defaultValueFilter().MinValue = mDataMinimum;
-        mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
-        mViewConfig->currentValueFilter().MinValue = mDataMinimum;
-        mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
+        if (!mViewConfig->defaultValueFilter().minMaxChanged()) {
+            mViewConfig->defaultValueFilter().MinValue = mDataMinimum;
+            mViewConfig->defaultValueFilter().MaxValue = mDataMaximum;
+        }
+        if (mViewConfig->currentValueFilter().PreviousAbsolute != mViewConfig->currentValueFilter().isAbsolute() ||
+            !mViewConfig->currentValueFilter().minMaxChanged() || mViewConfig->currentValueFilter().UseAbsoluteValuesGlobal) {
+            mViewConfig->currentValueFilter().MinValue = mDataMinimum;
+            mViewConfig->currentValueFilter().MaxValue = mDataMaximum;
+        }
         mDataHandler->setModelMinimum(mDataMinimum);
         mDataHandler->setModelMaximum(mDataMaximum);
     }

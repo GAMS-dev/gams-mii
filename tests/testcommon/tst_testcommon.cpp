@@ -43,6 +43,7 @@ private slots:
 
     void test_default_valueFilter();
     void test_getSet_valueFilter();
+    void test_minMaxChanged_valueFilter();
 
     void test_AttributeHelper_attributeText();
     void test_AttributeHelper_attributeValue();
@@ -56,7 +57,11 @@ private slots:
     void test_ViewHelper_isStandardView();
     void test_ViewHelper_zoomFactor();
     void test_ViewHelper_static();
-    void test_ViewHelper_miiMode();
+
+    void test_CmdParser_empty_params();
+    void test_CmdParser_default_params();
+    void test_CmdParser_scratchdir_spaces();
+    void test_CmdParser_additional_params();
 };
 
 void TestCommon::test_Mi_roleNames()
@@ -278,6 +283,20 @@ void TestCommon::test_getSet_valueFilter()
     QVERIFY(!filter.accepts(-42));
 }
 
+void TestCommon::test_minMaxChanged_valueFilter()
+{
+    ValueFilter filter;
+    QCOMPARE(filter.minMaxChanged(), false);
+    filter.MinValue = 0;
+    QCOMPARE(filter.minMaxChanged(), true);
+    filter.MinValue = std::numeric_limits<double>::lowest();
+    filter.MaxValue = 0;
+    QCOMPARE(filter.minMaxChanged(), true);
+    filter.MinValue = std::numeric_limits<double>::lowest();
+    filter.MaxValue = std::numeric_limits<double>::max();
+    QCOMPARE(filter.minMaxChanged(), false);
+}
+
 void TestCommon::test_AttributeHelper_attributeText()
 {
     QCOMPARE(AttributeHelper::attributeText(AttributeHelper::Level), "Level");
@@ -390,14 +409,89 @@ void TestCommon::test_ViewHelper_static()
     QCOMPARE(ViewHelper::VariableHeaderText, "Variables");
 }
 
-void TestCommon::test_ViewHelper_miiMode()
+void TestCommon::test_CmdParser_empty_params()
 {
-    QCOMPARE(ViewHelper::miiMode(QString()), ViewHelper::MiiModeType::None);
-    QCOMPARE(ViewHelper::miiMode("none"), ViewHelper::MiiModeType::None);
-    QCOMPARE(ViewHelper::miiMode("SINGLEmi"), ViewHelper::MiiModeType::Single);
-    QCOMPARE(ViewHelper::miiMode("MultiMI"), ViewHelper::MiiModeType::Multi);
-    QCOMPARE(ViewHelper::miiMode("key=lalal none=singleMi"), ViewHelper::MiiModeType::Single);
-    QCOMPARE(ViewHelper::miiMode("none=MULTIMI"), ViewHelper::MiiModeType::Multi);
+    CmdParser cmdParser1;
+    QCOMPARE(cmdParser1.mode(), ViewHelper::MiiModeType::None);
+    QVERIFY(cmdParser1.parameters().isEmpty());
+    QCOMPARE(cmdParser1.scratchDir(), QString());
+
+    CmdParser cmdParser2;
+    cmdParser2.parse("");
+    QCOMPARE(cmdParser2.mode(), ViewHelper::MiiModeType::None);
+    QVERIFY(cmdParser2.parameters().isEmpty());
+    QCOMPARE(cmdParser2.scratchDir(), QString());
+}
+
+void TestCommon::test_CmdParser_default_params()
+{
+    CmdParser cmdParser1;
+    cmdParser1.parse("MIIMode=singleMI scrdir=/home/alex/Documents/GAMS/ModelInspector/workspace/scratch");
+    QCOMPARE(cmdParser1.mode(), ViewHelper::MiiModeType::Single);
+    QStringList params1 {
+      "MIIMode=singleMI",
+      "scrdir=/home/alex/Documents/GAMS/ModelInspector/workspace/scratch"
+    };
+    QCOMPARE(cmdParser1.parameters(), params1);
+    QCOMPARE(cmdParser1.scratchDir(), "/home/alex/Documents/GAMS/ModelInspector/workspace/scratch");
+
+    CmdParser cmdParser2;
+    cmdParser2.parse("MIIMode=multiMI scrdir=/home/alex/Documents/GAMS/ModelInspector/workspace/scratch");
+    QCOMPARE(cmdParser2.mode(), ViewHelper::MiiModeType::Multi);
+    QStringList params2 {
+        "MIIMode=multiMI",
+        "scrdir=/home/alex/Documents/GAMS/ModelInspector/workspace/scratch"
+    };
+    QCOMPARE(cmdParser2.parameters(), params2);
+    QCOMPARE(cmdParser2.scratchDir(), "/home/alex/Documents/GAMS/ModelInspector/workspace/scratch");
+
+    CmdParser cmdParser3;
+    cmdParser3.parse("MIIMode=lala scrdir=/home/alex/Documents/GAMS/ModelInspector/workspace/scratch");
+    QCOMPARE(cmdParser3.mode(), ViewHelper::MiiModeType::None);
+    QStringList params3 {
+        "MIIMode=lala",
+        "scrdir=/home/alex/Documents/GAMS/ModelInspector/workspace/scratch"
+    };
+    QCOMPARE(cmdParser3.parameters(), params3);
+    QCOMPARE(cmdParser3.scratchDir(), "/home/alex/Documents/GAMS/ModelInspector/workspace/scratch");
+}
+
+void TestCommon::test_CmdParser_scratchdir_spaces()
+{
+    CmdParser cmdParser1;
+    cmdParser1.parse("MIIMode=singleMI scrdir=/home/alex/Documents/GAMS/ModelInspector/works pace/scratch");
+    QCOMPARE(cmdParser1.mode(), ViewHelper::MiiModeType::Single);
+    QStringList params1 {
+        "MIIMode=singleMI",
+        "scrdir=/home/alex/Documents/GAMS/ModelInspector/works pace/scratch"
+    };
+    QCOMPARE(cmdParser1.parameters(), params1);
+    QCOMPARE(cmdParser1.scratchDir(), "/home/alex/Documents/GAMS/ModelInspector/works pace/scratch");
+}
+
+void TestCommon::test_CmdParser_additional_params()
+{
+    CmdParser cmdParser1;
+    cmdParser1.parse("MIIMode=singleMI scrdir=/home/alex/Documents/GAMS/ModelInspector/workspace/scratch lp=xpress");
+    QCOMPARE(cmdParser1.mode(), ViewHelper::MiiModeType::Single);
+    QStringList params1 {
+        "MIIMode=singleMI",
+        "scrdir=/home/alex/Documents/GAMS/ModelInspector/workspace/scratch",
+        "lp=xpress"
+    };
+    QCOMPARE(cmdParser1.parameters(), params1);
+    QCOMPARE(cmdParser1.scratchDir(), "/home/alex/Documents/GAMS/ModelInspector/workspace/scratch");
+
+    CmdParser cmdParser2;
+    cmdParser2.parse("MIIMode=multiMI scrdir=/home/alex/Documents/GAMS/ModelInspector/work space/scratch lp=xpress");
+    QCOMPARE(cmdParser2.mode(), ViewHelper::MiiModeType::Multi);
+    QStringList params2 {
+        "MIIMode=multiMI",
+        "scrdir=/home/alex/Documents/GAMS/ModelInspector/work space/scratch",
+        "lp=xpress"
+    };
+    QCOMPARE(cmdParser2.parameters(), params2);
+    QCOMPARE(cmdParser2.scratchDir(), "/home/alex/Documents/GAMS/ModelInspector/work space/scratch");
 }
 
 QTEST_APPLESS_MAIN(TestCommon)

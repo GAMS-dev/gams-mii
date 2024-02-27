@@ -43,6 +43,7 @@ using gams::studio::mii::FilterDialog;
 using gams::studio::mii::ModelInspector;
 using gams::studio::mii::SearchResultModel;
 using gams::studio::mii::ViewHelper;
+using gams::studio::mii::CmdParser;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -53,7 +54,6 @@ MainWindow::MainWindow(QWidget *parent)
     , mFilterDialog(new FilterDialog(this))
     , mAggregationStatusLabel(new QLabel(QString(), this))
     , mScrWatcher(this)
-    , mRegEx("(\\w+=)", QRegularExpression::CaseInsensitiveOption)
 {
     ui->setupUi(this);
     ui->modelInspector->setWorkspace(workspace());
@@ -67,7 +67,6 @@ MainWindow::MainWindow(QWidget *parent)
     setupConnections();
     setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
     createProjectDirectory();
-
     ui->actionZoom_In->setShortcut(QKeySequence::ZoomIn);
     ui->actionZoom_Out->setShortcut(QKeySequence::ZoomOut);
 }
@@ -120,6 +119,7 @@ void MainWindow::on_actionRun_triggered()
     QDir dir(path);
     if (!dir.mkpath(path)) {
         ui->logEdit->appendPlainText("Error: Could not create workspace " + path);
+        setRunButtonState(true);
         return;
     }
     mLoadScrFiles = false;
@@ -135,40 +135,34 @@ void MainWindow::on_actionRun_triggered()
         ui->modelInspector->setBaseScratchDir(dir);
         loadModelInstance(0, QProcess::NormalExit);
     } else {
-        QStringList keys;
-        int index = -1, count = 0;
-        for (const auto& match : mRegEx.globalMatch(ui->paramsEdit->text())) {
-            keys << match.captured();
-            if (match.captured() == "scrdir=")
-                index = count;
-            ++count;
-        }
-        QStringList values = ui->paramsEdit->text().split(mRegEx, Qt::SkipEmptyParts);
-        if (index >= 0) {
-            auto scrdir = values.at(index).trimmed();
-            QDir dir(scrdir);
+        CmdParser cmdParser;
+        cmdParser.parse(ui->paramsEdit->text());
+        if (!cmdParser.scratchDir().isEmpty()) {
+            QDir dir(cmdParser.scratchDir());
             dir.removeRecursively();
             dir.mkdir(dir.absolutePath());
-            ui->modelInspector->setScratchDir(scrdir);
-            ui->modelInspector->setBaseScratchDir(scrdir);
-            updateScratchDataWatcher(scrdir);
+            ui->modelInspector->setScratchDir(cmdParser.scratchDir());
+            ui->modelInspector->setBaseScratchDir(cmdParser.scratchDir());
+            updateScratchDataWatcher(cmdParser.scratchDir());
         } else {
             ui->logEdit->appendPlainText("Error: No scrach direcetory specified.");
+            setRunButtonState(true);
             return;
         }
         if (ui->gamslibCheckBox->isChecked()) {
             loadGAMSModel(path);
-        }
-        QStringList params;
-        for (int i=0; i<count; ++i) {
-            if (keys[i] == "scrdir=") {
-                params << keys[i].trimmed() + "\"" + values[i].trimmed() + "\"";
-            } else {
-                params << keys[i].trimmed() + values[i].trimmed();
+        } else {
+            auto fp = ui->modelEdit->text();
+            QFileInfo fi(fp);
+            if (fp.indexOf(fi.fileName()) > 0) {
+                auto dir = fi.absoluteDir();
+                if (dir.exists()) {
+                    path = dir.absolutePath();
+                }
             }
         }
         mProcess->setModel(ui->modelEdit->text());
-        mProcess->setParameters(params);
+        mProcess->setParameters(cmdParser.parameters());
         mProcess->setWorkingDir(path);
         mProcess->execute();
     }
@@ -272,7 +266,7 @@ void MainWindow::on_actionAbout_Qt_triggered()
 
 void MainWindow::loadModelInstance(int exitCode, QProcess::ExitStatus exitStatus)
 {
-    auto miiMode = ViewHelper::miiMode(ui->paramsEdit->text());
+    auto miiMode = CmdParser::miiMode(ui->paramsEdit->text());
     ui->modelInspector->setMiiMode(miiMode);
     switch (miiMode) {
     case ViewHelper::MiiModeType::Single:

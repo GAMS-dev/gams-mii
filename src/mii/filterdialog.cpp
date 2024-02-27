@@ -126,14 +126,7 @@ void FilterDialog::on_resetButton_clicked()
     }
     mViewConfig->setCurrentValueFilter(filter);
     setViewConfig(mViewConfig);
-
-    mViewConfig->currentIdentifierFilter()[variableOrientation()] = applyHeaderFilter(mVarFilterModel);
-    mViewConfig->currentIdentifierFilter()[equationOrientation()] = applyHeaderFilter(mEqnFilterModel);
-    applyValueFilter();
-    mViewConfig->currentLabelFiler().LabelCheckStates[variableOrientation()] = applyLabelFilter(variableOrientation(), mLabelFilterModel);
-    mViewConfig->currentLabelFiler().LabelCheckStates[equationOrientation()] = applyLabelFilter(equationOrientation(), mLabelFilterModel);
-    mViewConfig->currentLabelFiler().Any = ui->labelBox->currentIndex();
-    emit viewConfigUpdated();
+    on_applyButton_clicked();
 }
 
 void FilterDialog::on_cancelButton_clicked()
@@ -408,6 +401,7 @@ void FilterDialog::applyValueFilter()
     mViewConfig->currentValueFilter().MinValue = ui->minEdit->text().toDouble();
     mViewConfig->currentValueFilter().MaxValue = ui->maxEdit->text().toDouble();
     mViewConfig->currentValueFilter().ExcludeRange = ui->excludeBox->isChecked();
+    mViewConfig->currentValueFilter().PreviousAbsolute = mViewConfig->currentValueFilter().isAbsolute();
     mViewConfig->currentValueFilter().UseAbsoluteValues = ui->absoluteBox->isChecked();
     mViewConfig->currentValueFilter().ShowPInf = ui->pInfBox->isChecked();
     mViewConfig->currentValueFilter().ShowNInf = ui->nInfBox->isChecked();

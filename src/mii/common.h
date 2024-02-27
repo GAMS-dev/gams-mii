@@ -24,6 +24,7 @@
 #include <limits>
 
 #include <QMap>
+#include <QRegularExpression>
 #include <QString>
 #include <QVariant>
 #include <QVector>
@@ -280,16 +281,6 @@ public:
         }
     }
 
-    static MiiModeType miiMode(const QString &params)
-    {
-        if (params.contains("singleMI", Qt::CaseInsensitive)) {
-            return MiiModeType::Single;
-        } else if (params.contains("multiMI", Qt::CaseInsensitive)) {
-            return MiiModeType::Multi;
-        }
-        return MiiModeType::None;
-    }
-
     static const int ZoomFactor = 2;
 
     static const QString AttributeHeaderText;
@@ -310,6 +301,63 @@ public:
     static const QString Postopt;
     static const QString Preopt;
     static const QStringList PredefinedViewTexts;
+};
+
+class CmdParser
+{
+public:
+    CmdParser()
+        : mRegEx("(\\w+=)", QRegularExpression::CaseInsensitiveOption)
+    {
+
+    }
+
+    void parse(const QString& params)
+    {
+        mParams = params;
+        mMode = miiMode(mParams);
+        auto values = mParams.split(mRegEx, Qt::SkipEmptyParts);
+        for (const auto& match : mRegEx.globalMatch(mParams)) {
+            auto key = match.captured().trimmed();
+            if (key == ScratchDirKey && !values.isEmpty()) {
+                mScratchDir = values.first().trimmed();
+            }
+            mParameters << key+(values.isEmpty() ? QString() : values.takeFirst().trimmed());
+        }
+    }
+
+    ViewHelper::MiiModeType mode() const
+    {
+        return mMode;
+    }
+
+    const QStringList& parameters() const
+    {
+        return mParameters;
+    }
+
+    QString scratchDir() const
+    {
+        return mScratchDir;
+    }
+
+    static ViewHelper::MiiModeType miiMode(const QString& params)
+    {
+        if (params.contains("singleMI", Qt::CaseInsensitive)) {
+            return ViewHelper::MiiModeType::Single;
+        } else if (params.contains("multiMI", Qt::CaseInsensitive)) {
+            return ViewHelper::MiiModeType::Multi;
+        }
+        return ViewHelper::MiiModeType::None;
+    }
+
+private:
+    QRegularExpression mRegEx;
+    QString mParams;
+    ViewHelper::MiiModeType mMode = ViewHelper::MiiModeType::None;
+    QStringList mParameters;
+    QString mScratchDir;
+    const QString ScratchDirKey = "scrdir=";
 };
 
 class FileHelper
@@ -475,6 +523,7 @@ struct ValueFilter
     bool ExcludeRange = false;
     bool UseAbsoluteValues = false;
     bool UseAbsoluteValuesGlobal = false;
+    bool PreviousAbsolute = false;
 
     bool ShowPInf = true;
     bool ShowNInf = true;
@@ -483,6 +532,12 @@ struct ValueFilter
     bool isAbsolute() const
     {
         return UseAbsoluteValues || UseAbsoluteValuesGlobal;
+    }
+
+    bool minMaxChanged() const
+    {
+        return MinValue != std::numeric_limits<double>::lowest() ||
+               MaxValue != std::numeric_limits<double>::max();
     }
 
     bool accepts(const QVariant &value) const

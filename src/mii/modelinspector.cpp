@@ -131,6 +131,7 @@ void ModelInspector::setShowAbsoluteValuesGlobal(bool absoluteValues)
     mModelInstance->setGlobalAbsolute(absoluteValues);
     for (auto widget : mSectionModel->rootItem()->widgets()) {
         widget->viewConfig()->currentAggregation().setUseAbsoluteValues(absoluteValues);
+        widget->viewConfig()->currentValueFilter().PreviousAbsolute = widget->viewConfig()->currentValueFilter().isAbsolute();
         widget->viewConfig()->currentValueFilter().UseAbsoluteValues = absoluteValues;
         widget->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal = absoluteValues;
         widget->setShowAbsoluteValues(absoluteValues);
@@ -245,10 +246,12 @@ void ModelInspector::resetZoom()
 void ModelInspector::updateFilters()
 {
     auto frame = currentView();
-    if (frame)
+    if (frame) {
         frame->updateFilters(AbstractViewConfiguration::ValueConfig |
                              AbstractViewConfiguration::LabelConfig |
                              AbstractViewConfiguration::IdentifierConfig);
+        emit filtersChanged();
+    }
 }
 
 void ModelInspector::saveModelView()
@@ -348,7 +351,7 @@ void ModelInspector::removeModelView()
     auto currentIndex = ui->sectionView->currentIndex();
     if (!currentIndex.isValid())
         return;
-    auto item = static_cast<SectionTreeItem*>(currentIndex.internalPointer());
+    auto item = static_cast<AbstractSectionTreeItem*>(currentIndex.internalPointer());
     auto parent = item->parent();
     auto customViewIndex = customIndex(item->modelInstanceGroup());
     auto predefinedViewIndex = predefinedIndex(item->modelInstanceGroup());
@@ -524,7 +527,7 @@ AbstractViewFrame* ModelInspector::currentView() const
     auto currentIndex = ui->sectionView->currentIndex();
     if (!currentIndex.isValid())
         return nullptr;
-    auto item = static_cast<SectionTreeItem*>(currentIndex.internalPointer());
+    auto item = static_cast<AbstractSectionTreeItem*>(currentIndex.internalPointer());
     return item ? item->widget() : nullptr;
 }
 
