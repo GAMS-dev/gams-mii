@@ -138,8 +138,8 @@ pack-wei:
     - '& $cmd_vcvars'
     - $env:Path = "C:\Qt\Tools\icu\bin64;" + $env:PATH
     - mkdir mii
-    - cp "/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.38.33135/x64/Microsoft.VC143.CRT/*" "mii"
-    - cp "/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.38.33135/vc_redist.x64.exe" "mii"
+    - cp "/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.42.34433/x64/Microsoft.VC143.CRT/*" "mii"
+    - cp "/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.42.34433/vc_redist.x64.exe" "mii"
     - cp build/src/bin/* mii
     - cd mii
     - 'windeployqt --release --compiler-runtime --force mii.exe'
@@ -151,7 +151,7 @@ pack-wei:
       )
     - $data | out-file -encoding ascii test.py
     - python test.py comodo_code.dat comodo_cert.p12
-    - signtool sign /v /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
+    - signtool sign /v /fd SHA256 /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
     - rm comodo_code.dat, comodo_cert.p12, test.py
     - cd ..
     - Compress-Archive -Path mii -DestinationPath GAMS-MII-wei-x86_64.zip
@@ -169,7 +169,7 @@ pack-wei-debug:
     - when: always
   tags: [windows]
   image:
-    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-${QT_IMAGE_VERSION}:latest
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-${QT_IMAGE_VERSION}-dbg:latest
   needs: [build-wei-debug]
   variables:
     vcinsdir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC
@@ -179,8 +179,8 @@ pack-wei-debug:
     - '& $cmd_vcvars'
     - $env:Path = "C:\Qt\Tools\icu\bin64;" + $env:PATH
     - mkdir mii
-    - cp "/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.38.33135/x64/Microsoft.VC143.CRT/*" "mii"
-    - cp "/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.38.33135/vc_redist.x64.exe" "mii"
+    - cp "/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.42.34433/x64/Microsoft.VC143.CRT/*" "mii"
+    - cp "/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.42.34433/vc_redist.x64.exe" "mii"
     - cp build/src/bin/* mii
     - cd mii
     - 'windeployqt --debug --compiler-runtime --force mii.exe'
@@ -192,7 +192,7 @@ pack-wei-debug:
       )
     - $data | out-file -encoding ascii test.py
     - python test.py comodo_code.dat comodo_cert.p12
-    - signtool sign /v /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
+    - signtool sign /v /fd SHA256 /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
     - rm comodo_code.dat, comodo_cert.p12, test.py
     - cd ..
     - Compress-Archive -Path mii -DestinationPath GAMS-MII-wei-debug-x86_64.zip
