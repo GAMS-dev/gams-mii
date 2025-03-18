@@ -171,15 +171,20 @@ OTHER_FILES +=                                      \
     ../platform/linux/mii.desktop                   \
     ../platform/macos/gams-mii.entitlements.plist   \
     ../ci/cloudfront-deploy.sh                      \
-    ../ci/github-deploy.sh                          \
     ../ci/codechecker.sh                            \
+    ../ci/github-deploy.sh                          \
+    ../ci/license-update.sh                         \
     ../ci/skipfile.txt                              \
-    ../ci/.gitlab-ci-06-gams.yml                    \
+    ../ci/.gitlab-ci-06-quality-gate.yml            \
     ../ci/.gitlab-ci-09-build.yml                   \
     ../ci/.gitlab-ci-12-test.yml                    \
     ../ci/.gitlab-ci-15-pack.yml                    \
     ../ci/.gitlab-ci-20-analyze.yml                 \
     ../ci/.gitlab-ci-24-deploy.yml                  \
     ../.gitlab-ci.yml                               \
+    ../.gitignore                                   \
+    ../.pre-commit-config.yaml                      \
+    ../.secrets.baseline                            \
+    ../CONTRIBUTING.md                              \
     ../README.md                                    \
     ../version

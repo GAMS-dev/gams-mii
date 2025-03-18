@@ -231,7 +231,7 @@ void FilterDialog::setupConnections()
     connect(ui->selectLabelButton, &QPushButton::clicked, this, &FilterDialog::selectLabelEntries);
     connect(ui->deselectLabelButton, &QPushButton::clicked, this, &FilterDialog::deselectLabelEntries);
     connect(ui->labelBox, &QComboBox::currentIndexChanged, this, &FilterDialog::labelBoxCurrentIndexChanged);
-    connect(ui->absoluteBox, &QCheckBox::stateChanged,
+    connect(ui->absoluteBox, &QCheckBox::checkStateChanged,
             this, [this](){
                 updateRangeEdit(ui->minEdit, ui->minEdit->text());
                 updateRangeEdit(ui->maxEdit, ui->maxEdit->text());
