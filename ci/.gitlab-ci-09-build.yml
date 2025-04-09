@@ -3,6 +3,10 @@ build-dac:
   tags: [macos-arm64]
   variables:
     qtpath: /opt/Qt/${QT_VERSION}/bin
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - !reference [.get-gams]
     - !reference [.gams-folder-dac]
@@ -24,6 +28,10 @@ build-deg:
   tags: [macos]
   variables:
     qtpath: /opt/Qt/${QT_VERSION}/bin
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - !reference [.get-gams]
     - !reference [.gams-folder-deg]
@@ -49,6 +57,10 @@ build-leg:
   needs: [fetch-ci-scripts, quality-gate]
   variables:
     DOLLAR_GAMS: $$$$GAMS_DISTRIB
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - !reference [.get-gams]
     - !reference [.gams-folder-leg]
@@ -70,6 +82,10 @@ build-wei:
      cmd_vcvars: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat
   image:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-${QT_IMAGE_VERSION}:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - $env:Path = "C:\Miniconda\Library\bin;C:\Miniconda\DLLs;" + $env:Path
     - $env:Path = "C:\Qt\Tools\icu\bin64;" + $env:PATH
@@ -92,16 +108,14 @@ build-wei:
 
 build-wei-debug:
   stage: build
-  rules:
-    - if: $PF_WEI_DEBUG == "0"
-      when: never
-    - when: on_success
   tags: [windows]
   needs: [fetch-ci-scripts, quality-gate]
   variables:
      cmd_vcvars: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat
   image:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-${QT_IMAGE_VERSION}-dbg:latest
+  rules:
+    - if: $PF_WEI_DEBUG == "1"
   script:
     - $env:Path = "C:\Miniconda\Library\bin;C:\Miniconda\DLLs;" + $env:Path
     - $env:Path = "C:\Qt\Tools\icu\bin64;" + $env:PATH

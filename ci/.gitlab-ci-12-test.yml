@@ -5,6 +5,10 @@ test-dac:
   dependencies: [fetch-ci-scripts,build-dac]
   variables:
     qtpath: /opt/Qt/${QT_VERSION}/bin
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - !reference [.get-gams]
     - !reference [.gams-folder-dac]
@@ -34,6 +38,10 @@ test-deg:
   dependencies: [fetch-ci-scripts,build-deg]
   variables:
     qtpath: /opt/Qt/${QT_VERSION}/bin
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - !reference [.get-gams]
     - !reference [.gams-folder-deg]
@@ -64,6 +72,10 @@ test-leg:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-${QT_IMAGE_VERSION}:latest
     entrypoint: [""]   # prevent startup.sh
   dependencies: [fetch-ci-scripts,build-leg]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - !reference [.get-gams]
     - !reference [.gams-folder-leg]
@@ -92,6 +104,10 @@ test-wei:
   image:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-${QT_IMAGE_VERSION}:latest
   dependencies: [fetch-ci-scripts,build-wei]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - $env:Path = "C:\Miniconda\Library\bin;C:\Miniconda\DLLs;" + $env:Path
     - $env:Path = "C:\Qt\Tools\icu\bin64;" + $env:PATH

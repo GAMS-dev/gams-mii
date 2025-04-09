@@ -4,6 +4,10 @@ pack-dac:
   variables:
     qtpath: /opt/Qt/${QT_VERSION}/bin
   needs: [build-dac]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - WORKSPACE=$(pwd)
     - PATH="${qtpath}:${PATH}"
@@ -53,6 +57,10 @@ pack-deg:
   variables:
     qtpath: /opt/Qt/${QT_VERSION}/bin
   needs: [build-deg]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - WORKSPACE=$(pwd)
     - PATH="${qtpath}:${PATH}"
@@ -105,6 +113,10 @@ pack-leg:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/leg/builder-${QT_IMAGE_VERSION}:latest
     entrypoint: [""]   # prevent startup.sh
   needs: [build-leg]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     # create folder structure
     - mkdir -p appdir/usr/bin
@@ -133,6 +145,10 @@ pack-wei:
   variables:
     vcinsdir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC
     cmd_vcvars: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
   script:
     - $env:VCINSTALLDIR = "$vcinsdir"
     - '& $cmd_vcvars'
@@ -163,10 +179,6 @@ pack-wei:
 
 pack-wei-debug:
   stage: pack
-  rules:
-    - if: $PF_WEI_DEBUG == "0"
-      when: never
-    - when: always
   tags: [windows]
   image:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-${QT_IMAGE_VERSION}-dbg:latest
@@ -174,6 +186,8 @@ pack-wei-debug:
   variables:
     vcinsdir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC
     cmd_vcvars: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat
+  rules:
+    - if: $PF_WEI_DEBUG == "1"
   script:
     - $env:VCINSTALLDIR = "$vcinsdir"
     - '& $cmd_vcvars'
