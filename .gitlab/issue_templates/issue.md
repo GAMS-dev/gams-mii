@@ -10,5 +10,9 @@ t.b.d.
 
 **Steps**
 - [ ] t.b.d.
-- [ ] Profiling
-- [ ] Unit Tests
+- [ ] Quality enhancements
+  - [ ] Clazy
+  - [ ] clang-tidy
+  - [ ] Memory checks, e.g. valgrind
+  - [ ] Profiling
+  - [ ] Unit Tests
