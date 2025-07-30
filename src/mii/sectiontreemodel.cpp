@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -297,7 +297,8 @@ void SectionTreeModel::loadMultiModeModelData(QStackedWidget* stackedWidget)
 {
     bool setActive = true;
     QDir scratchDir(mScratchDir);
-    for (const auto& entry : scratchDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+    auto entries = scratchDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const auto& entry : std::as_const(entries)) {
         auto group = new SectionGroupTreeItem(entry, mRoot);
         group->setType(ViewHelper::ViewDataType::ModelInstanceGroup);
         QDir groupScratchDir(mScratchDir + QDir::separator() + entry);

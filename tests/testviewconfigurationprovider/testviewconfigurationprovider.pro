@@ -8,7 +8,8 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-INCLUDEPATH += $$SRCPATH/mii
+INCLUDEPATH += $$SRCPATH            \
+               $$SRCPATH/mii
 
 SOURCES +=  tst_testviewconfigurationprovider.cpp        \
             $$SRCPATH/mii/abstractmodelinstance.cpp      \

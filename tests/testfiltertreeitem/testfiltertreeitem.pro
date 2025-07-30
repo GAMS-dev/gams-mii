@@ -7,5 +7,5 @@ TEMPLATE = app
 
 INCLUDEPATH += $$SRCPATH/mii
 
-SOURCES +=  tst_testfiltertreeitem.cpp                  \
+SOURCES +=  tst_testfiltertreeitem.cpp          \
             $$SRCPATH/mii/filtertreeitem.cpp

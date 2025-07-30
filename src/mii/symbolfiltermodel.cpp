@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -235,7 +235,7 @@ QSet<int> SymbolFilterModel::skipColumnLabels()
 {
     bool anyChecked = false;
     QSet<QString> labels;
-    for (const auto& dimFilter : mViewConfig->variableLabels()) {
+    for (const auto& dimFilter : std::as_const(mViewConfig->variableLabels())) {
         for (auto iter=dimFilter.keyValueBegin(); iter!=dimFilter.keyValueEnd(); ++iter) {
             if (iter->second)
                 anyChecked = true;
@@ -272,7 +272,7 @@ QSet<int> SymbolFilterModel::skipRowLabels()
 {
     bool anyChecked = false;
     QSet<QString> labels;
-    for (const auto& dimFilter : mViewConfig->equationLabels()) {
+    for (const auto& dimFilter : std::as_const(mViewConfig->equationLabels())) {
         for (auto iter=dimFilter.keyValueBegin(); iter!=dimFilter.keyValueEnd(); ++iter) {
             if (iter->second)
                 anyChecked = true;

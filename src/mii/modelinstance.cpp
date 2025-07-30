@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,12 +25,20 @@
 
 #include <QAbstractItemModel>
 #include <QVector>
-
+#include <cstring>
 #include <QDebug>
 
 namespace gams {
 namespace studio {
 namespace mii {
+
+enum class GamsCallbackMode : std::uint8_t
+{
+    Status = 1,
+    Log    = 2
+};
+
+QStringList ModelInstance::GamsCallbackLog {};
 
 ModelInstance::ModelInstance(bool useOutput,
                              const QString &workspace,
@@ -42,6 +50,7 @@ ModelInstance::ModelInstance(bool useOutput,
     setUseOutput(useOutput);
     initialize();
     loadScratchData();
+    appendGamsCallbackLog();
 }
 
 ModelInstance::~ModelInstance()
@@ -214,6 +223,7 @@ void ModelInstance::loadScratchData()
     mLogMessages << "CTRL File: " + ctrlFile;
     if (gevInitEnvironmentLegacy(mGEV, ctrlFile.toStdString().c_str())) {
         mLogMessages << "ERROR: Could not initialize model instance";
+        appendGamsCallbackLog();
         mState = Error;
         return;
     }
@@ -222,6 +232,7 @@ void ModelInstance::loadScratchData()
     gmoRegisterEnvironment(mGMO, mGEV, msg);
     if (gmoLoadDataLegacy(mGMO, msg)) {
         mLogMessages << "ERROR: Could not load model instance (input): " + QString(msg);
+        appendGamsCallbackLog();
         mState = Error;
         return;
     }
@@ -232,6 +243,7 @@ void ModelInstance::loadScratchData()
         gmoNameSolFileSet(mGMO, solFile.toStdString().c_str());
         if (gmoLoadSolutionLegacy(mGMO)) {
             mLogMessages << "ERROR: Could not load model instance (output): " + QString(msg);
+            appendGamsCallbackLog();
             mState = Error;
             return;
         }
@@ -240,6 +252,7 @@ void ModelInstance::loadScratchData()
     mDCT = (dctHandle_t)gmoDict(mGMO);
     if (!mDCT) {
         mLogMessages << "ERROR: Could not load dictionary file.";
+        appendGamsCallbackLog();
         mState = Error;
         return;
     }
@@ -553,7 +566,6 @@ void ModelInstance::initialize()
     gevSetExitIndicator(0); // switch of lib exit() call
     gevSetScreenIndicator(0); // switch off std lib output
     gevSetErrorCallback(ModelInstance::errorCallback);
-
     mLogMessages << "GAMS System Dir: " + mSystemDir;
 
     char msg[GMS_SSSIZE];
@@ -565,6 +577,7 @@ void ModelInstance::initialize()
         mState = Error;
         return;
     }
+    gevRegisterWriteCallback(mGEV, ModelInstance::logCallback, true, nullptr);
 
     gmoSetExitIndicator(0); // switch of lib exit() call
     gmoSetScreenIndicator(0); // switch off std lib output
@@ -916,12 +929,34 @@ QVariant ModelInstance::specialMarginalVarValueBasis(double value, int cIndex, b
     return specialValuePostopt(value, abs);
 }
 
+void ModelInstance::appendGamsCallbackLog()
+{
+    mLogMessages << GamsCallbackLog;
+    GamsCallbackLog.clear();
+}
+
 int ModelInstance::errorCallback(int count, const char *message)
 {
     Q_UNUSED(count)
-    qDebug()<< message;
+    QString msg(message);
+    GamsCallbackLog << msg.trimmed();
     return 0;
 }
+
+void ModelInstance::logCallback(const char *s, const int mode, void *usrmem)
+{
+    Q_UNUSED(mode);
+    Q_UNUSED(usrmem);
+    if (mode == static_cast<int>(GamsCallbackMode::Status))
+        return;
+    auto length { static_cast<uint8_t>(s[0]) };
+    char* data = new char[length];
+    strncpy(data, s+1, length);
+    QString msg(data);
+    GamsCallbackLog << msg.replace("\n", " ").trimmed();
+    delete[] data;
+}
+
 
 }
 }

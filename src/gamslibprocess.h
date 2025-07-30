@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,50 +20,23 @@
 #ifndef GAMSLIBPROCESS_H
 #define GAMSLIBPROCESS_H
 
-#include <QObject>
-#include <QProcess>
-#include <QString>
-#include <QMutex>
+#include "abstractprocess.h"
 
 class GAMSLibProcess
-        : public QObject
+        : public AbstractProcess
 {
     Q_OBJECT
 
 public:
-    GAMSLibProcess(QObject *parent = Q_NULLPTR);
+    GAMSLibProcess(QObject *parent = nullptr);
 
-    void setTargetDir(const QString &targetDir);
-    QString targetDir() const;
-
-    void setModelNumber(int modelNumber);
     int modelNumber() const;
+    void setModelNumber(int modelNumber);
 
-    void setModelName(const QString &modelName);
-    QString modelName() const;
-
-    void execute();
-
-    QProcess* process();
-
-signals:
-    void newStdChannelData(const QByteArray &data);
+    void execute() override;
 
 private:
-    QString nativeAppPath();
-
-    void readStdChannel(QProcess::ProcessChannel channel);
-    void readStdOut();
-    void readStdErr();
-
-private:
-    QProcess mProcess;
-    QString mAppName;
-    QString mTargetDir;
     int mModelNumber = -1;
-    QString mModelName;
-
-    QMutex mOutputMutex;
 };
 
 #endif // GAMSLIBPROCESS_H

@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -128,7 +128,8 @@ void ModelInspector::setShowAbsoluteValuesGlobal(bool absoluteValues)
     if (mModelInstance->globalAbsolute() == absoluteValues)
         return;
     mModelInstance->setGlobalAbsolute(absoluteValues);
-    for (auto widget : mSectionModel->rootItem()->widgets()) {
+    auto widgets = mSectionModel->rootItem()->widgets();
+    for (auto widget : std::as_const(widgets)) {
         widget->viewConfig()->currentValueFilter().UseAbsoluteValues = absoluteValues;
         widget->viewConfig()->currentValueFilter().UseAbsoluteValuesGlobal = absoluteValues;
         widget->setShowAbsoluteValues(absoluteValues);
@@ -188,7 +189,8 @@ void ModelInspector::reloadModelInstance()
         auto customGroup = mSectionModel->rootItem()->customGroup();
         if (!customGroup)
             return;
-        for (auto view : customGroup->widgets()) {
+        auto widgets = customGroup->widgets();
+        for (auto view : std::as_const(widgets)) {
             if (view->type() == ViewHelper::ViewDataType::Postopt)
                 continue;
             mModelInstance->loadViewData(view->viewConfig());
@@ -221,21 +223,24 @@ void ModelInspector::cancelRun()
 
 void ModelInspector::zoomIn()
 {
-    for (auto widget : mSectionModel->rootItem()->widgets()) {
+    auto widgets = mSectionModel->rootItem()->widgets();
+    for (auto widget : std::as_const(widgets)) {
         widget->zoomIn();
     }
 }
 
 void ModelInspector::zoomOut()
 {
-    for (auto widget : mSectionModel->rootItem()->widgets()) {
+    auto widgets = mSectionModel->rootItem()->widgets();
+    for (auto widget : std::as_const(widgets)) {
         widget->zoomOut();
     }
 }
 
 void ModelInspector::resetZoom()
 {
-    for (auto widget : mSectionModel->rootItem()->widgets()) {
+    auto widgets = mSectionModel->rootItem()->widgets();
+    for (auto widget : std::as_const(widgets)) {
         widget->resetZoom();
     }
 }
@@ -357,7 +362,8 @@ void ModelInspector::removeModelView()
     auto parent = item->parent();
     auto customViewIndex = customIndex(item->modelInstanceGroup());
     auto predefinedViewIndex = predefinedIndex(item->modelInstanceGroup());
-    for (auto widget : mSectionModel->removeItem(item)) {
+    auto removed = mSectionModel->removeItem(item);
+    for (auto widget : std::as_const(removed)) {
         ui->stackedWidget->removeWidget(widget);
         mModelInstance->removeViewData(widget->viewConfig()->viewId());
         delete widget;
@@ -463,6 +469,7 @@ void ModelInspector::setupModelInstanceView(bool loadModel)
             mModelInstance->setGlobalAbsolute(globalAbs);
         }
         if (mModelInstance->state() == AbstractModelInstance::Error) {
+            emit newLogMessage(mModelInstance->logMessages());
             mModelInstance = QSharedPointer<AbstractModelInstance>(new EmptyModelInstance);
             mModelInstance->setUseOutput(useOutput);
         }
@@ -511,7 +518,7 @@ void ModelInspector::switchModelInstance()
         if (!sibling->isActive())
             continue;
         auto wgts = mSectionModel->removeCustomRows(sibling->customGroup());
-        for (auto wgt : wgts) {
+        for (auto wgt : std::as_const(wgts)) {
             ui->stackedWidget->removeWidget(wgt);
             wgt->setParent(nullptr);
             delete wgt;

@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,9 +83,9 @@ public:
         }
     }
 
-    static QVector<QString> attributeTextList()
+    static const QVector<QString>& attributeTextList()
     {
-        return QVector<QString> {
+        static QVector<QString> data {
             LevelText,
             MarginalText,
             LowerText,
@@ -98,6 +98,7 @@ public:
             InfeasibilityText,
             TypeText
         };
+        return data;
     }
 
     static double attributeValue(double a, double b, bool aInf = false, bool bInf = false)

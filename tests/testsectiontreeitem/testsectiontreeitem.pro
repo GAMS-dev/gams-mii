@@ -5,7 +5,8 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-INCLUDEPATH += $$SRCPATH/mii
+INCLUDEPATH += $$SRCPATH            \
+               $$SRCPATH/mii
 
 SOURCES +=  tst_testsectiontreeitem.cpp                  \
             $$SRCPATH/mii/abstractmodelinstance.cpp      \

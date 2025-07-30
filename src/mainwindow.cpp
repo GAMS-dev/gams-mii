@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , mLibProcess(new GAMSLibProcess(this))
-    , mProcess(new GAMSProcess(this))
+    , mGamsProcess(new GAMSProcess(this))
     , mFilterDialog(new FilterDialog(this))
     , mScrWatcher(this)
 {
@@ -80,7 +80,7 @@ void MainWindow::appendLogMessage(const QString &message)
     ui->logEdit->appendPlainText(message.trimmed());
 }
 
-void MainWindow::on_actionOpen_triggered()
+void MainWindow::open()
 {
     QString workingDir = workspace();
     QFileInfo current(ui->modelEdit->text());
@@ -105,7 +105,7 @@ void MainWindow::on_actionOpen_triggered()
     }
 }
 
-void MainWindow::on_actionRun_triggered()
+void MainWindow::run()
 {
     ui->logEdit->verticalScrollBar()->setValue(ui->logEdit->verticalScrollBar()->maximum());
     setRunButtonState(false);
@@ -155,19 +155,19 @@ void MainWindow::on_actionRun_triggered()
                 }
             }
         }
-        mProcess->setModel(ui->modelEdit->text());
-        mProcess->setParameters({cmdParser.parameters()});
-        mProcess->setWorkingDir(path);
-        mProcess->execute();
+        mGamsProcess->setModel(ui->modelEdit->text());
+        mGamsProcess->setParameters({cmdParser.parameters()});
+        mGamsProcess->setDirectory(path);
+        mGamsProcess->execute();
     }
 }
 
-void MainWindow::on_action_Quit_triggered()
+void MainWindow::quit()
 {
     close();
 }
 
-void MainWindow::on_action_Search_triggered()
+void MainWindow::focusSearch()
 {
     ui->searchEdit->setFocus();
 }
@@ -189,7 +189,7 @@ void MainWindow::editMenuAboutToShow()
     ui->actionRenameView->setEnabled(states.RenameEnabled);
 }
 
-void MainWindow::on_actionFilters_triggered()
+void MainWindow::showFilters()
 {
     setGlobalFiltersData();
     showDialog(mFilterDialog);
@@ -329,22 +329,38 @@ void MainWindow::scrFileChanged()
 
 void MainWindow::setupConnections()
 {
-    connect(mProcess->process(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+    connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::open);
+    connect(ui->actionRun, &QAction::triggered, this, &MainWindow::run);
+    connect(ui->action_Quit, &QAction::triggered, this, &MainWindow::quit);
+    connect(ui->action_Search, &QAction::triggered, this, &MainWindow::focusSearch);
+    connect(ui->actionFilters, &QAction::triggered, this, &MainWindow::showFilters);
+
+    connect(mGamsProcess.get(), &AbstractProcess::finished,
             this, &MainWindow::loadModelInstance);
+    connect(mGamsProcess.get(), &GAMSProcess::newStdChannelData,
+            this, &MainWindow::appendLogMessage);
+    connect(mGamsProcess.get(), &GAMSLibProcess::newLogMessage,
+            this, &MainWindow::appendLogMessage);
+    connect(mGamsProcess.get(), &GAMSLibProcess::runCanceled,
+            this, [this]{ ui->runButton->setEnabled(true); });
     connect(ui->modelInspector, &ModelInspector::newLogMessage,
             this, &MainWindow::appendLogMessage);
+
     connect(mLibProcess, &GAMSLibProcess::newStdChannelData,
             this, &MainWindow::appendLogMessage);
-    connect(mLibProcess->process(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+    connect(mLibProcess, &AbstractProcess::finished,
             this, &MainWindow::handleLibProcessResult);
-    connect(mProcess.get(), &GAMSProcess::newStdChannelData,
+    connect(mLibProcess, &GAMSLibProcess::newLogMessage,
             this, &MainWindow::appendLogMessage);
+    connect(mLibProcess, &GAMSLibProcess::runCanceled,
+            this, [this]{ ui->runButton->setEnabled(true); });
+
     connect(ui->searchEdit, &QLineEdit::returnPressed,
             this, &MainWindow::searchHeaders);
     connect(ui->openButton, &QPushButton::clicked,
-            this, &MainWindow::on_actionOpen_triggered);
+            this, &MainWindow::open);
     connect(ui->runButton, &QPushButton::clicked,
-            this, &MainWindow::on_actionRun_triggered);
+            this, &MainWindow::run);
     connect(mFilterDialog, &FilterDialog::viewConfigUpdated,
             this, &MainWindow::viewConfigUpdate);
     connect(ui->modelInspector, &ModelInspector::viewChanged,
@@ -365,9 +381,9 @@ void MainWindow::setupConnections()
     connect(ui->actionShow_Absolute, &QAction::triggered,
             this, &MainWindow::showAbsoluteValues);
     connect(ui->paramsEdit, &QLineEdit::returnPressed,
-            this, &MainWindow::on_actionRun_triggered);
+            this, &MainWindow::run);
     connect(ui->modelEdit, &QLineEdit::returnPressed,
-            this, &MainWindow::on_actionRun_triggered);
+            this, &MainWindow::run);
     connect(&mScrWatcher, &QFileSystemWatcher::directoryChanged,
             this, &MainWindow::scrDirectoryChanged);
     connect(&mScrWatcher, &QFileSystemWatcher::fileChanged,
@@ -377,7 +393,7 @@ void MainWindow::setupConnections()
         setRunButtonState(true);
     });
     connect(ui->modelInspector, &ModelInspector::openFilterDialog,
-            this, &MainWindow::on_actionFilters_triggered);
+            this, &MainWindow::showFilters);
 }
 
 void MainWindow::createProjectDirectory()
@@ -434,7 +450,8 @@ void MainWindow::loadSingleModelInstance(int exitCode, QProcess::ExitStatus exit
         return;
     }
     int datFileCount = 0;
-    for (const auto& file : scrdir.entryList()) {
+    auto files = scrdir.entryList();
+    for (const auto& file : std::as_const(files)) {
         if (file.endsWith(mii::FileHelper::GamsCntr, Qt::CaseInsensitive) ||
             file.endsWith(mii::FileHelper::GamsDict, Qt::CaseInsensitive) ||
             file.endsWith(mii::FileHelper::Gamsmatr, Qt::CaseInsensitive) ||
@@ -485,9 +502,9 @@ void MainWindow::loadGAMSModel(const QString &path)
             return;
     }
     ui->logEdit->appendPlainText(QString("Load model %1 from model library. The target location is %2.").arg(ui->modelEdit->text(), path));
-    mLibProcess->setTargetDir(path);
+    mLibProcess->setDirectory(path);
     QString model = ui->modelEdit->text();
-    mLibProcess->setModelName(model.replace(".gms", "").trimmed());
+    mLibProcess->setModel(model.replace(".gms", "").trimmed());
     mLibProcess->execute();
 }
 

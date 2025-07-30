@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,48 +20,17 @@
 #ifndef GAMSPROCESS_H
 #define GAMSPROCESS_H
 
-#include <QMutex>
-#include <QObject>
-#include <QProcess>
+#include "abstractprocess.h"
 
 class GAMSProcess
-        : public QObject
+        : public AbstractProcess
 {
     Q_OBJECT
 
 public:
     GAMSProcess(QObject *parent = nullptr);
 
-    void setWorkingDir(const QString &workingDir);
-    QString workingDir() const;
-
-    void execute();
-    void interrupt();
-    void stop();
-
-    void setModel(const QString &model);
-    void setParameters(const QStringList &parameters);
-
-    QProcess* process();
-
-signals:
-    void newStdChannelData(const QByteArray &data);
-
-private:
-    QString nativeAppPath();
-
-    void readStdChannel(QProcess::ProcessChannel channel);
-    void readStdOut();
-    void readStdErr();
-
-private:
-    QProcess mProcess;
-    QString mAppName;
-    QString mModel;
-    QStringList mParameters;
-    QString mWorkingDir;
-
-    QMutex mOutputMutex;
+    void execute() override;
 };
 
 #endif // GAMSPROCESS_H

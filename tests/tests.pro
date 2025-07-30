@@ -6,6 +6,8 @@ SUBDIRS +=                          \
     testdatamatrix                  \
     testemptymodelinstance          \
     testfiltertreeitem              \
+    testgamslibprocess \
+    testgamsprocess \
     testlabeltreeitem               \
     testmodelinstance               \
     testpostopttreeitem             \

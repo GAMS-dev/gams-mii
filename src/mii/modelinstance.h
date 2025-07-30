@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -169,7 +169,10 @@ private:
     QVariant specialMarginalEquValueBasis(double value, int rIndex, bool abs);
     QVariant specialMarginalVarValueBasis(double value, int cIndex, bool abs);
 
+    void appendGamsCallbackLog();
+
     static int errorCallback(int count, const char *message);
+    static void logCallback(const char *s, const int mode, void *usrmem);
 
 private:
     DataHandler *mDataHandler;
@@ -192,6 +195,8 @@ private:
     QString mLongestLabel;
     QString mLongestEqnText;
     QString mLongestVarText;
+
+    static QStringList GamsCallbackLog;
 };
 
 }

@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ FilterTreeItem* FilterTreeItem::child(int index)
     return mChilds.at(index);
 }
 
-QList<FilterTreeItem*> FilterTreeItem::childs() const
+const QList<FilterTreeItem *> &FilterTreeItem::childs() const
 {
     return mChilds;
 }
@@ -71,7 +71,7 @@ bool FilterTreeItem::hasChildren() const
 
 FilterTreeItem *FilterTreeItem::contains(const QString &label)
 {
-    for (auto item : mChilds) {
+    for (auto item : std::as_const(mChilds)) {
         if (item->text() == label)
             return item;
     }

@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -909,8 +909,8 @@ private:
                         int column = sparseRow->colIdx()[idx] - firstSection;
                         row->data()[column] = value(data[idx]);
                         row->nlFlags()[column] = sparseRow->nlFlags()[idx];
-                        mDataMinimum = std::min(mDataMinimum, row->data()[idx]);
-                        mDataMaximum = std::max(mDataMaximum, row->data()[idx]);
+                        mDataMinimum = std::min(mDataMinimum, row->data()[column]);
+                        mDataMaximum = std::max(mDataMaximum, row->data()[column]);
                         mColumns[column].indices().append(rr);
                     }
                 } else {
@@ -920,8 +920,8 @@ private:
                         int column = sparseRow->colIdx()[idx] - firstIdx;
                         row->data()[column] = value(data[idx]);
                         row->nlFlags()[column] = sparseRow->nlFlags()[idx];
-                        mDataMinimum = std::min(mDataMinimum, row->data()[idx]);
-                        mDataMaximum = std::max(mDataMaximum, row->data()[idx]);
+                        mDataMinimum = std::min(mDataMinimum, row->data()[column]);
+                        mDataMaximum = std::max(mDataMaximum, row->data()[column]);
                         mColumns[sparseRow->colIdx()[idx] - firstSection].indices().append(rr);
                     }
                 }
@@ -1731,7 +1731,7 @@ private:
     {
         bool abs = mViewConfig->currentValueFilter().isAbsolute();
         auto attributes = new GroupPostoptTreeItem(ViewHelper::AttributeHeaderText);
-        for (const auto& label : AttributeHelper::attributeTextList()) {
+        for (const auto& label : std::as_const(AttributeHelper::attributeTextList())) {
             if (mViewConfig->currentAttributeFilter().value(label) == Qt::Unchecked) {
                 continue;
             }
@@ -1857,12 +1857,12 @@ private:
         auto labels = symbol->sectionLabels().value(index);
         auto states = mViewConfig->currentLabelFiler().LabelCheckStates.value(orientation);
         if (mViewConfig->currentLabelFiler().Any) {
-            for (const auto& label : labels) {
+            for (const auto& label : std::as_const(labels)) {
                 if (states.value(label) == Qt::Checked)
                     return false;
             }
         } else {
-            for (const auto& label : labels) {
+            for (const auto& label : std::as_const(labels)) {
                 if (states.value(label) == Qt::Unchecked)
                     return true;
             }

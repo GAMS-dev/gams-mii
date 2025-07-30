@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ void Search::searchStaticHeader(Qt::Orientation orientation)
                                                  : mDataModel->rowCount();
     for (int section=0; section<sections; ++section) {
         auto labels = mDataModel->headerData(section, orientation, ViewHelper::SectionLabelRole).toStringList();
-        for (const auto& label : labels) {
+        for (const auto& label : std::as_const(labels)) {
             if (compare(label)) {
                 mViewConfig->searchResult().Entries.append(SearchResult::SearchEntry{section, orientation});
                 break;

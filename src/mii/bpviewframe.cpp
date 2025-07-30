@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ void AbstractBPViewFrame::handleRowColumnSelection()
 {
     QSet<Symbol*> rowSymbols, columnSymbols;
     auto indexes = ui->tableView->selectionModel()->selectedIndexes();
-    for (const auto& index : indexes) {
+    for (const auto& index : std::as_const(indexes)) {
         if (!index.isValid())
             continue;
         if (index.column() >= mModelInstance->variableCount())

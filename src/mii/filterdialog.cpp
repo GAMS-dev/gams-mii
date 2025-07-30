@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -493,7 +493,7 @@ void FilterDialog::applyLabelFilter(Qt::Orientation orientation, QSortFilterProx
 {
     FilterTreeItem* root = nullptr;
     auto childs = static_cast<FilterTreeModel*>(model->sourceModel())->filterItem()->childs();
-    for (auto child : childs) {
+    for (auto child : std::as_const(childs)) {
         if (orientation == variableOrientation() && child->text() == ViewHelper::VariableHeaderText) {
             root = child;
             break;
@@ -524,7 +524,7 @@ void FilterDialog::applyLabelFilter(Qt::Orientation orientation, QSortFilterProx
 void FilterDialog::applySymbolDimensions()
 {
     auto types = static_cast<FilterTreeModel*>(mDimFilterModel->sourceModel())->filterItem()->childs();
-    for (auto type : types) {
+    for (auto type : std::as_const(types)) {
         if (type->text() == ViewHelper::EquationHeaderText) {
             for (auto dim : type->childs()) {
                 int d = dim->text().remove("Dimension ").toInt() - 1;

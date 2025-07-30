@@ -1,8 +1,8 @@
 /**
  * GAMS Model Instance Inspector (MII)
  *
- * Copyright (c) 2023-2024 GAMS Software GmbH <support@gams.com>
- * Copyright (c) 2023-2024 GAMS Development Corp. <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Software GmbH <support@gams.com>
+ * Copyright (c) 2023-2025 GAMS Development Corp. <support@gams.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,17 +57,17 @@ private slots:
     void appendLogMessage(const QString &message);
 
     // File
-    void on_actionOpen_triggered();
-    void on_actionRun_triggered();
-    void on_action_Quit_triggered();
+    void open();
+    void run();
+    void quit();
 
     // Edit
-    void on_action_Search_triggered();
+    void focusSearch();
     void searchHeaders();
     void editMenuAboutToShow();
 
     // View
-    void on_actionFilters_triggered();
+    void showFilters();
     void on_actionShow_search_result_triggered();
     void showAbsoluteValues();
     void on_actionShow_Output_triggered();
@@ -116,7 +116,7 @@ private:
 private:
     Ui::MainWindow *ui;
     GAMSLibProcess *mLibProcess;
-    QSharedPointer<GAMSProcess> mProcess;
+    QSharedPointer<GAMSProcess> mGamsProcess;
     gams::studio::mii::FilterDialog *mFilterDialog;
     QFileSystemWatcher mScrWatcher;
     const QString mScrUpdateWarning = "Warning: It looks like the scratch data has not been updated.";
