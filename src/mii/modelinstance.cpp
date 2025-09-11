@@ -950,11 +950,11 @@ void ModelInstance::logCallback(const char *s, const int mode, void *usrmem)
     if (mode == static_cast<int>(GamsCallbackMode::Status))
         return;
     auto length { static_cast<uint8_t>(s[0]) };
-    char* data = new char[length];
-    strncpy(data, s+1, length);
+    char data[GMS_SSSIZE];
+    std::memmove(data, s+1, length);
+    data[length] = '\0';
     QString msg(data);
     GamsCallbackLog << msg.replace("\n", " ").trimmed();
-    delete[] data;
 }
 
 

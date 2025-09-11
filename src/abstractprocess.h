@@ -33,6 +33,7 @@ public:
     AbstractProcess(const QString &app, QObject *parent = nullptr);
 
     QString application() const;
+    bool runable();
 
     QString directory() const;
     void setDirectory(const QString &dir);
@@ -59,7 +60,6 @@ signals:
 protected:
     QString nativeAppPath();
 
-    bool isAppAvailable();
 
 private slots:
     void readStdOut();

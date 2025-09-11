@@ -88,7 +88,6 @@ build-wei:
     - if: $PF_WEI_DEBUG == "0"
   script:
     - ls C:\Qt
-    - ls C:\Qt\6.9.1
     - $env:Path = "C:\Miniconda\Library\bin;C:\Miniconda\DLLs;" + $env:Path
     - $env:Path = "C:\Qt\Tools\icu\bin64;" + $env:PATH
     - !reference [.get-gams-wei]

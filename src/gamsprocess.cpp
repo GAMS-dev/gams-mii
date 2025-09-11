@@ -31,7 +31,7 @@ GAMSProcess::GAMSProcess(QObject *parent)
 
 void GAMSProcess::execute()
 {
-    if (!isAppAvailable()) {
+    if (!runable()) {
         emit runCanceled();
         return;
     }

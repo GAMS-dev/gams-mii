@@ -21,6 +21,7 @@
 #include "commonpaths.h"
 
 #include <QDir>
+#include <QStandardPaths>
 
 AbstractProcess::AbstractProcess(const QString &app, QObject *parent)
     : QObject(parent)
@@ -80,11 +81,11 @@ QString AbstractProcess::nativeAppPath()
     const QString& systemDir = CommonPaths::systemDir();
     if (systemDir.isEmpty())
         return QString();
-    auto appPath = QDir(systemDir).filePath(application());
+    auto appPath = QStandardPaths::findExecutable(application(), { systemDir });
     return QDir::toNativeSeparators(appPath);
 }
 
-bool AbstractProcess::isAppAvailable()
+bool AbstractProcess::runable()
 {
     auto app = nativeAppPath();
     if (!app.isEmpty() && QFileInfo::exists(app))

@@ -37,7 +37,7 @@ void GAMSLibProcess::setModelNumber(int modelNumber)
 
 void GAMSLibProcess::execute()
 {
-    if (!isAppAvailable()) {
+    if (!runable()) {
         emit runCanceled();
         return;
     }

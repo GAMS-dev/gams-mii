@@ -167,8 +167,13 @@ pack-wei:
       )
     - $data | out-file -encoding ascii test.py
     - python test.py comodo_code.dat comodo_cert.p12
-    - signtool sign /v /fd SHA256 /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
-    - rm comodo_code.dat, comodo_cert.p12, test.py
+    - |+
+      signtool sign /v /fd SHA256 /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
+      rm comodo_code.dat, comodo_cert.p12, test.py
+      signtool verify /v /pa mii.exe
+      if ($LastExitCode -ne 0) {
+        exit 1
+      }
     - cd ..
     - Compress-Archive -Path mii -DestinationPath GAMS-MII-wei-x86_64.zip
   artifacts:
@@ -206,8 +211,13 @@ pack-wei-debug:
       )
     - $data | out-file -encoding ascii test.py
     - python test.py comodo_code.dat comodo_cert.p12
-    - signtool sign /v /fd SHA256 /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
-    - rm comodo_code.dat, comodo_cert.p12, test.py
+    - |+
+      signtool sign /v /fd SHA256 /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
+      rm comodo_code.dat, comodo_cert.p12, test.py
+      signtool verify /v /pa mii.exe
+      if ($LastExitCode -ne 0) {
+        exit 1
+      }
     - cd ..
     - Compress-Archive -Path mii -DestinationPath GAMS-MII-wei-debug-x86_64.zip
   artifacts:

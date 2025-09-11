@@ -108,6 +108,8 @@ void MainWindow::open()
 void MainWindow::run()
 {
     ui->logEdit->verticalScrollBar()->setValue(ui->logEdit->verticalScrollBar()->maximum());
+    ui->actionShow_Absolute->setChecked(false);
+    ui->actionShow_Output->setChecked(true);
     setRunButtonState(false);
     auto path = workspace();
     QDir dir(path);
@@ -119,6 +121,7 @@ void MainWindow::run()
     mLoadScrFiles = false;
     mScrFilesUpdated = false;
     ui->modelInspector->setModelFilePath(ui->modelEdit->text());
+    ui->modelInspector->setShowAbsoluteValuesGlobal(ui->actionShow_Absolute->isChecked());
     ui->modelInspector->setShowOutput(ui->actionShow_Output->isChecked());
     if (ui->modelEdit->text().endsWith(".dat")) {
         mLoadScrFiles = true;

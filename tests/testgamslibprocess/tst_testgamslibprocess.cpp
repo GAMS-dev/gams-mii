@@ -19,6 +19,7 @@
  */
 #include <QtTest>
 
+#include "commonpaths.h"
 #include "gamslibprocess.h"
 
 class TestGamsLibProcess : public QObject
@@ -37,13 +38,16 @@ private slots:
     void test_getset_data();
     void test_getset();
 
+    void test_application();
+    void test_runable();
+
 private:
     GAMSLibProcess *mProc;
 };
 
 TestGamsLibProcess::TestGamsLibProcess()
 {
-
+    CommonPaths::setSystemDir(GAMS_DISTRIB_PATH);
 }
 
 TestGamsLibProcess::~TestGamsLibProcess()
@@ -98,6 +102,16 @@ void TestGamsLibProcess::test_getset()
     QCOMPARE(mProc->modelNumber(), modelnr);
     mProc->setModel(model);
     QCOMPARE(mProc->model(), model);
+}
+
+void TestGamsLibProcess::test_application()
+{
+    QCOMPARE(mProc->application(), "gamslib");
+}
+
+void TestGamsLibProcess::test_runable()
+{
+    QVERIFY(mProc->runable());
 }
 
 QTEST_APPLESS_MAIN(TestGamsLibProcess)
