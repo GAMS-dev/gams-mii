@@ -32,3 +32,18 @@ deploy-github:
     - mv *.AppImage *.dmg *.zip artifacts
     - chmod +x ci/github-deploy.sh
     - TAG_NAME=$CI_COMMIT_TAG GITHUB_TOKEN=${GITHUB_TOKEN} ./ci/github-deploy.sh
+
+deploy-qt:
+  stage: deploy
+  tags: [linux]
+  needs: []
+  image:
+    name: $GAMS_CONTAINER_REGISTRY/qt-machines/deployer:latest
+    entrypoint: [""]   # prevent startup.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $PF_WEI_DEBUG == "0"
+  script:
+    - chmod +x ci/qt-deploy.sh
+    - ./ci/qt-deploy.sh

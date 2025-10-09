@@ -4,8 +4,11 @@ GAMS Model Instance Inspector (MII) is a system to examine the structure and pro
 by the General Algebraic Modeling System (GAMS). It is strongly inspired by the tool
 [GAMSCHK](https://www.gams.com/latest/docs/S_GAMSCHK.html) developed by
 [Bruce McCarl](https://agecon.tamu.edu/people/mccarl-bruce/). For further information about GAMS please
-visit [GAMS](https://www.gams.com) or the [GAMS documentation](https://www.gams.com/latest/docs/). Additional information
-on how to use the MII can be found at the [GitHub MII Wiki](https://github.com/GAMS-dev/gams-mii/wiki/GAMS-Model-Instance-Inspector-(MII)).
+visit [GAMS](https://www.gams.com) or the [GAMS documentation](https://www.gams.com/latest/docs/).
+
+# Documenation
+
+Information on how to use the MII can be found at the [GitHub MII Wiki](https://github.com/GAMS-dev/gams-mii/wiki).
 
 # How to build
 
@@ -58,5 +61,5 @@ Before you request a review of your changes please make sure that you used the l
 
 | Dependency | License | Description |
 | ------ | ------ | ------ |
-| [Qt 6](https://www.qt.io/) | [LGPL](https://doc.qt.io/qt-6/lgpl.html) | [Qt Licensing](https://doc.qt.io/qt-6/licensing.html). The Qt 6 everywhere package (source) can be downloaded from [GAMS](https://d37drm4t2jghv5.cloudfront.net/qt/qt-everywhere-src-6.4.2.tar.xz) or directly from https://www.qt.io/download, where installers are provided as well. |
+| [Qt 6](https://www.qt.io/) | [LGPL](https://doc.qt.io/qt-6/lgpl.html) | [Qt Licensing](https://doc.qt.io/qt-6/licensing.html). The Qt 6 everywhere package (source) can be downloaded from [GAMS](https://d37drm4t2jghv5.cloudfront.net/qt/qt-everywhere-src-6.9.3.tar.xz) or directly from https://www.qt.io/download, where installers are provided as well. |
 | [dtoaLoc](extern/dtoaloc) | [License](extern/dtoaloc/README.md) | |
