@@ -6,7 +6,7 @@ by the General Algebraic Modeling System (GAMS). It is strongly inspired by the 
 [Bruce McCarl](https://agecon.tamu.edu/people/mccarl-bruce/). For further information about GAMS please
 visit [GAMS](https://www.gams.com) or the [GAMS documentation](https://www.gams.com/latest/docs/).
 
-# Documenation
+# Documentation
 
 Information on how to use the MII can be found at the [GitHub MII Wiki](https://github.com/GAMS-dev/gams-mii/wiki).
 
