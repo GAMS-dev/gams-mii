@@ -143,8 +143,8 @@ pack-wei:
     name: $GAMS_CONTAINER_REGISTRY/qt-machines/wei/builder-${QT_IMAGE_VERSION}:latest
   needs: [build-wei]
   variables:
-    vcinsdir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC
-    cmd_vcvars: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat
+    vcinsdir: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC
+    cmd_vcvars: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
@@ -154,25 +154,19 @@ pack-wei:
     - '& $cmd_vcvars'
     - $env:Path = "C:\Qt\Tools\icu\bin64;" + $env:PATH
     - mkdir mii
-    - cp "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.44.35112/x64/Microsoft.VC143.CRT/*" "mii"
-    - cp "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC/14.44.35112/vc_redist.x64.exe" "mii"
+    - cp "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Redist/MSVC/14.44.35112/x64/Microsoft.VC143.CRT/*" "mii"
+    - cp "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Redist/MSVC/14.44.35112/vc_redist.x64.exe" "mii"
     - cp build/src/bin/* mii
     - cd mii
     - 'windeployqt --release --compiler-runtime --force mii.exe'
     - echo $GAMS_COMODO_CERT | out-file -encoding ascii comodo_code.dat
-    - $data = (
-      'import base64;',
-      'import sys;',
-      'base64.decode(open(sys.argv[1], ''rb''), open(sys.argv[2], ''wb''))'
-      )
-    - $data | out-file -encoding ascii test.py
-    - python test.py comodo_code.dat comodo_cert.p12
-    - |+
-      signtool sign /v /fd SHA256 /f comodo_cert.p12 /p $GAMS_COMODO_CERT_PASSWORD /t http://timestamp.comodoca.com mii.exe
-      rm comodo_code.dat, comodo_cert.p12, test.py
-      signtool verify /v /pa mii.exe
-      if ($LastExitCode -ne 0) {
-        exit 1
+    - |
+      if ($env:CI_COMMIT_TAG -match '^v\d+\.\d+\.\d+.*') {
+        Write-Host "Release tag detected: $env:CI_COMMIT_TAG - Signing mii.exe"
+        & signtool sign /v /fd SHA256 /tr http://timestamp.acs.microsoft.com -td SHA256 -dlib $env:LOCALAPPDATA/Microsoft/MicrosoftArtifactSigningClientTools/Azure.CodeSigning.Dlib.dll -dmdf $env:SIGNTOOL_METADATA_JSON studio.exe
+        & signtool verify /v /pa mii.exe
+      } else {
+        Write-Host "Not a release vX.Y.Z. Skipping signing mii.exe!"
       }
     - cd ..
     - Compress-Archive -Path mii -DestinationPath GAMS-MII-wei-x86_64.zip
